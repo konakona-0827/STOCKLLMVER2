@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sqlite3
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 from config import ROOT, now
@@ -145,6 +146,49 @@ class DashboardTests(unittest.TestCase):
                 if isinstance(node,ast.Call):
                     name=getattr(node.func,'attr',getattr(node.func,'id',''))
                     self.assertFalse(any(s in name for s in ['SendStock','CancelOrder','PaperBroker']), (file,name))
+
+    def test_gui_worker_error_releases_lock_and_auto_recovers(self):
+        import tkinter as tk
+        from dashboard import Dashboard
+        root = tk.Tk()
+        root.withdraw()
+        app = Dashboard(root,Path(self.tmp.name),120)
+        calls = []
+        def fail(trigger, phase):
+            calls.append(trigger)
+            phase('WAITING_OPENAI')
+            time.sleep(.25)
+            raise RuntimeError('injected local test error')
+        app.service.run = fail
+        app.manual()
+        deadline = time.monotonic()+3
+        try:
+            while app.scheduler.scan_lock.locked() and time.monotonic()<deadline:
+                root.update()
+                time.sleep(.02)
+            self.assertEqual(app.status,'ERROR')
+            self.assertFalse(app.scheduler.scan_lock.locked())
+            self.assertGreaterEqual(app.heartbeat,2)
+            app.scheduler.next_auto=time.time()-.1
+            deadline=time.monotonic()+3
+            while (len(calls)<2 or app.scheduler.scan_lock.locked()) and time.monotonic()<deadline:
+                root.update()
+                time.sleep(.02)
+            self.assertEqual(calls,['MANUAL','AUTO'])
+            self.assertFalse(app.scheduler.scan_lock.locked())
+            self.assertGreater(app.scheduler.next_auto,time.time())
+        finally:
+            app.close()
+            until=time.monotonic()+2
+            while root.winfo_exists() and time.monotonic()<until:
+                root.update()
+                time.sleep(.02)
+                try:
+                    alive=root.winfo_exists()
+                except tk.TclError:
+                    break
+                if not alive:
+                    break
 
 
 if __name__=='__main__':

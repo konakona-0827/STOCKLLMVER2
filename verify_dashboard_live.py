@@ -48,7 +48,7 @@ def main():
                 top10=[r['symbol'] for r in app.result['top']],
                 analysis_set=[{'symbol':c['symbol'],'source':c['analysis_source']} for c in app.result['analysis_set']],
                 positions=app.positions, decisions=app.result['decision'],
-                position_table=[app.position_tree.item(i)['values'] for i in app.position_tree.get_children()])
+                position_table=[app.position_tree.set(i) for i in app.position_tree.get_children()])
         if {'AUTO','MANUAL'} <= seen and not app.scheduler.scan_lock.locked():
             report.update(heartbeat_count=app.heartbeat,elapsed_seconds=time.monotonic()-launched,
                           positions_unchanged=ps.load(db)==before, sell_0050_half_qty=sell_qty(20,.5),

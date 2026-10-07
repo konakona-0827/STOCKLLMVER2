@@ -8,17 +8,18 @@ from config import ROOT, load_env, now, redact
 from main import Audit, save_json, single_instance
 from universe import load_universe, load_rules
 from capital_multi_quote import MultiCapitalMarket, multi_snapshot
-from quant_scanner import scan_and_rank
+from quant_scanner import scan_and_rank, scan_quote
 from multi_scan import candidate_payload
 import position_store
 import position_analyzer
 import scan_store
 
 
-def build_union(top, ranked, quotes, positions, db_path, at):
+def build_union(top, ranked, quotes, positions, db_path, at, scanned=None):
     qmap = {q['symbol']: q for q in quotes}
     pmap = {p['symbol']: p for p in positions}
     rmap = {r['symbol']: r for r in ranked}
+    metrics_map = {r['symbol']:r for r in (scanned or [])}
     top_symbols = {r['symbol'] for r in top}
     managed = {p['symbol'] for p in positions if p['ai_managed_qty'] > 0}
     symbols = [r['symbol'] for r in top] + sorted(managed-top_symbols)
@@ -28,11 +29,14 @@ def build_union(top, ranked, quotes, positions, db_path, at):
         if r:
             c = candidate_payload([r], quotes, db_path, at)[0]
         else:
-            c = dict(symbol=s, quant_rank=None, quant_score=None, components={}, metrics={},
+            metric = metrics_map.get(s, {})
+            c = dict(symbol=s, quant_rank=None, quant_score=metric.get('quant_score'),
+                     components=metric.get('components',{}), metrics=metric.get('metrics',{}),
                      **{k:q.get(k) for k in ('last_price', 'open', 'high', 'low', 'bid', 'ask', 'volume', 'quote_status', 'quote_timestamp')},
                      volume_unit='shares', warnings=q.get('warnings', []),
                      market_history=scan_store.recent_history(db_path, s, at))
         c.pop('position_qty', None)
+        c['is_trial'] = bool(q.get('is_trial'))
         c['analysis_source'] = 'TOP10+POSITION' if s in top_symbols & managed else ('TOP10' if s in top_symbols else 'POSITION')
         c['position'] = position_store.context(pmap.get(s, position_store.empty(s)), q['last_price'])
         result.append(c)
@@ -106,10 +110,14 @@ class AnalysisService:
         save_json(directory/'raw_quotes.json', raw)
         save_json(directory/'multi_market_snapshot.json', batch)
         phase('QUANT_ANALYSIS')
-        scanned, ranked, top = scan_and_rank([q for q in batch['quotes'] if q['symbol'] in universe['symbols']], rules, now())
+        at = now()
+        scanned, ranked, top = scan_and_rank([q for q in batch['quotes'] if q['symbol'] in universe['symbols']], rules, at)
+        # Position-only stocks outside the universe still receive available
+        # metrics, but cannot displace the universe's Top 10 ranking.
+        scanned += [scan_quote(q, rules, at) for q in batch['quotes'] if q['symbol'] not in universe['symbols']]
         save_json(directory/'quant_scan.json', dict(rule_config=rules, quotes=scanned))
         save_json(directory/'candidate_ranking.json', dict(ranking=ranked, top_candidates=top))
-        candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started)
+        candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned)
         save_json(directory/'analysis_set.json', candidates)
         request = position_analyzer.build_request(candidates)
         save_json(directory/'openai_request.json', request)

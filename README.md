@@ -58,7 +58,7 @@
 - `data/analysis/quote_0050.json`：若成功取得SKCOM快照才保存的最後行情。
 - `data/analysis/latest_run.json`：最近一次執行ID、各階段時間與該次保存資料夾。
 - `data/analysis/runs/<run_id>/`：每次獨立保存的raw_quote、market_snapshot、openai_request、openai_response、decision、connection與run.json，後續執行不覆蓋。
-- `data/analysis/market_history.sqlite3`：累積研究資料庫，只有`market_snapshots`與`analyses`兩張資料表，沒有訂單／資金／持倉表。
+- `data/analysis/market_history.sqlite3`：累積研究資料庫；單股使用 `market_snapshots` / `analyses`，多股使用 `scan_runs` / `multi_market_snapshots` / `quant_metrics` / `candidate_rankings` / `selection_analyses`，GUI 另新增手動配置 `positions` / `position_events`。沒有模擬成交或資金帳本。
 
 時間皆保存含時區的ISO 8601字串（台灣UTC+08:00，日本時間加一小時）：
 
@@ -87,3 +87,35 @@
 SKCOM需完成註冊並有有效登入憑證；OpenAI需要既有.env內的API key。
 
 API錯誤或格式錯誤會顯示WAIT並結束，保留原始回覆供檢查。真實委託與broker cross-check由其他流程處理。
+
+## GUI / 固定自動掃描 / 持倉聯集
+
+雙擊 `Dashboard.cmd`（或 `python dashboard.py`）。原 `Start.cmd` 單股及 `Scan.cmd` 多股入口保持獨立。
+GUI 開啟後按「立即重新分析」取得 SKCOM 行情並送到 OpenAI；按 Start Auto Scan 啟用每 1800 秒固定時間格的排程（台北每小時 :00 / :30）。初始自動掃描為關閉。
+手動分析有 60 秒冷卻，不影響下一個自動時間。任何分析執行中都不重疊；若自動時間到但仍在分析，跳過該時間格。Stop Auto Scan 只停止後續排程，不中斷本輪保存。關閉視窗會等待當前請求結束並保存。
+
+Position Settings 手動填入 `symbol / user_qty / ai_managed_qty / user_average_cost / ai_average_cost`。成本未知留白；兩種股數均為非負整數。此處是研究配置，不代表券商已確認庫存。空白資料庫不自動建立持倉，測試的 0050 不會寫入正式資料庫。
+OpenAI 收到 `Quant Top 10 ∪ ai_managed_qty > 0`，並標記 TOP10 / POSITION / TOP10+POSITION；未入榜或沒有行情的 AI 管理股票也不省略。沒有行情只能 WAIT。
+SELL 股數嚴格驗證為 `floor(ai_managed_qty × action_ratio)`，不能加上 user_qty。BUY 未提供資金預算，僅建議方向，股數為 null；HOLD/WAIT 股數為 0。建議不會修改任何配置。
+持倉表分開顯示總未實現損益、AI 管理損益與 AI 損益率，成本/價格缺失顯示 `--`；計算依本輪快照，不是持續行情。決策 JSON/理由與各股票行情時間均有獨立分頁。沒有券商成交紀錄時，成交彙總顯示 unavailable。
+
+每輪檔案在 `data/analysis/runs/<run_id>/`：
+
+| 檔案 | 保存內容 |
+|---|---|
+| run.json | AUTO/MANUAL、started_at、finished_at、行情請求起訖、錯誤、run_id |
+| positions_snapshot.json | 本輪讀取的手動持倉配置，不隨後續編輯更動 |
+| raw_quotes.json / multi_market_snapshot.json | 原始券商欄位、資料時間、接收時間、請求時間、品質 |
+| quant_scan.json / candidate_ranking.json | 分數構成及 Top 10 |
+| analysis_set.json | 聯集、來源、量化資訊與持倉/PnL context |
+| openai_request.json | 實際提示詞、輸入與 schema，不含金鑰 |
+| openai_response.json | 原始 JSON 字串、完整 API 回覆、用量、時間、驗證結果 |
+| selection_decision.json | 驗證後的逐檔建議；錯誤時為明確標示的 WAIT fallback |
+| dashboard_result.json | 該輪 GUI 使用的完整資料 |
+| sqlite_result.json / connection.json | SQLite 核對及 SKCOM 連線事件 |
+
+`data/analysis/latest_dashboard.json` 是最近 GUI 結果索引；歷史 runs 不覆蓋。上述研究資料同時寫入 `market_history.sqlite3`，持倉修改歷程保存在 `position_events`。SQLite 寫入失敗仍盡量保留 run/error JSON。單輪錯誤顯示 ERROR，後續固定自動排程繼續。
+
+離線測試：`python -m unittest -q test_analysis test_multi_scan test_dashboard`。
+短週期 GUI：`python dashboard.py --test-mode --interval 120 --data-dir data/gui_test`。
+真實 SKCOM/OpenAI 整合驗證：`python verify_dashboard_live.py`，會呼叫 OpenAI API 並開啟 GUI，於獨立 `data/gui_verification/<時間>/` 建立明確標示的 0050/2454 測試配置；完成 MANUAL 和 AUTO 後保存 verification.json 並關閉。不呼叫任何下單 API。

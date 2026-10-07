@@ -9,6 +9,7 @@ floor(ai_managed_qty * action_ratio)，action_ratio 介於 0 到 1，SELL 至少
 BUY 因未提供可用資金，不虛構購買力：action_ratio=0、suggested_qty=null、warnings 明確說明未提供買入預算。
 HOLD/WAIT 的 action_ratio=0、suggested_qty=0、suggested_price=null。
 UNAVAILABLE 必須 WAIT，reference_price=null。其他 reference_price 等於輸入 last_price。
+is_trial=true 為試撮，必須 WAIT。
 data_quality 必須等於 quote_status。LAST_KNOWN warnings 必須包含「不是即時行情」，明確列出資料時間。
 suggested_price 是正數或 null，不得捏造不存在的現價。confidence 介於 0 與 1。
 只依提供的行情、量化分數、持倉與歷史 snapshot 推論。缺少日 K、技術指標、新聞時不可虛構。

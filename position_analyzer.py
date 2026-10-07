@@ -72,6 +72,8 @@ def validate(result, candidates):
             raise ValueError('INVALID_PRICE')
         if d['data_quality'] != c['quote_status'] or (c['quote_status'] == 'UNAVAILABLE' and d['decision'] != 'WAIT'):
             raise ValueError('INVALID_DATA_QUALITY_DECISION')
+        if c.get('is_trial') and d['decision'] != 'WAIT':
+            raise ValueError('TRIAL_QUOTE_MUST_WAIT')
         if not isinstance(d['reason'], str) or not d['reason'].strip() or not isinstance(d['warnings'], list) or any(not isinstance(w, str) for w in d['warnings']):
             raise ValueError('INVALID_EXPLANATION')
         if c['quote_status'] == 'LAST_KNOWN' and not any('不是即時行情' in w for w in d['warnings']):
