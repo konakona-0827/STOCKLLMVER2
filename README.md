@@ -116,6 +116,8 @@ SELL 股數嚴格驗證為 `floor(ai_managed_qty × action_ratio)`，不能加�
 
 `data/analysis/latest_dashboard.json` 是最近 GUI 結果索引；歷史 runs 不覆蓋。上述研究資料同時寫入 `market_history.sqlite3`，持倉修改歷程保存在 `position_events`。SQLite 寫入失敗仍盡量保留 run/error JSON。單輪錯誤顯示 ERROR，後續固定自動排程繼續。
 
-離線測試：`python -m unittest -q test_analysis test_multi_scan test_dashboard`。
+提供給下游程式的穩定建議介面為 `data/analysis/latest_advice.json`；每輪同時封存 `runs/<run_id>/advice_interface.json`。內容包含標準化建議、行情品質與年齡秒數、行情／LLM 時間、執行狀態及 `real_order_sent`。欄位說明與 Python 讀取範例見 `ADVICE_INTERFACE.md`。
+
+離線測試：`python -m unittest -q test_analysis test_multi_scan test_dashboard test_advice_interface`。
 短週期 GUI：`python dashboard.py --test-mode --interval 120 --data-dir data/gui_test`。
 真實 SKCOM/OpenAI 整合驗證：`python verify_dashboard_live.py`，會呼叫 OpenAI API 並開啟 GUI，於獨立 `data/gui_verification/<時間>/` 建立明確標示的 0050/2454 測試配置；完成 MANUAL 和 AUTO 後保存 verification.json 並關閉。不呼叫任何下單 API。

@@ -30,8 +30,8 @@ def load(path):
 
 
 def save_manual(path, symbol, user_qty, ai_managed_qty, user_average_cost=None, ai_average_cost=None):
-    if not isinstance(symbol, str) or not re.fullmatch(r'[0-9]{4,6}', symbol):
-        raise ValueError('股票代號須為 4–6 位數字')
+    if not isinstance(symbol, str) or not re.fullmatch(r'(?:[0-9]{4,6}|[0-9]{4,5}[A-Z])', symbol):
+        raise ValueError('標的代碼須為有效的 4–6 字元上市證券代碼')
     for qty in (user_qty, ai_managed_qty):
         if type(qty) is not int or qty < 0:
             raise ValueError('股數須為非負整數')

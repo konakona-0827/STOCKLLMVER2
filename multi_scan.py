@@ -14,12 +14,14 @@ import candidate_analyzer
 import scan_store
 
 
-def candidate_payload(top, quotes, db_path, at):
+def candidate_payload(top, quotes, db_path, at, etf_symbols=()):
     lookup = {q['symbol']: q for q in quotes}
+    etf_symbols = set(etf_symbols)
     result = []
     for r in top:
         q = lookup[r['symbol']]
-        result.append(dict(symbol=q['symbol'], quant_rank=r['rank'], quant_score=r['quant_score'],
+        result.append(dict(symbol=q['symbol'], asset_type='ETF' if q['symbol'] in etf_symbols else 'STOCK',
+            quant_rank=r['rank'], quant_score=r['quant_score'],
             components=r['components'], metrics=r['metrics'],
             last_price=q['last_price'], open=q['open'], high=q['high'], low=q['low'],
             bid=q['bid'], ask=q['ask'], volume=q['volume'], volume_unit='shares',
@@ -92,7 +94,7 @@ def main():
         save_json(directory/'quant_scan.json', quant)
         save_json(directory/'candidate_ranking.json', ranking)
         db_path = args.data_dir/'market_history.sqlite3'
-        candidates = candidate_payload(top, batch['quotes'], db_path, started)
+        candidates = candidate_payload(top, batch['quotes'], db_path, started, universe.get('etf_symbols', []))
         request = candidate_analyzer.build_request(candidates)
         save_json(directory/'openai_request.json', request)
         if candidates and not stop.exists():

@@ -52,13 +52,13 @@ def single_instance(path):
         f.close()
 
 
-def snapshot(symbol, quote=None, warnings=None, at=None):
+def snapshot(symbol, quote=None, warnings=None, at=None, asset_type='UNKNOWN'):
     at = at or now()
-    result = dict(symbol=symbol, source='CAPITAL_SKCOM', data_quality='UNAVAILABLE',
+    result = dict(symbol=symbol, asset_type=asset_type, source='CAPITAL_SKCOM', data_quality='UNAVAILABLE',
                   exchange_time=None, fetched_at=None, price=None, bid=None, ask=None,
                   volume_shares=None, warnings=list(warnings or []))
     if not quote or quote.get('source') != 'CAPITAL_SKCOM' or quote.get('symbol') != symbol:
-        result['warnings'].append('沒有取得指定股票的SKCOM行情。')
+        result['warnings'].append('沒有取得指定標的的SKCOM行情。')
         return result
     try:
         stamp = datetime.fromisoformat(quote['exchange_time'])
@@ -134,13 +134,21 @@ def main():
     parser.add_argument('--budget-twd', type=float, default=None, help='Optional user budget; never maintained as an account')
     parser.add_argument('--data-dir', type=Path, default=ROOT / 'data' / 'analysis')
     args = parser.parse_args()
-    if not re.fullmatch(r'[0-9]{4,6}', args.symbol):
-        parser.error('symbol must contain 4..6 digits')
+    if not re.fullmatch(r'(?:[0-9]{4,6}|[0-9]{4,5}[A-Z])', args.symbol):
+        parser.error('symbol must be a 4..6 character TWSE security code')
+    parser.add_argument('--asset-type', choices=['AUTO', 'STOCK', 'ETF'], default='AUTO',
+                        help='Optional type for symbols outside the configured universe')
     if args.held_qty is not None and args.held_qty < 0:
         parser.error('held-qty cannot be negative')
     if args.budget_twd is not None and (not math.isfinite(args.budget_twd) or args.budget_twd <= 0):
         parser.error('budget must be finite and positive')
     load_env()
+    universe = load_universe(ROOT/'config'/'universe_tw.json')
+    configured_etfs = set(universe.get('etf_symbols', []))
+    asset_type = ('ETF' if args.symbol in configured_etfs else
+                  'STOCK' if args.symbol in universe['symbols'] else 'UNKNOWN')
+    if args.asset_type != 'AUTO':
+        asset_type = args.asset_type
     args.data_dir.mkdir(parents=True, exist_ok=True)
     with single_instance(args.data_dir / 'runtime.lock'), History(args.data_dir / 'market_history.sqlite3') as history:
         run_id = now().strftime('%Y%m%dT%H%M%S') + '-' + uuid.uuid4().hex[:8]
@@ -172,7 +180,7 @@ def main():
             request_completed = now().isoformat()
             market.close()
             save_json(args.data_dir / 'connection.json', audit.events)
-        snap = snapshot(args.symbol, quote, warnings)
+        snap = snapshot(args.symbol, quote, warnings, asset_type=asset_type)
         if quote and any('使用先前' in w for w in warnings) and snap['data_quality'] != 'UNAVAILABLE':
             snap['data_quality'] = 'LAST_KNOWN'
             snap['warnings'].append('快取快照不是即時行情。')

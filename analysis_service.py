@@ -13,13 +13,15 @@ from multi_scan import candidate_payload
 import position_store
 import position_analyzer
 import scan_store
+from advice_interface import write_advice_interface
 
 
-def build_union(top, ranked, quotes, positions, db_path, at, scanned=None):
+def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_symbols=()):
     qmap = {q['symbol']: q for q in quotes}
     pmap = {p['symbol']: p for p in positions}
     rmap = {r['symbol']: r for r in ranked}
     metrics_map = {r['symbol']:r for r in (scanned or [])}
+    etf_symbols = set(etf_symbols)
     top_symbols = {r['symbol'] for r in top}
     managed = {p['symbol'] for p in positions if p['ai_managed_qty'] > 0}
     symbols = [r['symbol'] for r in top] + sorted(managed-top_symbols)
@@ -31,6 +33,7 @@ def build_union(top, ranked, quotes, positions, db_path, at, scanned=None):
         else:
             metric = metrics_map.get(s, {})
             c = dict(symbol=s, quant_rank=None, quant_score=metric.get('quant_score'),
+                     asset_type='ETF' if s in etf_symbols else 'STOCK',
                      components=metric.get('components',{}), metrics=metric.get('metrics',{}),
                      **{k:q.get(k) for k in ('last_price', 'open', 'high', 'low', 'bid', 'ask', 'volume', 'quote_status', 'quote_timestamp')},
                      volume_unit='shares', warnings=q.get('warnings', []),
@@ -117,7 +120,8 @@ class AnalysisService:
         scanned += [scan_quote(q, rules, at) for q in batch['quotes'] if q['symbol'] not in universe['symbols']]
         save_json(directory/'quant_scan.json', dict(rule_config=rules, quotes=scanned))
         save_json(directory/'candidate_ranking.json', dict(ranking=ranked, top_candidates=top))
-        candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned)
+        candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
+                                 universe.get('etf_symbols', []))
         save_json(directory/'analysis_set.json', candidates)
         request = position_analyzer.build_request(candidates)
         save_json(directory/'openai_request.json', request)
@@ -140,6 +144,9 @@ class AnalysisService:
         manifest.update(finished_at=now().isoformat(), request_started_at=started, request_completed_at=completed,
                         universe_count=len(universe['symbols']), quote_symbols_count=len(symbols),
                         symbols_received=batch['symbols_received'], ai_validation=response['validation'],
+                        llm_model=request.get('model'),
+                        llm_request_started_at=response.get('request_started_at'),
+                        llm_response_received_at=response.get('response_received_at'),
                         status='ERROR' if failures else 'COMPLETE', error='; '.join(failures),
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts, decision=decision)
@@ -148,6 +155,8 @@ class AnalysisService:
         save_json(directory/'sqlite_result.json', db_result)
         save_json(directory/'run.json', manifest)
         save_json(self.directory/'latest_dashboard.json', result)
+        write_advice_interface(result, directory/'advice_interface.json')
+        write_advice_interface(result, self.directory/'latest_advice.json')
         return result
 
     def refresh(self):

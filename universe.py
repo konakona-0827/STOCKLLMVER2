@@ -9,10 +9,17 @@ def load_universe(path):
     symbols = data.get('symbols')
     if not isinstance(symbols, list) or not 10 <= len(symbols) <= 50:
         raise ValueError('Universe must contain 10..50 symbols')
-    if any(not isinstance(s, str) or not re.fullmatch(r'\d{4,6}', s) for s in symbols):
+    if any(not isinstance(s, str) or not re.fullmatch(r'(?:\d{4,6}|\d{4,5}[A-Z])', s) for s in symbols):
         raise ValueError('Invalid universe symbol')
     if len(set(symbols)) != len(symbols):
         raise ValueError('Duplicate universe symbols')
+    etf_symbols = data.get('etf_symbols', [])
+    if not isinstance(etf_symbols, list) or any(
+            not isinstance(s, str) or s not in symbols for s in etf_symbols):
+        raise ValueError('ETF symbols must be listed in universe symbols')
+    if len(set(etf_symbols)) != len(etf_symbols):
+        raise ValueError('Duplicate ETF symbol')
+    data['etf_symbols'] = etf_symbols
     return data
 
 

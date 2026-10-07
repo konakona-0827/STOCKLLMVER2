@@ -1,5 +1,6 @@
 """One login/monitor/subscription; per-symbol failures do not abort the batch."""
 import time
+from datetime import datetime
 from capital import CapitalMarket, normalize_stock
 from capital_check import unpack, error_info
 from config import now
@@ -62,6 +63,7 @@ def multi_snapshot(symbols, raw, errors, started, completed, at=None):
     for symbol in symbols:
         q = raw.get(symbol)
         s = snapshot(symbol, q, [errors[symbol]] if symbol in errors else [], at)
+        s['data_age_seconds'] = round((at - datetime.fromisoformat(s['exchange_time'])).total_seconds(), 3) if s.get('exchange_time') else None
         s.update(quote_status=s['data_quality'], last_price=s['price'],
                  quote_timestamp=s['exchange_time'], open=q.get('open') if q else None,
                  high=q.get('high') if q else None, low=q.get('low') if q else None,
