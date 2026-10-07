@@ -111,5 +111,16 @@ def analyze(candidates, request, provider=call_openai):
         result = dict(market_view='WAIT：OpenAI或JSON驗證失敗，沒有產生有效候選建議。', selected=[],
                       rejected_candidates=[{'symbol': c['symbol'], 'reason': 'ANALYSIS_FAILED_WAIT'} for c in candidates],
                       data_quality=overall_quality(candidates))
+    names = {c['symbol']: c.get('name') or '股票名稱未取得' for c in candidates}
+    for item in result['selected']:
+        name = names.get(item['symbol'], '股票名稱未取得')
+        prefix = f"{name}（{item['symbol']}）："
+        if not item['reason'].startswith(prefix):
+            item['reason'] = prefix + item['reason']
+    for item in result['rejected_candidates']:
+        name = names.get(item['symbol'], '股票名稱未取得')
+        prefix = f"{name}（{item['symbol']}）："
+        if not item['reason'].startswith(prefix):
+            item['reason'] = prefix + item['reason']
     return result, dict(request_started_at=started, response_received_at=now().isoformat(),
                         validation=validation, raw_response=redact(raw), api=api)

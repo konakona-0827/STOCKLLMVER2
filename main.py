@@ -12,6 +12,7 @@ import uuid
 from config import ROOT, load_env, now, redact, MAX_QUOTE_AGE_SECONDS
 from capital import CapitalMarket
 from history import History
+from universe import load_universe
 import llm
 
 
@@ -54,7 +55,7 @@ def single_instance(path):
 
 def snapshot(symbol, quote=None, warnings=None, at=None, asset_type='UNKNOWN'):
     at = at or now()
-    result = dict(symbol=symbol, asset_type=asset_type, source='CAPITAL_SKCOM', data_quality='UNAVAILABLE',
+    result = dict(symbol=symbol, name=None, asset_type=asset_type, source='CAPITAL_SKCOM', data_quality='UNAVAILABLE',
                   exchange_time=None, fetched_at=None, price=None, bid=None, ask=None,
                   volume_shares=None, warnings=list(warnings or []))
     if not quote or quote.get('source') != 'CAPITAL_SKCOM' or quote.get('symbol') != symbol:
@@ -75,6 +76,7 @@ def snapshot(symbol, quote=None, warnings=None, at=None, asset_type='UNKNOWN'):
     except (ValueError, TypeError, KeyError):
         result['warnings'].append('行情價格或時間無法驗證。')
         return result
+    result['name'] = quote.get('name')
     for key in ('exchange_time', 'fetched_at', 'received_at', 'callback_received_at',
                 'price', 'bid', 'ask', 'volume_shares', 'quote_basis', 'is_trial', 'retrieval_method'):
         result[key] = quote.get(key)
@@ -109,14 +111,18 @@ def analyze(snap, held_qty=None, budget=None, provider=llm.decide, observations=
     except Exception as exc:
         api['error'] = {'type': type(exc).__name__, 'detail': redact(exc)}
         result = llm.fallback(snap, '分析服務或JSON驗證未完成，等待有效分析。', 'OPENAI_OR_JSON_ERROR')
+    name = snap.get('name') or '股票名稱未取得'
+    prefix = f"{name}（{snap['symbol']}）："
+    if not result['reason'].startswith(prefix):
+        result['reason'] = prefix + result['reason']
     return result, dict(input=payload, request=request, raw_response=redact(raw), api=api,
                         request_started_at=started, response_received_at=now().isoformat())
 
 
-def display(result):
+def display(result, name=None):
     value = lambda x: 'null' if x is None else str(x)
     print('\n==============================\nAI TRADING DECISION\n==============================')
-    for label, data in [('Symbol', result['symbol']), ('Market Data', result['data_quality']),
+    for label, data in [('Symbol', f"{name or '名稱未取得'} ({result['symbol']})"), ('Market Data', result['data_quality']),
                         ('Decision', result['decision']), ('Confidence', f"{result['confidence']:.0%}"),
                         ('Reference', value(result['reference_price'])),
                         ('Suggested', value(result['suggested_price'])), ('Suggested Qty', value(result['suggested_qty'])),
@@ -133,11 +139,11 @@ def main():
     parser.add_argument('--held-qty', type=int, default=None, help='Optional position supplied by user; never modified')
     parser.add_argument('--budget-twd', type=float, default=None, help='Optional user budget; never maintained as an account')
     parser.add_argument('--data-dir', type=Path, default=ROOT / 'data' / 'analysis')
+    parser.add_argument('--asset-type', choices=['AUTO', 'STOCK', 'ETF'], default='AUTO',
+                        help='Optional type for symbols outside the configured universe')
     args = parser.parse_args()
     if not re.fullmatch(r'(?:[0-9]{4,6}|[0-9]{4,5}[A-Z])', args.symbol):
         parser.error('symbol must be a 4..6 character TWSE security code')
-    parser.add_argument('--asset-type', choices=['AUTO', 'STOCK', 'ETF'], default='AUTO',
-                        help='Optional type for symbols outside the configured universe')
     if args.held_qty is not None and args.held_qty < 0:
         parser.error('held-qty cannot be negative')
     if args.budget_twd is not None and (not math.isfinite(args.budget_twd) or args.budget_twd <= 0):
@@ -214,7 +220,7 @@ def main():
         save_json(args.data_dir / 'openai_request.json', record.get('request', {}))
         save_json(args.data_dir / 'openai_response.json', record)
         save_json(args.data_dir / 'decision.json', result)
-        display(result)
+        display(result, snap.get('name'))
         print('RUN RECORD: ' + str(run_dir.resolve()), flush=True)
 
 

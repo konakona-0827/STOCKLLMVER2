@@ -2,12 +2,13 @@
 
 ## 多股票掃描（新增）
 
-`python multi_scan.py` 或 `Scan.cmd`：一次登入SKCOM，讀取設定檔的20檔上市股票／ETF盤中零股行情，程式篩選排名後只將Top 10交給OpenAI比較，輸出0～5檔建議並結束。不送單、不模擬成交。
+`python multi_scan.py` 或 `Scan.cmd`：一次登入SKCOM，讀取設定檔的20檔上市股票／ETF盤中零股行情，程式篩選排名後只將Top 10交給OpenAI比較，輸出0～5檔建議並結束。不送單。
 原本 `Start.cmd --symbol 0050` 保留為單股入口。
 
-- 股票池：`config/universe_tw.json`，允許10～50檔，第一版20檔。
+- 股票池：`config/universe_tw.json`，允許10～50檔，第一版20檔；同一候選池可放上市股票及 ETF。`etf_symbols` 用來明確標出 ETF（目前 0050），加入其他 ETF 時，需同時把代碼加入 `symbols` 和 `etf_symbols`。
 - 門檻與分數權重：`config/scan_rules.json`；`CANDIDATE_TOP_N`可設1～10。
 - OpenAI比較提示詞：`prompt_selection.md`，未知持倉只允許BUY／WAIT。
+- ETF 不因產品類別而排除；提示詞要求依有提供的追蹤標的、分散度、流動性、費用等資料評估，並排除槓桿、反向及期貨型 ETF。資料池是固定清單，不會自動擴成所有 ETF。群益帳戶個別可買限制尚未接入檢查資料，分析只會提醒待核實，不會宣稱已確認可買。
 - 行情原始資料、全部metrics與分數、Top N排名、OpenAI請求與原始回覆都存於新的`data/analysis/runs/<run_id>/`；`latest_scan.json`指出最新掃描位置。
 - 對外單股與多股輸出分開；多股決策是`selection_decision.json`，不覆蓋單股`decision.json`。
 - SQLite沿用`market_history.sqlite3`，新增5張scan專用表，保留單股資料表。
@@ -19,8 +20,7 @@
 離線測試：`python -m unittest -v test_analysis test_multi_scan`。
 2026-10-07實測：一次登入、20/20檔取得、0 unavailable、Top 10送入OpenAI、5檔WAIT、JSON驗證成功，41項測試通過。完整報告位於該次run內的`verification_report.md`。
 
-流程只有：SKCOM → 指定股票market snapshot → OpenAI JSON → 格式驗證 → 顯示建議 → 結束。
-不建立Paper Broker，不模擬成交，不更新現金或持倉，不查詢券商庫存，不送單、改單、撤單。
+單檔與命令列多檔入口只分析、不模擬成交。GUI 另有獨立模擬資金與成交帳本；不查詢券商庫存，不送出、修改或撤銷真實委託。
 
 ## 使用
 
@@ -30,7 +30,7 @@
 .\Start.cmd --symbol 0050
 ```
 
-預設股票為0050。可指定其他上市股票或ETF。
+預設標的是0050。可指定其他上市股票或ETF；代碼格式支援四至六位數字及如 `00400A` 的英文字尾代碼。對未列入設定檔的代碼，可用 `--asset-type ETF` 指定類型。
 也可以執行 `python main.py --symbol 0050`。程式只分析一次，印出 `REAL ORDER SENT = NO` 後結束，沒有30分鐘排程。
 
 選用：`--held-qty 20` 提供你已知的持倉，`--budget-twd 5000` 提供分析預算。這些只作為本次輸入，不是虛擬帳戶，不會被程式更新。不提供持倉時不產生HOLD／SELL；不提供預算時BUY建議股數為null。
@@ -58,7 +58,8 @@
 - `data/analysis/quote_0050.json`：若成功取得SKCOM快照才保存的最後行情。
 - `data/analysis/latest_run.json`：最近一次執行ID、各階段時間與該次保存資料夾。
 - `data/analysis/runs/<run_id>/`：每次獨立保存的raw_quote、market_snapshot、openai_request、openai_response、decision、connection與run.json，後續執行不覆蓋。
-- `data/analysis/market_history.sqlite3`：累積研究資料庫；單股使用 `market_snapshots` / `analyses`，多股使用 `scan_runs` / `multi_market_snapshots` / `quant_metrics` / `candidate_rankings` / `selection_analyses`，GUI 另新增手動配置 `positions` / `position_events`。沒有模擬成交或資金帳本。
+- GUI 每輪另存 `paper_account_snapshot.json` 和 `paper_simulation.json`；主資料庫 `paper_trades` 保存逐筆模擬買賣、手續費、現金變動及已實現損益。
+- `data/analysis/market_history.sqlite3`：累積研究資料庫；除行情、分析及手動配置持倉外，GUI 使用 `paper_account` / `paper_positions` / `paper_events` / `paper_trades` 保存模擬資金與成交。
 
 時間皆保存含時區的ISO 8601字串（台灣UTC+08:00，日本時間加一小時）：
 
@@ -92,11 +93,14 @@ API錯誤或格式錯誤會顯示WAIT並結束，保留原始回覆供檢查。�
 
 雙擊 `Dashboard.cmd`（或 `python dashboard.py`）。原 `Start.cmd` 單股及 `Scan.cmd` 多股入口保持獨立。
 GUI 開啟後按「立即重新分析」取得 SKCOM 行情並送到 OpenAI；按 Start Auto Scan 啟用每 1800 秒固定時間格的排程（台北每小時 :00 / :30）。初始自動掃描為關閉。
+先在主畫面「模擬資金上限（TWD）」輸入金額並按紅色「設定／增加模擬資金」，再按「開始分析（模擬）」。第一次設定建立資金；之後輸入較高的累計上限會把增加額加進可用現金，可在執行期間追加。上限不可調低。有效 LIVE 行情下，通過 LLM 格式驗證的 BUY/SELL 會以最後成交價記為模擬成交；單筆最多 999 股，BUY 數量會再由程式依當下餘額與手續費封頂。LLM 每輪會收到可用現金、每檔可買股數與模擬持倉。
+分析表格會在代號旁顯示 SKCOM 回傳的中文標的名稱；LLM 理由也會以「名稱（代號）：」標示分析對象。若行情沒有名稱，介面會顯示「股票名稱未取得」，不以模型猜測補值。
+每筆模擬手續費為 `max(1 元, floor(成交金額 × 0.1425%))`；買進手續費併入持倉成本，賣出手續費自賣出入帳金額扣除並計入已實現損益。此模擬依要求只計手續費，不計證交稅、滑價或未成交風險；不是券商回報。
 手動分析有 60 秒冷卻，不影響下一個自動時間。任何分析執行中都不重疊；若自動時間到但仍在分析，跳過該時間格。Stop Auto Scan 只停止後續排程，不中斷本輪保存。關閉視窗會等待當前請求結束並保存。
 
 Position Settings 手動填入 `symbol / user_qty / ai_managed_qty / user_average_cost / ai_average_cost`。成本未知留白；兩種股數均為非負整數。此處是研究配置，不代表券商已確認庫存。空白資料庫不自動建立持倉，測試的 0050 不會寫入正式資料庫。
 OpenAI 收到 `Quant Top 10 ∪ ai_managed_qty > 0`，並標記 TOP10 / POSITION / TOP10+POSITION；未入榜或沒有行情的 AI 管理股票也不省略。沒有行情只能 WAIT。
-SELL 股數嚴格驗證為 `floor(ai_managed_qty × action_ratio)`，不能加上 user_qty。BUY 未提供資金預算，僅建議方向，股數為 null；HOLD/WAIT 股數為 0。建議不會修改任何配置。
+模擬 SELL 股數嚴格驗證為 `floor(paper_position.qty × action_ratio)`，不能賣超過模擬持倉；單筆上限 999 股。BUY 股數必須不超過 LLM 收到的可買上限，執行前再由程式依最新可用現金計算一次，確保含手續費後不超支。手動輸入的券商持倉與模擬持倉彼此獨立。
 持倉表分開顯示總未實現損益、AI 管理損益與 AI 損益率，成本/價格缺失顯示 `--`；計算依本輪快照，不是持續行情。決策 JSON/理由與各股票行情時間均有獨立分頁。沒有券商成交紀錄時，成交彙總顯示 unavailable。
 
 每輪檔案在 `data/analysis/runs/<run_id>/`：

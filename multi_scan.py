@@ -20,7 +20,7 @@ def candidate_payload(top, quotes, db_path, at, etf_symbols=()):
     result = []
     for r in top:
         q = lookup[r['symbol']]
-        result.append(dict(symbol=q['symbol'], asset_type='ETF' if q['symbol'] in etf_symbols else 'STOCK',
+        result.append(dict(symbol=q['symbol'], name=q.get('name'), asset_type='ETF' if q['symbol'] in etf_symbols else 'STOCK',
             quant_rank=r['rank'], quant_score=r['quant_score'],
             components=r['components'], metrics=r['metrics'],
             last_price=q['last_price'], open=q['open'], high=q['high'], low=q['low'],
@@ -41,7 +41,7 @@ def display(batch, top, selection, response):
     print('\nOPENAI SELECTION\n========================================')
     print(selection['market_view'])
     for q in selection['selected']:
-        print(f"{q['rank']}. {q['symbol']}\n   Decision   : {q['decision']}\n   Confidence : {q['confidence']:.0%}\n   Price      : {q['reference_price']}\n   Reason     : {q['reason']}")
+        print(f"{q['rank']}. {q.get('name') or '名稱未取得'} ({q['symbol']})\n   Decision   : {q['decision']}\n   Confidence : {q['confidence']:.0%}\n   Price      : {q['reference_price']}\n   Reason     : {q['reason']}")
     print(f"\nFINAL\n========================================\nSelected Symbols : {len(selection['selected'])}\nAI Validation    : {response['validation']}\nReal Order Sent  : NO\n========================================", flush=True)
 
 

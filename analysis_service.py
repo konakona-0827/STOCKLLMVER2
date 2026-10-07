@@ -14,25 +14,28 @@ import position_store
 import position_analyzer
 import scan_store
 from advice_interface import write_advice_interface
+import paper_portfolio
 
 
-def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_symbols=()):
+def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_symbols=(), paper_positions=()):
     qmap = {q['symbol']: q for q in quotes}
     pmap = {p['symbol']: p for p in positions}
     rmap = {r['symbol']: r for r in ranked}
     metrics_map = {r['symbol']:r for r in (scanned or [])}
     etf_symbols = set(etf_symbols)
+    paper_map = {p['symbol']: p for p in paper_positions}
     top_symbols = {r['symbol'] for r in top}
     managed = {p['symbol'] for p in positions if p['ai_managed_qty'] > 0}
-    symbols = [r['symbol'] for r in top] + sorted(managed-top_symbols)
+    symbols = list(dict.fromkeys([r['symbol'] for r in top] + sorted(managed-top_symbols) +
+                                 sorted(set(paper_map)-top_symbols)))
     result = []
     for s in symbols:
         q, r = qmap[s], rmap.get(s)
         if r:
-            c = candidate_payload([r], quotes, db_path, at)[0]
+            c = candidate_payload([r], quotes, db_path, at, etf_symbols)[0]
         else:
             metric = metrics_map.get(s, {})
-            c = dict(symbol=s, quant_rank=None, quant_score=metric.get('quant_score'),
+            c = dict(symbol=s, name=q.get('name'), quant_rank=None, quant_score=metric.get('quant_score'),
                      asset_type='ETF' if s in etf_symbols else 'STOCK',
                      components=metric.get('components',{}), metrics=metric.get('metrics',{}),
                      **{k:q.get(k) for k in ('last_price', 'open', 'high', 'low', 'bid', 'ask', 'volume', 'quote_status', 'quote_timestamp')},
@@ -42,6 +45,7 @@ def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_s
         c['is_trial'] = bool(q.get('is_trial'))
         c['analysis_source'] = 'TOP10+POSITION' if s in top_symbols & managed else ('TOP10' if s in top_symbols else 'POSITION')
         c['position'] = position_store.context(pmap.get(s, position_store.empty(s)), q['last_price'])
+        c['paper_position'] = paper_map.get(s, dict(symbol=s, qty=0, cost_cents=0))
         result.append(c)
     return result
 
@@ -86,7 +90,14 @@ class AnalysisService:
         # The GUI contract is Top 10, independent of a one-shot CLI override.
         rules['candidate_top_n'] = 10
         positions = position_store.load(self.db_path)
-        symbols = list(dict.fromkeys(universe['symbols'] + [p['symbol'] for p in positions if p['user_qty']+p['ai_managed_qty'] > 0]))
+        paper_state = paper_portfolio.snapshot(self.db_path)
+        if paper_state is None:
+            raise ValueError('請先在主畫面設定模擬資金上限，再開始分析')
+        paper_positions = paper_portfolio.positions(self.db_path)
+        symbols = list(dict.fromkeys(universe['symbols'] +
+                     [p['symbol'] for p in positions if p['user_qty']+p['ai_managed_qty'] > 0] +
+                     [p['symbol'] for p in paper_positions if p['qty'] > 0]))
+        save_json(directory/'paper_account_snapshot.json', paper_state)
         save_json(directory/'universe_snapshot.json', universe)
         save_json(directory/'positions_snapshot.json', positions)
         audit = Audit(directory)
@@ -121,9 +132,15 @@ class AnalysisService:
         save_json(directory/'quant_scan.json', dict(rule_config=rules, quotes=scanned))
         save_json(directory/'candidate_ranking.json', dict(ranking=ranked, top_candidates=top))
         candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
-                                 universe.get('etf_symbols', []))
+                                 universe.get('etf_symbols', []), paper_positions)
+        for c in candidates:
+            if c['last_price'] is not None and c['quote_status'] == 'LIVE' and not c.get('is_trial'):
+                c['max_buy_qty'] = paper_portfolio.max_affordable_qty(
+                    paper_state['available_cash_cents'], c['last_price'])
+            else:
+                c['max_buy_qty'] = 0
         save_json(directory/'analysis_set.json', candidates)
-        request = position_analyzer.build_request(candidates)
+        request = position_analyzer.build_request(candidates, paper_state)
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
         if candidates and not self.stop.is_set():
@@ -132,6 +149,15 @@ class AnalysisService:
             decision = dict(market_view='沒有可分析集合，或已要求停止。', decisions=[])
             response = dict(validation='NOT_CALLED', api={}, raw_response='')
         phase('PROCESSING_RESULT')
+        if response['validation'] == 'VALID' and not self.stop.is_set():
+            simulation = paper_portfolio.apply_decisions(
+                self.db_path, manifest['run_id'], decision['decisions'], candidates)
+        else:
+            simulation = dict(account=paper_portfolio.account(self.db_path),
+                              available_cash_twd=paper_state['available_cash_twd'],
+                              capital_limit_twd=paper_state['capital_limit_twd'],
+                              positions=paper_positions, trades=[])
+        save_json(directory/'paper_simulation.json', simulation)
         save_json(directory/'openai_response.json', response)
         save_json(directory/'selection_decision.json', decision)
         price_map = {q['symbol']:q['last_price'] for q in batch['quotes']}
@@ -149,7 +175,9 @@ class AnalysisService:
                         llm_response_received_at=response.get('response_received_at'),
                         status='ERROR' if failures else 'COMPLETE', error='; '.join(failures),
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
-        result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts, decision=decision)
+        result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
+                      decision=decision, paper_simulation=simulation,
+                      paper_trade_history=paper_portfolio.trades(self.db_path))
         save_json(directory/'dashboard_result.json', result)
         db_result = scan_store.persist(self.db_path, manifest, batch, raw, scanned, ranked, request, response, decision)
         save_json(directory/'sqlite_result.json', db_result)
@@ -163,5 +191,8 @@ class AnalysisService:
         path = self.directory/'latest_dashboard.json'
         result = json.loads(path.read_text(encoding='utf-8')) if path.exists() else None
         positions = position_store.load(self.db_path)
+        if result is not None:
+            result['paper_simulation'] = paper_portfolio.snapshot(self.db_path)
+            result['paper_trade_history'] = paper_portfolio.trades(self.db_path)
         quotes = {q['symbol']:q['last_price'] for q in result['batch']['quotes']} if result else {}
         return result, [position_store.context(p, quotes.get(p['symbol'])) for p in positions]

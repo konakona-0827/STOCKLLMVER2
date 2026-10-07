@@ -52,6 +52,7 @@ def build_advice_interface(result, generated_at=None):
         warnings = list(dict.fromkeys([*(quote.get('warnings') or []), *(decision.get('warnings') or [])]))
         recommendations.append({
             'symbol': symbol,
+            'asset_type': candidate.get('asset_type', 'UNKNOWN'),
             'decision': decision.get('decision', 'WAIT'),
             'confidence': decision.get('confidence', 0),
             'reference_price': decision.get('reference_price'),
@@ -100,6 +101,7 @@ def build_advice_interface(result, generated_at=None):
         },
         'market_view': (result.get('decision') or {}).get('market_view', ''),
         'recommendations': recommendations,
+        'paper_simulation': result.get('paper_simulation'),
         'real_order_sent': bool(manifest.get('real_order_sent', False)),
     }
 

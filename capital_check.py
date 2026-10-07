@@ -4,6 +4,7 @@ Default: local DLL/COM checks. --connect: one login, quote and inventory queries
 No submission, modification, cancellation or account-to-paper position import.
 """
 import argparse
+import re
 import ctypes
 import json
 import os
@@ -176,8 +177,8 @@ def main():
     parser.add_argument('--timeout', type=float, default=15)
     parser.add_argument('--symbol', default='2330')
     args = parser.parse_args()
-    if not args.symbol.isdigit() or len(args.symbol) != 4 or not 1 <= args.timeout <= 30:
-        parser.error('symbol must be four digits; timeout must be 1..30 seconds')
+    if not re.fullmatch(r'(?:[0-9]{4,6}|[0-9]{4,5}[A-Z])', args.symbol) or not 1 <= args.timeout <= 30:
+        parser.error('symbol must be a 4..6 character TWSE security code; timeout must be 1..30 seconds')
     load_env()
     result = dict(timestamp=now().isoformat(), mode='READ_ONLY', real_order_sent=False,
                   python_bits=struct.calcsize('P') * 8, login='NOT_ATTEMPTED',
