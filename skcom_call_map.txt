@@ -1,0 +1,109 @@
+﻿C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:99: self.objects['SKReplyLib'] = reply
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:100: self.objects['SKQuoteLib'] = client.CreateObject(
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:101: self.sk.SKQuoteLib, interface=self.sk.ISKQuoteLib
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:108: object_type='SKQuoteLib',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:109: object_id=hex(id(self.objects['SKQuoteLib'])),
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:120: for name in ('SKCenterLib', 'SKQuoteLib', 'SKReplyLib'):
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:121: self.objects[name] = client.CreateObject(
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:154: self.connections = [client.GetEvents(self.objects['SKQuoteLib'], self.sinks[0])]
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:158: ('SKReplyLib', 'SKQuoteLib'), self.sinks)]
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:176: rc = int(center.SKCenterLib_Login(user, password))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:185: api_name='SKCenterLib_Login',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:197: api_name='SKCenterLib_Login',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:204: rc = int(self.objects['SKQuoteLib'].SKQuoteLib_EnterMonitorLONG())
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:211: object_type='SKQuoteLib',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:212: object_id=hex(id(self.objects['SKQuoteLib'])),
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:213: api_name='SKQuoteLib_EnterMonitorLONG',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:234: quote = self.objects.get('SKQuoteLib')
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:235: method = getattr(quote, 'SKQuoteLib_GetQuoteStatus', None) if quote else None
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:238: 'reason': 'SKQuoteLib_GetQuoteStatus unavailable'}
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:271: object_type='SKQuoteLib',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:273: api_name='SKQuoteLib_GetQuoteStatus',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:280: quote = self.objects['SKQuoteLib']
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:283: rc = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(1, 5, ','.join(wanted)))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:295: result = quote.SKQuoteLib_GetStockByIndexLONG(market, index, stock)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:314: value = quote.SKQuoteLib_GetStockByMarketAndNo(5, symbol, stock)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:341: if self.entered and 'SKQuoteLib' in self.objects:
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:343: result = self.objects['SKQuoteLib'].SKQuoteLib_LeaveMonitor()
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:351: object_type='SKQuoteLib',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:352: object_id=hex(id(self.objects['SKQuoteLib'])),
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital.py:353: api_name='SKQuoteLib_LeaveMonitor',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:54: center, quote, order, reply = [objects[n] for n in ('SKCenterLib', 'SKQuoteLib', 'SKOrderLib', 'SKReplyLib')]
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:117: code = int(center.SKCenterLib_Login(user, password))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:123: result['order_initialize_return_code'] = int(order.SKOrderLib_Initialize())
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:143: result['quote_enter_return_code'] = int(quote.SKQuoteLib_EnterMonitorLONG())
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:146: code = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(1, 5, symbol))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:151: value = quote.SKQuoteLib_GetStockByMarketAndNo(5, symbol, stock)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:164: result['quote_leave_return_code'] = int(quote.SKQuoteLib_LeaveMonitor())
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:198: for name in ('SKCenterLib', 'SKQuoteLib', 'SKOrderLib', 'SKReplyLib'):
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_check.py:200: objects[name] = client.CreateObject(getattr(sk, name), interface=getattr(sk, 'I' + name))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_multi_quote.py:34: quote = self.objects['SKQuoteLib']
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_multi_quote.py:38: rc = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_multi_quote.py:51: object_type='SKQuoteLib',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_multi_quote.py:53: api_name='SKQuoteLib_RequestStocksWithMarketNo',
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_multi_quote.py:76: stock = read_stock(quote.SKQuoteLib_GetStockByIndexLONG(market, index, stock), stock)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\capital_multi_quote.py:89: stock = read_stock(quote.SKQuoteLib_GetStockByMarketAndNo(5, symbol, stock), stock)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\inspect_order_api.py:25: iface = sk.ISKOrderLib
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\inspect_order_api.py:29: print("Matching ISKOrderLib methods:")
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\inspect_order_api.py:49: print("dir(ISKOrderLib) matches:")
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\test_analysis.py:130: self.assertNotIn('SKOrderLib_Initialize', attrs)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\test_multi_scan.py:110: quote=SimpleNamespace(SKQuoteLib_RequestStocksWithMarketNo=Mock(return_value=(1,0)),
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\test_multi_scan.py:111: SKQuoteLib_GetStockByMarketAndNo=Mock(side_effect=lookup))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\test_multi_scan.py:112: market.objects={'SKQuoteLib':quote}
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\test_multi_scan.py:117: quote.SKQuoteLib_RequestStocksWithMarketNo.assert_called_once_with(1,5,'2330,2454')
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\test_multi_scan.py:118: self.assertEqual(quote.SKQuoteLib_GetStockByMarketAndNo.call_count,2)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\account_guard.py:83: raise AccountCheckError("SKOrderLib.GetBalance is unavailable.")
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_crosscheck.py:102: """Parse fields documented for SKReplyLib.OnNewData.
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_executor.py:121: # reconnect only SKReply. Never perform a blind second SKCenterLib_Login.
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:163: self._skC = comtypes.client.CreateObject(sk.SKCenterLib, interface=sk.ISKCenterLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:164: self._skO = comtypes.client.CreateObject(sk.SKOrderLib, interface=sk.ISKOrderLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:165: self._skR = comtypes.client.CreateObject(sk.SKReplyLib, interface=sk.ISKReplyLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:167: ("SKOrderLib", self._skO),
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:168: ("SKReplyLib", self._skR)):
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:222: rc = self._skC.SKCenterLib_Login(self.user, self.password)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:231: api_name="SKCenterLib_Login",
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:243: api_name="SKCenterLib_Login",
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:248: raise CapitalReplySessionError(f"SKCenterLib_Login failed: rc={rc}")
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:250: rc = self._skO.SKOrderLib_Initialize()
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:252: raise CapitalReplySessionError(f"SKOrderLib_Initialize failed: rc={rc}")
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:276: rc = self._skR.SKReplyLib_ConnectByID(self.user)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:278: raise CapitalReplySessionError(f"SKReplyLib_ConnectByID failed: rc={rc}")
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:345: """Return SKReplyLib_IsConnectedByID state when available.
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:353: fn = getattr(self._skR, "SKReplyLib_IsConnectedByID", None)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:412: """Reconnect SKReply only. This deliberately does NOT call SKCenterLib_Login."""
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:420: rc = self._skR.SKReplyLib_ConnectByID(self.user)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:423: f"SKReplyLib_ConnectByID reconnect failed: rc={rc}"
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\execution\capital_reply_session.py:449: - Never blindly call SKCenterLib_Login a second time.
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:78: for name in ('SKCenterLib', 'SKOrderLib', 'SKQuoteLib', 'SKReplyLib'):
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:79: self.objects[name] = client.CreateObject(getattr(self.sk, name), interface=getattr(self.sk, 'I' + name))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:124: ('SKReplyLib', 'SKOrderLib', 'SKQuoteLib'), self.sinks)]
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:142: rc = int(center.SKCenterLib_Login(user, password))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:146: order = self.objects['SKOrderLib']
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:147: for name in ('SKOrderLib_Initialize', 'ReadCertByID', 'GetUserAccount'):
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:151: rc = int(self.objects['SKQuoteLib'].SKQuoteLib_EnterMonitorLONG())
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:188: rc = int(self.objects['SKOrderLib'].GetRealBalanceReport(os.environ['CAPITAL_USER_ID'], account))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:196: quote = self.objects['SKQuoteLib']
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:199: rc = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(1, 5, ','.join(wanted)))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:217: result = quote.SKQuoteLib_GetStockByIndexLONG(market, index, stock)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:240: if self.entered and 'SKQuoteLib' in self.objects:
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\capital.py:242: self.objects['SKQuoteLib'].SKQuoteLib_LeaveMonitor()
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\test_paper.py:334: q = SimpleNamespace(SKQuoteLib_RequestStocksWithMarketNo=lambda *a: calls.append(a) or (1, 0),
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\test_paper.py:335: SKQuoteLib_GetStockByIndexLONG=lambda *a: (stock, 0))
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\legacy_paper_20261007\test_paper.py:338: market.objects = {'SKQuoteLib': q}
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\STOCKLLMVER2_execution_step4\execution\capital_crosscheck.py:20: """Parsed SKReplyLib OnNewData row.
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\tests\test_session_health_step12.py:11: def SKReplyLib_IsConnectedByID(self, user):
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_oddlot_probe_simple_fixed.py:68: skC = comtypes.client.CreateObject(sk.SKCenterLib, interface=sk.ISKCenterLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_oddlot_probe_simple_fixed.py:69: skO = comtypes.client.CreateObject(sk.SKOrderLib, interface=sk.ISKOrderLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_oddlot_probe_simple_fixed.py:70: skR = comtypes.client.CreateObject(sk.SKReplyLib, interface=sk.ISKReplyLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_oddlot_probe_simple_fixed.py:106: rc = skC.SKCenterLib_Login(USER, PWD)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_oddlot_probe_simple_fixed.py:116: rc = skO.SKOrderLib_Initialize()
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_oddlot_probe_simple_fixed.py:146: rc = skR.SKReplyLib_ConnectByID(USER)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:7: 3) Connect SKReplyLib and wait for OnComplete (replay/backfill complete).
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:16: in SKReplyLib replay.
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:109: skC = comtypes.client.CreateObject(sk.SKCenterLib, interface=sk.ISKCenterLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:110: skO = comtypes.client.CreateObject(sk.SKOrderLib, interface=sk.ISKOrderLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:111: skR = comtypes.client.CreateObject(sk.SKReplyLib, interface=sk.ISKReplyLib)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:151: rc = skC.SKCenterLib_Login(user, pwd)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:161: rc = skO.SKOrderLib_Initialize()
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:191: rc = skR.SKReplyLib_ConnectByID(user)
+C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2\掛單測試\capital_reservation_crosscheck.py:270: print("- Therefore for TC, SKReplyLib replay/backfill through OnComplete is the")

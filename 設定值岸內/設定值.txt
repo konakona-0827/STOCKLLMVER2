@@ -1,0 +1,25 @@
+真實委託的呼叫條件可在 [analysis_service.py](C:/Users/user/OneDrive/ドキュメント/STOCKLLMVER2/STOCKLLMVER2/analysis_service.py) 找到：只有 AUTO、掃描狀態完成、AI 驗證有效，才會呼叫執行器。手動分析不走這條下單路徑。
+真實下單的限額與條件
+以下數值來自目前的 config/execution_live.json：
+設定	目前值	實際作用
+enabled	true	開啟真實執行路徑；設為 false 時執行器回報停用。
+max_order_twd	NT$10,000	單筆委託金額上限。
+max_buy_qty	999 股	單筆買進股數上限。
+max_daily_buy_twd	NT$20,000	每日買進預留金額上限，按台北日期計算；透過執行資料庫的委託紀錄保留額度。不是每日買賣合計上限。
+min_available_to_buy_twd	NT$10,000	買進後的可用買進額必須至少保留這個金額。這是餘額下限，不是每筆最低買進金額。
+buy_cash_buffer_rate	1%	買進預留金額額外加上的緩衝比例。
+min_buy_fee_reserve_twd	NT$20	計算買進預留金額時，至少保留 NT$20 的費用額度。
+max_quote_age_seconds	120 秒	真實執行要求行情狀態為 LIVE，且行情年齡不得超過此值。
+min_confidence_pct	0	信心度最低門檻為 0%，等於沒有額外提高信心度要求。
+observe_seconds	20 秒	送單後等待券商回報的觀察時間設定；不是委託存續時間或交易時段。
+
+
+風控實作在 [auto_advice_executor.py](C:/Users/user/OneDrive/ドキュメント/STOCKLLMVER2/STOCKLLMVER2/execution/auto_advice_executor.py)、[risk_guard.py](C:/Users/user/OneDrive/ドキュメント/STOCKLLMVER2/STOCKLLMVER2/execution/risk_guard.py) 與 [execution_store.py](C:/Users/user/OneDrive/ドキュメント/STOCKLLMVER2/STOCKLLMVER2/execution/execution_store.py)。
+**目前設定裡沒有每日賣出金額上限，也沒有每日委託筆數上限。**賣出數量仍受 AI 管理持股、券商可賣庫存等檢查約束；人工持股不會自動當成 AI 可賣部位。
+排程與交易時段
+項目	位置	目前值／行為
+AUTO 掃描間隔	[scheduler.py](C:/Users/user/OneDrive/ドキュメント/STOCKLLMVER2/STOCKLLMVER2/scheduler.py)	每 1,800 秒，即 30 分鐘。
+AUTO 掃描時段	同上	台北時間週一至週五 09:00–13:30；不在時段內不啟動掃描。
+手動分析冷卻時間	同上	60 秒。
+自動掃描啟動方式	[dashboard.py](C:/Users/user/OneDrive/ドキュメント/STOCKLLMVER2/STOCKLLMVER2/dashboard.py)	每次開啟 Dashboard 後，使用者按「開始自動掃描」才啟動；不是開程式就自動掃描。
+低餘額保護	dashboard.py、execution/health_monitor.py	券商可買金額低於 min_available_to_buy_twd 時會停止 AUTO；需通過後續檢查才可能恢復。

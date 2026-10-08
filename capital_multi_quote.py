@@ -3,8 +3,11 @@ import time
 from datetime import datetime
 from capital import CapitalMarket, normalize_stock
 from capital_check import unpack, error_info
-from config import now
+from config import ROOT, now
 from main import snapshot
+from execution.capital_session_audit import record_capital_event
+
+MAX_ODDLOT_QUOTE_SYMBOLS = 20
 
 
 def read_stock(result, original):
@@ -17,13 +20,80 @@ def read_stock(result, original):
 
 class MultiCapitalMarket(CapitalMarket):
     def fetch_batch(self, symbols, timeout=12):
-        self.connect()
+        ordered_symbols = tuple(dict.fromkeys(symbols))
+        if not ordered_symbols:
+            return {}, {}
+        groups = [ordered_symbols[i:i + MAX_ODDLOT_QUOTE_SYMBOLS]
+                  for i in range(0, len(ordered_symbols), MAX_ODDLOT_QUOTE_SYMBOLS)]
+        quotes, errors = {}, {}
+        for group_index, group in enumerate(groups, start=1):
+            if group_index > 1:
+                # Empirical account probe: LeaveMonitor=0 then re-entering the
+                # same SKQuoteLib object allowed the next odd-lot batch.
+                rc = self.leave_monitor()
+                self.event('BATCH_MONITOR_LEFT', {
+                    'return_code': rc,
+                    'batch_index': group_index - 1,
+                })
+                self._enter_monitor()
+            else:
+                self.connect()
+            batch_quotes, batch_errors = self._fetch_one_batch(
+                group, timeout=timeout, batch_index=group_index,
+                batch_count=len(groups),
+            )
+            quotes.update(batch_quotes)
+            errors.update(batch_errors)
+        if len(groups) > 1:
+            # A clean final leave avoids retaining a live quote monitor between
+            # scan cycles; COM objects and the authenticated reply session stay
+            # on the broker thread for the next scan.
+            self.leave_monitor()
+        return quotes, errors
+
+    def _fetch_one_batch(self, ordered_symbols, *, timeout, batch_index, batch_count):
         quote = self.objects['SKQuoteLib']
-        rc = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(1, 5, ','.join(symbols)))
-        self.event('BATCH_SUBSCRIBE', {'return_code': rc, 'symbols': symbols})
-        if rc:
-            raise RuntimeError('BATCH_SUBSCRIBE_REJECTED_' + str(rc))
-        wanted, quotes, errors = set(symbols), {}, {}
+        if self.subscribed and self.subscribed != ordered_symbols:
+            raise RuntimeError('QUOTE_SYMBOL_SET_CHANGED_REQUIRES_NEW_MONITOR')
+        if not self.subscribed:
+            status = self.quote_connection_status(phase=f'PRE_SUBSCRIBE_BATCH_{batch_index}')
+            if (status.get('return_code') == 0 and status.get('over_limit') is True):
+                raise RuntimeError('BROKER_QUOTE_CONNECTION_LIMIT')
+            rc = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(
+                1, 5, ','.join(ordered_symbols)
+            ))
+            self.event('BATCH_SUBSCRIBE', {
+                'return_code': rc,
+                'symbols': ordered_symbols,
+                'symbol_count': len(ordered_symbols),
+                'batch_index': batch_index,
+                'batch_count': batch_count,
+            })
+            record_capital_event(
+                ROOT,
+                session_id=self.session_id,
+                call_site='MultiCapitalMarket._fetch_one_batch',
+                event='API_CALL',
+                object_type='SKQuoteLib',
+                object_id=hex(id(quote)),
+                api_name='SKQuoteLib_RequestStocksWithMarketNo',
+                return_code=rc,
+            )
+            if rc:
+                if rc == 3030:
+                    self.quote_connection_status(
+                        phase=f'POST_SUBSCRIBE_REJECT_BATCH_{batch_index}'
+                    )
+                raise RuntimeError('BATCH_SUBSCRIBE_REJECTED_' + str(rc))
+            self.subscribed = ordered_symbols
+        else:
+            self.event('BATCH_SUBSCRIBE_REUSED', {
+                'symbols': ordered_symbols,
+                'symbol_count': len(ordered_symbols),
+                'batch_index': batch_index,
+                'batch_count': batch_count,
+            })
+        wanted, quotes, errors = set(ordered_symbols), {}, {}
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline and set(quotes) != wanted and not self.stopped():
             self.pump(.1)
@@ -39,7 +109,7 @@ class MultiCapitalMarket(CapitalMarket):
                         quotes[q['symbol']] = q
                 except Exception as exc:
                     self.event('BATCH_CALLBACK_ERROR', error_info(exc))
-        for symbol in symbols:
+        for symbol in ordered_symbols:
             if symbol in quotes or self.stopped():
                 continue
             try:

@@ -1,0 +1,45 @@
+如果你真的想拿目前既有的 2891 測賣出，也可以明確把其中 1 股交給 AI：
+python test_llm_sell_signal.py --symbol 2891 --qty 1 --price 你的價格 --bootstrap-ai-managed-qty 1 --execute
+
+cd /d "C:\Users\user\OneDrive\ドキュメント\STOCKLLMVER2\STOCKLLMVER2"
+
+
+1. 模擬 LLM 發出 BUY：0050 買 1 股，限價 150
+python test_llm_buy_signal.py --symbol 0050 --qty 1 --price 150 --execute
+
+
+
+SELL 測試：中信金 2891 賣 1 股，150 元
+你有 7 股，這次測試明確把 1 股當成 AI 可管理：
+python test_llm_sell_signal.py --symbol 2891 --qty 1 --price 150 --bootstrap-ai-managed-qty 1 --execute
+
+現在流程變成：
+Login 一次
+↓
+Health Check
+↓
+Account Snapshot 一次
+├─ BUYING POWER
+└─ INVENTORY
+↓
+同一 Session + 同一 Snapshot
+直接交給正式 Pipeline
+↓
+不再重複 GetRealBalanceReport
+↓
+BUY / SELL
+↓
+Cross-check
+
+而正式 multi-order batch 也是：
+一份 final LLM JSON
+↓
+帳戶快照一次
+↓
+最多 10 個 intents 共用
+↓
+每筆自己 Risk Check
+↓
+每筆自己 Send
+↓
+每筆自己 Cross-check

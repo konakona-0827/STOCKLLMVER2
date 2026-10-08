@@ -86,6 +86,8 @@ class Dashboard:
         self.last_error = ''
         self.last_scan = None
         self.closing = False
+        self.broker_shutdown_started = False
+        self.broker_shutdown_complete = False
         self.refresh_pending = False
         self.heartbeat = 0
         root.title('STOCKLLM｜台股行情與 AI 分析')
@@ -324,6 +326,11 @@ class Dashboard:
                 elif kind == 'health_error':
                     self.health_running = False
                     self.last_error = payload
+                elif kind == 'broker_shutdown_complete':
+                    self.broker_shutdown_complete = True
+                elif kind == 'broker_shutdown_error':
+                    self.last_error = payload
+                    self.broker_shutdown_complete = True
         except queue.Empty:
             pass
         wall, mono = time.time(), time.monotonic()
@@ -332,8 +339,27 @@ class Dashboard:
             self.launch_health()
         if not self.closing and self.scheduler.tick(wall):
             self.launch('AUTO')
-        if self.closing and not self.scheduler.scan_lock.locked():
-            self.root.destroy()
+        if (self.closing and not self.scheduler.scan_lock.locked()
+                and not self.health_running):
+            if not self.broker_shutdown_started:
+                self.broker_shutdown_started = True
+                def shutdown_broker():
+                    try:
+                        from execution.broker_runtime import shutdown_broker_runtime
+                        shutdown_broker_runtime(ROOT)
+                        self.events.put(('broker_shutdown_complete', None))
+                    except Exception as exc:
+                        self.events.put((
+                            'broker_shutdown_error',
+                            redact(f'{type(exc).__name__}: {exc}'),
+                        ))
+                threading.Thread(
+                    target=shutdown_broker, name='broker-shutdown', daemon=True,
+                ).start()
+            if self.broker_shutdown_complete:
+                self.root.destroy()
+                return
+            self.root.after(100, self.tick)
             return
         def stamp(ts):
             return datetime.fromtimestamp(ts, TAIPEI).isoformat(timespec='seconds') if ts else '--'

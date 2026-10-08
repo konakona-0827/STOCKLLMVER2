@@ -7,11 +7,13 @@ All COM calls and event pumping stay on the owning STA thread.
 from datetime import datetime
 import os
 import time
+import uuid
 import ctypes
 from ctypes import wintypes
 from config import ROOT, TAIPEI, now
 from capital_check import find_dll, unpack, error_info
 from market import quality
+from execution.capital_session_audit import record_capital_event
 
 
 def normalize_stock(stock, received_at):
@@ -44,6 +46,7 @@ class CapitalMarket:
     def __init__(self, audit, stopped=lambda: False, login_session=None):
         self.audit, self.stopped = audit, stopped
         self.login_session = login_session
+        self.session_id = getattr(login_session, 'session_id', None) or uuid.uuid4().hex
         self.client = self.sk = None
         self.objects, self.connections, self.sinks = {}, [], []
         self.dll_handle = None
@@ -57,6 +60,12 @@ class CapitalMarket:
 
     def event(self, stage, code):
         self.audit.event('CAPITAL_' + stage, {'code': code})
+
+    def cleanup_event(self, stage, code):
+        try:
+            self.event(stage, code)
+        except Exception:
+            pass
 
     def pump(self, seconds=.1):
         if self.client and not self.stopped():
@@ -84,12 +93,18 @@ class CapitalMarket:
 
     def initialize(self):
         if self.login_session is not None:
-            client, self.sk, center, reply, action = self.login_session.quote_login_context()
+            client, self.sk, center, reply, quote, action = self.login_session.quote_login_context()
             self.client = client
             self.objects['SKCenterLib'] = center
             self.objects['SKReplyLib'] = reply
-            self.objects['SKQuoteLib'] = client.CreateObject(
-                self.sk.SKQuoteLib, interface=self.sk.ISKQuoteLib
+            self.objects['SKQuoteLib'] = quote
+            record_capital_event(
+                ROOT,
+                session_id=self.session_id,
+                call_site='CapitalMarket.initialize',
+                event='COM_OBJECT_REUSED',
+                object_type='SKQuoteLib',
+                object_id=hex(id(quote)),
             )
             self.event('LOGIN_REUSED', {'action': action})
         else:
@@ -103,6 +118,14 @@ class CapitalMarket:
             for name in ('SKCenterLib', 'SKQuoteLib', 'SKReplyLib'):
                 self.objects[name] = client.CreateObject(
                     getattr(self.sk, name), interface=getattr(self.sk, 'I' + name)
+                )
+                record_capital_event(
+                    ROOT,
+                    session_id=self.session_id,
+                    call_site='CapitalMarket.initialize',
+                    event='COM_OBJECT_CREATED',
+                    object_type=name,
+                    object_id=hex(id(self.objects[name])),
                 )
         owner = self
 
@@ -138,6 +161,12 @@ class CapitalMarket:
         if time.monotonic() < self.retry_at:
             raise RuntimeError('BROKER_DISCONNECTED_RETRY_INTERVAL')
         self.retry_at = time.monotonic() + 60
+        # Keep the same SKQuoteLib object when a previous batch left the
+        # monitor cleanly. Re-entering it was verified in an isolated probe.
+        if self.objects and self.login_session is not None:
+            self.pending_indices, self.quotes = set(), {}
+            self._enter_monitor()
+            return
         self.close()
         self.pending_indices, self.quotes = set(), {}
         try:
@@ -147,23 +176,154 @@ class CapitalMarket:
                 if not user or not password:
                     raise RuntimeError('BROKER_CREDENTIALS_MISSING')
                 center = self.objects['SKCenterLib']
-                rc = int(center.SKCenterLib_Login(user, password))
+                try:
+                    rc = int(center.SKCenterLib_Login(user, password))
+                except Exception as exc:
+                    record_capital_event(
+                        ROOT,
+                        session_id=self.session_id,
+                        call_site='CapitalMarket.connect',
+                        event='LOGIN_CALL',
+                        object_type='SKCenterLib',
+                        object_id=hex(id(center)),
+                        api_name='SKCenterLib_Login',
+                        login_set_quote_flag='N/A',
+                        return_code=f'EXCEPTION:{type(exc).__name__}',
+                    )
+                    raise
+                record_capital_event(
+                    ROOT,
+                    session_id=self.session_id,
+                    call_site='CapitalMarket.connect',
+                    event='LOGIN_CALL',
+                    object_type='SKCenterLib',
+                    object_id=hex(id(center)),
+                    api_name='SKCenterLib_Login',
+                    login_set_quote_flag='N/A',
+                    return_code=rc,
+                )
                 self.event('LOGIN', rc)
                 if rc:
                     raise RuntimeError(f'BROKER_LOGIN_RETURN_CODE_{rc}')
-            rc = int(self.objects['SKQuoteLib'].SKQuoteLib_EnterMonitorLONG())
-            self.event('ENTER_MONITOR', rc)
-            self.entered = rc == 0
-            if rc or not self.wait(lambda: self.ready, 30):
-                raise RuntimeError('BROKER_QUOTE_NOT_READY')
-            self.connected = True
-            self.status = 'CONNECTED'
-            print('CAPITAL CONNECTED | read-only odd-lot quotes only', flush=True)
+            self._enter_monitor()
         except Exception as exc:
             self.status = 'DISCONNECTED'
             self.event('CONNECT_FAILED', error_info(exc))
             self.close()
             raise
+
+    def _enter_monitor(self):
+        if self.entered:
+            return
+        quote = self.objects.get('SKQuoteLib')
+        if quote is None:
+            raise RuntimeError('BROKER_QUOTE_OBJECT_MISSING')
+        self.ready = False
+        self.pending_indices.clear()
+        rc = int(quote.SKQuoteLib_EnterMonitorLONG())
+        self.event('ENTER_MONITOR', rc)
+        record_capital_event(
+            ROOT,
+            session_id=self.session_id,
+            call_site='CapitalMarket._enter_monitor',
+            event='API_CALL',
+            object_type='SKQuoteLib',
+            object_id=hex(id(quote)),
+            api_name='SKQuoteLib_EnterMonitorLONG',
+            return_code=rc,
+        )
+        self.entered = rc == 0
+        if rc or not self.wait(lambda: self.ready, 30):
+            raise RuntimeError('BROKER_QUOTE_NOT_READY')
+        quote_status = self.quote_connection_status()
+        if (quote_status and quote_status.get('return_code') == 0
+                and quote_status.get('over_limit') is True):
+            raise RuntimeError('BROKER_QUOTE_CONNECTION_LIMIT')
+        self.connected = True
+        self.status = 'CONNECTED'
+        print('CAPITAL CONNECTED | read-only odd-lot quotes only', flush=True)
+
+    def leave_monitor(self):
+        """Leave only the quote monitor while retaining its COM objects/events."""
+        if not self.entered:
+            return 0
+        quote = self.objects.get('SKQuoteLib')
+        if quote is None:
+            self.entered = self.connected = self.ready = False
+            return 0
+        try:
+            rc = unpack(quote.SKQuoteLib_LeaveMonitor())
+        except Exception as exc:
+            self.cleanup_event('LEAVE_MONITOR_ERROR', error_info(exc))
+            record_capital_event(
+                ROOT, session_id=self.session_id,
+                call_site='CapitalMarket.leave_monitor', event='API_CALL',
+                object_type='SKQuoteLib', object_id=hex(id(quote)),
+                api_name='SKQuoteLib_LeaveMonitor',
+                return_code=f'EXCEPTION:{type(exc).__name__}',
+            )
+            raise
+        self.cleanup_event('LEAVE_MONITOR', {'return_code': rc})
+        record_capital_event(
+            ROOT, session_id=self.session_id,
+            call_site='CapitalMarket.leave_monitor', event='API_CALL',
+            object_type='SKQuoteLib', object_id=hex(id(quote)),
+            api_name='SKQuoteLib_LeaveMonitor', return_code=rc,
+        )
+        self.entered = self.connected = self.ready = False
+        self.subscribed = ()
+        self.pending_indices.clear()
+        if rc:
+            self.cleanup_event('LEAVE_MONITOR_FAILED', {'return_code': rc})
+            raise RuntimeError(f'BROKER_LEAVE_MONITOR_RETURN_CODE_{rc}')
+        self.retry_at = 0
+        return rc
+
+    def quote_connection_status(self, phase='PRE_SUBSCRIBE'):
+        """Read the SDK quote-connection counter after the ready callback."""
+        quote = self.objects.get('SKQuoteLib')
+        method = getattr(quote, 'SKQuoteLib_GetQuoteStatus', None) if quote else None
+        if method is None:
+            status = {'phase': phase, 'return_code': None, 'available': False,
+                      'reason': 'SKQuoteLib_GetQuoteStatus unavailable'}
+            self.event('QUOTE_STATUS', status)
+            return status
+        try:
+            # V2.13.59 typelib exposes two [in,out] values and a Long retval.
+            result = method(0, False)
+            if isinstance(result, (tuple, list)) and len(result) >= 3:
+                connection_count, over_limit, return_code = result[-3:]
+                status = {
+                    'phase': phase,
+                    'return_code': int(return_code),
+                    'reported_connection_count': int(connection_count),
+                    'over_limit': bool(over_limit),
+                    'count_meaning': ('maximum_allowed' if bool(over_limit)
+                                      else 'previous_connections_excluding_current'),
+                    'available': True,
+                }
+            else:
+                status = {
+                    'phase': phase,
+                    'return_code': unpack(result),
+                    'available': False,
+                    'result_shape': type(result).__name__,
+                }
+        except Exception as exc:
+            status = {'phase': phase, 'return_code': None, 'available': False,
+                      'error': error_info(exc)}
+        self.event('QUOTE_STATUS', status)
+        record_capital_event(
+            ROOT,
+            session_id=self.session_id,
+            call_site=f'CapitalMarket.quote_connection_status:{phase}',
+            event='API_CALL',
+            object_type='SKQuoteLib',
+            object_id=hex(id(quote)) if quote is not None else '',
+            api_name='SKQuoteLib_GetQuoteStatus',
+            return_code=status.get('return_code', 'UNKNOWN'),
+        )
+        return status
 
     def fetch(self, symbols):
         self.connect()
@@ -230,16 +390,16 @@ class CapitalMarket:
     def close(self):
         if self.entered and 'SKQuoteLib' in self.objects:
             try:
-                self.objects['SKQuoteLib'].SKQuoteLib_LeaveMonitor()
-            except Exception:
-                pass
+                self.leave_monitor()
+            except Exception as exc:
+                self.cleanup_event('LEAVE_MONITOR_ERROR', error_info(exc))
         self.entered = self.connected = self.ready = False
         self.subscribed = ()
         for connection in self.connections:
             try:
                 connection.disconnect()
-            except Exception:
-                pass
+            except Exception as exc:
+                self.cleanup_event('QUOTE_EVENT_DISCONNECT_ERROR', error_info(exc))
         self.connections, self.sinks, self.objects = [], [], {}
         if self.dll_handle:
             self.dll_handle.close()

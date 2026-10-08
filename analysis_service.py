@@ -107,7 +107,10 @@ class AnalysisService:
             raise ValueError('請先在主畫面設定模擬資金上限，再開始分析')
         paper_positions = paper_portfolio.positions(self.db_path)
         symbols = list(dict.fromkeys(universe['symbols'] +
-                     [p['symbol'] for p in positions if p['user_qty']+p['ai_managed_qty'] > 0] +
+                     # Manual holdings still need quote snapshots for current
+                     # value display and inventory context, but are not added
+                     # to the AI-managed candidate set by build_union().
+                     [p['symbol'] for p in positions] +
                      [p['symbol'] for p in paper_positions if p['qty'] > 0]))
         save_json(directory/'paper_account_snapshot.json', paper_state)
         save_json(directory/'universe_snapshot.json', universe)

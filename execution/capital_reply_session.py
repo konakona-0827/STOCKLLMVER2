@@ -4,9 +4,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os
 import time
+import uuid
 from threading import get_ident
 
 from .capital_crosscheck import CrossCheckResult, evaluate_seq13
+from .capital_session_audit import record_capital_event
 
 
 class CapitalReplySessionError(RuntimeError):
@@ -106,6 +108,9 @@ class CapitalReplySession:
         dll_path: str | Path | None = None,
     ) -> None:
         self.project_root = Path(project_root)
+        self.session_id = uuid.uuid4().hex
+        self.login_call_count = 0
+        self.login_set_quote_call_count = 0
         self.user = (user or os.getenv("CAPITAL_USER_ID", "")).strip()
         self.password = (password or os.getenv("CAPITAL_PASSWORD", "")).strip()
         self.account_override = (account or os.getenv("CAPITAL_ACCOUNT", "")).strip()
@@ -115,6 +120,7 @@ class CapitalReplySession:
         self.account: str | None = None
         self._comtypes = None
         self._sk = None
+        self._skQ = None
         self._skC = None
         self._skO = None
         self._skR = None
@@ -155,9 +161,25 @@ class CapitalReplySession:
 
         self._comtypes = comtypes.client
         self._sk = sk
+        # The integrated read-only probe reproduced 3030 when SKQuoteLib was
+        # created after login. Creating it before the other COM objects and
+        # before Center login allowed the same Order/Reply session to subscribe.
+        self._skQ = comtypes.client.CreateObject(sk.SKQuoteLib, interface=sk.ISKQuoteLib)
         self._skC = comtypes.client.CreateObject(sk.SKCenterLib, interface=sk.ISKCenterLib)
         self._skO = comtypes.client.CreateObject(sk.SKOrderLib, interface=sk.ISKOrderLib)
         self._skR = comtypes.client.CreateObject(sk.SKReplyLib, interface=sk.ISKReplyLib)
+        for object_type, obj in (("SKQuoteLib", self._skQ),
+                                 ("SKCenterLib", self._skC),
+                                 ("SKOrderLib", self._skO),
+                                 ("SKReplyLib", self._skR)):
+            record_capital_event(
+                self.project_root,
+                session_id=self.session_id,
+                call_site="CapitalReplySession.connect",
+                event="COM_OBJECT_CREATED",
+                object_type=object_type,
+                object_id=hex(id(obj)),
+            )
 
         state = self.snapshot
 
@@ -201,7 +223,33 @@ class CapitalReplySession:
         # If the call or a later setup step fails, do not retry Center login
         # in this process: it may already have succeeded at the broker.
         self._center_login_attempted = True
-        rc = self._skC.SKCenterLib_Login(self.user, self.password)
+        self.login_call_count += 1
+        try:
+            rc = self._skC.SKCenterLib_Login(self.user, self.password)
+        except Exception as exc:
+            record_capital_event(
+                self.project_root,
+                session_id=self.session_id,
+                call_site="CapitalReplySession.connect",
+                event="LOGIN_CALL",
+                object_type="SKCenterLib",
+                object_id=hex(id(self._skC)),
+                api_name="SKCenterLib_Login",
+                login_set_quote_flag="N/A",
+                return_code=f"EXCEPTION:{type(exc).__name__}",
+            )
+            raise
+        record_capital_event(
+            self.project_root,
+            session_id=self.session_id,
+            call_site="CapitalReplySession.connect",
+            event="LOGIN_CALL",
+            object_type="SKCenterLib",
+            object_id=hex(id(self._skC)),
+            api_name="SKCenterLib_Login",
+            login_set_quote_flag="N/A",
+            return_code=rc,
+        )
         if rc != 0:
             raise CapitalReplySessionError(f"SKCenterLib_Login failed: rc={rc}")
 
@@ -266,9 +314,9 @@ class CapitalReplySession:
             )
         health = self.ensure_ready()
         if any(item is None for item in
-               (self._comtypes, self._sk, self._skC, self._skR)):
+               (self._comtypes, self._sk, self._skQ, self._skC, self._skR)):
             raise CapitalReplySessionError("Logged-in quote context is unavailable.")
-        return self._comtypes, self._sk, self._skC, self._skR, health.action
+        return self._comtypes, self._sk, self._skC, self._skR, self._skQ, health.action
 
     def tc_rows_copy(self) -> list[str]:
         return list(self.snapshot.tc_rows)

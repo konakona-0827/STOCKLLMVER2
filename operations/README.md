@@ -1,6 +1,10 @@
 # 交易執行與健康檢查
 
-Dashboard 在台北時間 08:00–14:00 啟動或運行時做健康檢查，包含 08:00 與 14:00，每個整點一次；盤外、週末會等待下一個交易日 08:00。健康檢查、AUTO/MANUAL 行情掃描與真實委託共用同一條 COM 工作執行緒及 Capital session；工作會在佇列等待，不會平行重複登入或平行送單。行情掃描先檢查既有登入與回報通道，沿用 Center/Reply，只建立當次 Quote 監聽。若首次 Center 登入已嘗試但後續初始化失敗，本次 Dashboard 執行期間不再盲目重試登入；錯誤寫入掃描與健康檢查紀錄，需確認券商連線後重啟 Dashboard。
+Dashboard 在台北時間 08:00–14:00 啟動或運行時做健康檢查，包含 08:00 與 14:00，每個整點一次；盤外、週末會等待下一個交易日 08:00。健康檢查、AUTO/MANUAL 行情掃描與真實委託共用同一條 COM 工作執行緒及 Capital session；工作會在佇列等待，不會平行重複登入或平行送單。
+
+經獨立程序對照，完整 Order/Reply 登入流程若在登入後才建立 `SKQuoteLib`，即使只訂閱 1 檔也回 3030；先建立 `SKQuoteLib` 再執行 Center 登入，則同一完整流程可取得行情。正式程式現在於登入前建立並保留 Quote 物件。原本 21 檔單次訂閱也回 3030，因此清單依序切成每批最多 20 檔；每批間確認 `LeaveMonitor()=0`，再讓同一 Quote 物件重入。手動持股仍納入行情快照供持倉市值顯示，但不因此加入 AI 管理持倉。獨立程序已以正式類別連續完成兩次 20＋1 檔掃描：共四次訂閱及四次離開都回 0，每次取得 21 檔且只登入一次。
+
+SDK 文件指出 `SKQuoteLib_LeaveMonitor` 也會中斷 Reply 連線。多批行情掃描結束後，broker runtime 會在同一 COM 執行緒確認並恢復 Reply 連線；恢復失敗就視為掃描錯誤。訂閱前以唯讀 `SKQuoteLib_GetQuoteStatus` 記錄連線數與超限旗標；訂閱回傳 3030 時會再查一次。`data/health/capital_com_events.csv` 記錄 PID、Capital session、COM object ID、建立呼叫點、Login API/旗標/回傳碼，以及 Quote monitor、訂閱和離開呼叫。程式碼沒有 `SKCenterLib_LoginSetQuote` 呼叫點。Dashboard 關閉時會在 broker COM 執行緒離開 Quote monitor。若首次 Center 登入已嘗試但後續初始化失敗，本次 Dashboard 執行期間不再重試登入。
 
 ## 紀錄位置
 
