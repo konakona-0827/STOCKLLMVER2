@@ -252,7 +252,9 @@ class Dashboard:
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill='both', expand=True, padx=20, pady=(0, 8))
         self.top_tree = self.table('量化排名', ['名次','股票代號','股票名稱','最新價','行情狀態','量化分數','AI 建議','信心度'])
-        self.union_tree = self.table('AI 分析清單', ['股票代號','股票名稱','納入原因','量化排名','AI 管理股數','建議','信心度'])
+        self.union_tree = self.table('AI 分析清單',
+            ['股票代號','股票名稱','納入原因','量化排名','目前 AI 持股','持股核對','持股對帳時間','建議','信心度'],
+            hint='目前 AI 持股取自最近券商對帳後的正式帳本；建議與量化排名仍屬分析當時結果。')
         self.position_tree = self.table('持倉概況',
             ['股票代號','股票名稱','券商現股','AI 管理股數','人工設定股數','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
             hint='請按「重新整理並與券商對帳」以取得最新資訊；持倉數量以券商回傳為準。')
@@ -289,7 +291,8 @@ class Dashboard:
         tree = ttk.Treeview(frame, columns=columns, show='headings')
         widths = {
             '名次': 65, '股票代號': 90, '股票名稱': 150, '最新價': 95, '行情狀態': 110, '量化分數': 100, 'AI 建議': 90, '信心度': 85,
-            '納入原因': 130, '量化排名': 90, 'AI 管理股數': 105, '建議': 85,
+            '納入原因': 130, '量化排名': 90, 'AI 管理股數': 105,
+            '目前 AI 持股': 110, '持股核對': 120, '持股對帳時間': 205, '建議': 85,
             '總股數': 80, '人工持有': 85, 'AI 管理': 85, 'AI 管理比例': 100, '人工平均成本': 110,
             'AI 平均成本': 105, '目前參考價': 100, '總未實現損益': 115, 'AI 未實現損益': 115,
             'AI 損益率': 90, '建議減碼比例': 110, '建議股數': 90,
@@ -587,6 +590,12 @@ class Dashboard:
     def render(self):
         for tree in (self.top_tree, self.union_tree, self.position_tree, self.quote_tree):
             tree.delete(*tree.get_children())
+        health = self.last_health or {}
+        verified = bool(health.get('broker_inventory_verified'))
+        live_ai_positions = health.get('ai_positions')
+        current_holdings_ready = (verified and isinstance(live_ai_positions, dict)
+                                  and bool(health.get('checked_at')))
+        comparisons = {row['symbol']: row for row in health.get('inventory_comparison') or []}
         decisions, quotes, names = {}, {}, {}
         if self.result:
             r = self.result
@@ -605,7 +614,24 @@ class Dashboard:
                 self.top_tree.insert('', 'end', values=[t['rank'], t['symbol'], names.get(t['symbol'], '股票名稱未取得'), value(quotes[t['symbol']]['last_price']), QUALITY_LABELS.get(t['quote_status'], t['quote_status']), value(t['quant_score']), DECISION_LABELS.get(d.get('decision'), d.get('decision','--')), value(d.get('confidence'),True)])
             for c in r['analysis_set']:
                 d = decisions.get(c['symbol'], {})
-                self.union_tree.insert('', 'end', values=[c['symbol'],c.get('name') or '股票名稱未取得',SOURCE_LABELS.get(c['analysis_source'],c['analysis_source']),value(c['quant_rank']),c['position']['ai_managed_qty'],DECISION_LABELS.get(d.get('decision'), d.get('decision','--')),value(d.get('confidence'),True)])
+                symbol = c['symbol']
+                ai_qty = live_ai_positions.get(symbol, 0) if current_holdings_ready else '待核對'
+                comparison = comparisons.get(symbol)
+                holding_status = (
+                    {'MATCH': '相符',
+                     'AI_EXCEEDS_BROKER': 'AI 股數超過券商',
+                     'CONFIGURED_EXCEEDS_BROKER': '設定股數超過券商',
+                     'BROKER_EXCESS_UNATTRIBUTED': '券商多出未歸屬股數'}.get(
+                         comparison.get('status'), comparison.get('status', '待核對'))
+                    if current_holdings_ready and comparison else
+                    '無持股' if current_holdings_ready else '待券商核對')
+                self.union_tree.insert('', 'end', values=[
+                    symbol, c.get('name') or '股票名稱未取得',
+                    SOURCE_LABELS.get(c['analysis_source'], c['analysis_source']),
+                    value(c['quant_rank']), ai_qty, holding_status,
+                    health.get('checked_at') or '--',
+                    DECISION_LABELS.get(d.get('decision'), d.get('decision', '--')),
+                    value(d.get('confidence'), True)])
             for q in quotes.values():
                 try:
                     age = (now() - datetime.fromisoformat(q['quote_timestamp'])).total_seconds()
@@ -620,8 +646,6 @@ class Dashboard:
             if r['manifest'].get('display_notice'):
                 self.detail.insert('1.0', r['manifest']['display_notice'] + '\n\n')
             self.detail.configure(state='disabled')
-        health = self.last_health or {}
-        verified = bool(health.get('broker_inventory_verified'))
         self.broker_position_tree.delete(*self.broker_position_tree.get_children())
         for row in health.get('inventory_comparison') or []:
             self.broker_position_tree.insert('', 'end', values=[
