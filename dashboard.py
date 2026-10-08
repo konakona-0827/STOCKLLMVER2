@@ -204,12 +204,16 @@ class Dashboard:
         current = paper_portfolio.account(self.service.db_path)
         current_cents = current['capital_limit_cents'] if current else 0
         current_twd = current_cents // 100
+        if current:
+            prompt = (
+                '請輸入新的累計模擬資金總上限（新台幣整數）。\n'
+                f'目前上限：NT$ {current_twd:,}\n'
+                f'目前可用現金：NT$ {current["cash_cents"] // 100:,}'
+            )
+        else:
+            prompt = '請輸入初始模擬資金總上限（新台幣整數）。'
         amount = simpledialog.askinteger(
-            '設定模擬資金總上限',
-            '請輸入新的累計模擬資金上限（新台幣整數）。\n'
-            f'目前上限：NT$ {current_twd:,}\n'
-            f'目前可用現金：NT$ {current["cash_cents"] // 100:,}\n' if current else
-            '請輸入初始模擬資金總上限（新台幣整數）。',
+            '設定模擬資金總上限', prompt,
             parent=self.root, initialvalue=current_twd if current else 10000,
             minvalue=current_twd if current else 1
         )
@@ -292,10 +296,22 @@ class Dashboard:
                     self.root.configure(cursor='')
                 elif kind == 'capital_saved':
                     self.root.configure(cursor='')
+                    self.paper_capital_button.configure(state='normal')
                     self.paper_account_configured = True
-                    self.paper_limit_input.delete(0, 'end')
-                    self.paper_limit_input.insert(0, str(payload['capital_limit_cents'] // 100))
+                    account = payload['account']
+                    self.paper_limit_var.set(f"{account['capital_limit_cents'] // 100:,}")
                     self.refresh()
+                    messagebox.showinfo(
+                        '模擬資金設定完成',
+                        f"模擬資金總上限：NT$ {account['capital_limit_cents'] // 100:,}\n"
+                        f"可用現金：NT$ {account['cash_cents'] // 100:,}\n"
+                        f"本次增加可用現金：NT$ {payload['added_cents'] // 100:,}",
+                        parent=self.root
+                    )
+                elif kind == 'capital_error':
+                    self.root.configure(cursor='')
+                    self.paper_capital_button.configure(state='normal')
+                    messagebox.showerror('模擬資金設定失敗', payload, parent=self.root)
                 elif kind == 'position_saved':
                     self.refresh()
                 elif kind == 'health':
@@ -371,22 +387,37 @@ class Dashboard:
             self.detail.configure(state='disabled')
         paper_state = paper_portfolio.snapshot(self.service.db_path)
         if paper_state:
-            paper_value = sum(p['qty'] * (quotes.get(p['symbol'], {}).get('last_price') or 0)
-                              for p in paper_state['positions'])
+            paper_value = 0.0
+            unpriced_count = 0
+            for position in paper_state['positions']:
+                price = quotes.get(position['symbol'], {}).get('last_price')
+                if isinstance(price, (int, float)) and price > 0:
+                    paper_value += position['qty'] * price
+                else:
+                    unpriced_count += 1
+            market_value = f"NT$ {paper_value:,.2f}"
+            estimated_assets = f"NT$ {paper_state['available_cash_twd'] + paper_value:,.2f}"
+            if unpriced_count:
+                if paper_value:
+                    market_value += f"（另有 {unpriced_count} 檔無可用行情未計）"
+                else:
+                    market_value = f"無可用行情（{unpriced_count} 檔持倉未計）"
+                estimated_assets += f"（未含 {unpriced_count} 檔無可用行情持倉）"
             self.paper_text.set(
-                f"模擬資金上限：TWD {paper_state['capital_limit_twd']:,.0f}　"
-                f"可用現金：TWD {paper_state['available_cash_twd']:,.0f}　"
-                f"模擬持倉參考市值：TWD {paper_value:,.2f}"
-                f"　（提高上限會將增加額加到可用現金）")
-            if not self.paper_limit_input.get().strip():
-                self.paper_limit_input.insert(0, str(int(paper_state['capital_limit_twd'])))
+                f"模擬資金總上限：NT$ {paper_state['capital_limit_twd']:,.0f}　"
+                f"可用現金：NT$ {paper_state['available_cash_twd']:,.0f}　"
+                f"模擬持倉參考市值：{market_value}　"
+                f"模擬估值合計：{estimated_assets}"
+            )
+            self.paper_limit_var.set(f"{int(paper_state['capital_limit_twd']):,}")
             self.paper_position_tree.delete(*self.paper_position_tree.get_children())
             for p in paper_state['positions']:
                 total_cost = p['cost_cents'] / 100
                 avg_cost = total_cost / p['qty'] if p['qty'] else 0
                 self.paper_position_tree.insert('', 'end', values=[p['symbol'], names.get(p['symbol'], '股票名稱未取得'), p['qty'], f'{total_cost:,.2f}', f'{avg_cost:,.4f}'])
         else:
-            self.paper_text.set('模擬資金尚未設定；請先輸入上限並按紅色按鈕。')
+            self.paper_text.set('模擬資金尚未設定；按紅色按鈕輸入初始上限。')
+            self.paper_limit_var.set('尚未設定')
         self.paper_trade_tree.delete(*self.paper_trade_tree.get_children())
         for t in (self.result or {}).get('paper_trade_history', []):
             self.paper_trade_tree.insert('', 'end', values=[

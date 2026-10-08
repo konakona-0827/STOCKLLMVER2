@@ -1,4 +1,4 @@
-"""One COM-owning broker thread shared by live execution and health checks."""
+"""One COM-owning broker thread shared by quotes, execution and health checks."""
 from __future__ import annotations
 
 from concurrent.futures import Future
@@ -27,8 +27,13 @@ class BrokerRuntime:
     def health(self):
         return self._submit("health")
 
+    def fetch_quotes(self, symbols, audit, stopped, timeout=12):
+        return self._submit("quotes", tuple(symbols), audit, stopped, timeout)
+
     def _run(self):
         session = None
+        login_blocked = False
+        login_error = None
         com_initialized = False
         com_error = None
         try:
@@ -43,24 +48,34 @@ class BrokerRuntime:
                 kind, args, future = self._queue.get()
                 try:
                     if not com_initialized:
-                        if kind == "execute":
+                        if kind in ("execute", "quotes"):
                             raise RuntimeError(com_error)
                         from .health_monitor import run_health_check
                         result = run_health_check(self.project_root,
                                                   connection_error=com_error)
                     else:
-                        connection_error = None
-                        if session is None:
+                        connection_error = login_error if login_blocked else None
+                        if session is None and not login_blocked:
+                            candidate = None
                             try:
-                                session = build_live_readonly_session_from_project(
+                                candidate = build_live_readonly_session_from_project(
                                     self.project_root
                                 )
-                                session.connect()
+                                candidate.connect()
+                                session = candidate
+                                login_error = None
                             except Exception as exc:
                                 session = None
                                 connection_error = (
                                     f"broker connection: {type(exc).__name__}: {exc}"
                                 )
+                                if candidate is not None and getattr(
+                                    candidate, "center_login_attempted", False
+                                ):
+                                    # Login may have reached SKCOM before a later
+                                    # setup failure. Another login could return 2003.
+                                    login_blocked = True
+                                    login_error = connection_error
                         if kind == "execute":
                             if session is None:
                                 raise RuntimeError(connection_error)
@@ -75,6 +90,17 @@ class BrokerRuntime:
                                 self.project_root, session=session,
                                 connection_error=connection_error,
                             )
+                        elif kind == "quotes":
+                            if session is None:
+                                raise RuntimeError(connection_error)
+                            from capital_multi_quote import MultiCapitalMarket
+                            market = MultiCapitalMarket(
+                                args[1], stopped=args[2], login_session=session,
+                            )
+                            try:
+                                result = market.fetch_batch(args[0], timeout=args[3])
+                            finally:
+                                market.close()
                         else:
                             raise ValueError(f"unknown broker job: {kind}")
                     future.set_result(result)

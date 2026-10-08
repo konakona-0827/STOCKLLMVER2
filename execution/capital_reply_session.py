@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os
 import time
+from threading import get_ident
 
 from .capital_crosscheck import CrossCheckResult, evaluate_seq13
 
@@ -120,10 +121,16 @@ class CapitalReplySession:
         self._reply_conn = None
         self._order_conn = None
         self._connected = False
+        self._owner_thread_id: int | None = None
+        self._center_login_attempted = False
 
     @property
     def connected(self) -> bool:
         return self._connected
+
+    @property
+    def center_login_attempted(self) -> bool:
+        return self._center_login_attempted
 
     def connect(
         self,
@@ -136,6 +143,11 @@ class CapitalReplySession:
             raise CapitalReplySessionError("Missing CAPITAL_USER_ID or CAPITAL_PASSWORD.")
         if self._connected:
             return self.snapshot.copy()
+        if self._center_login_attempted:
+            raise CapitalReplySessionError(
+                "Previous Center login attempt has uncertain status; restart the Dashboard "
+                "after checking the broker connection."
+            )
 
         import comtypes.client
         comtypes.client.GetModule(str(self.dll_path))
@@ -186,6 +198,9 @@ class CapitalReplySession:
         self._reply_conn = comtypes.client.GetEvents(self._skR, ReplyEvents())
         self._order_conn = comtypes.client.GetEvents(self._skO, OrderEvents())
 
+        # If the call or a later setup step fails, do not retry Center login
+        # in this process: it may already have succeeded at the broker.
+        self._center_login_attempted = True
         rc = self._skC.SKCenterLib_Login(self.user, self.password)
         if rc != 0:
             raise CapitalReplySessionError(f"SKCenterLib_Login failed: rc={rc}")
@@ -232,6 +247,7 @@ class CapitalReplySession:
             comtypes.client.PumpEvents(0.25)
 
         self._connected = True
+        self._owner_thread_id = get_ident()
         return state.copy()
 
     def pump(self, seconds: float) -> ReplySnapshot:
@@ -241,6 +257,18 @@ class CapitalReplySession:
         while time.time() < end:
             self._comtypes.PumpEvents(0.25)
         return self.snapshot.copy()
+
+    def quote_login_context(self):
+        """Expose the current COM login to a quote monitor on this same thread."""
+        if self._owner_thread_id != get_ident():
+            raise CapitalReplySessionError(
+                "Quote monitor must run on the broker session's COM thread."
+            )
+        health = self.ensure_ready()
+        if any(item is None for item in
+               (self._comtypes, self._sk, self._skC, self._skR)):
+            raise CapitalReplySessionError("Logged-in quote context is unavailable.")
+        return self._comtypes, self._sk, self._skC, self._skR, health.action
 
     def tc_rows_copy(self) -> list[str]:
         return list(self.snapshot.tc_rows)

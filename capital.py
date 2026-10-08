@@ -2,7 +2,7 @@
 
 Login/event registration follows 掛單測試/capital_oddlot_probe_simple_fixed.py.
 Quote interfaces follow the supplied 2.13.59 SDK. No order or inventory calls.
-All COM calls and event pumping stay on the main STA thread.
+All COM calls and event pumping stay on the owning STA thread.
 """
 from datetime import datetime
 import os
@@ -41,8 +41,9 @@ def normalize_stock(stock, received_at):
 
 
 class CapitalMarket:
-    def __init__(self, audit, stopped=lambda: False):
+    def __init__(self, audit, stopped=lambda: False, login_session=None):
         self.audit, self.stopped = audit, stopped
+        self.login_session = login_session
         self.client = self.sk = None
         self.objects, self.connections, self.sinks = {}, [], []
         self.dll_handle = None
@@ -82,15 +83,27 @@ class CapitalMarket:
         return bool(predicate())
 
     def initialize(self):
-        import comtypes.client as client
-        self.client = client
-        dll, warnings = find_dll()
-        for warning in warnings:
-            self.event(warning, None)
-        self.dll_handle = os.add_dll_directory(str(dll.parent))
-        self.sk = client.GetModule(str(dll))
-        for name in ('SKCenterLib', 'SKQuoteLib', 'SKReplyLib'):
-            self.objects[name] = client.CreateObject(getattr(self.sk, name), interface=getattr(self.sk, 'I' + name))
+        if self.login_session is not None:
+            client, self.sk, center, reply, action = self.login_session.quote_login_context()
+            self.client = client
+            self.objects['SKCenterLib'] = center
+            self.objects['SKReplyLib'] = reply
+            self.objects['SKQuoteLib'] = client.CreateObject(
+                self.sk.SKQuoteLib, interface=self.sk.ISKQuoteLib
+            )
+            self.event('LOGIN_REUSED', {'action': action})
+        else:
+            import comtypes.client as client
+            self.client = client
+            dll, warnings = find_dll()
+            for warning in warnings:
+                self.event(warning, None)
+            self.dll_handle = os.add_dll_directory(str(dll.parent))
+            self.sk = client.GetModule(str(dll))
+            for name in ('SKCenterLib', 'SKQuoteLib', 'SKReplyLib'):
+                self.objects[name] = client.CreateObject(
+                    getattr(self.sk, name), interface=getattr(self.sk, 'I' + name)
+                )
         owner = self
 
         class ReplyEvents:
@@ -111,9 +124,13 @@ class CapitalMarket:
                 owner.pending_indices.add((int(market), int(index)))
                 owner.callback_times[(int(market), int(index))] = now().isoformat()
 
-        self.sinks = [ReplyEvents(), QuoteEvents()]
-        self.connections = [client.GetEvents(self.objects[name], sink) for name, sink in zip(
-            ('SKReplyLib', 'SKQuoteLib'), self.sinks)]
+        if self.login_session is not None:
+            self.sinks = [QuoteEvents()]
+            self.connections = [client.GetEvents(self.objects['SKQuoteLib'], self.sinks[0])]
+        else:
+            self.sinks = [ReplyEvents(), QuoteEvents()]
+            self.connections = [client.GetEvents(self.objects[name], sink) for name, sink in zip(
+                ('SKReplyLib', 'SKQuoteLib'), self.sinks)]
 
     def connect(self):
         if self.connected:
@@ -125,14 +142,15 @@ class CapitalMarket:
         self.pending_indices, self.quotes = set(), {}
         try:
             self.initialize()
-            user, password = os.getenv('CAPITAL_USER_ID'), os.getenv('CAPITAL_PASSWORD')
-            if not user or not password:
-                raise RuntimeError('BROKER_CREDENTIALS_MISSING')
-            center = self.objects['SKCenterLib']
-            rc = int(center.SKCenterLib_Login(user, password))
-            self.event('LOGIN', rc)
-            if rc:
-                raise RuntimeError(f'BROKER_LOGIN_RETURN_CODE_{rc}')
+            if self.login_session is None:
+                user, password = os.getenv('CAPITAL_USER_ID'), os.getenv('CAPITAL_PASSWORD')
+                if not user or not password:
+                    raise RuntimeError('BROKER_CREDENTIALS_MISSING')
+                center = self.objects['SKCenterLib']
+                rc = int(center.SKCenterLib_Login(user, password))
+                self.event('LOGIN', rc)
+                if rc:
+                    raise RuntimeError(f'BROKER_LOGIN_RETURN_CODE_{rc}')
             rc = int(self.objects['SKQuoteLib'].SKQuoteLib_EnterMonitorLONG())
             self.event('ENTER_MONITOR', rc)
             self.entered = rc == 0

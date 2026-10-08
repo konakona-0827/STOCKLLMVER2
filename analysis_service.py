@@ -7,7 +7,7 @@ import uuid
 from config import ROOT, load_env, now, redact
 from main import Audit, save_json, single_instance
 from universe import load_universe, load_rules
-from capital_multi_quote import MultiCapitalMarket, multi_snapshot
+from capital_multi_quote import multi_snapshot
 from quant_scanner import scan_and_rank, scan_quote
 from multi_scan import candidate_payload
 import position_store
@@ -115,21 +115,17 @@ class AnalysisService:
         audit = Audit(directory)
         phase('SCANNING_QUOTES')
         started, raw, errors = now().isoformat(), {}, {}
-        # Initialize and destroy every COM object on this same worker thread.
-        import comtypes
-        comtypes.CoInitialize()
-        market = MultiCapitalMarket(audit, stopped=self.stop.is_set)
         try:
-            try:
-                raw, errors = market.fetch_batch(symbols, 12)
-            except Exception as exc:
-                errors = {s:redact(f'{type(exc).__name__}: {exc}') for s in symbols}
-                audit.event('BATCH_ERROR', {'detail':redact(exc)})
-        finally:
-            try:
-                market.close()
-            finally:
-                comtypes.CoUninitialize()
+            # Quotes, health checks and execution share the broker COM thread.
+            # Its connected session is checked and reused before opening a
+            # quote monitor, so scans never issue a second Center login.
+            from execution.broker_runtime import get_broker_runtime
+            raw, errors = get_broker_runtime(ROOT).fetch_quotes(
+                symbols, audit, self.stop.is_set, timeout=12,
+            )
+        except Exception as exc:
+            errors = {s:redact(f'{type(exc).__name__}: {exc}') for s in symbols}
+            audit.event('BATCH_ERROR', {'detail':redact(exc)})
         completed = now().isoformat()
         batch = multi_snapshot(symbols, raw, errors, started, completed)
         batch['run_id'] = manifest['run_id']
