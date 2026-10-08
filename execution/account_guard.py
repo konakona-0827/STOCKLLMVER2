@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Iterable
 import time
@@ -37,6 +38,65 @@ class InventoryRow:
     raw: str
 
 
+@dataclass(frozen=True)
+class SettlementDue:
+    trade_date: str
+    settlement_date: str
+    net_twd: Decimal
+
+
+def _roc_date(value: str) -> str:
+    digits = value.strip()
+    if len(digits) != 7 or not digits.isdigit():
+        raise AccountCheckError("Invalid broker settlement date")
+    return date(int(digits[:3]) + 1911, int(digits[3:5]),
+                int(digits[5:7])).isoformat()
+
+
+def parse_get_t3_due_amt(raw: str) -> list[SettlementDue]:
+    """Parse the broker's T/T-1/T-2 TWD net settlement amounts."""
+    text = str(raw or "").strip().rstrip(".")
+    if not text or text == "-1":
+        raise AccountCheckError("GetT3DueAmt returned no settlement data")
+    twd = []
+    for section in text.split(";"):
+        if not section.strip():
+            continue
+        fields = [part.strip() for part in section.split(",")]
+        if len(fields) != 10:
+            raise AccountCheckError("Unexpected GetT3DueAmt format")
+        if fields[9] not in ("臺幣", "台幣", "TWD", "NTD"):
+            continue
+        for start in (0, 3, 6):
+            trade, settle, amount = fields[start:start + 3]
+            if not trade and not settle and not amount:
+                continue
+            try:
+                value = Decimal(amount)
+                if not value.is_finite():
+                    raise InvalidOperation
+                twd.append(SettlementDue(_roc_date(trade),
+                                         _roc_date(settle), value))
+            except (InvalidOperation, ValueError) as exc:
+                raise AccountCheckError("Invalid GetT3DueAmt amount/date") from exc
+    if not twd:
+        raise AccountCheckError("GetT3DueAmt has no TWD settlement rows")
+    return twd
+
+
+def query_settlement_dues(session: CapitalReplySession) -> list[SettlementDue]:
+    if not session.connected or session._skO is None or not session.account:
+        raise AccountCheckError("Capital session is not connected")
+    if not hasattr(session._skO, "GetT3DueAmt"):
+        raise AccountCheckError("SKOrderLib.GetT3DueAmt is unavailable")
+    try:
+        raw = session._skO.GetT3DueAmt(session.user, session.account)
+    except Exception as exc:
+        raise AccountCheckError(
+            f"GetT3DueAmt exception: {type(exc).__name__}: {exc}") from exc
+    return parse_get_t3_due_amt(str(raw or ""))
+
+
 def _dec(value: str) -> Decimal:
     return Decimal(value.strip())
 
@@ -65,6 +125,9 @@ def parse_get_balance(raw: str) -> BuyingPower:
         available = _dec(p[3])
     except (InvalidOperation, ValueError):
         return BuyingPower(False, one, None, None, None, raw, "Invalid numeric fields")
+    if not all(value.is_finite() for value in (balance, withdrawable, available)) or available < 0:
+        return BuyingPower(False, one, None, None, None, raw,
+                           "Non-finite or negative available buying power")
 
     # GetBalance is specifically the 一戶通 balance/available-amount query.
     if one is not True:

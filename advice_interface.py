@@ -102,6 +102,7 @@ def build_advice_interface(result, generated_at=None):
         'market_view': (result.get('decision') or {}).get('market_view', ''),
         'recommendations': recommendations,
         'paper_simulation': result.get('paper_simulation'),
+        'execution_budget': result.get('execution_budget'),
         'real_order_sent': bool(manifest.get('real_order_sent', False)),
     }
 

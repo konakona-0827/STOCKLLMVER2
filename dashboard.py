@@ -1,6 +1,8 @@
-"""Responsive research dashboard. Start with Dashboard.cmd. No execution API."""
+"""Responsive research and guarded live execution dashboard."""
 import argparse
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
+import math
 import os
 from pathlib import Path
 import queue
@@ -8,10 +10,9 @@ import threading
 import time
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-from config import ROOT, TAIPEI, now, redact
+from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
-    health_check_due_or_next, next_health_check_after,
 )
 from analysis_service import AnalysisService
 import position_store
@@ -26,6 +27,30 @@ def value(v, percent=False):
     return f'{v:.2f}' if isinstance(v, float) else str(v)
 
 
+def current_position_quotes(health, result):
+    """Only value broker holdings with quotes still fresh at display time."""
+    quotes = {}
+    candidates = list((result or {}).get('batch', {}).get('quotes', []))
+    candidates.extend((health or {}).get('position_quotes') or [])
+    at = now()
+    for quote in candidates:
+        try:
+            stamp = datetime.fromisoformat(quote['quote_timestamp'])
+            age = (at-stamp).total_seconds()
+            symbol = str(quote['symbol']).strip()
+            price = float(quote['last_price'])
+            if (quote.get('quote_status') != 'LIVE' or stamp.tzinfo is None
+                    or not symbol
+                    or not 0 <= age <= MAX_QUOTE_AGE_SECONDS
+                    or not math.isfinite(price) or price <= 0):
+                continue
+        except (KeyError, TypeError, ValueError):
+            continue
+        if symbol not in quotes or stamp > quotes[symbol][0]:
+            quotes[symbol] = (stamp, price, quote.get('name'))
+    return quotes
+
+
 DECISION_LABELS = {'BUY': '買進', 'HOLD': '持有', 'SELL': '賣出', 'WAIT': '觀望'}
 QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情'}
 STATUS_LABELS = {
@@ -34,13 +59,75 @@ STATUS_LABELS = {
     'COMPLETE': '完成', 'ERROR': '錯誤', 'RUNNING': '執行中',
     'PAUSED_LOW_BALANCE': '券商可買金額低於下限；自動掃描已停止',
 }
+BROKER_EVENT_LABELS = {
+    'FULLY_FILLED': '券商成交事件：全部成交',
+    'PARTIALLY_FILLED_REMAINDER_UNCONFIRMED': '券商成交事件：部分成交，餘量未確認',
+    'PARTIAL_FILL_REMAINDER_CANCELLED': '券商成交事件：部分成交，餘量已取消',
+    'ACKNOWLEDGED_NO_FILL_EVENT': '券商已受理，尚未見成交事件',
+    'CANCELLED_NO_FILL': '券商取消，未見成交事件',
+    'NO_MATCHING_BROKER_EVENT': '本次未找到對應券商事件',
+    'PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED': '先前成交已存證，本次未重播',
+}
+BUY_BLOCK_LABELS = {
+    'BROKER_CHECK_ERROR': '券商查詢錯誤',
+    'BALANCE_UNVERIFIED': '券商可買額未確認',
+    'INVENTORY_UNVERIFIED': '券商庫存未確認',
+    'BELOW_MINIMUM_BALANCE': '券商可買額低於保留額',
+    'UNRESOLVED_ORDER': '尚有未結委託',
+    'INVENTORY_MISMATCH': '券商持倉與正式帳本不一致',
+    'BROKER_FILL_LEDGER_MISMATCH': '券商成交尚未同步正式帳本',
+    'BROKER_FILL_UNVERIFIED': '券商成交事件未完整核對',
+    'PENDING_RESERVE_UNVERIFIED': '未結買單保留額無法核實',
+    'AI_CAPITAL_UNVERIFIED': 'AI 持倉投入額無法核實',
+    'AI_CAPITAL_LIMIT_REACHED': 'AI 資金總上限已用盡',
+    'DAILY_BUY_LIMIT_REACHED': '當日 BUY 額度已用盡',
+    'NO_BROKER_HEADROOM_AFTER_RESERVE': '券商可買額扣除保留後不足',
+    'PRIOR_EXECUTION_ERROR': '前次委託執行錯誤',
+    'OTHER_HEALTH_WARNING': '健康檢查仍有警示',
+}
+ORDER_LEDGER_LABELS = {
+    'FILLED': '全部成交', 'PARTIALLY_FILLED': '部分成交，餘量未結',
+    'PARTIALLY_FILLED_CANCELLED': '部分成交，餘量已取消',
+    'ACKNOWLEDGED': '券商已受理', 'UNCONFIRMED': '券商回覆待確認',
+    'CANCELLED': '已取消',
+}
 SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
 
 
-def decision_text(decision, analysis_set=()):
+def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None):
     asset_types = {c.get('symbol'): c.get('asset_type', 'UNKNOWN') for c in analysis_set}
     names = {c.get('symbol'): c.get('name') or '股票名稱未取得' for c in analysis_set}
-    lines = [f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
+    lines = [f"AI 分析時間：{analysis_at or '未取得'}（台北時間 UTC+8）\n\n",
+             f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
+    if budget_info:
+        buys = [d for d in decision.get('decisions', []) if d.get('decision') == 'BUY']
+        candidates = {c.get('symbol'): c for c in analysis_set}
+        subtotal = 0.0
+        reserve = 0.0
+        for item in buys:
+            candidate = candidates.get(item.get('symbol'), {})
+            price = candidate.get('budget_price') or candidate.get('ask') or candidate.get('last_price')
+            qty = item.get('suggested_qty') or 0
+            if isinstance(price, (int, float)) and qty > 0:
+                gross = price * qty
+                subtotal += gross
+                reserve += max(float(budget_info.get('min_buy_fee_reserve_twd') or 0),
+                               gross * float(budget_info.get('buy_cash_buffer_rate') or 0))
+        available = budget_info.get('available_cash_twd')
+        total = subtotal + reserve
+        if budget_info.get('budget_status') != 'READY':
+            check = '預算未確認／額度為零，本輪已停止'
+        else:
+            check = '通過' if available is not None and total <= available else ('無 BUY 建議' if not buys else '超額／未確認')
+        lines.insert(1,
+            f"本輪可用買進預算：NT$ {available:,.0f}　"
+            f"AI BUY 估算總額（含預留）：NT$ {total:,.0f}　檢查：{check}\n"
+            f"券商可買餘額：NT$ {budget_info.get('broker_buying_power_twd') or 0:,.0f}　"
+            f"最低保留：NT$ {budget_info.get('minimum_balance_reserve_twd') or 0:,.0f}　"
+            f"未結買單保留：NT$ {budget_info.get('pending_buy_reserve_twd') or 0:,.0f}　"
+            f"AI 持倉投入估算：NT$ {budget_info.get('ai_committed_capital_twd') or 0:,.0f}　"
+            f"總上限剩餘：NT$ {budget_info.get('strategy_remaining_twd') or 0:,.0f}\n"
+            f"當日剩餘額度：NT$ {budget_info.get('daily_buy_remaining_twd') or 0:,.0f}\n\n")
     for item in decision.get('decisions', []):
         warnings = item.get('warnings') or []
         lines.append('\n\n' + '─' * 48)
@@ -53,6 +140,15 @@ def decision_text(decision, analysis_set=()):
         lines.append(f"\n信心度：{value(item.get('confidence'), True)}")
         lines.append(f"\n參考價：{value(item.get('reference_price'))}　建議價：{value(item.get('suggested_price'))}")
         lines.append(f"\n建議股數：{value(item.get('suggested_qty'))}　減碼比例：{value(item.get('action_ratio'), True)}")
+        if item.get('decision') == 'BUY':
+            candidate = next((c for c in analysis_set if c.get('symbol') == symbol), {})
+            price = candidate.get('budget_price') or candidate.get('ask') or candidate.get('last_price')
+            qty = item.get('suggested_qty') or 0
+            if isinstance(price, (int, float)) and qty > 0:
+                gross = price * qty
+                reserve = max(float((budget_info or {}).get('min_buy_fee_reserve_twd') or 0),
+                              gross * float((budget_info or {}).get('buy_cash_buffer_rate') or 0))
+                lines.append(f"\n本筆預估委託（含費用預留）：NT$ {gross+reserve:,.0f}")
         lines.append(f"\n行情狀態：{QUALITY_LABELS.get(item.get('data_quality'), item.get('data_quality', '--'))}")
         lines.append(f"\n理由：{item.get('reason', '--')}")
         if warnings:
@@ -74,7 +170,7 @@ class Dashboard:
             ),
             phase_offset_seconds=300 if interval == AUTO_INTERVAL_SECONDS else 0,
         )
-        self.next_health_at = health_check_due_or_next(time.time())
+        self.next_health_at = time.time()
         self.health_running = False
         self.last_health = None
         self.balance_hold = False
@@ -101,13 +197,39 @@ class Dashboard:
                   fieldbackground=[('readonly', '#FFF2CC')],
                   foreground=[('readonly', '#333333')])
         self.status_text = tk.StringVar()
-        ttk.Label(root, textvariable=self.status_text, justify='left', anchor='w', padding=(12, 10)).pack(fill='x', padx=12, pady=(10, 8))
-        self.paper_text = tk.StringVar(value='模擬資金尚未設定；按紅色按鈕輸入上限。')
-        ttk.Label(root, textvariable=self.paper_text, anchor='w', padding=(12, 7),
-                  foreground='#8B0000', font=('Microsoft JhengHei UI', 10, 'bold')).pack(fill='x', padx=20, pady=(0, 5))
+        self.system_status_text = tk.StringVar()
+        ttk.Label(root, textvariable=self.status_text, anchor='w',
+                  padding=(8, 5), font=('Microsoft JhengHei UI', 10, 'bold')).pack(
+                      fill='x', padx=20, pady=(8, 4))
+        summary = ttk.Frame(root)
+        summary.pack(fill='x', padx=20, pady=(0, 4))
+        for column in range(3):
+            summary.columnconfigure(column, weight=1, uniform='summary')
+        self.paper_text = tk.StringVar(value='資金總上限尚未設定；按紅色按鈕輸入上限。')
+        self.finance_text = tk.StringVar(value='券商資金：等待對帳。')
+        self.settlement_text = tk.StringVar(value='券商預計交割款：等待查詢。')
+        for column, (title, variable, color) in enumerate((
+                ('券商資金', self.finance_text, '#184D47'),
+                ('AI 額度', self.paper_text, '#8B0000'),
+                ('交割與成交', self.settlement_text, '#6B4E16'))):
+            card = ttk.LabelFrame(summary, text=title, padding=(8, 5))
+            card.grid(row=0, column=column, sticky='nsew',
+                      padx=(0, 6) if column < 2 else 0)
+            ttk.Label(card, textvariable=variable, anchor='w', justify='left',
+                      wraplength=440, foreground=color,
+                      font=('Microsoft JhengHei UI', 10, 'bold')).pack(
+                          fill='both', expand=True)
+        self.spend_text = tk.StringVar(value='券商成交價金：請重新整理並與券商對帳。')
+        self.system_budget_text = tk.StringVar()
+        self.system_finance_text = tk.StringVar()
+        self.system_settlement_text = tk.StringVar()
+        self.budget_reason_text = tk.StringVar(value='買進新委託狀態：待券商對帳。')
+        ttk.Label(root, textvariable=self.budget_reason_text, anchor='w', justify='left',
+                  padding=(8, 3), foreground='#8B4513').pack(fill='x', padx=20,
+                                                              pady=(0, 3))
         bar = ttk.Frame(root)
-        bar.pack(fill='x', padx=20, pady=(0, 10))
-        ttk.Label(bar, text='模擬資金總上限（顯示）').pack(side='left', padx=(0, 5))
+        bar.pack(fill='x', padx=20, pady=(0, 7))
+        ttk.Label(bar, text='資金總上限（TWD）').pack(side='left', padx=(0, 5))
         self.paper_limit_var = tk.StringVar(value='尚未設定')
         self.paper_limit_input = ttk.Entry(
             bar, width=14, textvariable=self.paper_limit_var,
@@ -120,33 +242,48 @@ class Dashboard:
             relief='flat', padx=10, pady=4, font=('Microsoft JhengHei UI', 9, 'bold')
         )
         self.paper_capital_button.pack(side='left', padx=(0, 12))
-        self.run_button = ttk.Button(bar, text='開始分析（模擬）', command=self.manual)
+        self.run_button = ttk.Button(bar, text='分析並送交實盤風控', command=self.manual)
         self.run_button.pack(side='left', padx=(0, 8), ipady=3)
         for label, command in [('開始自動掃描', self.start_auto), ('停止自動掃描', self.stop_auto),
-                               ('重新整理', self.refresh), ('開啟最近分析資料夾', self.open_folder),
+                               ('重新整理並與券商對帳', lambda: self.refresh(sync_broker=True)), ('開啟最近分析資料夾', self.open_folder),
                                ('設定持倉', self.position_settings)]:
             ttk.Button(bar, text=label, command=command).pack(side='left', padx=4, ipady=3)
         self.market_text = tk.StringVar(value='行情摘要：尚未取得資料')
-        ttk.Label(root, textvariable=self.market_text, anchor='w', padding=(12, 9), relief='groove').pack(fill='x', padx=20, pady=(0, 12))
         self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill='both', expand=True, padx=20, pady=(0, 12))
+        self.notebook.pack(fill='both', expand=True, padx=20, pady=(0, 8))
         self.top_tree = self.table('量化排名', ['名次','股票代號','股票名稱','最新價','行情狀態','量化分數','AI 建議','信心度'])
         self.union_tree = self.table('AI 分析清單', ['股票代號','股票名稱','納入原因','量化排名','AI 管理股數','建議','信心度'])
-        self.position_tree = self.table('持倉概況（手動配置，未經券商核對）', ['股票代號','股票名稱','總股數','人工持有','AI 管理','AI 管理比例','人工平均成本','AI 平均成本','目前參考價','總未實現損益','AI 未實現損益','AI 損益率','AI 建議','建議減碼比例','建議股數'])
+        self.position_tree = self.table('持倉概況',
+            ['股票代號','股票名稱','券商現股','AI 管理股數','人工設定股數','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
+            hint='請按「重新整理並與券商對帳」以取得最新資訊；持倉數量以券商回傳為準。')
         self.quote_tree = self.table('行情與時間（台北時間 UTC+8）', ['股票代號','股票名稱','行情狀態','最新價','資料年齡（秒）','行情時間','請求開始','資料收到','請求完成'])
-        self.paper_position_tree = self.table('模擬持倉', ['股票代號','股票名稱','股數','含手續費總成本（TWD）','每股均成本（TWD）'])
-        self.paper_trade_tree = self.table('模擬成交紀錄', ['時間','股票代號','股票名稱','方向','股數','模擬成交價','成交金額','手續費','現金變化','已實現損益','分析回合'])
+        self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','正式 AI 股數','人工設定股數','差異狀態'])
+        self.live_trade_tree = self.table('正式委託與成交紀錄',
+            ['委託時間','股票代號','方向','委託股數','帳本成交股數','券商回報成交明細',
+             '券商回報成交價金','未確認成交股數','已取消餘量','券商事件推定','事件數',
+             '委託價','帳本狀態','券商回報核對','券商序號','分析回合'])
         detail = ttk.Frame(self.notebook)
         self.notebook.add(detail, text='分析結果與理由')
         self.detail = tk.Text(detail, wrap='word', padx=14, pady=12, font=('Microsoft JhengHei UI', 10), spacing1=2, spacing3=5)
         self.detail.pack(fill='both', expand=True, padx=8, pady=8)
         self.detail.configure(state='disabled')
-        ttk.Label(root, text='模擬成交只使用有效即時行情；不送出群益委託。模擬手續費按每筆金額 0.1425% 無條件捨去，最低 TWD 1。\n每筆模擬買進最多 999 股；模擬持倉與手動輸入的券商持倉分開記錄。',
-                   justify='left', anchor='w', padding=(20, 8)).pack(fill='x', pady=(0, 8))
+        system = ttk.Frame(self.notebook)
+        self.notebook.add(system, text='系統資訊')
+        for title, variable in (
+                ('執行與健康檢查', self.system_status_text),
+                ('AI 額度與持倉參考市值', self.system_budget_text),
+                ('券商餘額與新買預算算法', self.system_finance_text),
+                ('預計交割明細', self.system_settlement_text),
+                ('券商成交與風控占用', self.spend_text),
+                ('行情掃描', self.market_text)):
+            ttk.Label(system, text=title, font=('Microsoft JhengHei UI', 10, 'bold'),
+                      padding=(12, 8, 12, 2)).pack(fill='x')
+            ttk.Label(system, textvariable=variable, anchor='w', justify='left',
+                      wraplength=1380, padding=(20, 0, 12, 2)).pack(fill='x')
         self.refresh()
         self.root.after(100, self.tick)
 
-    def table(self, label, columns):
+    def table(self, label, columns, hint=None):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text=label)
         tree = ttk.Treeview(frame, columns=columns, show='headings')
@@ -157,6 +294,8 @@ class Dashboard:
             'AI 平均成本': 105, '目前參考價': 100, '總未實現損益': 115, 'AI 未實現損益': 115,
             'AI 損益率': 90, '建議減碼比例': 110, '建議股數': 90,
             '資料年齡（秒）': 115, '行情時間': 180, '請求開始': 180, '資料收到': 180, '請求完成': 180,
+            '券商回報成交明細': 235, '券商回報成交價金': 155,
+            '券商事件推定': 260, '事件數': 155,
         }
         for col in columns:
             tree.heading(col, text=col)
@@ -164,21 +303,33 @@ class Dashboard:
         ys = ttk.Scrollbar(frame, orient='vertical', command=tree.yview)
         xs = ttk.Scrollbar(frame, orient='horizontal', command=tree.xview)
         tree.configure(yscrollcommand=ys.set, xscrollcommand=xs.set)
-        tree.grid(row=0, column=0, sticky='nsew')
-        ys.grid(row=0, column=1, sticky='ns')
-        xs.grid(row=1, column=0, sticky='ew')
-        frame.rowconfigure(0, weight=1)
+        table_row = 1 if hint else 0
+        if hint:
+            ttk.Label(frame, text=hint, anchor='w', padding=(10, 8)).grid(
+                row=0, column=0, columnspan=2, sticky='ew')
+        tree.grid(row=table_row, column=0, sticky='nsew')
+        ys.grid(row=table_row, column=1, sticky='ns')
+        xs.grid(row=table_row+1, column=0, sticky='ew')
+        frame.rowconfigure(table_row, weight=1)
         frame.columnconfigure(0, weight=1)
         return tree
 
     def start_auto(self):
         if paper_portfolio.account(self.service.db_path) is None:
-            messagebox.showinfo('模擬資金', '請先在主畫面輸入模擬資金上限並按紅色按鈕。')
+            messagebox.showinfo('資金總上限', '請先在主畫面設定資金總上限。')
             return
         if self.balance_hold:
             messagebox.showwarning('餘額下限', '券商可買金額低於設定下限，已停止自動掃描。請確認餘額並等待下一次健康檢查。')
             return
         self.scheduler.start_auto(time.time())
+
+    def health_delay(self):
+        """Check open orders every minute; otherwise refresh broker state every five."""
+        snapshot = self.last_health or {}
+        pending = bool(snapshot.get('unresolved_attempts')) or any(
+            int(row.get('unconfirmed_qty') or 0) > 0
+            for row in snapshot.get('broker_order_reconciliation') or [])
+        return 60 if pending else 300
 
     def launch_health(self):
         if self.health_running:
@@ -186,8 +337,8 @@ class Dashboard:
         self.health_running = True
         def work():
             try:
-                from execution.broker_runtime import get_broker_runtime
-                self.events.put(('health', get_broker_runtime(ROOT).health()))
+                from execution.health_monitor import sync_broker_state
+                self.events.put(('health', sync_broker_state(ROOT)))
             except Exception as exc:
                 self.events.put(('health_error', redact(f'{type(exc).__name__}: {exc}')))
         threading.Thread(target=work, name='health-worker', daemon=True).start()
@@ -197,7 +348,7 @@ class Dashboard:
 
     def manual(self):
         if paper_portfolio.account(self.service.db_path) is None:
-            messagebox.showinfo('模擬資金', '請先在主畫面輸入模擬資金上限並按紅色按鈕。')
+            messagebox.showinfo('資金總上限', '請先在主畫面設定資金總上限。')
             return
         if not self.closing and self.scheduler.manual(time.time(), time.monotonic()):
             self.launch('MANUAL')
@@ -208,23 +359,23 @@ class Dashboard:
         current_twd = current_cents // 100
         if current:
             prompt = (
-                '請輸入新的累計模擬資金總上限（新台幣整數）。\n'
+                '請輸入新的資金總上限（新台幣整數）。\n'
                 f'目前上限：NT$ {current_twd:,}\n'
-                f'目前可用現金：NT$ {current["cash_cents"] // 100:,}'
+                '此金額限制 AI 買進預算；券商可買額須另行對帳。'
             )
         else:
-            prompt = '請輸入初始模擬資金總上限（新台幣整數）。'
+            prompt = '請輸入資金總上限（新台幣整數）。'
         amount = simpledialog.askinteger(
-            '設定模擬資金總上限', prompt,
+            '設定資金總上限', prompt,
             parent=self.root, initialvalue=current_twd if current else 10000,
             minvalue=current_twd if current else 1
         )
         if amount is None:
             return
         if not messagebox.askyesno(
-            '確認模擬資金上限',
-            f'將模擬資金總上限設定為 NT$ {amount:,}。\n'
-            '若高於目前上限，增加額會加入可用現金；既有模擬持倉與交易紀錄會保留。\n\n'
+            '確認資金總上限',
+            f'將 AI 交易的資金總上限設定為 NT$ {amount:,}。\n'
+            '實際可買額仍以券商回報為準；此設定不會變更券商帳戶餘額。\n\n'
             '確認套用嗎？',
             parent=self.root
         ):
@@ -234,10 +385,7 @@ class Dashboard:
         def work():
             try:
                 state = paper_portfolio.set_capital_limit(self.service.db_path, amount)
-                self.events.put(('capital_saved', dict(
-                    account=state, previous_limit_cents=current_cents,
-                    added_cents=max(0, state['capital_limit_cents']-current_cents)
-                )))
+                self.events.put(('capital_saved', dict(account=state)))
             except Exception as exc:
                 self.events.put(('capital_error', redact(exc)))
         threading.Thread(target=work, name='paper-capital-worker', daemon=True).start()
@@ -256,13 +404,13 @@ class Dashboard:
                 self.events.put(('finished', None))
         threading.Thread(target=work, name='analysis-worker', daemon=False).start()
 
-    def refresh(self):
+    def refresh(self, sync_broker=False):
         if self.refresh_pending or self.scheduler.scan_lock.locked() or self.closing:
             return
         self.refresh_pending = True
         def work():
             try:
-                self.events.put(('refresh', self.service.refresh()))
+                self.events.put(('refresh', self.service.refresh(sync_broker=sync_broker)))
             except Exception as exc:
                 self.events.put(('refresh_error', redact(exc)))
         threading.Thread(target=work, name='refresh-worker', daemon=True).start()
@@ -276,6 +424,12 @@ class Dashboard:
                     self.status = payload
                 elif kind == 'result':
                     self.result, self.positions = payload, payload['positions']
+                    if payload.get('broker_snapshot'):
+                        self.last_health = payload['broker_snapshot']
+                        self.next_health_at = time.time() + self.health_delay()
+                        self.balance_hold = bool(self.last_health.get('balance_below_floor'))
+                        if self.balance_hold:
+                            self.scheduler.stop_auto()
                     self.last_scan = payload['manifest']['finished_at']
                     self.status = payload['manifest']['status']
                     self.last_error = payload['manifest']['error']
@@ -287,7 +441,12 @@ class Dashboard:
                 elif kind == 'refresh':
                     self.refresh_pending = False
                     if not self.scheduler.scan_lock.locked():
-                        self.result, self.positions = payload
+                        self.result, self.positions, broker_snapshot = payload
+                        if broker_snapshot is not None:
+                            self.last_health = broker_snapshot
+                            self.next_health_at = time.time() + self.health_delay()
+                            self.balance_hold = bool(broker_snapshot.get('balance_below_floor'))
+                            if self.balance_hold:self.scheduler.stop_auto()
                         self.paper_account_configured = paper_portfolio.account(self.service.db_path) is not None
                         if self.result:
                             self.last_scan = self.result['manifest']['finished_at']
@@ -304,28 +463,30 @@ class Dashboard:
                     self.paper_limit_var.set(f"{account['capital_limit_cents'] // 100:,}")
                     self.refresh()
                     messagebox.showinfo(
-                        '模擬資金設定完成',
-                        f"模擬資金總上限：NT$ {account['capital_limit_cents'] // 100:,}\n"
-                        f"可用現金：NT$ {account['cash_cents'] // 100:,}\n"
-                        f"本次增加可用現金：NT$ {payload['added_cents'] // 100:,}",
+                        '資金總上限已更新',
+                        f"資金總上限：NT$ {account['capital_limit_cents'] // 100:,}\n"
+                        '請按「重新整理並與券商對帳」取得最新可買額與持倉。',
                         parent=self.root
                     )
                 elif kind == 'capital_error':
                     self.root.configure(cursor='')
                     self.paper_capital_button.configure(state='normal')
-                    messagebox.showerror('模擬資金設定失敗', payload, parent=self.root)
+                    messagebox.showerror('資金總上限設定失敗', payload, parent=self.root)
                 elif kind == 'position_saved':
                     self.refresh()
                 elif kind == 'health':
                     self.health_running = False
                     self.last_health = payload
+                    self.next_health_at = time.time() + self.health_delay()
                     self.balance_hold = bool(payload.get('balance_below_floor'))
                     if self.balance_hold:
                         self.scheduler.stop_auto()
                         self.status = 'PAUSED_LOW_BALANCE'
+                    self.render()
                 elif kind == 'health_error':
                     self.health_running = False
                     self.last_error = payload
+                    self.next_health_at = time.time() + 60
                 elif kind == 'broker_shutdown_complete':
                     self.broker_shutdown_complete = True
                 elif kind == 'broker_shutdown_error':
@@ -334,11 +495,16 @@ class Dashboard:
         except queue.Empty:
             pass
         wall, mono = time.time(), time.monotonic()
-        if not self.closing and wall >= self.next_health_at:
-            self.next_health_at = next_health_check_after(wall)
+        if (not self.closing and wall >= self.next_health_at
+                and not self.health_running and not self.refresh_pending
+                and not self.scheduler.scan_lock.locked()):
+            self.next_health_at = wall + self.health_delay()
             self.launch_health()
         if not self.closing and self.scheduler.tick(wall):
             self.launch('AUTO')
+        if (not self.closing and self.heartbeat % 300 == 0
+                and not self.refresh_pending and not self.scheduler.scan_lock.locked()):
+            self.render()
         if (self.closing and not self.scheduler.scan_lock.locked()
                 and not self.health_running):
             if not self.broker_shutdown_started:
@@ -365,16 +531,56 @@ class Dashboard:
             return datetime.fromtimestamp(ts, TAIPEI).isoformat(timespec='seconds') if ts else '--'
         cooldown = self.scheduler.cooldown(mono)
         nxt = self.scheduler.next_auto
+        health = self.last_health or {}
+        comparisons = health.get('inventory_comparison') or []
+        mismatches = [x['symbol'] for x in comparisons if x.get('status') != 'MATCH']
+        broker_balance = health.get('broker_balance_twd')
+        current_buy_budget = health.get('current_buy_budget_twd')
+        fill_mismatch = any(
+            row.get('status') == 'FILL_MISMATCH'
+            for row in health.get('broker_order_reconciliation') or [])
+        pending_orders = [row for row in health.get('broker_order_reconciliation') or []
+                          if int(row.get('unconfirmed_qty') or 0) > 0]
+        health_note = ('（券商成交股數與正式帳本不一致；請重新整理對帳）' if fill_mismatch else
+                       '（有委託部分成交或尚未見成交事件）' if pending_orders else
+                       '（前次分析失敗；本次券商資料已確認）'
+                       if health.get('status') == 'WARN'
+                       and health.get('last_scan_status') == 'ERROR'
+                       and health.get('buy_sources_verified') else '')
+        if health.get('latest_health_write_warning'):
+            health_note += '（健康檢查檔案寫入受阻；券商資料已另存正式資料庫）'
+        broker_line = (f"券商可買：{broker_balance if broker_balance is not None else '未確認'} 元　"
+                       f"持倉核對：{'不一致 '+','.join(mismatches) if mismatches else '相符' if comparisons else '未確認'}　"
+                       f"未解委託：{len(health.get('unresolved_attempts') or [])} 筆")
+        checked_at = (health.get('checked_at') or '--').replace('T', ' ')
+        if checked_at != '--':
+            checked_at = checked_at[5:19]
+        budget_label = (f'NT$ {float(current_buy_budget):,.0f}'
+                        if current_buy_budget is not None else '待確認')
         self.status_text.set(
+            f'健康 {health.get("status", "待檢查")}　｜　'
+            f'持倉 {"不一致" if mismatches else "相符" if comparisons else "待核對"}　｜　'
+            f'券商對帳 {checked_at}　｜　未確認委託 {len(pending_orders)} 筆　｜　'
+            f'可新買 {budget_label}　｜　{STATUS_LABELS.get(self.status, self.status)}')
+        self.system_status_text.set(
             f'現在時間：{now().isoformat(timespec="seconds")}（台北時間 UTC+8）\n'
             f'最近完成分析：{self.last_scan or "尚無"}\n\n'
             f'自動掃描：{("下次 " + stamp(nxt) + "　倒數 " + str(max(0, int(nxt-wall))) + " 秒") if nxt else "未啟用"}　　'
-            f'掃描間隔：{self.scheduler.interval // 60} 分鐘　　略過重疊時段：{self.scheduler.skipped} 次\n'
+            f'掃描間隔：{self.scheduler.interval // 60} 分鐘　　因分析進行中而略過的自動掃描：{self.scheduler.skipped} 次\n'
             f'手動分析：{stamp(self.scheduler.last_manual)}　　冷卻時間：{str(cooldown)+" 秒" if cooldown else "可立即使用"}\n\n'
             f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　　最近錯誤：{self.last_error or "無"}\n'
-            f'健康檢查：{self.last_health.get("status") if self.last_health else "尚未完成"}'
-            f'　　最近檢查：{self.last_health.get("checked_at") if self.last_health else "--"}'
-            f'　　餘額保護：{"已停止 AUTO" if self.balance_hold else "正常"}')
+            f'健康檢查：{health.get("status", "尚未完成")}{health_note}'
+            f'　　最近檢查：{health.get("checked_at") or "--"}\n'
+            f'券商對帳：{"持倉已核對" if health.get("broker_inventory_verified") else "尚未完成"}'
+            f'　　對帳時間：{health.get("checked_at") or "--"}'
+            f'　　餘額保護：{"已停止 AUTO" if self.balance_hold else "正常"}\n'
+            f'下次自動對帳：{stamp(self.next_health_at)}'
+            f'（有未結委託每 1 分鐘，其他每 5 分鐘；APP 開啟期間）\n'
+            f'{broker_line}　新買單可用預算：'
+            f'{f"NT$ {float(current_buy_budget):,.0f}" if current_buy_budget is not None else "未確認"}'
+            f'（{health.get("budget_status") or "UNVERIFIED"}）　'
+            f'正式委託：{len(health.get("execution_attempts") or [])} 筆'
+            f'　資料驗證：{"券商庫存已查詢" if health.get("broker_inventory_verified") else "未完成"}')
         self.run_button.configure(state='disabled' if self.closing or cooldown or self.scheduler.scan_lock.locked() or not self.paper_account_configured else 'normal')
         self.root.after(100, self.tick)
 
@@ -409,58 +615,195 @@ class Dashboard:
                 self.quote_tree.insert('', 'end', values=[q['symbol'],q.get('name') or '股票名稱未取得',QUALITY_LABELS.get(q['quote_status'],q['quote_status']),value(q['last_price']),age,q['quote_timestamp'] or '--',q['request_started_at'],q.get('received_at') or '--',q['request_completed_at']])
             self.detail.configure(state='normal')
             self.detail.delete('1.0','end')
-            self.detail.insert('end', decision_text(r['decision'], r['analysis_set']))
+            self.detail.insert('end', decision_text(r['decision'], r['analysis_set'],
+                r['manifest'].get('llm_response_received_at'), r.get('execution_budget')))
+            if r['manifest'].get('display_notice'):
+                self.detail.insert('1.0', r['manifest']['display_notice'] + '\n\n')
             self.detail.configure(state='disabled')
-        paper_state = paper_portfolio.snapshot(self.service.db_path)
-        if paper_state:
-            paper_value = 0.0
-            unpriced_count = 0
-            for position in paper_state['positions']:
-                price = quotes.get(position['symbol'], {}).get('last_price')
-                if isinstance(price, (int, float)) and price > 0:
-                    paper_value += position['qty'] * price
-                else:
-                    unpriced_count += 1
-            market_value = f"NT$ {paper_value:,.2f}"
-            estimated_assets = f"NT$ {paper_state['available_cash_twd'] + paper_value:,.2f}"
-            if unpriced_count:
-                if paper_value:
-                    market_value += f"（另有 {unpriced_count} 檔無可用行情未計）"
-                else:
-                    market_value = f"無可用行情（{unpriced_count} 檔持倉未計）"
-                estimated_assets += f"（未含 {unpriced_count} 檔無可用行情持倉）"
-            self.paper_text.set(
-                f"模擬資金總上限：NT$ {paper_state['capital_limit_twd']:,.0f}　"
-                f"可用現金：NT$ {paper_state['available_cash_twd']:,.0f}　"
-                f"模擬持倉參考市值：{market_value}　"
-                f"模擬估值合計：{estimated_assets}"
-            )
-            self.paper_limit_var.set(f"{int(paper_state['capital_limit_twd']):,}")
-            self.paper_position_tree.delete(*self.paper_position_tree.get_children())
-            for p in paper_state['positions']:
-                total_cost = p['cost_cents'] / 100
-                avg_cost = total_cost / p['qty'] if p['qty'] else 0
-                self.paper_position_tree.insert('', 'end', values=[p['symbol'], names.get(p['symbol'], '股票名稱未取得'), p['qty'], f'{total_cost:,.2f}', f'{avg_cost:,.4f}'])
+        health = self.last_health or {}
+        verified = bool(health.get('broker_inventory_verified'))
+        self.broker_position_tree.delete(*self.broker_position_tree.get_children())
+        for row in health.get('inventory_comparison') or []:
+            self.broker_position_tree.insert('', 'end', values=[
+                health.get('checked_at') or '--', row.get('symbol'), row.get('broker_cash_qty'),
+                row.get('ai_qty'), row.get('configured_user_qty'),
+                row.get('status') if verified else '券商查詢未完整驗證'])
+        self.live_trade_tree.delete(*self.live_trade_tree.get_children())
+        order_checks = {x['decision_id']: x for x in health.get('broker_order_reconciliation') or []}
+        for attempt in health.get('execution_attempts') or []:
+            detail = attempt.get('detail') or {}
+            order_check = order_checks.get(attempt.get('decision_id'), {})
+            fill_parts = []
+            for fill in order_check.get('broker_replay_fill_details') or []:
+                try:
+                    qty = int(fill['quantity'])
+                    price = Decimal(str(fill['price_twd']))
+                    fill_parts.append(f'{qty} 股 × NT$ {price:,.2f}')
+                except (KeyError, TypeError, ValueError, InvalidOperation):
+                    fill_parts.append('成交價待確認')
+            gross = order_check.get('broker_replay_fill_gross_twd')
+            try:
+                gross_text = (f'NT$ {Decimal(str(gross)):,.2f}' if gross is not None
+                              else '待確認' if order_check.get('broker_verified_filled_qty',
+                                                          order_check.get('broker_replay_filled_qty')) else '--')
+            except (ValueError, InvalidOperation):
+                gross_text = '待確認'
+            self.live_trade_tree.insert('', 'end', values=[
+                attempt.get('started_at'), attempt.get('symbol'), attempt.get('side'),
+                detail.get('quantity', '--'), detail.get('filled_quantity', '--'),
+                '；'.join(fill_parts) if fill_parts else '--', gross_text,
+                order_check.get('unconfirmed_qty', '--'),
+                order_check.get('cancelled_qty', '--'),
+                BROKER_EVENT_LABELS.get(order_check.get('broker_event_status'),
+                                        '待券商事件核對'),
+                '受理 {ack}／成交 {fill}／取消 {cancel}'.format(
+                    **(order_check.get('broker_event_counts') or
+                       dict(ack=0, fill=0, cancel=0))),
+                detail.get('limit_price', '--'),
+                ORDER_LEDGER_LABELS.get(attempt.get('status'), attempt.get('status')),
+                {'FILL_MATCH':'成交與帳本相符',
+                 'ARCHIVED_BROKER_FILL_VERIFIED':'先前券商成交已存證',
+                 'FILL_MISMATCH':'券商成交與帳本不一致',
+                 'NO_FILL_CONFIRMED':'券商取消，確認無成交',
+                 'NO_FILL_YET_VERIFIED':'券商已受理，尚未見成交',
+                 'FILL_UNVERIFIED':'成交尚未確認'}.get(
+                    order_check.get('status'),
+                    order_check.get('status', '無券商成交核對')),
+                detail.get('seq13', '--'), attempt.get('run_id')])
+        checks = health.get('broker_order_reconciliation') or []
+        known_gross = Decimal('0')
+        unpriced_fill = False
+        for check in checks:
+            if int(check.get('broker_verified_filled_qty',
+                             check.get('broker_replay_filled_qty')) or 0) <= 0:
+                continue
+            try:
+                amount = Decimal(str(check['broker_replay_fill_gross_twd']))
+                if not amount.is_finite() or amount < 0:
+                    raise InvalidOperation
+                known_gross += amount
+            except (KeyError, TypeError, ValueError, InvalidOperation):
+                unpriced_fill = True
+        spend = ('待券商成交核對' if not health.get('checked_at')
+                 or (not checks and health.get('execution_attempts')) else
+                 f'已知 NT$ {known_gross:,.2f}，另有成交價待確認' if unpriced_fill else
+                 f'NT$ {known_gross:,.2f}')
+        if checks and any(a.get('decision_id') not in order_checks
+                          for a in health.get('execution_attempts') or []):
+            spend += '，另有委託待核對'
+        reserved = health.get('daily_buy_reserved_twd')
+        try:
+            reserved_text = (f'NT$ {Decimal(str(reserved)):,.2f}'
+                             if reserved is not None else '待確認')
+        except (ValueError, InvalidOperation):
+            reserved_text = '待確認'
+        self.spend_text.set(
+            f'券商回報已確認成交價金（未含實際手續費）：{spend}　'
+            f'核對時間：{health.get("checked_at") or "--"}\n'
+            f'當日 BUY 風控額度占用（含已成交與未結委託，非交割款）：{reserved_text}')
+        block_reasons = [BUY_BLOCK_LABELS.get(code, code)
+                         for code in health.get('buy_block_reasons') or []]
+        if health.get('budget_status') == 'READY':
+            self.budget_reason_text.set(
+                '新買委託：可依可新買額度評估；送單前仍會重新查券商餘額。')
+        elif block_reasons:
+            self.budget_reason_text.set(
+                '新買委託暫停：' + '、'.join(block_reasons) +
+                '。詳見「系統資訊」。')
         else:
-            self.paper_text.set('模擬資金尚未設定；按紅色按鈕輸入初始上限。')
-            self.paper_limit_var.set('尚未設定')
-        self.paper_trade_tree.delete(*self.paper_trade_tree.get_children())
-        for t in (self.result or {}).get('paper_trade_history', []):
-            self.paper_trade_tree.insert('', 'end', values=[
-                t['occurred_at'], t['symbol'], t.get('name') or names.get(t['symbol'], '股票名稱未取得'), '買進' if t['side']=='BUY' else '賣出', t['qty'],
-                f"{t['price_cents']/100:.2f}", f"{t['gross_cents']/100:.2f}", f"{t['fee_twd']:.0f}",
-                f"{t['cash_change_cents']/100:+.2f}", f"{t['realized_pnl_cents']/100:+.2f}", t['run_id']])
-        for p in self.positions:
-            d = decisions.get(p['symbol'], {})
-            # A changed manual configuration invalidates the displayed prior advice.
-            old = next((c['position'] for c in (self.result or {}).get('analysis_set',[]) if c['symbol']==p['symbol']), {})
-            if old.get('updated_at') != p.get('updated_at'):
-                d = {}
-            fields = ['symbol','total_qty','user_qty','ai_managed_qty','ai_managed_ratio','user_average_cost','ai_average_cost','current_price','total_unrealized_pnl','ai_unrealized_pnl','ai_unrealized_pnl_pct']
-            vals = [value(p.get(k), k.endswith('ratio') or k.endswith('pct')) for k in fields]
-            vals.insert(1, names.get(p['symbol'], '股票名稱未取得'))
-            vals += [DECISION_LABELS.get(d.get('decision'), d.get('decision','--')),value(d.get('action_ratio'),True),value(d.get('suggested_qty'))]
-            self.position_tree.insert('', 'end', values=vals)
+            self.budget_reason_text.set('新買委託：待券商對帳確認。')
+        account = paper_portfolio.account(self.service.db_path)
+        self.paper_limit_var.set(f"{account['capital_limit_cents']/100:,.0f}" if account else '尚未設定')
+        def money(raw):
+            try:
+                amount = Decimal(str(raw))
+                return f'NT$ {amount:,.2f}' if amount.is_finite() else '待確認'
+            except (TypeError, ValueError, InvalidOperation):
+                return '待確認'
+        dues = health.get('broker_settlement_dues') or []
+        if health.get('settlement_query_error'):
+            self.settlement_text.set('交割款待券商查詢\n已確認成交價金：' + spend)
+            self.system_settlement_text.set('券商近三日交割應收付：暫無可核實資料；請重新整理。')
+        elif dues:
+            due_lines = []
+            payable = Decimal('0')
+            nearest_payable = None
+            for row in dues:
+                amount = Decimal(str(row['net_twd']))
+                if amount < 0:
+                    payable -= amount
+                    label = '應付'
+                    if nearest_payable is None:
+                        nearest_payable = (row['settlement_date'], -amount)
+                elif amount > 0:
+                    label = '應收'
+                else:
+                    label = '淨額'
+                due_lines.append(f"{row['settlement_date']} {label} {money(abs(amount))}")
+            self.settlement_text.set(
+                (f'{nearest_payable[0]} 應付 {money(nearest_payable[1])}'
+                 if nearest_payable else '近三日無應付交割款') +
+                f'\n已確認成交價金：{spend}')
+            self.system_settlement_text.set(
+                '券商近三日交割應收付（不是銀行已扣款）：' +
+                '；'.join(due_lines) + f'\n列示應付合計：{money(payable)}'
+                '；每日期額以券商回報為準，未從當日可買額重複扣除。')
+        else:
+            self.settlement_text.set('交割款待券商查詢\n已確認成交價金：' + spend)
+            self.system_settlement_text.set('券商近三日交割應收付：待券商查詢。')
+        fresh_quotes = current_position_quotes(health, self.result)
+        broker_rows = health.get('inventory_comparison') or []
+        held = [row for row in broker_rows if int(row.get('broker_cash_qty') or 0) > 0]
+        priced = [row for row in held if row['symbol'] in fresh_quotes]
+        if not verified:
+            market_value = '待券商對帳'
+        elif len(priced) != len(held):
+            market_value = f'待更新行情（{len(held)-len(priced)} 檔）'
+        else:
+            total_value = sum(int(row['broker_cash_qty'])*fresh_quotes[row['symbol']][1]
+                              for row in held)
+            market_value = f'NT$ {total_value:,.2f}'
+        cap = f"NT$ {account['capital_limit_cents']/100:,.0f}" if account else '尚未設定'
+        broker_cash = money(health.get('broker_balance_twd'))
+        buy_budget = money(health.get('current_buy_budget_twd'))
+        if health.get('budget_status') == 'BLOCKED':
+            buy_budget += '（暫停新買單）'
+        self.paper_text.set(
+            f'上限 {cap}　已投入 {money(health.get("ai_committed_capital_twd"))}\n'
+            f'未結保留 {money(health.get("pending_buy_reserve_twd"))}　'
+            f'可新買 {buy_budget}')
+        self.system_budget_text.set(
+            f'AI 資金總上限：{cap}　AI 持倉投入估算（成交價＋費用緩衝）：'
+            f'{money(health.get("ai_committed_capital_twd"))}　'
+            f'未結 BUY 安全保留：{money(health.get("pending_buy_reserve_twd"))}\n'
+            f'總上限剩餘：{money(health.get("strategy_remaining_twd"))}　'
+            f'可供新買：{buy_budget}　持倉參考市值：{market_value}')
+        self.finance_text.set(
+            f'一戶通餘額 {money(health.get("broker_one_account_balance_twd"))}　'
+            f'可出金 {money(health.get("broker_withdrawable_twd"))}\n'
+            f'當日可買進 {broker_cash}')
+        self.system_finance_text.set(
+            f'券商一戶通餘額：{money(health.get("broker_one_account_balance_twd"))}　'
+            f'可出金：{money(health.get("broker_withdrawable_twd"))}　'
+            f'當日可買進：{broker_cash}　查詢時間：{health.get("checked_at") or "--"}\n'
+            f'當日可買進 − 最低保留 {money(health.get("minimum_balance_twd"))}'
+            f' − 未結 BUY 安全保留 {money(health.get("pending_buy_reserve_twd"))}'
+            f' = 保守可用 {money(health.get("broker_remaining_after_pending_twd"))}；'
+            f'再與總上限剩餘及當日剩餘額度 {money(health.get("daily_buy_remaining_twd"))} 取最低。'
+            f'未結保留可能與券商已圈存金額重疊，作為額外安全緩衝。')
+        for row in broker_rows:
+            symbol = row['symbol']
+            quote = fresh_quotes.get(symbol)
+            qty = int(row.get('broker_cash_qty') or 0)
+            reference = f'{quote[1]:,.2f}' if quote else '--'
+            value_twd = f'NT$ {qty*quote[1]:,.2f}' if quote else '--'
+            self.position_tree.insert('', 'end', values=[
+                symbol, quote[2] if quote and quote[2] else names.get(symbol, '股票名稱未取得'),
+                qty if verified else '--', row.get('ai_qty') if verified else '--',
+                row.get('configured_user_qty') if verified else '--',
+                reference, value_twd, quote[0].isoformat(timespec='seconds') if quote else '--',
+                row.get('status') if verified else '待券商對帳',
+                health.get('checked_at') or '--'])
 
     def open_folder(self):
         if self.result:

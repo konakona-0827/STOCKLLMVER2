@@ -32,7 +32,7 @@ class ProductionExecutionHookTests(unittest.TestCase):
             runtime.execute.assert_called_once_with(advice_path)
             self.assertTrue((run_dir / "execution_report.json").exists())
 
-    def test_manual_run_does_not_call_live_execution_hook(self):
+    def test_manual_valid_run_calls_live_execution_hook(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             service = AnalysisService(root / "analysis")
@@ -40,13 +40,16 @@ class ProductionExecutionHookTests(unittest.TestCase):
             run_dir.mkdir(parents=True)
             advice_path = run_dir / "advice_interface.json"
 
-            with patch("execution.broker_runtime.get_broker_runtime") as execute:
+            runtime = SimpleNamespace(execute=Mock(return_value={"status": "NO_TRADE_ACTION"}))
+            with patch("execution.broker_runtime.get_broker_runtime", return_value=runtime):
                 report = service._execute_after_advice_written(
-                    "MANUAL", {}, run_dir, advice_path,
+                    "MANUAL", {"manifest": {
+                        "status": "COMPLETE", "ai_validation": "VALID",
+                    }}, run_dir, advice_path,
                 )
 
-            self.assertIsNone(report)
-            execute.assert_not_called()
+            self.assertEqual("NO_TRADE_ACTION", report["status"])
+            runtime.execute.assert_called_once_with(advice_path)
 
     def test_auto_run_without_valid_llm_result_does_not_call_hook(self):
         with tempfile.TemporaryDirectory() as tmp:

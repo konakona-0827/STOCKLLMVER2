@@ -5,6 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 import json
+import time
 from typing import Any
 
 from .account_guard import (
@@ -184,6 +185,137 @@ def execute_advice_file(
         else None
     )
 
+    buy_intents = [intent for intent in intents if intent.side == Side.BUY]
+    effective_cycle_budget = Decimal('0')
+    formal_db = root / 'data' / 'execution' / 'live_execution.sqlite3'
+    if buy_intents and store.path.resolve() == formal_db.resolve():
+        # Recheck the exact broker events on the COM-owning execution thread.
+        # The analysis budget may have aged while the AI was responding.
+        from .health_monitor import (
+            persist_refresh_snapshot,
+            reconcile_confirmed_broker_events, run_health_check,
+        )
+        health = run_health_check(root, session=session)
+        updates = reconcile_confirmed_broker_events(root, health)
+        if updates['updated']:
+            time.sleep(2)
+            health = run_health_check(root, session=session)
+        if updates['errors']:
+            health['errors'].extend('broker reconciliation: ' + x['reason']
+                                    for x in updates['errors'])
+            health['status'] = 'ERROR'
+        live_snapshot = persist_refresh_snapshot(root, health)
+        current_limit = Decimal(str(live_snapshot.get('current_buy_budget_twd') or 0))
+        budget_payload = payload.get('execution_budget') or {}
+        old_limit = Decimal(str(budget_payload.get('available_cash_twd') or 0))
+        budget_payload['available_cash_twd'] = str(min(old_limit, current_limit))
+        payload['execution_budget'] = budget_payload
+        report['live_budget_recheck'] = dict(
+            checked_at=live_snapshot.get('checked_at'),
+            status=live_snapshot.get('budget_status'),
+            buy_block_reasons=live_snapshot.get('buy_block_reasons'),
+            original_budget_twd=str(old_limit),
+            current_budget_twd=str(current_limit),
+            effective_budget_twd=budget_payload['available_cash_twd'])
+    if buy_intents:
+        budget_payload = payload.get('execution_budget') or payload.get('paper_simulation') or {}
+        cycle_budget_raw = budget_payload.get('available_cash_twd')
+        daily_reserved_before = store.daily_reserved_buy_twd()
+        daily_remaining = max(Decimal('0'), config.max_daily_buy_twd-daily_reserved_before)
+        broker_remaining = (max(Decimal('0'), initial_buying_power-config.min_available_to_buy_twd)
+                            if initial_buying_power is not None else Decimal('0'))
+        planned_buy_twd = Decimal('0')
+        if cycle_budget_raw is not None:
+            cycle_budget = Decimal(str(cycle_budget_raw))
+            for intent in buy_intents:
+                quote = quotes.get(intent.symbol)
+                if quote is None:
+                    continue
+                try:
+                    plan = build_order_plan(intent, quote=_refresh_quote(intent, quote), config=risk_cfg)
+                except Exception:
+                    # A rejected/stale quote cannot produce an order and is
+                    # still reported by the normal per-intent guard below.
+                    continue
+                fee_reserve = max(plan.estimated_value_twd*config.buy_cash_buffer_rate,
+                                  config.min_buy_fee_reserve_twd)
+                planned_buy_twd += plan.estimated_value_twd+fee_reserve
+            effective_cycle_budget = min(cycle_budget, broker_remaining, daily_remaining)
+        else:
+            cycle_budget = Decimal('0')
+        report['budget_preflight'] = {
+            'cycle_budget_twd':str(cycle_budget),
+            'broker_remaining_after_minimum_twd':str(broker_remaining),
+            'daily_reserved_before_twd':str(daily_reserved_before),
+            'daily_remaining_twd':str(daily_remaining),
+            'effective_cycle_budget_twd':str(effective_cycle_budget),
+            'planned_buy_twd_with_reserve':str(planned_buy_twd),
+        }
+        if cycle_budget_raw is None or planned_buy_twd > effective_cycle_budget:
+            reason = ('missing checked per-round BUY budget' if cycle_budget_raw is None else
+                      f'planned BUY total {planned_buy_twd} exceeds current round limit '
+                      f'{effective_cycle_budget}; no orders in this round were sent')
+            report.update(status='BLOCKED_BUDGET', block_reason=reason)
+            report['results'] = [dict(
+                decision_id=x.decision_id, run_id=x.run_id, symbol=x.symbol,
+                side=x.side.value, status='SKIPPED_CHECK_FAILED', reason=reason,
+                broker_order_sent=False, crosscheck_performed=False,
+            ) for x in intents]
+            return report
+
+    buy_intents = [intent for intent in intents if intent.side == Side.BUY]
+    if buy_intents:
+        budget_payload = payload.get("execution_budget") or payload.get("paper_simulation") or {}
+        cycle_budget_raw = budget_payload.get("available_cash_twd")
+        daily_reserved_before = store.daily_reserved_buy_twd()
+        daily_remaining = max(Decimal("0"), config.max_daily_buy_twd-daily_reserved_before)
+        broker_remaining = (max(Decimal("0"), initial_buying_power-config.min_available_to_buy_twd)
+                            if initial_buying_power is not None else Decimal("0"))
+        if cycle_budget_raw is None:
+            cycle_budget = Decimal("0")
+            budget_failure = "analysis did not provide a checked per-round BUY budget"
+        else:
+            cycle_budget = Decimal(str(cycle_budget_raw))
+            budget_failure = None
+        effective_cycle_budget = min(cycle_budget, broker_remaining, daily_remaining)
+        planned_buy_twd = Decimal("0")
+        unplannable_buys = []
+        for intent in buy_intents:
+            quote = quotes.get(intent.symbol)
+            if quote is None:
+                unplannable_buys.append(intent.symbol)
+                continue
+            try:
+                plan = build_order_plan(intent, quote=_refresh_quote(intent, quote), config=risk_cfg)
+            except Exception:
+                # Per-order quote/risk failures remain safely blocked by the
+                # normal execution loop; they cannot increase planned spend.
+                continue
+            fee_reserve = max(plan.estimated_value_twd*config.buy_cash_buffer_rate,
+                              config.min_buy_fee_reserve_twd)
+            planned_buy_twd += plan.estimated_value_twd+fee_reserve
+        report["budget_preflight"] = {
+            "cycle_budget_twd": str(cycle_budget),
+            "broker_remaining_after_minimum_twd": str(broker_remaining),
+            "daily_reserved_before_twd": str(daily_reserved_before),
+            "daily_remaining_twd": str(daily_remaining),
+            "effective_cycle_budget_twd": str(effective_cycle_budget),
+            "planned_buy_twd_with_reserve": str(planned_buy_twd),
+            "unplannable_buy_symbols": unplannable_buys,
+        }
+        if budget_failure or planned_buy_twd > effective_cycle_budget:
+            reason = budget_failure or (
+                f"planned BUY total {planned_buy_twd} exceeds current round limit "
+                f"{effective_cycle_budget}; no orders in this round were sent"
+            )
+            report.update(status="BLOCKED_BUDGET", block_reason=reason)
+            report["results"] = [dict(
+                decision_id=x.decision_id, run_id=x.run_id, symbol=x.symbol,
+                side=x.side.value, status="SKIPPED_CHECK_FAILED",
+                reason=reason, broker_order_sent=False, crosscheck_performed=False,
+            ) for x in intents]
+            return report
+
     initial_sellable: dict[str, int] = {}
     inventory = account_snapshot.inventory or ()
     for intent in intents:
@@ -329,6 +461,18 @@ def execute_advice_file(
                     raise AccountCheckError(
                         f"daily BUY cap: reserved={daily_reserved}, "
                         f"required={required}, max={config.max_daily_buy_twd}"
+                    )
+
+                if reserved_buy_twd + required > effective_cycle_budget:
+                    raise AccountCheckError(
+                        f"round BUY budget: reserved={reserved_buy_twd}, "
+                        f"required={required}, limit={effective_cycle_budget}"
+                    )
+
+                if reserved_buy_twd + required > effective_cycle_budget:
+                    raise AccountCheckError(
+                        f"round BUY budget: reserved={reserved_buy_twd}, "
+                        f"required={required}, limit={effective_cycle_budget}"
                     )
 
                 if effective_available - required < config.min_available_to_buy_twd:

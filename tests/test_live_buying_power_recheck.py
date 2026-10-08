@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -29,6 +31,7 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
                     "max_order_twd": None,
                     "max_buy_qty": 999,
                     "buy_cash_buffer_rate": 0.01,
+                    "min_available_to_buy_twd": 0,
                     "observe_seconds": 0,
                 }),
                 encoding="utf-8",
@@ -62,6 +65,7 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
                     "quote_timestamp": now,
                     "quote_age_seconds": 0,
                 }],
+                "execution_budget": {"available_cash_twd": 1000},
             }), encoding="utf-8")
 
             initial_power = BuyingPower(
@@ -105,6 +109,46 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
             item = report["results"][0]
             self.assertEqual("SKIPPED_CHECK_FAILED", item["status"])
             self.assertEqual("100", item["fresh_broker_buying_power_twd"])
+
+    def test_over_budget_round_is_blocked_before_any_order_attempt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
+            config_path = root / "execution_live.json"
+            config_path.write_text(json.dumps({
+                "enabled": True, "max_quote_age_seconds": 120,
+                "max_order_twd": None, "max_buy_qty": 999,
+                "buy_cash_buffer_rate": 0.01, "min_available_to_buy_twd": 0,
+                "observe_seconds": 0,
+            }), encoding="utf-8")
+            now = datetime.now(timezone.utc).isoformat()
+            advice_path = root / "advice.json"
+            advice_path.write_text(json.dumps({
+                "interface_version": "1.0", "generated_at": now,
+                "run_id": "RUN-BUY-BUDGET", "run_status": "READY",
+                "llm_validation": "VALID", "real_order_sent": False,
+                "market": {"quotes": [{"symbol": "0050", "quote_status": "LIVE",
+                    "price": 100, "bid": 99, "ask": 100, "exchange_time": now,
+                    "age_seconds": 0}]},
+                "recommendations": [{"symbol": "0050", "decision": "BUY",
+                    "confidence": 80, "suggested_qty": 1, "action_ratio": 0,
+                    "ai_managed_qty": 0, "quote_status": "LIVE",
+                    "quote_timestamp": now, "quote_age_seconds": 0}],
+                "execution_budget": {"available_cash_twd": 50},
+            }), encoding="utf-8")
+            power = BuyingPower(True, True, Decimal("1000"), Decimal("1000"), Decimal("1000"), "initial")
+            snapshot = ExecutionAccountSnapshot(captured_at=now, buying_power=power)
+            session = SimpleNamespace(connected=True)
+            with patch("execution.auto_advice_executor.query_buying_power") as query, \
+                    patch("execution.auto_advice_executor.CapitalOddLotExecutor.send_limit_order") as send:
+                report = execute_advice_file(advice_path, project_root=root,
+                    config_path=config_path, session=session, account_snapshot=snapshot)
+            self.assertEqual("BLOCKED_BUDGET", report["status"])
+            self.assertFalse(any(x["broker_order_sent"] for x in report["results"]))
+            query.assert_not_called()
+            send.assert_not_called()
+            with closing(sqlite3.connect(store.path)) as db:
+                self.assertEqual(0, db.execute('SELECT COUNT(*) FROM execution_attempts').fetchone()[0])
 
 
 if __name__ == "__main__":

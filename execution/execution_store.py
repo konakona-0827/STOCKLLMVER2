@@ -241,6 +241,137 @@ class ExecutionStore:
             self._insert_event(con, decision_id, status, now, full_detail)
         return new_qty
 
+    def reconcile_broker_fill(
+        self, decision_id: str, seq13: str, broker_filled_qty: int,
+        fill_details: list[dict], broker_cash_qty: int, configured_user_qty: int,
+    ) -> dict:
+        """Idempotently apply exact-order broker fills to the formal AI ledger."""
+        confirmed = int(broker_filled_qty)
+        if confirmed <= 0 or not fill_details:
+            raise ValueError("broker fill evidence is missing")
+        if sum(int(row["quantity"]) for row in fill_details) != confirmed:
+            raise ValueError("broker fill quantities do not agree")
+        gross = sum(
+            Decimal(str(row["price_twd"])) * int(row["quantity"])
+            for row in fill_details
+        )
+        if gross <= 0 or any(Decimal(str(row["price_twd"])) <= 0
+                             for row in fill_details):
+            raise ValueError("broker fill price is missing")
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute(
+                """SELECT symbol,side,status,detail_json FROM execution_attempts
+                   WHERE decision_id=?""", (decision_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("formal order is missing")
+            symbol, side, status, detail_json = row
+            detail = json.loads(detail_json or "{}")
+            if (side not in ("BUY", "SELL") or status not in
+                    ("ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED",
+                     "UNCONFIRMED", "CANCELLED", "PARTIALLY_FILLED_CANCELLED")
+                    or str(detail.get("seq13")) != str(seq13)
+                    or detail.get("send_return_code") != 0):
+                raise RuntimeError("broker order identity is not verified")
+            ordered = int(detail.get("quantity") or 0)
+            recorded = int(detail.get("filled_quantity") or 0)
+            if not 0 <= recorded <= confirmed <= ordered:
+                raise RuntimeError("broker fill conflicts with formal order quantity")
+            delta = confirmed - recorded
+            if delta == 0:
+                return dict(changed=False, symbol=symbol, filled_qty=confirmed)
+            current_row = con.execute(
+                "SELECT qty FROM ai_positions WHERE symbol=?", (symbol,),
+            ).fetchone()
+            current_qty = int(current_row[0]) if current_row else 0
+            new_qty = current_qty + delta if side == "BUY" else current_qty - delta
+            if new_qty < 0:
+                raise RuntimeError("broker SELL fill exceeds formal AI shares")
+            if new_qty + max(0, int(configured_user_qty)) > int(broker_cash_qty):
+                raise RuntimeError("broker cash inventory does not cover confirmed AI shares")
+            new_status = "FILLED" if confirmed == ordered else "PARTIALLY_FILLED"
+            detail.update(
+                filled_quantity=confirmed,
+                broker_reconciled_seq13=str(seq13),
+                broker_reconciled_qty=confirmed,
+                broker_reconciled_side=side,
+                broker_reconciled_at=now,
+                broker_replay_fill_details=fill_details,
+                broker_replay_fill_gross_twd=str(gross),
+                ai_managed_qty_after_fill=new_qty,
+            )
+            con.execute(
+                """INSERT INTO ai_positions(symbol,qty,updated_at) VALUES (?,?,?)
+                   ON CONFLICT(symbol) DO UPDATE
+                   SET qty=excluded.qty,updated_at=excluded.updated_at""",
+                (symbol, new_qty, now),
+            )
+            con.execute(
+                """UPDATE execution_attempts SET status=?,detail_json=?
+                   WHERE decision_id=?""",
+                (new_status, json.dumps(detail, ensure_ascii=False, default=str),
+                 decision_id),
+            )
+            self._insert_event(con, decision_id, "BROKER_FILL_RECONCILED", now,
+                               dict(seq13=seq13, side=side, delta_qty=delta,
+                                    total_filled_qty=confirmed,
+                                    broker_fill_gross_twd=str(gross)))
+        return dict(changed=True, symbol=symbol, delta_qty=delta,
+                    filled_qty=confirmed, status=new_status, side=side)
+
+    def reconcile_broker_buy_fill(
+        self, decision_id: str, seq13: str, broker_filled_qty: int,
+        fill_details: list[dict], broker_cash_qty: int, configured_user_qty: int,
+    ) -> dict:
+        """Compatibility wrapper for callers restricted to BUY orders."""
+        with self._connect() as con:
+            row = con.execute("SELECT side FROM execution_attempts WHERE decision_id=?",
+                              (decision_id,)).fetchone()
+        if row is None or row[0] != "BUY":
+            raise RuntimeError("broker order is not a BUY")
+        return self.reconcile_broker_fill(
+            decision_id, seq13, broker_filled_qty, fill_details,
+            broker_cash_qty, configured_user_qty)
+
+    def reconcile_broker_cancel(
+        self, decision_id: str, seq13: str, broker_filled_qty: int,
+    ) -> dict:
+        """Close an order only when exact broker cancel and fill totals agree."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute(
+                "SELECT symbol,side,status,detail_json FROM execution_attempts WHERE decision_id=?",
+                (decision_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("formal order is missing")
+            symbol, side, status, detail_json = row
+            detail = json.loads(detail_json or "{}")
+            if (side not in ("BUY", "SELL")
+                    or str(detail.get("seq13")) != str(seq13)
+                    or detail.get("send_return_code") != 0
+                    or int(detail.get("filled_quantity") or 0) != int(broker_filled_qty)):
+                raise RuntimeError("broker cancel does not match formal order")
+            new_status = ("PARTIALLY_FILLED_CANCELLED"
+                          if broker_filled_qty else "CANCELLED")
+            if status == new_status:
+                return dict(changed=False, symbol=symbol, status=status)
+            if status not in ("ACKNOWLEDGED", "PARTIALLY_FILLED", "UNCONFIRMED"):
+                raise RuntimeError("formal order cannot be closed by broker cancel")
+            detail.update(broker_cancel_seq13=str(seq13), broker_cancel_verified_at=now)
+            con.execute(
+                "UPDATE execution_attempts SET finished_at=?,status=?,detail_json=? WHERE decision_id=?",
+                (now, new_status, json.dumps(detail, ensure_ascii=False, default=str),
+                 decision_id),
+            )
+            self._insert_event(con, decision_id, "BROKER_CANCEL_RECONCILED", now,
+                               dict(seq13=seq13, side=side,
+                                    filled_qty=int(broker_filled_qty)))
+        return dict(changed=True, symbol=symbol, status=new_status, side=side)
+
     def ai_positions(self) -> dict[str, int]:
         with self._connect() as con:
             rows = con.execute("SELECT symbol, qty FROM ai_positions").fetchall()

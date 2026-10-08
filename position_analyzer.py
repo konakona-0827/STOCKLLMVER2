@@ -23,14 +23,20 @@ def sell_qty(qty, ratio):
 
 
 def build_request(candidates, paper_account=None):
+    live_account = str((paper_account or {}).get('source', '')).startswith('FRESH_BROKER_BUYING_POWER_AFTER_')
+    if live_account:
+        from execution.auto_advice_executor import LiveExecutionConfig
+        live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
     return dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=(ROOT/'prompt_positions.md').read_text(encoding='utf-8'),
-                input=json.dumps(dict(purpose='ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
+                input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
                                      paper_account=paper_account,
+                                     account_source='FRESH_BROKER_CHECKED' if live_account else 'PAPER',
                                      paper_simulation_rules=dict(
                                          commission_rate=0.001425,
                                          commission_rounding='floor_to_whole_TWD',
-                                         minimum_commission_twd=1,
+                                         minimum_commission_twd=float(live_config.min_buy_fee_reserve_twd) if live_account else 1,
+                                         buy_cash_buffer_rate=float(live_config.buy_cash_buffer_rate) if live_account else 0,
                                          max_oddlot_qty_per_trade=MAX_ODDLOT_QTY,
                                          fill_price='candidate.last_price; LIVE quotes only'),
                                      available_buy_budget_twd=(paper_account or {}).get('available_cash_twd')),
@@ -39,7 +45,8 @@ def build_request(candidates, paper_account=None):
                 max_output_tokens=min(24000, max(6000, len(candidates)*650)))
 
 
-def validate(result, candidates, available_cash_cents=None):
+def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=1,
+             buy_cash_buffer_rate=0):
     if not isinstance(result, dict) or set(result) != set(SCHEMA['required']) or not isinstance(result['market_view'], str) or not result['market_view'].strip():
         raise ValueError('INVALID_ROOT')
     if not isinstance(result['decisions'], list):
@@ -74,11 +81,14 @@ def validate(result, candidates, available_cash_cents=None):
                     (type(d['suggested_qty']) is not int or d['suggested_qty'] < 1 or
                      d['suggested_qty'] > min(MAX_ODDLOT_QTY, c['max_buy_qty']))):
                 raise ValueError('BUY_EXCEEDS_AVAILABLE_CASH')
-            if ('max_buy_qty' not in c and d['suggested_qty'] is not None) or d['action_ratio'] != 0:
+            if 'max_buy_qty' not in c and d['suggested_qty'] is not None:
                 raise ValueError('INVALID_BUY_QUANTITY')
             if available_cash_cents is not None and d['suggested_qty'] is not None:
-                gross_cents = price_cents(c['last_price']) * d['suggested_qty']
-                planned_buy_cost_cents += gross_cents + fee_twd(gross_cents) * 100
+                gross_cents = price_cents(c.get('budget_price') or c.get('ask') or c['last_price']) * d['suggested_qty']
+                reserve_cents = max(Decimal(str(minimum_buy_fee_twd)) * 100,
+                                    Decimal(gross_cents) * Decimal(str(buy_cash_buffer_rate)),
+                                    Decimal(fee_twd(gross_cents) * 100))
+                planned_buy_cost_cents += gross_cents + reserve_cents
         elif d['action_ratio'] != 0 or d['suggested_qty'] != 0 or d['suggested_price'] is not None:
             raise ValueError('NON_ACTION_QUANTITY')
         ref = d['reference_price']
@@ -96,10 +106,20 @@ def validate(result, candidates, available_cash_cents=None):
             raise ValueError('TRIAL_QUOTE_MUST_WAIT')
         if not isinstance(d['reason'], str) or not d['reason'].strip() or not isinstance(d['warnings'], list) or any(not isinstance(w, str) for w in d['warnings']):
             raise ValueError('INVALID_EXPLANATION')
+        if d['decision'] == 'BUY' and d['action_ratio'] != 0:
+            # BUY quantity is explicit. A nonzero ratio has no execution meaning;
+            # normalize it only after the quantity and price checks have passed.
+            d['action_ratio'] = 0
+            d['warnings'].append('BUY 的 action_ratio 已忽略；股數以 suggested_qty 與風控檢查為準。')
         if c['quote_status'] == 'LAST_KNOWN' and not any('不是即時行情' in w for w in d['warnings']):
             raise ValueError('MISSING_STALE_WARNING')
         if d['decision'] == 'BUY' and not any('預算' in w for w in d['warnings']):
-            raise ValueError('MISSING_BUDGET_WARNING')
+            # The numeric budget checks above are authoritative. Add the
+            # missing disclosure from the checked amount rather than turning
+            # every recommendation into ANALYSIS_FAILED_WAIT for prose alone.
+            budget = ('未知' if available_cash_cents is None
+                      else str(Decimal(available_cash_cents) / 100))
+            d['warnings'].append(f'預算：本輪可用買進上限 NT$ {budget}；實際委託仍由券商資金風控重查。')
     if seen != set(lookup):
         raise ValueError('MISSING_ANALYSIS_SYMBOL')
     if available_cash_cents is not None and planned_buy_cost_cents > available_cash_cents:
@@ -114,7 +134,10 @@ def analyze(candidates, request, provider=call_openai):
         request_input = json.loads(request.get('input', '{}'))
         budget_twd = request_input.get('available_buy_budget_twd')
         budget_cents = int(Decimal(str(budget_twd)) * 100) if budget_twd is not None else None
-        result = validate(json.loads(raw), candidates, budget_cents)
+        rules = request_input.get('paper_simulation_rules') or {}
+        result = validate(json.loads(raw), candidates, budget_cents,
+                          minimum_buy_fee_twd=rules.get('minimum_commission_twd', 1),
+                          buy_cash_buffer_rate=rules.get('buy_cash_buffer_rate', 0))
         validation = 'VALID'
     except Exception as exc:
         api['error'] = redact(f'{type(exc).__name__}: {exc}')
