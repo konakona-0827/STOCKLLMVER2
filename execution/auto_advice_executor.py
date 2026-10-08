@@ -10,6 +10,8 @@ from typing import Any
 from .account_guard import (
     AccountCheckError,
     cash_sellable_qty,
+    query_buying_power,
+    realtime_cash_qty,
 )
 from .account_snapshot import (
     ExecutionAccountSnapshot,
@@ -38,6 +40,9 @@ class LiveExecutionConfig:
     max_order_twd: Decimal | None = None
     max_buy_qty: int | None = 999
     buy_cash_buffer_rate: Decimal = Decimal("0.01")
+    min_available_to_buy_twd: Decimal = Decimal("10000")
+    min_buy_fee_reserve_twd: Decimal = Decimal("20")
+    max_daily_buy_twd: Decimal = Decimal("20000")
     observe_seconds: float = 20.0
 
     @classmethod
@@ -55,6 +60,9 @@ class LiveExecutionConfig:
             max_order_twd=dec("max_order_twd"),
             max_buy_qty=data.get("max_buy_qty", 999),
             buy_cash_buffer_rate=dec("buy_cash_buffer_rate", "0.01"),
+            min_available_to_buy_twd=dec("min_available_to_buy_twd", 10000),
+            min_buy_fee_reserve_twd=dec("min_buy_fee_reserve_twd", 20),
+            max_daily_buy_twd=dec("max_daily_buy_twd", 20000),
             observe_seconds=float(data.get("observe_seconds", 20)),
         )
 
@@ -88,7 +96,9 @@ def _refresh_quote(intent: AdviceIntent, quote: MarketQuote) -> MarketQuote:
     return MarketQuote(
         symbol=quote.symbol,
         quote_status=quote.quote_status,
-        age_seconds=quote.age_seconds if age is None else age,
+        # A copied age in advice JSON cannot prove freshness at send time.
+        # Missing/invalid timestamps must fail the risk guard.
+        age_seconds=age,
         last_price=quote.last_price,
         bid=quote.bid,
         ask=quote.ask,
@@ -103,6 +113,7 @@ def execute_advice_file(
     env_path: str | Path | None = None,
     session: CapitalReplySession | None = None,
     account_snapshot: ExecutionAccountSnapshot | None = None,
+    execution_db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Execute every BUY/SELL intent in one final advice JSON sequentially.
 
@@ -111,6 +122,10 @@ def execute_advice_file(
     """
     root = Path(project_root)
     config = LiveExecutionConfig.load(config_path)
+    if (config.min_available_to_buy_twd < 0 or config.min_buy_fee_reserve_twd < 0
+            or config.max_daily_buy_twd <= 0
+            or config.buy_cash_buffer_rate < 0):
+        raise ValueError("BUY cash guards must be nonnegative")
 
     report: dict[str, Any] = {
         "enabled": config.enabled,
@@ -129,7 +144,9 @@ def execute_advice_file(
         return report
 
     quotes = quote_map_from_advice_payload(payload)
-    store = ExecutionStore(root / "data" / "execution" / "execution.sqlite3")
+    store = ExecutionStore(Path(execution_db_path) if execution_db_path else
+                           root / "data" / "execution" / "live_execution.sqlite3",
+                           must_exist=True)
 
     if session is None:
         session = build_live_readonly_session_from_project(root, env_path=env_path)
@@ -216,14 +233,46 @@ def execute_advice_file(
                 raise RiskRejected(f"{intent.symbol}: no market quote")
             quote = _refresh_quote(intent, quote)
 
+            if (intent.side == Side.SELL
+                    and intent.symbol in store.pending_reconciliation_symbols(
+                        exclude_decision_id=intent.decision_id)):
+                raise AccountCheckError(
+                    f"{intent.symbol}: earlier order may have late fills; "
+                    "reconcile confirmed fills before another AI SELL"
+                )
+
             existing = store.get_ai_qty(intent.symbol)
             if existing is None:
+                # Advice may contain a user-entered, stale AI quantity. Only
+                # bootstrap a pre-existing SELL holding when the independent
+                # broker snapshot has at least that many cash shares. A BUY
+                # starts from zero and adds only confirmed fills.
+                seed_qty = 0
+                if intent.side == Side.SELL:
+                    if account_snapshot.inventory is None:
+                        raise AccountCheckError("inventory unavailable for AI position bootstrap")
+                    seed_qty = int(intent.ai_managed_qty or 0)
+                    broker_qty = realtime_cash_qty(account_snapshot.inventory,
+                                                   intent.symbol)
+                    if seed_qty > broker_qty:
+                        raise AccountCheckError(
+                            f"{intent.symbol}: unverified AI seed {seed_qty} "
+                            f"exceeds broker cash inventory {broker_qty}"
+                        )
                 ai_qty = store.bootstrap_ai_qty(
                     intent.symbol,
-                    int(intent.ai_managed_qty or 0),
+                    seed_qty,
                 )
             else:
                 ai_qty = existing
+            if intent.side == Side.SELL and account_snapshot.inventory is not None:
+                broker_qty = realtime_cash_qty(account_snapshot.inventory,
+                                               intent.symbol)
+                if ai_qty > broker_qty:
+                    raise AccountCheckError(
+                        f"{intent.symbol}: AI ledger {ai_qty} exceeds "
+                        f"broker cash inventory {broker_qty}; reconcile first"
+                    )
 
             position = PositionState(
                 symbol=intent.symbol,
@@ -241,28 +290,53 @@ def execute_advice_file(
             reserved_this_order_twd = Decimal("0")
 
             if intent.side == Side.BUY:
-                required = (
-                    plan.estimated_value_twd
-                    * (Decimal("1") + config.buy_cash_buffer_rate)
+                fee_reserve = max(
+                    plan.estimated_value_twd * config.buy_cash_buffer_rate,
+                    config.min_buy_fee_reserve_twd,
                 )
+                required = plan.estimated_value_twd + fee_reserve
                 if initial_buying_power is None:
                     raise AccountCheckError(
                         "buying power unavailable: "
                         + (account_snapshot.buying_power_error or "unknown query failure")
                     )
 
-                effective_available = initial_buying_power - reserved_buy_twd
+                # Re-read broker buying power for every BUY. The local
+                # reservation remains authoritative if broker balance updates
+                # lag behind accepted orders; the smaller value wins.
+                fresh_buying_power = query_buying_power(session)
+                fresh_available = fresh_buying_power.available_to_buy_twd
+                if fresh_available is None:
+                    raise AccountCheckError("fresh broker buying power is unavailable")
+
+                effective_available = min(
+                    initial_buying_power - reserved_buy_twd,
+                    fresh_available,
+                )
 
                 item["verified_buying_power_twd"] = str(initial_buying_power)
+                item["fresh_broker_buying_power_twd"] = str(fresh_available)
                 item["batch_reserved_buy_twd_before"] = str(reserved_buy_twd)
                 item["effective_buying_power_twd"] = str(effective_available)
                 item["required_twd_with_buffer"] = str(required)
+                item["fee_reserve_twd"] = str(fee_reserve)
+                item["min_available_to_buy_twd"] = str(config.min_available_to_buy_twd)
+                daily_reserved = store.daily_reserved_buy_twd()
+                item["daily_reserved_buy_twd_before"] = str(daily_reserved)
+                item["max_daily_buy_twd"] = str(config.max_daily_buy_twd)
 
-                if effective_available < required:
+                if daily_reserved + required > config.max_daily_buy_twd:
                     raise AccountCheckError(
-                        f"insufficient batch buying power: "
+                        f"daily BUY cap: reserved={daily_reserved}, "
+                        f"required={required}, max={config.max_daily_buy_twd}"
+                    )
+
+                if effective_available - required < config.min_available_to_buy_twd:
+                    raise AccountCheckError(
+                        f"BUY would cross minimum broker buying power: "
                         f"effective_available={effective_available}, "
-                        f"required_with_buffer={required}"
+                        f"required_with_buffer={required}, "
+                        f"minimum={config.min_available_to_buy_twd}"
                     )
                 reserved_this_order_twd = required
 
@@ -297,19 +371,26 @@ def execute_advice_file(
                 item["broker_order_sent"] = True
                 item["send_return_code"] = sent.return_code
                 item["seq13"] = sent.seq13
-                store.append_event(
+                store.mark_submitted(
                     intent.decision_id,
-                    "SUBMITTED",
                     {
                         "symbol": intent.symbol,
                         "side": intent.side.value,
                         "quantity": plan.quantity,
                         "limit_price": str(plan.limit_price),
+                        "required_twd_with_buffer": str(reserved_this_order_twd),
                         "return_code": sent.return_code,
                         "seq13": sent.seq13,
                     },
                 )
 
+            store.mark_send_pending(intent.decision_id, {
+                "symbol": plan.symbol, "side": plan.side.value,
+                "quantity": plan.quantity, "limit_price": str(plan.limit_price),
+                "required_twd_with_buffer": str(reserved_this_order_twd),
+            }, daily_limit_twd=(config.max_daily_buy_twd if intent.side == Side.BUY
+                                else None))
+            item["send_attempted"] = True
             result = broker.send_limit_order(
                 symbol=plan.symbol,
                 side=plan.side,
@@ -323,9 +404,11 @@ def execute_advice_file(
                 status=result.status.value,
                 quantity=result.quantity,
                 limit_price=str(result.price),
+                send_return_code=result.send_return_code,
                 seq13=result.seq13,
                 filled_quantity=result.filled_quantity,
                 broker_order_sent=result.broker_order_sent,
+                send_attempted=result.send_attempted,
                 crosscheck_performed=result.crosscheck_performed,
                 crosscheck_status=result.crosscheck.status.value,
                 accepted_event_count=len(result.crosscheck.accepted_rows),
@@ -338,7 +421,7 @@ def execute_advice_file(
             # Reserve the submitted quantity/value for the rest of this batch
             # even when final observation is ambiguous. This is deliberately
             # conservative and prevents duplicate spending/selling.
-            if result.broker_order_sent and result.send_return_code in (0, None):
+            if result.send_attempted and result.send_return_code in (0, None):
                 if intent.side == Side.BUY:
                     reserved_buy_twd += reserved_this_order_twd
                 else:
@@ -347,15 +430,14 @@ def execute_advice_file(
                         + plan.quantity
                     )
 
-            if result.filled_quantity > 0:
-                new_ai_qty = store.apply_fill(
-                    result.symbol,
-                    result.side,
-                    result.filled_quantity,
+            if result.changes_position:
+                new_ai_qty = store.finish_with_fill(
+                    intent.decision_id, result.status.value, item,
+                    result.symbol, result.side, result.filled_quantity,
                 )
                 item["ai_managed_qty_after_fill"] = new_ai_qty
-
-            store.finish(intent.decision_id, result.status.value, item)
+            else:
+                store.finish(intent.decision_id, result.status.value, item)
 
         except (RiskRejected, AccountCheckError) as exc:
             item.update(
@@ -371,12 +453,20 @@ def execute_advice_file(
             )
 
         except Exception as exc:
+            uncertain = bool(item.get("send_attempted"))
             item.update(
-                status="FAILED",
+                status="UNCONFIRMED" if uncertain else "FAILED",
                 reason=f"{type(exc).__name__}: {exc}",
                 automatic_retry=False,
             )
-            store.finish(intent.decision_id, "FAILED", item)
+            if uncertain and not item.get("broker_order_sent"):
+                item["broker_order_sent"] = None
+            try:
+                store.finish(intent.decision_id, item["status"], item)
+            except Exception:
+                # Keep the durable SEND_PENDING/SUBMITTED marker for manual
+                # reconciliation if the database is unavailable.
+                pass
 
         report["results"].append(item)
 

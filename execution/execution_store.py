@@ -1,22 +1,50 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from contextlib import closing, contextmanager
+from decimal import Decimal
 from pathlib import Path
 import json
 import sqlite3
 from typing import Any
 
 from .models import Side
+from config import TAIPEI
 
 
 class ExecutionStore:
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: str | Path, *, must_exist: bool = False) -> None:
         self.path = Path(path)
+        if must_exist:
+            self._validate_existing()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._init()
 
+    def _validate_existing(self):
+        if not self.path.is_file():
+            raise RuntimeError(f"execution DB missing; restore a backup: {self.path}")
+        with closing(sqlite3.connect(f"file:{self.path.as_posix()}?mode=ro",
+                                     uri=True, timeout=10)) as con:
+            if con.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise RuntimeError("execution DB failed SQLite quick_check")
+            names = {row[0] for row in con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )}
+            required = {"execution_attempts", "execution_events", "ai_positions"}
+            if not required <= names:
+                raise RuntimeError("execution DB is missing expected tables; restore a backup")
+
+    @contextmanager
     def _connect(self):
-        return sqlite3.connect(self.path, timeout=30)
+        con = sqlite3.connect(self.path, timeout=30)
+        try:
+            yield con
+            con.commit()
+        except Exception:
+            con.rollback()
+            raise
+        finally:
+            con.close()
 
     def _init(self):
         with self._connect() as con:
@@ -83,31 +111,162 @@ class ExecutionStore:
                        VALUES (?, ?, ?, ?, ?, 'STARTED')""",
                     (decision_id, run_id, symbol, side, now),
                 )
+                self._insert_event(con, decision_id, "STARTED", now,
+                                   {"run_id": run_id, "symbol": symbol, "side": side})
         except sqlite3.IntegrityError:
             return False
-
-        self.append_event(
-            decision_id,
-            "STARTED",
-            {"run_id": run_id, "symbol": symbol, "side": side},
-        )
         return True
+
+    @staticmethod
+    def _insert_event(con, decision_id, status, now, detail):
+        con.execute(
+            """INSERT INTO execution_events(decision_id, event_at, status, detail_json)
+               VALUES (?, ?, ?, ?)""",
+            (decision_id, now, status,
+             json.dumps(detail, ensure_ascii=False, default=str)),
+        )
+
+    @staticmethod
+    def _daily_reserved(con, local_day) -> Decimal:
+        total = Decimal("0")
+        for started_at, status, detail_json in con.execute(
+            """SELECT started_at, status, detail_json FROM execution_attempts
+               WHERE side='BUY' AND status NOT IN ('STARTED','SKIPPED_CHECK_FAILED')"""
+        ):
+            if datetime.fromisoformat(started_at).astimezone(TAIPEI).date() != local_day:
+                continue
+            detail = json.loads(detail_json or "{}")
+            if status == "FAILED" and detail.get("send_return_code") not in (0, None):
+                continue
+            if status == "FAILED" and not detail.get("send_attempted"):
+                continue
+            required = detail.get("required_twd_with_buffer")
+            if required is None:
+                raise RuntimeError("BUY attempt has no durable cash reservation; reconcile first")
+            total += Decimal(str(required))
+        return total
+
+    def daily_reserved_buy_twd(self) -> Decimal:
+        with self._connect() as con:
+            return self._daily_reserved(con, datetime.now(TAIPEI).date())
+
+    def mark_send_pending(self, decision_id: str, detail: dict[str, Any],
+                          *, daily_limit_twd: Decimal | None = None) -> None:
+        """Durable no-retry marker immediately before the broker call."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            if daily_limit_twd is not None:
+                required = Decimal(str(detail["required_twd_with_buffer"]))
+                reserved = self._daily_reserved(con, datetime.now(TAIPEI).date())
+                if reserved + required > daily_limit_twd:
+                    raise RuntimeError(
+                        f"daily BUY cap reached: {reserved}+{required}>{daily_limit_twd}"
+                    )
+            changed = con.execute(
+                """UPDATE execution_attempts SET status='SEND_PENDING', detail_json=?
+                   WHERE decision_id=? AND status='STARTED' AND finished_at IS NULL""",
+                (json.dumps(detail, ensure_ascii=False, default=str), decision_id),
+            ).rowcount
+            if changed != 1:
+                raise RuntimeError(f"cannot mark send pending: {decision_id}")
+            self._insert_event(con, decision_id, "SEND_PENDING", now, detail)
+
+    def mark_submitted(self, decision_id: str, detail: dict[str, Any]) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            changed = con.execute(
+                """UPDATE execution_attempts SET status='SUBMITTED', detail_json=?
+                   WHERE decision_id=? AND status='SEND_PENDING' AND finished_at IS NULL""",
+                (json.dumps(detail, ensure_ascii=False, default=str), decision_id),
+            ).rowcount
+            if changed != 1:
+                raise RuntimeError(f"cannot mark submitted: {decision_id}")
+            self._insert_event(con, decision_id, "SUBMITTED", now, detail)
 
     def finish(self, decision_id: str, status: str, detail: dict[str, Any]) -> None:
         now = datetime.now(timezone.utc).isoformat()
         with self._connect() as con:
-            con.execute(
+            changed = con.execute(
                 """UPDATE execution_attempts
                    SET finished_at=?, status=?, detail_json=?
-                   WHERE decision_id=?""",
+                   WHERE decision_id=? AND finished_at IS NULL""",
                 (
                     now,
                     status,
                     json.dumps(detail, ensure_ascii=False, default=str),
                     decision_id,
                 ),
+            ).rowcount
+            if changed != 1:
+                raise RuntimeError(f"attempt already finished or missing: {decision_id}")
+            self._insert_event(con, decision_id, status, now, detail)
+
+    def finish_with_fill(self, decision_id: str, status: str,
+                         detail: dict[str, Any], symbol: str,
+                         side: Side, qty: int) -> int:
+        """Commit confirmed fill, final attempt and event in one transaction."""
+        qty = int(qty)
+        if qty <= 0 or status not in ("FILLED", "PARTIALLY_FILLED"):
+            raise ValueError("only a confirmed positive fill can change ai_positions")
+        symbol = symbol.upper()
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            attempt = con.execute(
+                "SELECT status, finished_at FROM execution_attempts WHERE decision_id=?",
+                (decision_id,),
+            ).fetchone()
+            if attempt is None or attempt[1] is not None or attempt[0] != "SUBMITTED":
+                raise RuntimeError(f"attempt is not an open submitted order: {decision_id}")
+            row = con.execute(
+                "SELECT qty FROM ai_positions WHERE symbol=?", (symbol,),
+            ).fetchone()
+            current = int(row[0]) if row else 0
+            if side == Side.SELL and current < qty:
+                raise RuntimeError(f"confirmed SELL fill exceeds AI shares: {symbol}")
+            new_qty = current + qty if side == Side.BUY else current - qty
+            con.execute(
+                """INSERT INTO ai_positions(symbol, qty, updated_at) VALUES (?, ?, ?)
+                   ON CONFLICT(symbol) DO UPDATE
+                   SET qty=excluded.qty, updated_at=excluded.updated_at""",
+                (symbol, new_qty, now),
             )
-        self.append_event(decision_id, status, detail)
+            full_detail = dict(detail, ai_managed_qty_after_fill=new_qty)
+            con.execute(
+                """UPDATE execution_attempts SET finished_at=?, status=?, detail_json=?
+                   WHERE decision_id=?""",
+                (now, status,
+                 json.dumps(full_detail, ensure_ascii=False, default=str), decision_id),
+            )
+            self._insert_event(con, decision_id, status, now, full_detail)
+        return new_qty
+
+    def ai_positions(self) -> dict[str, int]:
+        with self._connect() as con:
+            rows = con.execute("SELECT symbol, qty FROM ai_positions").fetchall()
+        return {str(symbol): int(qty) for symbol, qty in rows}
+
+    def unresolved_attempts(self) -> list[dict[str, Any]]:
+        with self._connect() as con:
+            rows = con.execute(
+                """SELECT decision_id, symbol, side, started_at, status
+                   FROM execution_attempts WHERE finished_at IS NULL
+                   ORDER BY started_at"""
+            ).fetchall()
+        return [dict(zip(("decision_id", "symbol", "side", "started_at", "status"), row))
+                for row in rows]
+
+    def pending_reconciliation_symbols(self, *, exclude_decision_id: str = "") -> set[str]:
+        """Symbols whose later fills may not yet be reflected in ai_positions."""
+        with self._connect() as con:
+            rows = con.execute(
+                """SELECT DISTINCT symbol FROM execution_attempts
+                   WHERE status IN ('STARTED','SEND_PENDING','SUBMITTED',
+                                    'ACKNOWLEDGED','PARTIALLY_FILLED','UNCONFIRMED')
+                     AND decision_id<>?""",
+                (exclude_decision_id,),
+            ).fetchall()
+        return {str(row[0]).upper() for row in rows}
 
     def events_for(self, decision_id: str) -> list[dict[str, Any]]:
         with self._connect() as con:

@@ -7,9 +7,12 @@ import queue
 import threading
 import time
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 from config import ROOT, TAIPEI, now, redact
-from scheduler import Scheduler, AUTO_INTERVAL_SECONDS
+from scheduler import (
+    Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
+    health_check_due_or_next, next_health_check_after,
+)
 from analysis_service import AnalysisService
 import position_store
 import paper_portfolio
@@ -29,6 +32,7 @@ STATUS_LABELS = {
     'IDLE': '閒置', 'SCANNING_QUOTES': '取得行情中', 'QUANT_ANALYSIS': '量化分析中',
     'WAITING_OPENAI': '等待 AI 分析', 'PROCESSING_RESULT': '整理分析結果中',
     'COMPLETE': '完成', 'ERROR': '錯誤', 'RUNNING': '執行中',
+    'PAUSED_LOW_BALANCE': '券商可買金額低於下限；自動掃描已停止',
 }
 SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
 
@@ -62,7 +66,18 @@ class Dashboard:
     def __init__(self, root, directory=ROOT/'data'/'analysis', interval=AUTO_INTERVAL_SECONDS):
         self.root = root
         self.service = AnalysisService(directory)
-        self.scheduler = Scheduler(interval)
+        self.scheduler = Scheduler(
+            interval,
+            allowed_slot=(
+                is_twse_oddlot_market_window
+                if interval == AUTO_INTERVAL_SECONDS else None
+            ),
+            phase_offset_seconds=300 if interval == AUTO_INTERVAL_SECONDS else 0,
+        )
+        self.next_health_at = health_check_due_or_next(time.time())
+        self.health_running = False
+        self.last_health = None
+        self.balance_hold = False
         self.events = queue.Queue()
         self.result = None
         self.positions = []
@@ -79,19 +94,30 @@ class Dashboard:
         style = ttk.Style(root)
         style.configure('Treeview', rowheight=29)
         style.configure('Treeview.Heading', font=('Microsoft JhengHei UI', 10, 'bold'))
+        style.configure('CapitalReadonly.TEntry', fieldbackground='#FFF2CC', foreground='#333333')
+        style.map('CapitalReadonly.TEntry',
+                  fieldbackground=[('readonly', '#FFF2CC')],
+                  foreground=[('readonly', '#333333')])
         self.status_text = tk.StringVar()
         ttk.Label(root, textvariable=self.status_text, justify='left', anchor='w', padding=(12, 10)).pack(fill='x', padx=12, pady=(10, 8))
-        self.paper_text = tk.StringVar(value='模擬資金尚未設定；請先輸入上限並按紅色按鈕。')
+        self.paper_text = tk.StringVar(value='模擬資金尚未設定；按紅色按鈕輸入上限。')
         ttk.Label(root, textvariable=self.paper_text, anchor='w', padding=(12, 7),
                   foreground='#8B0000', font=('Microsoft JhengHei UI', 10, 'bold')).pack(fill='x', padx=20, pady=(0, 5))
         bar = ttk.Frame(root)
         bar.pack(fill='x', padx=20, pady=(0, 10))
-        ttk.Label(bar, text='模擬資金總上限（TWD）').pack(side='left', padx=(0, 5))
-        self.paper_limit_input = ttk.Entry(bar, width=14)
+        ttk.Label(bar, text='模擬資金總上限（顯示）').pack(side='left', padx=(0, 5))
+        self.paper_limit_var = tk.StringVar(value='尚未設定')
+        self.paper_limit_input = ttk.Entry(
+            bar, width=14, textvariable=self.paper_limit_var,
+            state='readonly', style='CapitalReadonly.TEntry'
+        )
         self.paper_limit_input.pack(side='left', padx=(0, 5), ipady=3)
-        tk.Button(bar, text='設定／提高上限', command=self.save_paper_capital,
-                  bg='#C62828', fg='white', activebackground='#8E0000', activeforeground='white',
-                  relief='flat', padx=10, pady=4, font=('Microsoft JhengHei UI', 9, 'bold')).pack(side='left', padx=(0, 12))
+        self.paper_capital_button = tk.Button(
+            bar, text='設定／提高上限', command=self.save_paper_capital,
+            bg='#C62828', fg='white', activebackground='#8E0000', activeforeground='white',
+            relief='flat', padx=10, pady=4, font=('Microsoft JhengHei UI', 9, 'bold')
+        )
+        self.paper_capital_button.pack(side='left', padx=(0, 12))
         self.run_button = ttk.Button(bar, text='開始分析（模擬）', command=self.manual)
         self.run_button.pack(side='left', padx=(0, 8), ipady=3)
         for label, command in [('開始自動掃描', self.start_auto), ('停止自動掃描', self.stop_auto),
@@ -147,7 +173,22 @@ class Dashboard:
         if paper_portfolio.account(self.service.db_path) is None:
             messagebox.showinfo('模擬資金', '請先在主畫面輸入模擬資金上限並按紅色按鈕。')
             return
+        if self.balance_hold:
+            messagebox.showwarning('餘額下限', '券商可買金額低於設定下限，已停止自動掃描。請確認餘額並等待下一次健康檢查。')
+            return
         self.scheduler.start_auto(time.time())
+
+    def launch_health(self):
+        if self.health_running:
+            return
+        self.health_running = True
+        def work():
+            try:
+                from execution.broker_runtime import get_broker_runtime
+                self.events.put(('health', get_broker_runtime(ROOT).health()))
+            except Exception as exc:
+                self.events.put(('health_error', redact(f'{type(exc).__name__}: {exc}')))
+        threading.Thread(target=work, name='health-worker', daemon=True).start()
 
     def stop_auto(self):
         self.scheduler.stop_auto()
@@ -160,18 +201,39 @@ class Dashboard:
             self.launch('MANUAL')
 
     def save_paper_capital(self):
-        raw = self.paper_limit_input.get().strip().replace(',', '')
-        if not raw.isdigit() or int(raw) <= 0:
-            messagebox.showerror('金額格式錯誤', '請輸入大於 0 的整數新台幣金額。')
+        current = paper_portfolio.account(self.service.db_path)
+        current_cents = current['capital_limit_cents'] if current else 0
+        current_twd = current_cents // 100
+        amount = simpledialog.askinteger(
+            '設定模擬資金總上限',
+            '請輸入新的累計模擬資金上限（新台幣整數）。\n'
+            f'目前上限：NT$ {current_twd:,}\n'
+            f'目前可用現金：NT$ {current["cash_cents"] // 100:,}\n' if current else
+            '請輸入初始模擬資金總上限（新台幣整數）。',
+            parent=self.root, initialvalue=current_twd if current else 10000,
+            minvalue=current_twd if current else 1
+        )
+        if amount is None:
             return
-        amount = int(raw)
+        if not messagebox.askyesno(
+            '確認模擬資金上限',
+            f'將模擬資金總上限設定為 NT$ {amount:,}。\n'
+            '若高於目前上限，增加額會加入可用現金；既有模擬持倉與交易紀錄會保留。\n\n'
+            '確認套用嗎？',
+            parent=self.root
+        ):
+            return
         self.root.configure(cursor='watch')
+        self.paper_capital_button.configure(state='disabled')
         def work():
             try:
                 state = paper_portfolio.set_capital_limit(self.service.db_path, amount)
-                self.events.put(('capital_saved', state))
+                self.events.put(('capital_saved', dict(
+                    account=state, previous_limit_cents=current_cents,
+                    added_cents=max(0, state['capital_limit_cents']-current_cents)
+                )))
             except Exception as exc:
-                self.events.put(('refresh_error', redact(exc)))
+                self.events.put(('capital_error', redact(exc)))
         threading.Thread(target=work, name='paper-capital-worker', daemon=True).start()
 
     def launch(self, trigger):
@@ -236,9 +298,22 @@ class Dashboard:
                     self.refresh()
                 elif kind == 'position_saved':
                     self.refresh()
+                elif kind == 'health':
+                    self.health_running = False
+                    self.last_health = payload
+                    self.balance_hold = bool(payload.get('balance_below_floor'))
+                    if self.balance_hold:
+                        self.scheduler.stop_auto()
+                        self.status = 'PAUSED_LOW_BALANCE'
+                elif kind == 'health_error':
+                    self.health_running = False
+                    self.last_error = payload
         except queue.Empty:
             pass
         wall, mono = time.time(), time.monotonic()
+        if not self.closing and wall >= self.next_health_at:
+            self.next_health_at = next_health_check_after(wall)
+            self.launch_health()
         if not self.closing and self.scheduler.tick(wall):
             self.launch('AUTO')
         if self.closing and not self.scheduler.scan_lock.locked():
@@ -254,7 +329,10 @@ class Dashboard:
             f'自動掃描：{("下次 " + stamp(nxt) + "　倒數 " + str(max(0, int(nxt-wall))) + " 秒") if nxt else "未啟用"}　　'
             f'掃描間隔：{self.scheduler.interval // 60} 分鐘　　略過重疊時段：{self.scheduler.skipped} 次\n'
             f'手動分析：{stamp(self.scheduler.last_manual)}　　冷卻時間：{str(cooldown)+" 秒" if cooldown else "可立即使用"}\n\n'
-            f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　　最近錯誤：{self.last_error or "無"}')
+            f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　　最近錯誤：{self.last_error or "無"}\n'
+            f'健康檢查：{self.last_health.get("status") if self.last_health else "尚未完成"}'
+            f'　　最近檢查：{self.last_health.get("checked_at") if self.last_health else "--"}'
+            f'　　餘額保護：{"已停止 AUTO" if self.balance_hold else "正常"}')
         self.run_button.configure(state='disabled' if self.closing or cooldown or self.scheduler.scan_lock.locked() or not self.paper_account_configured else 'normal')
         self.root.after(100, self.tick)
 

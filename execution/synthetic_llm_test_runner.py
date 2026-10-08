@@ -179,7 +179,7 @@ def run_synthetic_signal(
     report["session_health_before"] = _health_dict(session)
 
     store = ExecutionStore(
-        root / "data" / "execution" / "execution.sqlite3"
+        root / "data" / "execution" / "synthetic_execution.sqlite3"
     )
 
     # Capture account data ONCE and reuse the exact snapshot in production.
@@ -250,6 +250,8 @@ def run_synthetic_signal(
         env_path=env_path,
         session=session,
         account_snapshot=account_snapshot,
+        execution_db_path=store.path,
+        latest_report_path=root / "data" / "execution" / "latest_synthetic_execution.json",
     )
     report["execution"] = execution_report
     report["session_health_after"] = _health_dict(session)

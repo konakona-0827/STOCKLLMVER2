@@ -38,9 +38,16 @@ class RealOrderResult:
     crosscheck: CrossCheckResult
     status: ExecutionStatus
     filled_quantity: int
-    broker_order_sent: bool
+    broker_order_sent: bool | None
     crosscheck_performed: bool
     automatic_retry_allowed: bool = False
+    send_attempted: bool = False
+
+    @property
+    def changes_position(self) -> bool:
+        return self.filled_quantity > 0 and self.status in (
+            ExecutionStatus.PARTIALLY_FILLED, ExecutionStatus.FILLED,
+        )
 
 
 def extract_seq13(text: Any) -> str | None:
@@ -143,8 +150,35 @@ class CapitalOddLotExecutor:
         )
         sent = parse_send_result(raw)
 
+        # SKCOM's synchronous return code is authoritative: a non-zero code
+        # means the broker rejected the request. Do not persist SUBMITTED or
+        # cross-check a rejected request as though an order had been accepted.
+        if sent.return_code not in (0, None):
+            cross = CrossCheckResult(
+                status=ExecutionStatus.FAILED,
+                expected_seq13=sent.seq13,
+                broker_seq13=None,
+                message=f"SendStockOddLotOrder rejected the request: rc={sent.return_code}",
+            )
+            return RealOrderResult(
+                symbol=sym,
+                side=side,
+                quantity=qty,
+                price=px,
+                send_return_code=sent.return_code,
+                send_message=sent.message,
+                seq13=sent.seq13,
+                crosscheck=cross,
+                status=ExecutionStatus.FAILED,
+                filled_quantity=0,
+                broker_order_sent=False,
+                crosscheck_performed=False,
+                automatic_retry_allowed=False,
+                send_attempted=True,
+            )
+
         # Persist SUBMITTED immediately, before waiting for cross-check.
-        if on_submitted is not None:
+        if sent.return_code == 0 and on_submitted is not None:
             on_submitted(sent)
 
         # For a known SEQ13, stop waiting as soon as the broker reply stream
@@ -160,9 +194,14 @@ class CapitalOddLotExecutor:
                 )
                 if probe.status != ExecutionStatus.UNCONFIRMED:
                     cross = probe
+                # ACK only proves that the order exists. Keep observing for
+                # an actual fill, including additional partial-fill events.
+                if probe.filled_quantity >= qty or probe.status in (
+                    ExecutionStatus.CANCELLED, ExecutionStatus.FAILED,
+                ):
                     break
 
-            if cross is None:
+            if cross is None or cross.filled_quantity < qty:
                 cross = self.session.crosscheck_seq13(
                     sent.seq13,
                     include_report9=True,
@@ -185,8 +224,11 @@ class CapitalOddLotExecutor:
 
         filled = min(qty, max(0, cross.filled_quantity))
 
-        if sent.return_code not in (0, None):
-            final = ExecutionStatus.FAILED
+        if sent.return_code is None:
+            # The call happened, but its acceptance was not established.
+            # Keep the intent claimed and require reconciliation; never retry.
+            final = ExecutionStatus.UNCONFIRMED
+            filled = 0
         elif filled >= qty:
             final = ExecutionStatus.FILLED
         elif filled > 0:
@@ -205,7 +247,8 @@ class CapitalOddLotExecutor:
             crosscheck=cross,
             status=final,
             filled_quantity=filled,
-            broker_order_sent=True,
+            broker_order_sent=None if sent.return_code is None else sent.return_code == 0,
             crosscheck_performed=True,
             automatic_retry_allowed=False,
+            send_attempted=True,
         )

@@ -15,6 +15,18 @@ import position_analyzer
 import scan_store
 from advice_interface import write_advice_interface
 import paper_portfolio
+from scheduler import is_twse_oddlot_market_window
+
+
+def should_call_openai(trigger, candidates, stopped, wall):
+    if stopped or not candidates:
+        return False
+    if trigger == 'MANUAL':
+        return True
+    return is_twse_oddlot_market_window(wall) and any(
+        c.get('quote_status') == 'LIVE' and not c.get('is_trial')
+        for c in candidates
+    )
 
 
 def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_symbols=(), paper_positions=()):
@@ -143,10 +155,14 @@ class AnalysisService:
         request = position_analyzer.build_request(candidates, paper_state)
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
-        if candidates and not self.stop.is_set():
+        if should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
+                              stopped=self.stop.is_set(), wall=now().timestamp()):
             decision, response = position_analyzer.analyze(candidates, request)
         else:
-            decision = dict(market_view='沒有可分析集合，或已要求停止。', decisions=[])
+            reason = ('AUTO 等待盤中零股交易時段及有效即時行情。'
+                      if manifest['trigger_type'] == 'AUTO' and not self.stop.is_set()
+                      else '沒有可分析集合，或已要求停止。')
+            decision = dict(market_view=reason, decisions=[])
             response = dict(validation='NOT_CALLED', api={}, raw_response='')
         phase('PROCESSING_RESULT')
         if response['validation'] == 'VALID' and not self.stop.is_set():
@@ -183,9 +199,44 @@ class AnalysisService:
         save_json(directory/'sqlite_result.json', db_result)
         save_json(directory/'run.json', manifest)
         save_json(self.directory/'latest_dashboard.json', result)
-        write_advice_interface(result, directory/'advice_interface.json')
+        advice_path = directory/'advice_interface.json'
+        write_advice_interface(result, advice_path)
         write_advice_interface(result, self.directory/'latest_advice.json')
+
+        execution_report = self._execute_after_advice_written(
+            manifest.get('trigger_type'), result, directory, advice_path,
+        )
+        if execution_report is not None:
+            result['execution_report'] = execution_report
+            save_json(directory/'dashboard_result.json', result)
+            save_json(self.directory/'latest_dashboard.json', result)
         return result
+
+    def _execute_after_advice_written(self, trigger, result, directory, advice_path):
+        # Only the scheduled production cycle may reach live execution. Manual
+        # dashboard runs are explicitly analysis/simulation actions.
+        manifest = result.get('manifest') or {}
+        if (trigger != 'AUTO' or manifest.get('status') != 'COMPLETE'
+                or manifest.get('ai_validation') != 'VALID'):
+            return None
+
+        from execution.broker_runtime import get_broker_runtime
+
+        try:
+            # The same COM-owning broker thread handles every AUTO cycle and
+            # the hourly read-only health check; no duplicate Capital login.
+            report = get_broker_runtime(ROOT).execute(advice_path)
+        except Exception as exc:
+            report = {
+                'status': 'ERROR',
+                'advice_path': str(advice_path),
+                'reason': redact(f'{type(exc).__name__}: {exc}'),
+                'automatic_retry': False,
+            }
+            latest_execution = self.directory.parent/'execution'/'latest_live_execution.json'
+            save_json(latest_execution, report)
+        save_json(directory/'execution_report.json', report)
+        return report
 
     def refresh(self):
         path = self.directory/'latest_dashboard.json'

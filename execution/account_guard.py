@@ -135,6 +135,14 @@ def query_inventory(
         try:
             raws = session.query_real_balance_rows()
             rows = [parse_real_balance_row(x) for x in raws]
+            malformed = [raw for raw, row in zip(raws, rows)
+                         if str(raw).strip() and not str(raw).startswith("##")
+                         and row is None]
+            if malformed:
+                raise AccountCheckError(
+                    f"GetRealBalanceReport has {len(malformed)} unparsed rows; "
+                    "inventory is not trustworthy"
+                )
             return [x for x in rows if x is not None]
         except CapitalReplySessionError as exc:
             last_exc = exc
