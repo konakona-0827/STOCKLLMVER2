@@ -37,6 +37,12 @@ class ReplySnapshot:
     real_balance_rows: list[str] = field(default_factory=list)
     real_balance_complete: bool = False
 
+    def begin_replay(self) -> None:
+        """Discard the previous Reply connection's events before a fresh replay."""
+        self.replay_complete = False
+        self.all_rows.clear()
+        self.tc_rows.clear()
+
     def copy(self) -> "ReplySnapshot":
         return ReplySnapshot(
             replay_complete=self.replay_complete,
@@ -421,8 +427,9 @@ class CapitalReplySession:
                 "Cannot reconnect SKReply without an existing logged-in session."
             )
 
-        # A new ConnectByID should produce a new replay completion.
-        self.snapshot.replay_complete = False
+        # ConnectByID replays historical orders again. Keeping the prior rows
+        # would count the same fills once per quote-driven Reply reconnect.
+        self.snapshot.begin_replay()
         rc = self._skR.SKReplyLib_ConnectByID(self.user)
         if rc != 0:
             raise CapitalReplySessionError(

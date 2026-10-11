@@ -14,6 +14,7 @@ from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
 )
+from market_calendar import twse_closed_reason
 from analysis_service import AnalysisService
 import position_store
 import paper_portfolio
@@ -264,6 +265,39 @@ class Dashboard:
             ['委託時間','股票代號','方向','委託股數','帳本成交股數','券商回報成交明細',
              '券商回報成交價金','未確認成交股數','已取消餘量','券商事件推定','事件數',
              '委託價','帳本狀態','券商回報核對','券商序號','分析回合'])
+        settlement_tab = ttk.Frame(self.notebook)
+        self.notebook.add(settlement_tab, text='預計交割')
+        self.settlement_status_text = tk.StringVar(value='等待券商查詢交割資料。')
+        ttk.Label(settlement_tab, textvariable=self.settlement_status_text,
+                  anchor='w', justify='left', wraplength=1380,
+                  padding=(10, 8)).pack(fill='x')
+        ttk.Button(settlement_tab, text='查看正式委託與成交紀錄',
+                   command=lambda: self.notebook.select(self.live_trade_tree.master)).pack(
+                       anchor='w', padx=10, pady=(0, 6))
+        settlement_grid = ttk.Frame(settlement_tab)
+        settlement_grid.pack(fill='both', expand=True, padx=8, pady=(0, 8))
+        settlement_grid.columnconfigure(0, weight=1)
+        settlement_grid.rowconfigure(0, weight=1)
+        settlement_columns = ('交易日', '應付', '應收', '淨額', '資料說明')
+        self.settlement_tree = ttk.Treeview(
+            settlement_grid, columns=settlement_columns, show='tree headings')
+        self.settlement_tree.heading('#0', text='交割日／展開日彙總')
+        self.settlement_tree.column('#0', width=250, minwidth=200, stretch=False)
+        for column, width in (('交易日', 130), ('應付', 150), ('應收', 150),
+                              ('淨額', 160), ('資料說明', 460)):
+            self.settlement_tree.heading(column, text=column)
+            self.settlement_tree.column(column, width=width,
+                                        minwidth=width if column != '資料說明' else 250,
+                                        anchor='w' if column == '資料說明' else 'e')
+        settlement_y = ttk.Scrollbar(settlement_grid, orient='vertical',
+                                     command=self.settlement_tree.yview)
+        settlement_x = ttk.Scrollbar(settlement_grid, orient='horizontal',
+                                     command=self.settlement_tree.xview)
+        self.settlement_tree.configure(yscrollcommand=settlement_y.set,
+                                       xscrollcommand=settlement_x.set)
+        self.settlement_tree.grid(row=0, column=0, sticky='nsew')
+        settlement_y.grid(row=0, column=1, sticky='ns')
+        settlement_x.grid(row=1, column=0, sticky='ew')
         detail = ttk.Frame(self.notebook)
         self.notebook.add(detail, text='分析結果與理由')
         self.detail = tk.Text(detail, wrap='word', padx=14, pady=12, font=('Microsoft JhengHei UI', 10), spacing1=2, spacing3=5)
@@ -272,12 +306,12 @@ class Dashboard:
         system = ttk.Frame(self.notebook)
         self.notebook.add(system, text='系統資訊')
         for title, variable in (
-                ('執行與健康檢查', self.system_status_text),
-                ('AI 額度與持倉參考市值', self.system_budget_text),
-                ('券商餘額與新買預算算法', self.system_finance_text),
-                ('預計交割明細', self.system_settlement_text),
-                ('券商成交與風控占用', self.spend_text),
-                ('行情掃描', self.market_text)):
+                ('執行與健康檢查：', self.system_status_text),
+                ('AI 額度與持倉參考市值：', self.system_budget_text),
+                ('券商餘額與新買預算算法（為了保留戶頭至少 NT$10,000）：', self.system_finance_text),
+                ('預計交割明細：', self.system_settlement_text),
+                ('券商成交與風控占用：', self.spend_text),
+                ('行情掃描：', self.market_text)):
             ttk.Label(system, text=title, font=('Microsoft JhengHei UI', 10, 'bold'),
                       padding=(12, 8, 12, 2)).pack(fill='x')
             ttk.Label(system, textvariable=variable, anchor='w', justify='left',
@@ -542,14 +576,26 @@ class Dashboard:
         fill_mismatch = any(
             row.get('status') == 'FILL_MISMATCH'
             for row in health.get('broker_order_reconciliation') or [])
-        pending_orders = [row for row in health.get('broker_order_reconciliation') or []
-                          if int(row.get('unconfirmed_qty') or 0) > 0]
+        pending_orders = health.get('unresolved_attempts') or []
+        health_status = health.get('status', '待檢查')
+        health_label = {
+            'OK': '正常', 'PENDING_ORDER': '未結委託（待券商回報）',
+            'WARN': '警示', 'ALERT': '異常', 'ERROR': '錯誤',
+        }.get(health_status, health_status)
         health_note = ('（券商成交股數與正式帳本不一致；請重新整理對帳）' if fill_mismatch else
-                       '（有委託部分成交或尚未見成交事件）' if pending_orders else
-                       '（前次分析失敗；本次券商資料已確認）'
-                       if health.get('status') == 'WARN'
-                       and health.get('last_scan_status') == 'ERROR'
-                       and health.get('buy_sources_verified') else '')
+                       f'（{len(pending_orders)} 筆委託尚未結束；未結買單餘量如有，已納入預算保留）'
+                       if health_status == 'PENDING_ORDER' else '')
+        if health_status in ('WARN', 'ALERT', 'ERROR'):
+            reasons = [BUY_BLOCK_LABELS.get(code, code)
+                       for code in health.get('buy_block_reasons') or []]
+            if reasons:
+                health_note += '（' + '；'.join(dict.fromkeys(reasons)) + '）'
+            if pending_orders:
+                health_note += f'（另有 {len(pending_orders)} 筆未結委託）'
+        if health.get('last_scan_status') == 'ERROR':
+            health_note += '（上次分析失敗；請查看分析紀錄）'
+        if health.get('last_execution_status') == 'ERROR':
+            health_note += '（上次委託執行失敗；請查看正式委託紀錄）'
         if health.get('latest_health_write_warning'):
             health_note += '（健康檢查檔案寫入受阻；券商資料已另存正式資料庫）'
         broker_line = (f"券商可買：{broker_balance if broker_balance is not None else '未確認'} 元　"
@@ -558,13 +604,26 @@ class Dashboard:
         checked_at = (health.get('checked_at') or '--').replace('T', ' ')
         if checked_at != '--':
             checked_at = checked_at[5:19]
+        broker_buy_label = (f'NT$ {float(broker_balance):,.0f}'
+                            if broker_balance is not None else '待確認')
         budget_label = (f'NT$ {float(current_buy_budget):,.0f}'
                         if current_buy_budget is not None else '待確認')
+        auto_label = (
+            f'下次 {datetime.fromtimestamp(nxt, TAIPEI):%m/%d %H:%M}，'
+            f'倒數 {max(0, math.ceil(nxt-wall))} 秒'
+            if nxt else '未啟用（倒數 --）')
         self.status_text.set(
-            f'健康 {health.get("status", "待檢查")}　｜　'
-            f'持倉 {"不一致" if mismatches else "相符" if comparisons else "待核對"}　｜　'
-            f'券商對帳 {checked_at}　｜　未確認委託 {len(pending_orders)} 筆　｜　'
-            f'可新買 {budget_label}　｜　{STATUS_LABELS.get(self.status, self.status)}')
+            f'現在時間 {now():%m/%d %H:%M:%S}（台北）　｜　'
+            f'自動掃描：{auto_label}　｜　'
+            f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　｜　'
+            f'健康：{health_label}　｜　'
+            f'券商對帳：{checked_at}　｜　'
+            f'資料驗證：{"券商庫存已查詢" if health.get("broker_inventory_verified") else "未完成"}\n'
+            f'券商可買：{broker_buy_label}　｜　'
+            f'未解委託：{len(health.get("unresolved_attempts") or [])} 筆　｜　'
+            f'新買單預算：{budget_label}　｜　'
+            f'正式委託：{len(health.get("execution_attempts") or [])} 筆　｜　'
+            f'持倉核對：{"不一致" if mismatches else "相符" if comparisons else "待核對"}')
         self.system_status_text.set(
             f'現在時間：{now().isoformat(timespec="seconds")}（台北時間 UTC+8）\n'
             f'最近完成分析：{self.last_scan or "尚無"}\n\n'
@@ -572,7 +631,7 @@ class Dashboard:
             f'掃描間隔：{self.scheduler.interval // 60} 分鐘　　因分析進行中而略過的自動掃描：{self.scheduler.skipped} 次\n'
             f'手動分析：{stamp(self.scheduler.last_manual)}　　冷卻時間：{str(cooldown)+" 秒" if cooldown else "可立即使用"}\n\n'
             f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　　最近錯誤：{self.last_error or "無"}\n'
-            f'健康檢查：{health.get("status", "尚未完成")}{health_note}'
+            f'健康檢查：{health_label}{health_note}'
             f'　　最近檢查：{health.get("checked_at") or "--"}\n'
             f'券商對帳：{"持倉已核對" if health.get("broker_inventory_verified") else "尚未完成"}'
             f'　　對帳時間：{health.get("checked_at") or "--"}'
@@ -727,7 +786,11 @@ class Dashboard:
             f'當日 BUY 風控額度占用（含已成交與未結委託，非交割款）：{reserved_text}')
         block_reasons = [BUY_BLOCK_LABELS.get(code, code)
                          for code in health.get('buy_block_reasons') or []]
-        if health.get('budget_status') == 'READY':
+        closed_reason = twse_closed_reason(now().date())
+        if closed_reason:
+            self.budget_reason_text.set(
+                f'新買委託：證交所今日休市（{closed_reason}）；目前行情不可用於交易，請於下個交易日再掃描。')
+        elif health.get('budget_status') == 'READY':
             self.budget_reason_text.set(
                 '新買委託：可依可新買額度評估；送單前仍會重新查券商餘額。')
         elif block_reasons:
@@ -745,36 +808,73 @@ class Dashboard:
             except (TypeError, ValueError, InvalidOperation):
                 return '待確認'
         dues = health.get('broker_settlement_dues') or []
+        expanded_dates = {
+            self.settlement_tree.item(item, 'text')
+            for item in self.settlement_tree.get_children()
+            if self.settlement_tree.item(item, 'open')
+        }
+        self.settlement_tree.delete(*self.settlement_tree.get_children())
         if health.get('settlement_query_error'):
-            self.settlement_text.set('交割款待券商查詢\n已確認成交價金：' + spend)
-            self.system_settlement_text.set('券商近三日交割應收付：暫無可核實資料；請重新整理。')
+            self.settlement_text.set('預計交割：待券商查詢\n已確認成交價金：' + spend)
+            self.system_settlement_text.set('券商近三個交易日的交割資料暫不可用；請重新整理並與券商對帳。')
+            self.settlement_status_text.set(
+                '券商交割查詢失敗；目前沒有可核實的預計交割明細。請重新整理並與券商對帳。')
         elif dues:
-            due_lines = []
-            payable = Decimal('0')
-            nearest_payable = None
+            grouped = {}
+            invalid_rows = 0
             for row in dues:
-                amount = Decimal(str(row['net_twd']))
-                if amount < 0:
-                    payable -= amount
-                    label = '應付'
-                    if nearest_payable is None:
-                        nearest_payable = (row['settlement_date'], -amount)
-                elif amount > 0:
-                    label = '應收'
-                else:
-                    label = '淨額'
-                due_lines.append(f"{row['settlement_date']} {label} {money(abs(amount))}")
-            self.settlement_text.set(
-                (f'{nearest_payable[0]} 應付 {money(nearest_payable[1])}'
-                 if nearest_payable else '近三日無應付交割款') +
-                f'\n已確認成交價金：{spend}')
-            self.system_settlement_text.set(
-                '券商近三日交割應收付（不是銀行已扣款）：' +
-                '；'.join(due_lines) + f'\n列示應付合計：{money(payable)}'
-                '；每日期額以券商回報為準，未從當日可買額重複扣除。')
+                try:
+                    due_day = datetime.strptime(row['settlement_date'], '%Y-%m-%d').date()
+                    trade_day = datetime.strptime(row['trade_date'], '%Y-%m-%d').date()
+                    amount = Decimal(str(row['net_twd']))
+                    if not amount.is_finite():
+                        raise ValueError('非有限金額')
+                except (KeyError, TypeError, ValueError, InvalidOperation):
+                    invalid_rows += 1
+                    continue
+                grouped.setdefault(due_day, []).append((trade_day, amount))
+            if invalid_rows or not grouped:
+                self.settlement_text.set('預計交割：資料待核實\n已確認成交價金：' + spend)
+                self.system_settlement_text.set('券商交割資料格式不完整；請重新整理並與券商對帳。')
+                self.settlement_status_text.set(
+                    f'券商交割資料有 {invalid_rows} 筆格式不符，暫不顯示不完整的合計；請重新整理並與券商對帳。')
+            else:
+                payable = Decimal('0')
+                receivable = Decimal('0')
+                for due_day in sorted(grouped):
+                    entries = grouped[due_day]
+                    net = sum((amount for _, amount in entries), Decimal('0'))
+                    payable += max(Decimal('0'), -net)
+                    receivable += max(Decimal('0'), net)
+                    label = f'{due_day:%m/%d}（{due_day:%Y-%m-%d}）'
+                    parent = self.settlement_tree.insert('', 'end', text=label,
+                        open=label in expanded_dates,
+                        values=('--', money(max(Decimal('0'), -net)),
+                                money(max(Decimal('0'), net)), f'NT$ {net:+,.2f}',
+                                f'券商回傳 {len(entries)} 筆交易日彙總'))
+                    for index, (trade_day, amount) in enumerate(entries, 1):
+                        self.settlement_tree.insert(parent, 'end',
+                            text=f'券商日彙總 {index}',
+                            values=(trade_day.isoformat(),
+                                    money(max(Decimal('0'), -amount)),
+                                    money(max(Decimal('0'), amount)),
+                                    f'NT$ {amount:+,.2f}',
+                                    '交易日淨額；券商 API 未提供逐筆交割款'))
+                self.settlement_text.set(
+                    f'預計應付 {money(payable)}　預計應收 {money(receivable)}\n'
+                    f'已確認成交價金：{spend}　明細見「預計交割」')
+                self.system_settlement_text.set(
+                    f'券商近三個交易日：預計應付 {money(payable)}；預計應收 {money(receivable)}；'
+                    '逐日金額見「預計交割」分頁。非銀行已扣款，未從當日可買額重複扣除。')
+                self.settlement_status_text.set(
+                    f'券商查詢時間：{health.get("checked_at") or "--"}　'
+                    f'預計應付合計：{money(payable)}　預計應收合計：{money(receivable)}\n'
+                    '點交割日左側箭頭可展開交易日彙總。GetT3DueAmt 僅提供最近三個交易日的交割淨額，'
+                    '不含逐筆交割款；個別已核實成交請查看正式委託紀錄。')
         else:
-            self.settlement_text.set('交割款待券商查詢\n已確認成交價金：' + spend)
-            self.system_settlement_text.set('券商近三日交割應收付：待券商查詢。')
+            self.settlement_text.set('預計交割：待券商查詢\n已確認成交價金：' + spend)
+            self.system_settlement_text.set('券商近三個交易日的交割資料：待券商查詢。')
+            self.settlement_status_text.set('等待券商查詢交割資料；請重新整理並與券商對帳。')
         fresh_quotes = current_position_quotes(health, self.result)
         broker_rows = health.get('inventory_comparison') or []
         held = [row for row in broker_rows if int(row.get('broker_cash_qty') or 0) > 0]
@@ -793,9 +893,10 @@ class Dashboard:
         if health.get('budget_status') == 'BLOCKED':
             buy_budget += '（暫停新買單）'
         self.paper_text.set(
-            f'上限 {cap}　已投入 {money(health.get("ai_committed_capital_twd"))}\n'
-            f'未結保留 {money(health.get("pending_buy_reserve_twd"))}　'
-            f'可新買 {buy_budget}')
+            f'總上限：{cap}　已投入：{money(health.get("ai_committed_capital_twd"))}\n'
+            f'未結保留：{money(health.get("pending_buy_reserve_twd"))}　'
+            f'上限剩餘：{money(health.get("strategy_remaining_twd"))}\n'
+            f'AI 可新買：{buy_budget}　持倉參考市值：{market_value}')
         self.system_budget_text.set(
             f'AI 資金總上限：{cap}　AI 持倉投入估算（成交價＋費用緩衝）：'
             f'{money(health.get("ai_committed_capital_twd"))}　'
@@ -803,14 +904,15 @@ class Dashboard:
             f'總上限剩餘：{money(health.get("strategy_remaining_twd"))}　'
             f'可供新買：{buy_budget}　持倉參考市值：{market_value}')
         self.finance_text.set(
-            f'一戶通餘額 {money(health.get("broker_one_account_balance_twd"))}　'
-            f'可出金 {money(health.get("broker_withdrawable_twd"))}\n'
-            f'當日可買進 {broker_cash}')
+            f'一戶通餘額：{money(health.get("broker_one_account_balance_twd"))}　'
+            f'可出金：{money(health.get("broker_withdrawable_twd"))}\n'
+            f'當日可買進：{broker_cash}')
         self.system_finance_text.set(
             f'券商一戶通餘額：{money(health.get("broker_one_account_balance_twd"))}　'
             f'可出金：{money(health.get("broker_withdrawable_twd"))}　'
             f'當日可買進：{broker_cash}　查詢時間：{health.get("checked_at") or "--"}\n'
             f'當日可買進 − 最低保留 {money(health.get("minimum_balance_twd"))}'
+            f'（為了保留戶頭至少 NT$10,000 的可買額）'
             f' − 未結 BUY 安全保留 {money(health.get("pending_buy_reserve_twd"))}'
             f' = 保守可用 {money(health.get("broker_remaining_after_pending_twd"))}；'
             f'再與總上限剩餘及當日剩餘額度 {money(health.get("daily_buy_remaining_twd"))} 取最低。'

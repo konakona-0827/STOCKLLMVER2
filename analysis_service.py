@@ -1,12 +1,13 @@
 """Background SKCOM -> ranking/position union -> OpenAI -> immutable research run."""
 import json
 import sqlite3
+from datetime import datetime
 from decimal import Decimal
 from contextlib import closing
 from pathlib import Path
 import threading
 import uuid
-from config import ROOT, load_env, now, redact
+from config import ROOT, TAIPEI, load_env, now, redact
 from main import Audit, save_json, single_instance
 from universe import load_universe, load_rules
 from capital_multi_quote import multi_snapshot
@@ -18,17 +19,20 @@ import scan_store
 from advice_interface import write_advice_interface
 import paper_portfolio
 from scheduler import is_twse_oddlot_market_window
+from market_calendar import twse_closed_reason
 
 
 def should_call_openai(trigger, candidates, stopped, wall):
     if stopped or not candidates:
         return False
-    if trigger == 'MANUAL':
-        return True
-    return is_twse_oddlot_market_window(wall) and any(
+    has_live_candidate = any(
         c.get('quote_status') == 'LIVE' and not c.get('is_trial')
         for c in candidates
     )
+    if trigger == 'MANUAL':
+        return (twse_closed_reason(datetime.fromtimestamp(wall, TAIPEI).date()) is None
+                and has_live_candidate)
+    return is_twse_oddlot_market_window(wall) and has_live_candidate
 
 
 def live_buy_budget(broker_health, daily_reserved, strategy_cap, daily_limit):
@@ -269,11 +273,22 @@ class AnalysisService:
                               stopped=self.stop.is_set(), wall=now().timestamp()):
             decision, response = position_analyzer.analyze(candidates, request)
         else:
+            market_closed = twse_closed_reason(now().date())
+            has_live_candidate = any(
+                c.get('quote_status') == 'LIVE' and not c.get('is_trial')
+                for c in candidates
+            )
             reason = ('券商可買額、未結委託保留或 AI 累計投入額不足以支持新買單，本輪已停止 AI 決策與委託。'
                       if not budget_ready else
-                      'AUTO 等待盤中零股交易時段及有效即時行情。'
+                      f'證交所今日休市（{market_closed}）；目前只有歷史行情，'
+                      '可買股數為 0。本輪不呼叫 AI，也不送出委託。'
+                      if market_closed else
+                      '沒有可驗證的即時行情；可買股數為 0。本輪不呼叫 AI，也不送出委託。'
+                      if not has_live_candidate else
+                      'AUTO 等待盤中零股交易時段；本輪不呼叫 AI，也不送出委託。'
                       if manifest['trigger_type'] == 'AUTO' and not self.stop.is_set()
                       else '沒有可分析集合，或已要求停止。')
+            manifest['display_notice'] = reason
             decision = dict(market_view=reason, decisions=[])
             response = dict(validation='NOT_CALLED', api={
                 'error':'BUY_BUDGET_CHECK_FAILED' if not budget_ready else None,

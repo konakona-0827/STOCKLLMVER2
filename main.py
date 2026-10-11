@@ -14,6 +14,7 @@ from capital import CapitalMarket
 from history import History
 from universe import load_universe
 import llm
+from scheduler import is_twse_oddlot_market_window
 
 
 def save_json(path, payload):
@@ -80,7 +81,7 @@ def snapshot(symbol, quote=None, warnings=None, at=None, asset_type='UNKNOWN'):
     for key in ('exchange_time', 'fetched_at', 'received_at', 'callback_received_at',
                 'price', 'bid', 'ask', 'volume_shares', 'quote_basis', 'is_trial', 'retrieval_method'):
         result[key] = quote.get(key)
-    market_open = at.weekday() < 5 and 9 * 60 <= at.hour * 60 + at.minute < 13 * 60 + 30
+    market_open = is_twse_oddlot_market_window(at.timestamp())
     result['data_quality'] = 'LIVE' if market_open and age <= MAX_QUOTE_AGE_SECONDS else 'LAST_KNOWN'
     if result['data_quality'] == 'LAST_KNOWN':
         result['warnings'].append('這不是即時行情；交易時間為 ' + quote['exchange_time'])

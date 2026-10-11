@@ -22,6 +22,7 @@ class BrokerRefreshSnapshotTests(unittest.TestCase):
                           broker_balance_twd='30541', minimum_balance_twd='10000',
                           daily_buy_limit_twd='20000', daily_buy_reserved_twd='12000',
                           strategy_cap_twd='10000',
+                          pending_buy_reserve_twd='0', ai_committed_capital_twd='0',
                           balance_below_floor=False, inventory_checked=True,
                           inventory_comparison=[dict(symbol='2449', broker_cash_qty=3,
                                                      ai_qty=0, configured_user_qty=3,
@@ -30,7 +31,7 @@ class BrokerRefreshSnapshotTests(unittest.TestCase):
             snapshot = persist_refresh_snapshot(root, report)
             self.assertEqual('30541', snapshot['broker_balance_twd'])
             self.assertTrue(snapshot['broker_inventory_verified'])
-            self.assertEqual('8000.0', snapshot['current_buy_budget_twd'])
+            self.assertEqual('8000', snapshot['current_buy_budget_twd'])
             self.assertEqual('READY', snapshot['budget_status'])
             self.assertEqual('SKIPPED_CHECK_FAILED', snapshot['execution_attempts'][0]['status'])
             self.assertEqual(snapshot, latest_refresh_snapshot(root))

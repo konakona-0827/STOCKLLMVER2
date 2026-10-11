@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 from execution.account_guard import BuyingPower, InventoryRow
 from execution.execution_store import ExecutionStore
-from execution.health_monitor import run_health_check
+from execution.health_monitor import persist_refresh_snapshot, run_health_check
 from execution.broker_runtime import BrokerRuntime
 from execution.models import Side
 
@@ -123,6 +123,46 @@ class AtomicAndHealthTests(unittest.TestCase):
                 encoding="utf-8-sig", newline=""
             ) as handle:
                 self.assertEqual("ALERT", list(csv.DictReader(handle))[0]["status"])
+
+    def test_verified_unfilled_order_has_pending_status_and_reserved_budget(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            (root / "config" / "execution_live.json").write_text(
+                json.dumps({"enabled": True, "min_available_to_buy_twd": 10000,
+                            "max_daily_buy_twd": 20000}), encoding="utf-8")
+            analysis_db = root / "data" / "analysis" / "market_history.sqlite3"
+            analysis_db.parent.mkdir(parents=True)
+            with closing(sqlite3.connect(analysis_db)) as con:
+                con.execute("CREATE TABLE paper_account (account_id INTEGER, capital_limit_cents INTEGER)")
+                con.execute("INSERT INTO paper_account VALUES (1, 1000000)")
+                con.execute("CREATE TABLE positions (symbol TEXT, user_qty INTEGER, ai_managed_qty INTEGER)")
+                con.commit()
+            store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
+            store.claim("D1", "R1", "0050", "BUY")
+            detail = dict(seq13="1234567890123", quantity=2, limit_price="1000",
+                          send_return_code=0, filled_quantity=0,
+                          required_twd_with_buffer="2020")
+            store.mark_send_pending("D1", detail)
+            store.mark_submitted("D1", detail)
+            store.finish("D1", "ACKNOWLEDGED", detail)
+            power = BuyingPower(True, True, Decimal("30541"), Decimal("30541"),
+                                Decimal("30541"), "raw")
+            cross = SimpleNamespace(filled_quantity=0, accepted_rows=["ack"], fill_rows=[],
+                                    cancel_rows=[], replay_complete=True,
+                                    report9_contains_seq=True)
+            session = SimpleNamespace(
+                ensure_ready=lambda: SimpleNamespace(action="REUSE"),
+                crosscheck_seq13=lambda *_args, **_kwargs: cross)
+            with patch("execution.health_monitor.query_buying_power", return_value=power), patch(
+                "execution.health_monitor.query_inventory", return_value=[]), patch(
+                "execution.health_monitor.query_settlement_dues", return_value=[]):
+                report = run_health_check(root, session=session)
+            self.assertEqual("PENDING_ORDER", report["status"])
+            self.assertEqual("2020", report["pending_buy_reserve_twd"])
+            snapshot = persist_refresh_snapshot(root, report)
+            self.assertEqual("READY", snapshot["budget_status"])
+            self.assertEqual("7980", snapshot["current_buy_budget_twd"])
 
     def test_broker_runtime_reuses_one_session_for_health_and_two_executions(self):
         with tempfile.TemporaryDirectory() as tmp:

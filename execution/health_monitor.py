@@ -146,10 +146,7 @@ def current_buy_block_reasons(report: dict) -> list[str]:
         reasons.append("BROKER_FILL_UNVERIFIED")
     if report.get("last_execution_status") == "ERROR":
         reasons.append("PRIOR_EXECUTION_ERROR")
-    if (not reasons and report.get("status") != "OK"
-            and not (report.get("status") == "WARN"
-                     and (report.get("last_scan_status") == "ERROR"
-                          or report.get("unresolved_attempts")))):
+    if (not reasons and report.get("status") not in ("OK", "PENDING_ORDER")):
         reasons.append("OTHER_HEALTH_WARNING")
     return reasons
 
@@ -529,8 +526,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                 report["errors"].append(
                     f"log {path.name}: {type(exc).__name__}: {exc}"
                 )
-    if (report["last_scan_status"] == "ERROR"
-            or report["last_execution_status"] == "ERROR"):
+    if report["last_execution_status"] == "ERROR":
         report["status"] = "WARN"
 
     try:
@@ -539,8 +535,6 @@ def run_health_check(project_root: str | Path, *, session=None,
         )
         report["db_ai_positions"] = positions
         report["unresolved_attempts"] = unresolved
-        if unresolved:
-            report["status"] = "WARN"
     except Exception as exc:
         report["errors"].append(f"database: {type(exc).__name__}: {exc}")
 
@@ -751,6 +745,11 @@ def run_health_check(project_root: str | Path, *, session=None,
         report["status"] = "ERROR"
     elif report["balance_below_floor"]:
         report["status"] = "ALERT"
+    elif report["pending_buy_reserve_error"] or report["ai_committed_capital_error"]:
+        if report["status"] == "OK":
+            report["status"] = "WARN"
+    elif report["unresolved_attempts"] and report["status"] == "OK":
+        report["status"] = "PENDING_ORDER"
 
     output.mkdir(parents=True, exist_ok=True)
     line = (f"{checked_at} HEALTH {report['status']} "

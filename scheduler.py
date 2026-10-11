@@ -4,6 +4,7 @@ import threading
 from datetime import datetime, timedelta
 
 from config import TAIPEI
+from market_calendar import twse_closed_reason
 
 AUTO_INTERVAL_SECONDS = 1800
 MANUAL_SCAN_COOLDOWN_SECONDS = 60
@@ -13,7 +14,8 @@ def is_twse_oddlot_market_window(wall):
     """Intraday odd-lot order window in Taipei time; quotes still prove a live day."""
     local = datetime.fromtimestamp(wall, TAIPEI)
     minutes = local.hour * 60 + local.minute
-    return local.weekday() < 5 and 9 * 60 <= minutes < 13 * 60 + 30
+    return (twse_closed_reason(local.date()) is None
+            and 9 * 60 <= minutes < 13 * 60 + 30)
 
 
 def is_health_check_window(wall):

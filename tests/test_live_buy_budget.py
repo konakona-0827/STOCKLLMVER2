@@ -10,10 +10,33 @@ from dashboard import decision_text
 class LiveBuyBudgetTests(unittest.TestCase):
     def test_budget_is_lowest_of_broker_strategy_and_daily_remaining(self):
         result = live_buy_budget(
-            dict(status='OK', errors=[], broker_balance_twd='30541', minimum_balance_twd='10000'),
+            dict(status='OK', errors=[], broker_balance_twd='30541',
+                 minimum_balance_twd='10000', inventory_checked=True,
+                 pending_buy_reserve_twd='0', ai_committed_capital_twd='0',
+                 strategy_cap_twd='10000', daily_buy_limit_twd='20000',
+                 daily_buy_reserved_twd='12000'),
             Decimal('12000'), Decimal('10000'), Decimal('20000'))
         self.assertEqual(Decimal('8000'), result['available'])
         self.assertEqual('READY', result['status'])
+
+    def test_verified_pending_order_reserves_cap_without_blocking_new_buy(self):
+        health = dict(status='PENDING_ORDER', errors=[], broker_balance_twd='30541',
+                      minimum_balance_twd='10000', inventory_checked=True,
+                      inventory_comparison=[dict(status='MATCH')],
+                      broker_order_reconciliation=[dict(status='NO_FILL_YET_VERIFIED')],
+                      unresolved_attempts=[dict(status='ACKNOWLEDGED')],
+                      pending_buy_reserve_twd='1200', ai_committed_capital_twd='3000',
+                      strategy_cap_twd='10000', daily_buy_limit_twd='20000',
+                      daily_buy_reserved_twd='0')
+        result = live_buy_budget(health, Decimal('0'), Decimal('10000'), Decimal('20000'))
+        self.assertEqual(Decimal('5800'), result['available'])
+        self.assertEqual('READY', result['status'])
+
+        health['status'] = 'WARN'
+        health['broker_order_reconciliation'][0]['status'] = 'FILL_UNVERIFIED'
+        result = live_buy_budget(health, Decimal('0'), Decimal('10000'), Decimal('20000'))
+        self.assertEqual(Decimal('0'), result['available'])
+        self.assertEqual('BLOCKED', result['status'])
 
     def test_unconfirmed_daily_reservations_fail_closed(self):
         result = live_buy_budget(
