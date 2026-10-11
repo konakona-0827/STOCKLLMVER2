@@ -22,21 +22,24 @@ def sell_qty(qty, ratio):
     return int((Decimal(qty)*Decimal(str(ratio))).to_integral_value(rounding=ROUND_FLOOR))
 
 
-def build_request(candidates, paper_account=None):
-    live_account = str((paper_account or {}).get('source', '')).startswith('FRESH_BROKER_BUYING_POWER_AFTER_')
-    if live_account:
+def build_request(candidates, paper_account=None, strategy_prompt=None, model=None):
+    source = str((paper_account or {}).get('source', ''))
+    live_account = source.startswith('FRESH_BROKER_BUYING_POWER_AFTER_')
+    matched_rules = live_account or source == 'SIMULATION_MATCHED_LIVE_RULES'
+    if matched_rules:
         from execution.auto_advice_executor import LiveExecutionConfig
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
-    return dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
-                instructions=(ROOT/'prompt_positions.md').read_text(encoding='utf-8'),
+    return dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
+                instructions=(strategy_prompt if strategy_prompt is not None else
+                              (ROOT/'prompt_positions.md').read_text(encoding='utf-8')),
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
                                      paper_account=paper_account,
                                      account_source='FRESH_BROKER_CHECKED' if live_account else 'PAPER',
                                      paper_simulation_rules=dict(
                                          commission_rate=0.001425,
                                          commission_rounding='floor_to_whole_TWD',
-                                         minimum_commission_twd=float(live_config.min_buy_fee_reserve_twd) if live_account else 1,
-                                         buy_cash_buffer_rate=float(live_config.buy_cash_buffer_rate) if live_account else 0,
+                                         minimum_commission_twd=float(live_config.min_buy_fee_reserve_twd) if matched_rules else 1,
+                                         buy_cash_buffer_rate=float(live_config.buy_cash_buffer_rate) if matched_rules else 0,
                                          max_oddlot_qty_per_trade=MAX_ODDLOT_QTY,
                                          fill_price='candidate.last_price; LIVE quotes only'),
                                      available_buy_budget_twd=(paper_account or {}).get('available_cash_twd')),

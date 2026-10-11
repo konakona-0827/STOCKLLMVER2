@@ -1,15 +1,18 @@
 """Responsive research and guarded live execution dashboard."""
 import argparse
+import json
+import sqlite3
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 import math
 import os
 from pathlib import Path
 import queue
+import re
 import threading
 import time
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
@@ -18,6 +21,7 @@ from market_calendar import twse_closed_reason
 from analysis_service import AnalysisService
 import position_store
 import paper_portfolio
+import strategy_catalog
 
 
 def value(v, percent=False):
@@ -187,9 +191,18 @@ class Dashboard:
         self.broker_shutdown_complete = False
         self.refresh_pending = False
         self.heartbeat = 0
+        self.strategy_audit_cache = {}
+        self.simulation_window = None
         root.title('STOCKLLM｜台股行情與 AI 分析')
         root.geometry('1500x920')
         root.protocol('WM_DELETE_WINDOW', self.close)
+        self.main_tabs = ttk.Notebook(root)
+        self.main_tabs.pack(fill='both',expand=True)
+        self.live_page = ttk.Frame(self.main_tabs)
+        self.sim_page = ttk.Frame(self.main_tabs)
+        self.main_tabs.add(self.live_page,text='正式交易')
+        self.main_tabs.add(self.sim_page,text='策略模擬')
+        self.main_tabs.bind('<<NotebookTabChanged>>',self.on_main_tab_changed)
         style = ttk.Style(root)
         style.configure('Treeview', rowheight=29)
         style.configure('Treeview.Heading', font=('Microsoft JhengHei UI', 10, 'bold'))
@@ -199,10 +212,10 @@ class Dashboard:
                   foreground=[('readonly', '#333333')])
         self.status_text = tk.StringVar()
         self.system_status_text = tk.StringVar()
-        ttk.Label(root, textvariable=self.status_text, anchor='w',
+        ttk.Label(self.live_page, textvariable=self.status_text, anchor='w',
                   padding=(8, 5), font=('Microsoft JhengHei UI', 10, 'bold')).pack(
                       fill='x', padx=20, pady=(8, 4))
-        summary = ttk.Frame(root)
+        summary = ttk.Frame(self.live_page)
         summary.pack(fill='x', padx=20, pady=(0, 4))
         for column in range(3):
             summary.columnconfigure(column, weight=1, uniform='summary')
@@ -225,10 +238,10 @@ class Dashboard:
         self.system_finance_text = tk.StringVar()
         self.system_settlement_text = tk.StringVar()
         self.budget_reason_text = tk.StringVar(value='買進新委託狀態：待券商對帳。')
-        ttk.Label(root, textvariable=self.budget_reason_text, anchor='w', justify='left',
+        ttk.Label(self.live_page, textvariable=self.budget_reason_text, anchor='w', justify='left',
                   padding=(8, 3), foreground='#8B4513').pack(fill='x', padx=20,
                                                               pady=(0, 3))
-        bar = ttk.Frame(root)
+        bar = ttk.Frame(self.live_page)
         bar.pack(fill='x', padx=20, pady=(0, 7))
         ttk.Label(bar, text='資金總上限（TWD）').pack(side='left', padx=(0, 5))
         self.paper_limit_var = tk.StringVar(value='尚未設定')
@@ -249,20 +262,27 @@ class Dashboard:
                                ('重新整理並與券商對帳', lambda: self.refresh(sync_broker=True)), ('開啟最近分析資料夾', self.open_folder),
                                ('設定持倉', self.position_settings)]:
             ttk.Button(bar, text=label, command=command).pack(side='left', padx=4, ipady=3)
+        ttk.Button(bar, text='選擇 MD 策略', command=self.choose_live_strategy).pack(
+            side='left', padx=4, ipady=3)
+        ttk.Label(bar, text='目前策略：').pack(side='left', padx=(8, 0))
+        self.live_strategy_text = tk.StringVar()
+        ttk.Label(bar, textvariable=self.live_strategy_text,
+                  font=('Microsoft JhengHei UI', 9, 'bold')).pack(side='left')
+        self.update_live_strategy_label()
         self.market_text = tk.StringVar(value='行情摘要：尚未取得資料')
-        self.notebook = ttk.Notebook(root)
+        self.notebook = ttk.Notebook(self.live_page)
         self.notebook.pack(fill='both', expand=True, padx=20, pady=(0, 8))
         self.top_tree = self.table('量化排名', ['名次','股票代號','股票名稱','最新價','行情狀態','量化分數','AI 建議','信心度'])
         self.union_tree = self.table('AI 分析清單',
             ['股票代號','股票名稱','納入原因','量化排名','目前 AI 持股','持股核對','持股對帳時間','建議','信心度'],
             hint='目前 AI 持股取自最近券商對帳後的正式帳本；建議與量化排名仍屬分析當時結果。')
         self.position_tree = self.table('持倉概況',
-            ['股票代號','股票名稱','券商現股','AI 管理股數','人工設定股數','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
+            ['股票代號','股票名稱','券商現股','AI 管理股數','人工設定股數','AI 最近買進策略','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
             hint='請按「重新整理並與券商對帳」以取得最新資訊；持倉數量以券商回傳為準。')
         self.quote_tree = self.table('行情與時間（台北時間 UTC+8）', ['股票代號','股票名稱','行情狀態','最新價','資料年齡（秒）','行情時間','請求開始','資料收到','請求完成'])
         self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','正式 AI 股數','人工設定股數','差異狀態'])
         self.live_trade_tree = self.table('正式委託與成交紀錄',
-            ['委託時間','股票代號','方向','委託股數','帳本成交股數','券商回報成交明細',
+            ['委託時間','股票代號','方向','採用策略','AI 理由','委託股數','帳本成交股數','券商回報成交明細',
              '券商回報成交價金','未確認成交股數','已取消餘量','券商事件推定','事件數',
              '委託價','帳本狀態','券商回報核對','券商序號','分析回合'])
         settlement_tab = ttk.Frame(self.notebook)
@@ -333,6 +353,7 @@ class Dashboard:
             '資料年齡（秒）': 115, '行情時間': 180, '請求開始': 180, '資料收到': 180, '請求完成': 180,
             '券商回報成交明細': 235, '券商回報成交價金': 155,
             '券商事件推定': 260, '事件數': 155,
+            'AI 最近買進策略': 180, '採用策略': 175, 'AI 理由': 360,
         }
         for col in columns:
             tree.heading(col, text=col)
@@ -350,6 +371,84 @@ class Dashboard:
         frame.rowconfigure(table_row, weight=1)
         frame.columnconfigure(0, weight=1)
         return tree
+
+    def update_live_strategy_label(self):
+        try:
+            strategy = strategy_catalog.live_selection()
+            self.live_strategy_text.set(Path(strategy['path']).name)
+        except Exception as exc:
+            self.live_strategy_text.set('策略檔案無法讀取：' + redact(exc))
+
+    def choose_live_strategy(self):
+        path = filedialog.askopenfilename(
+            parent=self.root, title='選擇正式交易的 MD 策略', initialdir=str(ROOT),
+            filetypes=[('Markdown 策略', '*.md')])
+        if not path:
+            return
+        try:
+            strategy_catalog.save_live_selection(path)
+            self.update_live_strategy_label()
+        except Exception as exc:
+            messagebox.showerror('策略選擇失敗', redact(exc), parent=self.root)
+
+    def show_live(self):
+        self.main_tabs.select(self.live_page)
+
+    def open_simulation(self):
+        if self.simulation_window is None or not self.simulation_window.window.winfo_exists():
+            from simulation_window import SimulationWindow
+            self.simulation_window = SimulationWindow(self.sim_page)
+            self.simulation_window.window.pack(fill='both',expand=True)
+        self.main_tabs.select(self.sim_page)
+
+    def on_main_tab_changed(self, _event=None):
+        if self.main_tabs.select() == str(self.sim_page):
+            self.open_simulation()
+
+    def run_strategy_info(self, run_id, symbol):
+        if not run_id or not re.fullmatch(r'[A-Za-z0-9_-]+', str(run_id)):
+            return '--', '--'
+        if run_id not in self.strategy_audit_cache:
+            directory = self.service.directory/'runs'/run_id
+            try:
+                manifest = json.loads((directory/'run.json').read_text(encoding='utf-8'))
+                decision = json.loads((directory/'selection_decision.json').read_text(encoding='utf-8'))
+                strategy = manifest.get('strategy') or {}
+                label = f"{strategy.get('name','--')} v{strategy.get('version','--')}" if strategy else '--'
+                reasons = {d['symbol']: d.get('reason','--') for d in decision.get('decisions', [])}
+                self.strategy_audit_cache[run_id] = (label, reasons)
+            except (OSError, ValueError, KeyError):
+                self.strategy_audit_cache[run_id] = ('--', {})
+        label, reasons = self.strategy_audit_cache[run_id]
+        return label, reasons.get(symbol, '--')
+
+    def historical_buy_strategy_labels(self, symbols):
+        """Find the latest confirmed AI BUY even when it is older than health's 100 rows."""
+        if not symbols:
+            return {}
+        path = ROOT/'data'/'execution'/'live_execution.sqlite3'
+        if not path.is_file():
+            return {}
+        labels = {}
+        try:
+            with sqlite3.connect('file:'+str(path.resolve())+'?mode=ro',uri=True,timeout=5) as db:
+                for run_id,symbol,detail_json,status in db.execute(
+                        "SELECT run_id,symbol,detail_json,status FROM execution_attempts "
+                        "WHERE side='BUY' ORDER BY started_at DESC"):
+                    if symbol not in symbols or symbol in labels:
+                        continue
+                    detail = json.loads(detail_json or '{}')
+                    if status not in ('FILLED','PARTIALLY_FILLED','PARTIALLY_FILLED_CANCELLED') \
+                            and int(detail.get('filled_quantity') or 0) <= 0:
+                        continue
+                    label,_ = self.run_strategy_info(run_id,symbol)
+                    if label != '--':
+                        labels[symbol] = label
+                    if len(labels) == len(symbols):
+                        break
+        except (OSError, sqlite3.Error, ValueError):
+            return labels
+        return labels
 
     def start_auto(self):
         if paper_portfolio.account(self.service.db_path) is None:
@@ -647,6 +746,7 @@ class Dashboard:
         self.root.after(100, self.tick)
 
     def render(self):
+        self.update_live_strategy_label()
         for tree in (self.top_tree, self.union_tree, self.position_tree, self.quote_tree):
             tree.delete(*tree.get_children())
         health = self.last_health or {}
@@ -700,6 +800,9 @@ class Dashboard:
                 self.quote_tree.insert('', 'end', values=[q['symbol'],q.get('name') or '股票名稱未取得',QUALITY_LABELS.get(q['quote_status'],q['quote_status']),value(q['last_price']),age,q['quote_timestamp'] or '--',q['request_started_at'],q.get('received_at') or '--',q['request_completed_at']])
             self.detail.configure(state='normal')
             self.detail.delete('1.0','end')
+            strategy = r['manifest'].get('strategy') or {}
+            if strategy:
+                self.detail.insert('end', f"正式交易策略：{strategy.get('name','--')} v{strategy.get('version','--')}\n\n")
             self.detail.insert('end', decision_text(r['decision'], r['analysis_set'],
                 r['manifest'].get('llm_response_received_at'), r.get('execution_budget')))
             if r['manifest'].get('display_notice'):
@@ -713,9 +816,30 @@ class Dashboard:
                 row.get('status') if verified else '券商查詢未完整驗證'])
         self.live_trade_tree.delete(*self.live_trade_tree.get_children())
         order_checks = {x['decision_id']: x for x in health.get('broker_order_reconciliation') or []}
+        latest_buy_strategy = {}
+        for attempt in health.get('execution_attempts') or []:
+            if attempt.get('side') != 'BUY':
+                continue
+            detail = attempt.get('detail') or {}
+            check = order_checks.get(attempt.get('decision_id'), {})
+            filled = int(check.get('broker_verified_filled_qty') or detail.get('filled_quantity') or 0)
+            if filled <= 0:
+                continue
+            label, _ = self.run_strategy_info(attempt.get('run_id'), attempt.get('symbol'))
+            symbol = attempt.get('symbol')
+            stamp = attempt.get('started_at') or ''
+            if label != '--' and (symbol not in latest_buy_strategy or stamp > latest_buy_strategy[symbol][0]):
+                latest_buy_strategy[symbol] = (stamp, label)
+        held_ai_symbols = {row['symbol'] for row in health.get('inventory_comparison') or []
+                           if int(row.get('ai_qty') or 0) > 0}
+        for symbol,label in self.historical_buy_strategy_labels(
+                held_ai_symbols-set(latest_buy_strategy)).items():
+            latest_buy_strategy[symbol] = ('',label)
         for attempt in health.get('execution_attempts') or []:
             detail = attempt.get('detail') or {}
             order_check = order_checks.get(attempt.get('decision_id'), {})
+            strategy_label, ai_reason = self.run_strategy_info(
+                attempt.get('run_id'), attempt.get('symbol'))
             fill_parts = []
             for fill in order_check.get('broker_replay_fill_details') or []:
                 try:
@@ -733,6 +857,7 @@ class Dashboard:
                 gross_text = '待確認'
             self.live_trade_tree.insert('', 'end', values=[
                 attempt.get('started_at'), attempt.get('symbol'), attempt.get('side'),
+                strategy_label, ai_reason,
                 detail.get('quantity', '--'), detail.get('filled_quantity', '--'),
                 '；'.join(fill_parts) if fill_parts else '--', gross_text,
                 order_check.get('unconfirmed_qty', '--'),
@@ -927,6 +1052,7 @@ class Dashboard:
                 symbol, quote[2] if quote and quote[2] else names.get(symbol, '股票名稱未取得'),
                 qty if verified else '--', row.get('ai_qty') if verified else '--',
                 row.get('configured_user_qty') if verified else '--',
+                latest_buy_strategy.get(symbol, ('','--'))[1] if verified and int(row.get('ai_qty') or 0)>0 else '--',
                 reference, value_twd, quote[0].isoformat(timespec='seconds') if quote else '--',
                 row.get('status') if verified else '待券商對帳',
                 health.get('checked_at') or '--'])
@@ -972,6 +1098,8 @@ class Dashboard:
 
     def close(self):
         self.closing = True
+        if self.simulation_window and not self.simulation_window.closed:
+            self.simulation_window.close()
         self.scheduler.stop_auto()
         self.service.stop.set()
         if self.scheduler.scan_lock.locked():

@@ -74,6 +74,8 @@ class DashboardTests(unittest.TestCase):
                 ps.save_manual(self.path,*args)
 
     def test_sell_excludes_user_qty(self):
+        self.c['quote_status'] = 'LIVE'
+        self.answer['decisions'][0]['data_quality'] = 'LIVE'
         self.assertEqual(pa.validate(self.answer,[self.c])['decisions'][0]['suggested_qty'],10)
         self.answer['decisions'][0]['suggested_qty']=15
         with self.assertRaises(ValueError):
@@ -98,6 +100,8 @@ class DashboardTests(unittest.TestCase):
 
     def test_user_only_cannot_sell(self):
         c = copy.deepcopy(self.c)
+        c['quote_status'] = 'LIVE'
+        self.answer['decisions'][0]['data_quality'] = 'LIVE'
         c['position']['ai_managed_qty']=0
         with self.assertRaises(ValueError):
             pa.validate(self.answer,[c])
@@ -134,7 +138,7 @@ class DashboardTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 svc.run('MANUAL')
         runs = list((Path(self.tmp.name)/'runs').glob('*/run.json'))
-        r = json.loads(runs[0].read_text())
+        r = json.loads(runs[0].read_text(encoding='utf-8'))
         self.assertEqual(r['status'],'ERROR')
         self.assertEqual(r['trigger_type'],'MANUAL')
         self.assertIn('finished_at',r)
@@ -150,6 +154,8 @@ class DashboardTests(unittest.TestCase):
     def test_gui_worker_error_releases_lock_and_auto_recovers(self):
         import tkinter as tk
         from dashboard import Dashboard
+        import paper_portfolio
+        paper_portfolio.set_capital_limit(Path(self.tmp.name)/'market_history.sqlite3', 100000)
         root = tk.Tk()
         root.withdraw()
         app = Dashboard(root,Path(self.tmp.name),120)

@@ -18,6 +18,7 @@ def build_advice_interface(result, generated_at=None):
     """Convert one dashboard result into a compact, versioned consumer contract."""
     generated_at = generated_at or now()
     manifest = result.get('manifest') or {}
+    strategy = manifest.get('strategy') or {}
     batch = result.get('batch') or {}
     quotes = {q['symbol']: q for q in batch.get('quotes', [])}
     decisions = {d['symbol']: d for d in (result.get('decision') or {}).get('decisions', [])}
@@ -52,6 +53,8 @@ def build_advice_interface(result, generated_at=None):
         warnings = list(dict.fromkeys([*(quote.get('warnings') or []), *(decision.get('warnings') or [])]))
         recommendations.append({
             'symbol': symbol,
+            'strategy_name': strategy.get('name'),
+            'strategy_version': strategy.get('version'),
             'asset_type': candidate.get('asset_type', 'UNKNOWN'),
             'decision': decision.get('decision', 'WAIT'),
             'confidence': decision.get('confidence', 0),
@@ -82,6 +85,7 @@ def build_advice_interface(result, generated_at=None):
         'run_error': manifest.get('error') or None,
         'llm_validation': validation,
         'llm_model': manifest.get('llm_model'),
+        'strategy': strategy,
         'request_timing': {
             'market_started_at': manifest.get('request_started_at'),
             'market_completed_at': manifest.get('request_completed_at'),

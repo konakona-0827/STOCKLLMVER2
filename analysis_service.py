@@ -18,6 +18,7 @@ import position_analyzer
 import scan_store
 from advice_interface import write_advice_interface
 import paper_portfolio
+import strategy_catalog
 from scheduler import is_twse_oddlot_market_window
 from market_calendar import twse_closed_reason
 
@@ -132,15 +133,18 @@ class AnalysisService:
         if trigger not in ('AUTO', 'MANUAL'):
             raise ValueError('INVALID_TRIGGER')
         load_env()
+        strategy = strategy_catalog.live_selection()
         run_id = now().strftime('%Y%m%dT%H%M%S')+'-gui-'+uuid.uuid4().hex[:8]
         directory = self.directory/'runs'/run_id
         directory.mkdir(parents=True)
         manifest = dict(run_id=run_id, trigger_type=trigger, started_at=now().isoformat(),
-                        run_directory=str(directory.resolve()), real_order_sent=False)
+                        run_directory=str(directory.resolve()), real_order_sent=False,
+                        strategy={k: strategy[k] for k in ('name', 'path', 'version', 'sha256')})
+        (directory/'strategy.md').write_text(strategy['prompt'], encoding='utf-8')
         save_json(directory/'run.json', manifest)
         try:
             with single_instance(self.directory/'runtime.lock'):
-                return self._run(directory, manifest, phase)
+                return self._run(directory, manifest, phase, strategy)
         except Exception as exc:
             manifest.update(finished_at=now().isoformat(), status='ERROR', error=redact(f'{type(exc).__name__}: {exc}'))
             save_json(directory/'run.json', manifest)
@@ -155,7 +159,7 @@ class AnalysisService:
                 save_json(directory/'storage_error.json', {'error':redact(storage_error)})
             raise
 
-    def _run(self, directory, manifest, phase):
+    def _run(self, directory, manifest, phase, strategy):
         universe = load_universe(ROOT/'config'/'universe_tw.json')
         rules = load_rules(ROOT/'config'/'scan_rules.json')
         # The GUI contract is Top 10, independent of a one-shot CLI override.
@@ -265,7 +269,8 @@ class AnalysisService:
             else:
                 c['max_buy_qty'] = 0
         save_json(directory/'analysis_set.json', candidates)
-        request = position_analyzer.build_request(candidates, paper_state)
+        request = position_analyzer.build_request(candidates, paper_state,
+                                                  strategy_prompt=strategy['prompt'])
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
         budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
