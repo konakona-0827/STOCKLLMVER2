@@ -6,6 +6,7 @@ import re
 import time
 from typing import Any, Callable
 
+from .account_guard import AccountCheckError, cash_sellable_qty, query_inventory
 from .capital_crosscheck import CrossCheckResult, recover_unique_new_tc_order
 from .capital_reply_session import CapitalReplySession
 from .models import ExecutionStatus, Side
@@ -125,6 +126,14 @@ class CapitalOddLotExecutor:
             raise CapitalExecutionError(
                 f"Capital session health check failed: {type(exc).__name__}: {exc}"
             ) from exc
+
+        if side == Side.SELL:
+            eligible = cash_sellable_qty(query_inventory(self.session), sym)
+            if qty > eligible:
+                raise AccountCheckError(
+                    f"{sym}: prior-day cash inventory available to sell "
+                    f"{eligible} < requested {qty}; same-day BUY shares are blocked"
+                )
 
         before_tc = self.session.tc_rows_copy()
 

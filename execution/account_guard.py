@@ -225,9 +225,25 @@ def query_inventory(
 
 def cash_sellable_qty(rows: Iterable[InventoryRow], symbol: str) -> int:
     wanted = symbol.strip().upper()
-    # T = 集保/cash inventory. AI executor does not auto-sell financing/short inventory.
+    # T = cash inventory. A same-day BUY cannot become eligible for a SELL,
+    # even if the broker reports it in sellable_qty (day-trading accounts can).
+    # Today's SELL orders may already include fills, so subtract the larger
+    # count once rather than subtracting both fields.
     return sum(
-        max(0, row.sellable_qty)
+        min(
+            max(0, row.sellable_qty),
+            max(0, row.yesterday_qty - max(0, row.today_order_sell,
+                                            row.today_sell_fill)),
+        )
+        for row in rows
+        if row.symbol == wanted and row.inventory_type == "T"
+    )
+
+
+def cash_today_buy_fill_qty(rows: Iterable[InventoryRow], symbol: str) -> int:
+    wanted = symbol.strip().upper()
+    return sum(
+        max(0, row.today_buy_fill)
         for row in rows
         if row.symbol == wanted and row.inventory_type == "T"
     )

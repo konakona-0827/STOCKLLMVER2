@@ -31,7 +31,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
     return dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=(strategy_prompt if strategy_prompt is not None else
-                              (ROOT/'prompt_positions.md').read_text(encoding='utf-8')),
+                              (ROOT/'strategies'/'prompt_positions.md').read_text(encoding='utf-8')),
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
                                      paper_account=paper_account,
                                      account_source='FRESH_BROKER_CHECKED' if live_account else 'PAPER',

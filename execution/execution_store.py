@@ -101,6 +101,32 @@ class ExecutionStore:
                 ),
             )
 
+    def claim_cancel(self, decision_id: str, seq13: str, remaining_qty: int) -> bool:
+        """Record a single no-retry cancel attempt before calling the broker."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute('BEGIN IMMEDIATE')
+            row = con.execute(
+                'SELECT status,detail_json FROM execution_attempts WHERE decision_id=?',
+                (decision_id,),
+            ).fetchone()
+            if row is None or row[0] not in ('ACKNOWLEDGED', 'PARTIALLY_FILLED'):
+                return False
+            detail = json.loads(row[1] or '{}')
+            if (str(detail.get('seq13')) != seq13
+                    or detail.get('send_return_code') != 0
+                    or int(detail.get('quantity') or 0) - int(detail.get('filled_quantity') or 0)
+                    != remaining_qty):
+                return False
+            if con.execute(
+                "SELECT 1 FROM execution_events WHERE decision_id=? AND status='CANCEL_SEND_PENDING' LIMIT 1",
+                (decision_id,),
+            ).fetchone():
+                return False
+            self._insert_event(con, decision_id, 'CANCEL_SEND_PENDING', now,
+                               {'seq13': seq13, 'remaining_qty': remaining_qty})
+            return True
+
     def claim(self, decision_id: str, run_id: str, symbol: str, side: str) -> bool:
         now = datetime.now(timezone.utc).isoformat()
         try:
@@ -371,6 +397,51 @@ class ExecutionStore:
                                dict(seq13=seq13, side=side,
                                     filled_qty=int(broker_filled_qty)))
         return dict(changed=True, symbol=symbol, status=new_status, side=side)
+
+    def reconcile_session_expiry(
+        self, decision_id: str, seq13: str, broker_filled_qty: int,
+    ) -> dict:
+        """Close a prior-day TC ROD remainder without claiming a broker cancel event."""
+        now = datetime.now(timezone.utc)
+        with self._connect() as con:
+            con.execute('BEGIN IMMEDIATE')
+            row = con.execute(
+                'SELECT symbol,side,started_at,status,detail_json FROM execution_attempts WHERE decision_id=?',
+                (decision_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError('formal order is missing')
+            symbol, side, started_at, status, detail_json = row
+            detail = json.loads(detail_json or '{}')
+            ordered = int(detail.get('quantity') or 0)
+            filled = int(broker_filled_qty)
+            if (side not in ('BUY', 'SELL')
+                    or datetime.fromisoformat(started_at).astimezone(TAIPEI).date()
+                    >= now.astimezone(TAIPEI).date()
+                    or str(detail.get('seq13')) != str(seq13)
+                    or detail.get('send_return_code') != 0
+                    or not 0 <= filled < ordered
+                    or int(detail.get('filled_quantity') or 0) != filled):
+                raise RuntimeError('prior-day order expiry is not verified')
+            new_status = 'PARTIALLY_FILLED_EXPIRED' if filled else 'EXPIRED_UNFILLED'
+            if status == new_status:
+                return dict(changed=False, symbol=symbol, status=status)
+            if status not in ('ACKNOWLEDGED', 'PARTIALLY_FILLED'):
+                raise RuntimeError('formal order is not eligible for session expiry')
+            detail.update(exchange_session_expired_at=now.isoformat(),
+                          exchange_session_expired_qty=ordered - filled,
+                          expiry_basis='TC_LIMIT_ROD_PRIOR_DAY_COMPLETE_REPLY_NO_CANCEL_EVENT')
+            con.execute(
+                'UPDATE execution_attempts SET finished_at=?,status=?,detail_json=? WHERE decision_id=?',
+                (now.isoformat(), new_status,
+                 json.dumps(detail, ensure_ascii=False, default=str), decision_id),
+            )
+            self._insert_event(con, decision_id, 'EXCHANGE_SESSION_EXPIRED', now.isoformat(),
+                               dict(seq13=seq13, side=side, filled_qty=filled,
+                                    expired_qty=ordered-filled,
+                                    basis='TC_LIMIT_ROD_PRIOR_DAY_COMPLETE_REPLY'))
+        return dict(changed=True, symbol=symbol, status=new_status, side=side,
+                    expired_qty=ordered-filled)
 
     def ai_positions(self) -> dict[str, int]:
         with self._connect() as con:

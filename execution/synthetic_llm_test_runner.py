@@ -9,6 +9,7 @@ import uuid
 
 from .account_guard import (
     cash_sellable_qty,
+    cash_today_buy_fill_qty,
     realtime_cash_qty,
 )
 from .account_snapshot import capture_account_snapshot
@@ -225,16 +226,28 @@ def run_synthetic_signal(
             if account_snapshot.inventory is not None
             else None
         )
+        today_bought = (
+            cash_today_buy_fill_qty(inv, symbol)
+            if account_snapshot.inventory is not None
+            else None
+        )
+        prior_day_ai_qty = (
+            max(0, effective_ai_qty - today_bought)
+            if today_bought is not None
+            else None
+        )
         report["precheck"] = {
             "broker_realtime_qty": broker_realtime,
             "broker_sellable_qty": broker_sellable,
+            "today_buy_fill_qty": today_bought,
+            "prior_day_ai_sellable_qty": prior_day_ai_qty,
             "inventory_error": account_snapshot.inventory_error,
             "stored_ai_managed_qty": stored_ai_qty,
             "effective_ai_managed_qty": effective_ai_qty,
             "would_allow_sell_by_qty": (
                 broker_sellable is not None
                 and broker_sellable >= req.qty
-                and effective_ai_qty >= req.qty
+                and prior_day_ai_qty >= req.qty
             ),
         }
 

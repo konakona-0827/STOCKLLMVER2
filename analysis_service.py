@@ -183,7 +183,9 @@ class AnalysisService:
                      # value display and inventory context, but are not added
                      # to the AI-managed candidate set by build_union().
                      [p['symbol'] for p in positions] +
-                     [p['symbol'] for p in paper_positions if p['qty'] > 0]))
+                     [p['symbol'] for p in paper_positions if p['qty'] > 0] +
+                     ([row['symbol'] for row in broker_health.get('broker_order_reconciliation', [])
+                       if row.get('symbol')] if broker_health else [])))
         save_json(directory/'paper_account_snapshot.json', paper_state)
         save_json(directory/'universe_snapshot.json', universe)
         save_json(directory/'positions_snapshot.json', positions)
@@ -204,6 +206,41 @@ class AnalysisService:
         completed = now().isoformat()
         batch = multi_snapshot(symbols, raw, errors, started, completed)
         batch['run_id'] = manifest['run_id']
+        cancel_review = None
+        if live_enabled and is_twse_oddlot_market_window(now().timestamp()):
+            import pending_order_ai
+            orders = pending_order_ai.eligible_orders(broker_health, batch['quotes'], now())
+            if orders:
+                cancel_request, cancel_decision, cancel_response = pending_order_ai.analyze(
+                    orders, strategy_prompt=strategy['prompt'])
+                save_json(directory/'pending_order_ai_request.json', cancel_request)
+                save_json(directory/'pending_order_ai_response.json',
+                          dict(decision=cancel_decision, response=cancel_response))
+                cancel_review = dict(orders=orders, decision=cancel_decision,
+                                     validation=cancel_response['validation'], results=[])
+                if cancel_response['validation'] == 'VALID':
+                    from execution.broker_runtime import get_broker_runtime
+                    order_map = {o['decision_id']: o for o in orders}
+                    for item in cancel_decision['decisions']:
+                        if item['action'] != 'CANCEL':
+                            continue
+                        if item['confidence'] < 0.7:
+                            cancel_review['results'].append(dict(
+                                decision_id=item['decision_id'], status='LOW_CONFIDENCE_KEEP'))
+                            continue
+                        try:
+                            outcome = get_broker_runtime(ROOT).cancel_order(order_map[item['decision_id']])
+                        except Exception as exc:
+                            outcome = dict(decision_id=item['decision_id'], status='CANCEL_OUTCOME_UNVERIFIED',
+                                           reason=redact(f'{type(exc).__name__}: {exc}'))
+                        cancel_review['results'].append(outcome)
+                        save_json(directory/'pending_order_cancel_report.json', cancel_review)
+                    if cancel_review['results']:
+                        from execution.health_monitor import sync_broker_state
+                        broker_health, _ = sync_broker_state(ROOT, return_report=True)
+                manifest['real_cancel_sent'] = any(
+                    x.get('cancel_request_sent') is True for x in cancel_review['results'])
+                save_json(directory/'pending_order_cancel_report.json', cancel_review)
         if live_enabled:
             from execution.execution_store import ExecutionStore
             daily_reserved = None
@@ -331,6 +368,8 @@ class AnalysisService:
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
                       paper_trade_history=paper_portfolio.trades(self.db_path))
+        if cancel_review is not None:
+            result['pending_order_cancel_review'] = cancel_review
         if live_enabled:
             result['execution_budget'] = {k:paper_state.get(k) for k in (
                 'available_cash_twd','broker_buying_power_twd','minimum_balance_reserve_twd',

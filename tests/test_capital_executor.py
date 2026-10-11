@@ -3,8 +3,9 @@ from __future__ import annotations
 import unittest
 from decimal import Decimal
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
+from execution.account_guard import AccountCheckError, parse_real_balance_row
 from execution.capital_executor import (
     CapitalExecutionError,
     CapitalOddLotExecutor,
@@ -76,6 +77,20 @@ class CapitalExecutorOfflineTests(unittest.TestCase):
         self.assertEqual(0, result.filled_quantity)
         callback.assert_not_called()
         session.crosscheck_seq13.assert_not_called()
+
+    def test_sell_of_today_buy_is_blocked_before_broker_send(self):
+        send = Mock()
+        session = SimpleNamespace(ensure_ready=Mock(), _skO=SimpleNamespace(
+            SendStockOddLotOrder=send))
+        today = parse_real_balance_row(
+            "2891,T,0,0,0,0,0,1,0,1,0,1,0,0,1,X,0,LOGIN,ACC"
+        )
+        with patch("execution.capital_executor.query_inventory", return_value=[today]):
+            with self.assertRaises(AccountCheckError):
+                CapitalOddLotExecutor(session).send_limit_order(
+                    symbol="2891", side=Side.SELL, quantity=1, price=40,
+                )
+        send.assert_not_called()
 
     def test_ack_does_not_stop_observation_before_confirmed_fill(self):
         seq = "1234567890123"

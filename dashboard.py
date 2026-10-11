@@ -72,6 +72,7 @@ BROKER_EVENT_LABELS = {
     'CANCELLED_NO_FILL': '券商取消，未見成交事件',
     'NO_MATCHING_BROKER_EVENT': '本次未找到對應券商事件',
     'PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED': '先前成交已存證，本次未重播',
+    'EXPIRED_BY_EXCHANGE_RULE': '盤中零股當日有效期限已過；未成交餘量已失效（非券商刪單事件）',
 }
 BUY_BLOCK_LABELS = {
     'BROKER_CHECK_ERROR': '券商查詢錯誤',
@@ -95,6 +96,8 @@ ORDER_LEDGER_LABELS = {
     'PARTIALLY_FILLED_CANCELLED': '部分成交，餘量已取消',
     'ACKNOWLEDGED': '券商已受理', 'UNCONFIRMED': '券商回覆待確認',
     'CANCELLED': '已取消',
+    'EXPIRED_UNFILLED': '當日有效期限已過，未成交',
+    'PARTIALLY_FILLED_EXPIRED': '部分成交，餘量當日失效',
 }
 SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
 
@@ -283,8 +286,9 @@ class Dashboard:
         self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','正式 AI 股數','人工設定股數','差異狀態'])
         self.live_trade_tree = self.table('正式委託與成交紀錄',
             ['委託時間','股票代號','方向','採用策略','AI 理由','委託股數','帳本成交股數','券商回報成交明細',
-             '券商回報成交價金','未確認成交股數','已取消餘量','券商事件推定','事件數',
-             '委託價','帳本狀態','券商回報核對','券商序號','分析回合'])
+             '券商回報成交價金','未確認成交股數','已取消餘量','已失效餘量','券商事件推定','事件數',
+             '委託價','帳本狀態','券商回報核對','券商序號','分析回合',
+             'AI 撤單決定','AI 撤單理由','撤單執行狀態'])
         settlement_tab = ttk.Frame(self.notebook)
         self.notebook.add(settlement_tab, text='預計交割')
         self.settlement_status_text = tk.StringVar(value='等待券商查詢交割資料。')
@@ -816,6 +820,10 @@ class Dashboard:
                 row.get('status') if verified else '券商查詢未完整驗證'])
         self.live_trade_tree.delete(*self.live_trade_tree.get_children())
         order_checks = {x['decision_id']: x for x in health.get('broker_order_reconciliation') or []}
+        cancel_review = (self.result or {}).get('pending_order_cancel_review') or {}
+        cancel_decisions = {x['decision_id']: x for x in
+                            (cancel_review.get('decision') or {}).get('decisions', [])}
+        cancel_results = {x['decision_id']: x for x in cancel_review.get('results', [])}
         latest_buy_strategy = {}
         for attempt in health.get('execution_attempts') or []:
             if attempt.get('side') != 'BUY':
@@ -838,6 +846,8 @@ class Dashboard:
         for attempt in health.get('execution_attempts') or []:
             detail = attempt.get('detail') or {}
             order_check = order_checks.get(attempt.get('decision_id'), {})
+            cancel_decision = cancel_decisions.get(attempt.get('decision_id'), {})
+            cancel_result = cancel_results.get(attempt.get('decision_id'), {})
             strategy_label, ai_reason = self.run_strategy_info(
                 attempt.get('run_id'), attempt.get('symbol'))
             fill_parts = []
@@ -862,6 +872,7 @@ class Dashboard:
                 '；'.join(fill_parts) if fill_parts else '--', gross_text,
                 order_check.get('unconfirmed_qty', '--'),
                 order_check.get('cancelled_qty', '--'),
+                order_check.get('expired_qty', '--'),
                 BROKER_EVENT_LABELS.get(order_check.get('broker_event_status'),
                                         '待券商事件核對'),
                 '受理 {ack}／成交 {fill}／取消 {cancel}'.format(
@@ -877,7 +888,11 @@ class Dashboard:
                  'FILL_UNVERIFIED':'成交尚未確認'}.get(
                     order_check.get('status'),
                     order_check.get('status', '無券商成交核對')),
-                detail.get('seq13', '--'), attempt.get('run_id')])
+                detail.get('seq13', '--'), attempt.get('run_id'),
+                {'KEEP': '保留委託', 'CANCEL': '要求撤單'}.get(
+                    cancel_decision.get('action'), '--'),
+                cancel_decision.get('reason', '--'),
+                cancel_result.get('status', '--')])
         checks = health.get('broker_order_reconciliation') or []
         known_gross = Decimal('0')
         unpriced_fill = False

@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from execution.account_guard import (
     cash_sellable_qty,
+    cash_today_buy_fill_qty,
     parse_get_balance,
     parse_real_balance_row,
 )
@@ -36,6 +37,23 @@ class AccountGuardTests(unittest.TestCase):
             "2891,C,0,0,0,0,3,0,0,0,0,3,0,0,3,X,0,LOGIN,ACC"
         )
         self.assertEqual(7, cash_sellable_qty([a, b], "2891"))
+
+    def test_today_buy_is_not_sellable_until_next_day(self):
+        today = parse_real_balance_row(
+            "2891,T,0,0,0,0,0,5,0,5,0,5,0,0,5,X,0,LOGIN,ACC"
+        )
+        tomorrow = parse_real_balance_row(
+            "2891,T,0,0,0,0,5,0,0,0,0,5,0,0,5,X,0,LOGIN,ACC"
+        )
+        self.assertEqual(5, cash_today_buy_fill_qty([today], "2891"))
+        self.assertEqual(0, cash_sellable_qty([today], "2891"))
+        self.assertEqual(5, cash_sellable_qty([tomorrow], "2891"))
+
+    def test_only_older_shares_remain_sellable(self):
+        mixed = parse_real_balance_row(
+            "2891,T,0,0,0,0,7,5,2,5,2,10,0,0,10,X,0,LOGIN,ACC"
+        )
+        self.assertEqual(5, cash_sellable_qty([mixed], "2891"))
 
 
 if __name__ == "__main__":

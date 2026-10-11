@@ -93,12 +93,17 @@ def _read_analysis_positions(path: Path) -> dict[str, dict[str, int]]:
 def _read_order_keys(path: Path) -> list[dict]:
     with closing(sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True, timeout=10)) as con:
         return [dict(decision_id=decision_id, symbol=symbol, side=side,
-                     status=status,
+                     status=status, started_at=started_at,
+                     cancel_requested=bool(cancel_requested),
                      detail=json.loads(detail_json or "{}"))
-                for decision_id, symbol, side, status, detail_json in con.execute(
-                    """SELECT decision_id,symbol,side,status,detail_json FROM execution_attempts
+                for decision_id, symbol, side, status, started_at, detail_json, cancel_requested in con.execute(
+                    """SELECT a.decision_id,a.symbol,a.side,a.status,a.started_at,a.detail_json,
+                              EXISTS(SELECT 1 FROM execution_events e WHERE e.decision_id=a.decision_id
+                                     AND e.status='CANCEL_SEND_PENDING')
+                       FROM execution_attempts a
                        WHERE status IN ('FILLED','PARTIALLY_FILLED','ACKNOWLEDGED','UNCONFIRMED',
-                                        'CANCELLED','PARTIALLY_FILLED_CANCELLED')
+                                        'CANCELLED','PARTIALLY_FILLED_CANCELLED',
+                                        'EXPIRED_UNFILLED','PARTIALLY_FILLED_EXPIRED')
                        ORDER BY started_at DESC LIMIT 100""")]
 
 
@@ -168,6 +173,8 @@ def _pending_buy_reservation(project_root: Path, report: dict,
     for decision_id, symbol, status, detail_json in rows:
         detail = json.loads(detail_json or "{}")
         check = checks.get(decision_id)
+        if check and check.get('broker_event_status') == 'EXPIRED_BY_EXCHANGE_RULE':
+            continue
         if (check is None or not check.get("broker_replay_complete")
                 or check.get("status") not in
                    ("FILL_MATCH", "ARCHIVED_BROKER_FILL_VERIFIED",
@@ -301,6 +308,16 @@ def reconcile_confirmed_broker_events(project_root: str | Path, report: dict) ->
                     check["decision_id"], check["seq13"], ledger_qty)
                 if cancel_change.get("changed"):
                     outcome["updated"].append(cancel_change)
+            elif (check.get('broker_event_status') == 'EXPIRED_BY_EXCHANGE_RULE'
+                    and check.get('broker_event_counts', {}).get('ack')
+                    and check.get('status') in
+                        ('FILL_MATCH', 'NO_FILL_YET_VERIFIED')
+                    and verified_qty == ledger_qty
+                    and ledger_qty < int(check.get('ordered_qty') or 0)):
+                expiry_change = store.reconcile_session_expiry(
+                    check['decision_id'], check['seq13'], ledger_qty)
+                if expiry_change.get('changed'):
+                    outcome['updated'].append(expiry_change)
         except Exception as exc:
             outcome["errors"].append(dict(
                 decision_id=check.get("decision_id"),
@@ -654,7 +671,17 @@ def run_health_check(project_root: str | Path, *, session=None,
                                    ("CANCELLED", "PARTIALLY_FILLED_CANCELLED")
                                    and detail.get("broker_cancel_seq13") == str(seq13))
                 has_cancel = bool(cancel_count or archived_cancel)
-                if broker_qty >= ordered_qty > 0:
+                archived_expiry = attempt['status'] in (
+                    'EXPIRED_UNFILLED', 'PARTIALLY_FILLED_EXPIRED')
+                prior_day = (datetime.fromisoformat(attempt['started_at']).astimezone(TAIPEI).date()
+                             < datetime.fromisoformat(checked_at).date())
+                session_expired = (not has_cancel and broker_qty < ordered_qty
+                                   and (archived_expiry or
+                                        (prior_day and cross.replay_complete
+                                         and accepted_count > 0)))
+                if session_expired:
+                    event_status = 'EXPIRED_BY_EXCHANGE_RULE'
+                elif broker_qty >= ordered_qty > 0:
                     event_status = "FULLY_FILLED"
                 elif broker_qty > 0:
                     event_status = ("PARTIAL_FILL_REMAINDER_CANCELLED" if has_cancel
@@ -692,7 +719,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                       and detail.get("broker_reconciled_seq13") == str(seq13)
                       and int(detail.get("broker_reconciled_qty") or 0) == recorded_qty):
                     verification = "ARCHIVED_BROKER_FILL_VERIFIED"
-                    if not has_cancel:
+                    if not has_cancel and not session_expired:
                         event_status = "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED"
                 else:
                     verification = "FILL_UNVERIFIED"
@@ -708,14 +735,19 @@ def run_health_check(project_root: str | Path, *, session=None,
                 report["broker_order_reconciliation"].append(dict(
                     decision_id=attempt["decision_id"],
                     symbol=attempt["symbol"], side=attempt["side"], seq13=str(seq13),
+                    started_at=attempt["started_at"],
+                    limit_price_twd=detail.get("limit_price"),
+                    cancel_requested=attempt["cancel_requested"],
                     ledger_status=attempt["status"], ledger_filled_qty=recorded_qty,
                     ordered_qty=ordered_qty,
                     broker_replay_filled_qty=broker_qty,
                     broker_verified_filled_qty=verified_qty,
-                    unconfirmed_qty=(0 if has_cancel else
+                    unconfirmed_qty=(0 if has_cancel or session_expired else
                                      max(0, ordered_qty-verified_qty)),
                     cancelled_qty=(max(0, ordered_qty-verified_qty)
                                    if has_cancel else 0),
+                    expired_qty=(max(0, ordered_qty-verified_qty)
+                                 if session_expired else 0),
                     broker_event_status=event_status,
                     broker_event_counts=dict(ack=accepted_count, fill=fill_event_count,
                                              cancel=cancel_count),

@@ -11,6 +11,7 @@ from typing import Any
 from .account_guard import (
     AccountCheckError,
     cash_sellable_qty,
+    cash_today_buy_fill_qty,
     query_buying_power,
     realtime_cash_qty,
 )
@@ -317,6 +318,7 @@ def execute_advice_file(
             return report
 
     initial_sellable: dict[str, int] = {}
+    initial_today_bought: dict[str, int] = {}
     inventory = account_snapshot.inventory or ()
     for intent in intents:
         if intent.side == Side.SELL:
@@ -324,9 +326,13 @@ def execute_advice_file(
                 inventory,
                 intent.symbol,
             )
+            initial_today_bought[intent.symbol] = cash_today_buy_fill_qty(
+                inventory, intent.symbol,
+            )
 
     reserved_buy_twd = Decimal("0")
     reserved_sell_qty: dict[str, int] = {}
+    batch_buy_fill_qty: dict[str, int] = {}
 
     for intent in intents:
         item: dict[str, Any] = {
@@ -499,6 +505,11 @@ def execute_advice_file(
                 item["batch_reserved_sell_qty_before"] = already_reserved
                 item["effective_broker_sellable_qty"] = effective_sellable
                 item["ai_managed_qty"] = ai_qty
+                today_bought = (initial_today_bought.get(intent.symbol, 0)
+                                  + batch_buy_fill_qty.get(intent.symbol, 0))
+                prior_day_ai_qty = max(0, ai_qty - today_bought)
+                item["today_buy_fill_qty"] = today_bought
+                item["prior_day_ai_sellable_qty"] = prior_day_ai_qty
 
                 if effective_sellable <= 0:
                     raise AccountCheckError(
@@ -509,6 +520,11 @@ def execute_advice_file(
                     raise AccountCheckError(
                         f"{intent.symbol}: effective broker sellable qty "
                         f"{effective_sellable} < requested {plan.quantity}"
+                    )
+                if prior_day_ai_qty < plan.quantity:
+                    raise AccountCheckError(
+                        f"{intent.symbol}: prior-day AI shares {prior_day_ai_qty} "
+                        f"< requested {plan.quantity}; same-day BUY shares are blocked"
                     )
 
             def on_submitted(sent: SendResult) -> None:
@@ -580,6 +596,11 @@ def execute_advice_file(
                     result.symbol, result.side, result.filled_quantity,
                 )
                 item["ai_managed_qty_after_fill"] = new_ai_qty
+                if result.side == Side.BUY:
+                    batch_buy_fill_qty[result.symbol] = (
+                        batch_buy_fill_qty.get(result.symbol, 0)
+                        + result.filled_quantity
+                    )
             else:
                 store.finish(intent.decision_id, result.status.value, item)
 

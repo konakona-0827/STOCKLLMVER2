@@ -27,6 +27,9 @@ class BrokerRuntime:
     def health(self):
         return self._submit("health")
 
+    def cancel_order(self, order: dict):
+        return self._submit("cancel_order", dict(order))
+
     def fetch_quotes(self, symbols, audit, stopped, timeout=12):
         return self._submit("quotes", tuple(symbols), audit, stopped, timeout)
 
@@ -63,7 +66,7 @@ class BrokerRuntime:
                         result = {"status": "STOPPED"}
                         stop_worker = True
                     elif not com_initialized:
-                        if kind in ("execute", "quotes"):
+                        if kind in ("execute", "quotes", "cancel_order"):
                             raise RuntimeError(com_error)
                         from .health_monitor import run_health_check
                         result = run_health_check(self.project_root,
@@ -91,7 +94,12 @@ class BrokerRuntime:
                                     # setup failure. Another login could return 2003.
                                     login_blocked = True
                                     login_error = connection_error
-                        if kind == "execute":
+                        if kind == "cancel_order":
+                            if session is None:
+                                raise RuntimeError(connection_error)
+                            from .cancel_manager import cancel_verified_order
+                            result = cancel_verified_order(self.project_root, session, args[0])
+                        elif kind == "execute":
                             if session is None:
                                 raise RuntimeError(connection_error)
                             from .pipeline_hook import execute_after_advice_written
