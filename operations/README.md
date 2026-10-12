@@ -14,6 +14,8 @@ Reply 每次重新連線會重新回放歷史委託事件；重連前必須清�
 - `data/health/health_checks.csv`：每次健康檢查一列，可用 Excel 等試算表開啟。
 - `data/health/inventory_reconciliation.csv`：每次各股票的正式 AI 記帳股數、手動持股設定與券商現股庫存。對帳以「正式 AI 持股 + 已設定手動持股」比較券商總庫存；尚未歸屬的多出股數標記 `BROKER_EXCESS_UNATTRIBUTED`，不自動寫入 `ai_positions`。手動持股數低於設定值時標記 `CONFIGURED_EXCEEDS_BROKER`。
 - `data/health/runtime.log`：每次檢查一行的引擎紀錄。
+- `data/health/dashboard_lifecycle.jsonl`：Dashboard 每次啟動、視窗就緒、每分鐘心跳、關閉要求、券商資源釋放及退出各一行 JSON。每行有 `run_id`、PID、台北與 UTC 時間及啟動後秒數，可用 UTC 時間對照 Windows 事件檢視器。`WORKER_ERROR`、`TK_CALLBACK_EXCEPTION`、`THREAD_EXCEPTION`、`FATAL_EXCEPTION` 會附錯誤資訊。若該 `run_id` 沒有 `EXIT`，表示未觀察到正常結束；最後一筆心跳可界定中斷時段，但不能單憑此檔判定原因。新紀錄只會在重新啟動 Dashboard 後生效。
+- `data/health/dashboard_faults.log`：Python 能攔截的原生層致命錯誤之執行緒堆疊；系統強制結束或斷電時可能沒有內容。
 - `data/health/latest_health.json`：最新完整檢查結果，包括券商查詢失敗原因與未解決委託。
 
 每次對帳使用共用 Capital session 重新查詢可買金額與現股庫存，核對正式 `ai_positions`、人工設定持股及正式委託紀錄，並把時間、查詢狀態、差異和正式委託狀態寫入 `live_execution.sqlite3` 的 `broker_refresh_snapshots`。App 的「券商持倉對帳」與「正式委託與成交紀錄」分頁顯示同一份快照；券商查詢不完整時標記未驗證。對已有券商序號的委託，會對照 Reply/OrderReport 可取得的成交證據；若完整券商回放能以精確序號核對 BUY 或 SELL 成交價量，且券商現股庫存足以涵蓋更新後 AI 與人工持股，會在同一 SQLite 交易中補記確認成交的股數、委託狀態與稽核事件。券商以精確序號確認取消時也會記錄已取消餘量並結束未結狀態。重複對帳僅補記新增事件。證據不足時不推定成交，也不根據券商總庫存猜測 AI 股數。

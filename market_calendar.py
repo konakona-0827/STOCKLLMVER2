@@ -3,7 +3,7 @@
 Source: https://www.twse.com.tw/zh/trading/holiday.html (115 / 2026 calendar).
 Live quote freshness is checked separately, including for dates not listed here.
 """
-from datetime import date
+from datetime import date, timedelta
 
 
 _CLOSED_2026 = {
@@ -28,3 +28,24 @@ def twse_closed_reason(day):
     if day.weekday() >= 5:
         return '週末'
     return _CLOSED_2026.get(day)
+
+
+def previous_trading_day(day: date) -> date:
+    """Skip weekends and documented exchange holidays before a date."""
+    candidate = day - timedelta(days=1)
+    while twse_closed_reason(candidate):
+        candidate -= timedelta(days=1)
+    return candidate
+
+
+def trading_day_context(day: date) -> dict:
+    previous = previous_trading_day(day)
+    skipped = []
+    candidate = previous + timedelta(days=1)
+    while candidate < day:
+        skipped.append({'date': candidate.isoformat(),
+                        'reason': twse_closed_reason(candidate)})
+        candidate += timedelta(days=1)
+    return {'as_of_date': day.isoformat(),
+            'previous_trading_date': previous.isoformat(),
+            'skipped_closed_dates': skipped}

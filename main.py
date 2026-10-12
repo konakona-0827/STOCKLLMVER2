@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import time
 import uuid
 from config import ROOT, load_env, now, redact, MAX_QUOTE_AGE_SECONDS
 from capital import CapitalMarket
@@ -18,10 +19,32 @@ from scheduler import is_twse_oddlot_market_window
 
 
 def save_json(path, payload):
+    """Publish complete JSON, tolerating brief Windows/OneDrive file locks."""
+    body = redact(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False))
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix('.tmp')
-    temp.write_text(redact(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False)), encoding='utf-8')
-    temp.replace(path)
+    delays = (0, 0.1, 0.25, 0.5, 1, 2)
+    for attempt, delay in enumerate(delays):
+        if delay:
+            time.sleep(delay)
+        # Keep each writer's temporary file separate, on the same filesystem.
+        temp = path.with_name(f'.{path.name}.{uuid.uuid4().hex}.tmp')
+        try:
+            with temp.open('x', encoding='utf-8') as handle:
+                handle.write(body)
+            temp.replace(path)
+            return
+        except OSError as exc:
+            winerror = getattr(exc, 'winerror', None)
+            retryable = winerror in (5, 32, 33) or (
+                winerror is None and isinstance(exc, PermissionError))
+            if not retryable or attempt == len(delays) - 1:
+                raise
+        finally:
+            try:
+                temp.unlink(missing_ok=True)
+            except OSError:
+                # A sync client can briefly lock the temporary file as well.
+                pass
 
 
 class Audit:

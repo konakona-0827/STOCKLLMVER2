@@ -33,18 +33,39 @@ def recent_history(path, symbol, at):
         for table, quality in [('market_snapshots', 'data_quality'), ('multi_market_snapshots', 'quote_status')]:
             if table not in tables:
                 continue
-            rows += db.execute(f'''SELECT snapshot_json FROM {table} WHERE symbol=?
-                AND exchange_time<=? AND request_completed_at<=? AND {quality}!='UNAVAILABLE'
-                ORDER BY exchange_time DESC,request_completed_at DESC LIMIT 20''', (symbol, at, at)).fetchall()
-        result, seen = [], set()
+            # Sampling only the newest few rows hides prior trading days when
+            # intraday scans are frequent. Keep distinct timestamps per day.
+            rows += db.execute(f'''WITH distinct_stamps AS (
+                    SELECT snapshot_json, exchange_time,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY exchange_time
+                               ORDER BY request_completed_at DESC) AS stamp_rank
+                    FROM {table} WHERE symbol=? AND exchange_time IS NOT NULL
+                      AND exchange_time<=? AND request_completed_at<=?
+                      AND {quality}!='UNAVAILABLE'
+                ), sampled_days AS (
+                    SELECT snapshot_json, exchange_time,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY substr(exchange_time,1,10)
+                               ORDER BY exchange_time DESC) AS day_rank
+                    FROM distinct_stamps WHERE stamp_rank=1
+                ) SELECT snapshot_json FROM sampled_days WHERE day_rank<=10
+                  ORDER BY exchange_time DESC LIMIT 100''', (symbol, at, at)).fetchall()
+        result, seen, per_day = [], set(), {}
         for row in sorted((json.loads(r[0]) for r in rows), key=lambda r: r['exchange_time'], reverse=True):
             stamp = row['exchange_time']
             if stamp in seen or row.get('retrieval_mode') == 'CACHE' or row.get('is_trial'):
                 continue
+            day = stamp[:10]
+            if day not in per_day and len(per_day) >= 5:
+                continue
+            if per_day.get(day, 0) >= 3:
+                continue
             seen.add(stamp)
+            per_day[day] = per_day.get(day, 0) + 1
             result.append(dict(exchange_time=stamp, price=row.get('last_price', row.get('price')),
                                volume_shares=row.get('volume', row.get('volume_shares'))))
-            if len(result) >= 3:
+            if len(result) >= 15:
                 break
         return list(reversed(result))
     finally:

@@ -122,6 +122,16 @@ def live_ai_positions(path):
                 for symbol, qty in db.execute('SELECT symbol,qty FROM ai_positions WHERE qty>0')]
 
 
+def broker_snapshot_after_execution(report, root):
+    from execution.health_monitor import latest_refresh_snapshot, sync_broker_state
+
+    if report.get('status') == 'NO_TRADE_ACTION':
+        snapshot = latest_refresh_snapshot(root)
+        if snapshot is not None:
+            return snapshot
+    return sync_broker_state(root)
+
+
 class AnalysisService:
     def __init__(self, directory=ROOT/'data'/'analysis'):
         self.directory = Path(directory)
@@ -370,11 +380,12 @@ class AnalysisService:
             recorded['run_status'] = 'HANDLED_BY_DASHBOARD'
             recorded['run_error'] = 'Execution report: ' + str(execution_report.get('status'))
             save_json(latest_advice, recorded)
-            # Re-read broker inventory after the executor has observed the
-            # order, so the app shows confirmed holdings and unresolved work.
+            # An empty advice has sent no order. Reuse its immediately preceding
+            # broker check: an immediate second inventory query may return 1019.
+            # After any real execution attempt, a fresh read is still required.
             try:
-                from execution.health_monitor import sync_broker_state
-                result['broker_snapshot'] = sync_broker_state(ROOT)
+                result['broker_snapshot'] = broker_snapshot_after_execution(
+                    execution_report, ROOT)
             except Exception as exc:
                 result['broker_refresh_error'] = redact(f'{type(exc).__name__}: {exc}')
             save_json(directory/'dashboard_result.json', result)

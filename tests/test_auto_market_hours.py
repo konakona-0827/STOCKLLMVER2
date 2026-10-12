@@ -39,7 +39,8 @@ class AutoMarketHoursTests(unittest.TestCase):
         self.assertEqual(wall(2026, 10, 8, 13, 5), scheduler.next_auto)
         self.assertTrue(scheduler.tick(wall(2026, 10, 8, 13, 5)))
         scheduler.finish()
-        self.assertEqual(wall(2026, 10, 9, 9, 5), scheduler.next_auto)
+        # 10/9 is the exchange's National Day substitute holiday.
+        self.assertEqual(wall(2026, 10, 12, 9, 5), scheduler.next_auto)
 
     def test_auto_openai_requires_open_window_and_live_nontrial_quote(self):
         live = [{"quote_status": "LIVE", "is_trial": False}]

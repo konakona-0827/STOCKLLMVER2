@@ -4,6 +4,7 @@ import math
 import os
 from decimal import Decimal, ROUND_FLOOR
 from config import ROOT, now, redact
+from market_calendar import trading_day_context
 from candidate_analyzer import object_schema, call_openai
 from paper_portfolio import MAX_ODDLOT_QTY, fee_twd, price_cents
 
@@ -29,10 +30,21 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
     if matched_rules:
         from execution.auto_advice_executor import LiveExecutionConfig
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
+    instructions = (strategy_prompt if strategy_prompt is not None else
+                    (ROOT/'prompt_positions.md').read_text(encoding='utf-8'))
+    instructions += ('\n\n交易日資料判讀：連續日 K 指連續「交易日」，週末與證交所休市日不構成缺口。'
+                     '讀取輸入的 trading_calendar.previous_trading_date 與 skipped_closed_dates；'
+                     '不可因前一曆日休市，就說缺少前一交易日資料。'
+                     'market_history 是盤中快照，不是完整日 K；若實際沒有足夠的多交易日 OHLC 與成交量，'
+                     '仍須明確說明跨日驗證不足，不可憑休市理由虛構日 K、量比或均線。'
+                     'history_status=INTRADAY_SNAPSHOTS_ONLY 只描述資料種類，不是禁止 BUY 的條件。'
+                     '不得僅因沒有日 K 就一律 WAIT；若當前 LIVE 行情的開高低現價、買賣價差與成交量、'
+                     '具體進場價、失效條件、交易成本和預算共同支持交易，可提出較低信心度及保守股數的 BUY。'
+                     '若證據仍不足，就說明缺少哪項決策依據並 WAIT；不可把盤中量宣稱為跨日放量。')
     return dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
-                instructions=(strategy_prompt if strategy_prompt is not None else
-                              (ROOT/'prompt_positions.md').read_text(encoding='utf-8')),
+                instructions=instructions,
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
+                                     trading_calendar=trading_day_context(now().date()),
                                      paper_account=paper_account,
                                      account_source='FRESH_BROKER_CHECKED' if live_account else 'PAPER',
                                      paper_simulation_rules=dict(

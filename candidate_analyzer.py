@@ -29,7 +29,7 @@ def overall_quality(candidates):
 def build_request(candidates):
     payload = dict(purpose='RESEARCH_SELECTION_ONLY_NO_ORDERS', candidates=candidates,
                    overall_data_quality=overall_quality(candidates), max_selected=5,
-                   daily_history_status='INSUFFICIENT_VALIDATED_DAILY_BARS')
+                   daily_history_status='NOT_PROVIDED')
     return dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=(ROOT/'prompt_selection.md').read_text(encoding='utf-8'),
                 input=json.dumps(payload, ensure_ascii=False, allow_nan=False),

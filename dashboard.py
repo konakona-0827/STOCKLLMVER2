@@ -11,6 +11,7 @@ import queue
 import re
 import threading
 import time
+import traceback
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS
@@ -22,6 +23,7 @@ from analysis_service import AnalysisService
 import position_store
 import paper_portfolio
 import strategy_catalog
+from lifecycle_log import LifecycleLog
 
 
 def value(v, percent=False):
@@ -163,9 +165,24 @@ def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None)
     return ''.join(lines)
 
 
+def update_detail_text(widget, content):
+    """Keep the reader's position while refreshing the analysis tab."""
+    if widget.get('1.0', 'end-1c') == content:
+        return
+    scroll_position = widget.yview()[0]
+    widget.configure(state='normal')
+    widget.delete('1.0', 'end')
+    widget.insert('1.0', content)
+    widget.configure(state='disabled')
+    widget.yview_moveto(scroll_position)
+
+
 class Dashboard:
-    def __init__(self, root, directory=ROOT/'data'/'analysis', interval=AUTO_INTERVAL_SECONDS):
+    def __init__(self, root, directory=ROOT/'data'/'analysis', interval=AUTO_INTERVAL_SECONDS,
+                 lifecycle=None):
         self.root = root
+        self.lifecycle = lifecycle
+        self.last_lifecycle_heartbeat = time.monotonic()
         self.service = AnalysisService(directory)
         self.scheduler = Scheduler(
             interval,
@@ -572,6 +589,8 @@ class Dashboard:
                     self.render()
                 elif kind == 'error':
                     self.status, self.last_error = 'ERROR', payload
+                    if self.lifecycle:
+                        self.lifecycle.event('WORKER_ERROR', worker='analysis', error=payload)
                 elif kind == 'finished':
                     self.scheduler.finish()
                 elif kind == 'refresh':
@@ -590,6 +609,8 @@ class Dashboard:
                 elif kind == 'refresh_error':
                     self.refresh_pending = False
                     self.last_error = payload
+                    if self.lifecycle:
+                        self.lifecycle.event('WORKER_ERROR', worker='refresh', error=payload)
                     self.root.configure(cursor='')
                 elif kind == 'capital_saved':
                     self.root.configure(cursor='')
@@ -623,14 +644,28 @@ class Dashboard:
                     self.health_running = False
                     self.last_error = payload
                     self.next_health_at = time.time() + 60
+                    if self.lifecycle:
+                        self.lifecycle.event('WORKER_ERROR', worker='health', error=payload)
                 elif kind == 'broker_shutdown_complete':
                     self.broker_shutdown_complete = True
+                    if self.lifecycle:
+                        self.lifecycle.event('BROKER_SHUTDOWN_COMPLETE')
                 elif kind == 'broker_shutdown_error':
                     self.last_error = payload
                     self.broker_shutdown_complete = True
+                    if self.lifecycle:
+                        self.lifecycle.event('BROKER_SHUTDOWN_ERROR', error=payload)
         except queue.Empty:
             pass
         wall, mono = time.time(), time.monotonic()
+        if self.lifecycle and mono - self.last_lifecycle_heartbeat >= 60:
+            self.last_lifecycle_heartbeat = mono
+            self.lifecycle.event('HEARTBEAT', status=self.status, closing=self.closing,
+                                 analysis_running=self.scheduler.scan_lock.locked(),
+                                 health_running=self.health_running,
+                                 refresh_pending=self.refresh_pending,
+                                 auto_enabled=self.scheduler.next_auto is not None,
+                                 last_error=self.last_error)
         if (not self.closing and wall >= self.next_health_at
                 and not self.health_running and not self.refresh_pending
                 and not self.scheduler.scan_lock.locked()):
@@ -659,6 +694,8 @@ class Dashboard:
                     target=shutdown_broker, name='broker-shutdown', daemon=True,
                 ).start()
             if self.broker_shutdown_complete:
+                if self.lifecycle:
+                    self.lifecycle.event('WINDOW_DESTROY', last_error=self.last_error)
                 self.root.destroy()
                 return
             self.root.after(100, self.tick)
@@ -798,16 +835,14 @@ class Dashboard:
                 except (TypeError, ValueError):
                     age = '--'
                 self.quote_tree.insert('', 'end', values=[q['symbol'],q.get('name') or '股票名稱未取得',QUALITY_LABELS.get(q['quote_status'],q['quote_status']),value(q['last_price']),age,q['quote_timestamp'] or '--',q['request_started_at'],q.get('received_at') or '--',q['request_completed_at']])
-            self.detail.configure(state='normal')
-            self.detail.delete('1.0','end')
             strategy = r['manifest'].get('strategy') or {}
-            if strategy:
-                self.detail.insert('end', f"正式交易策略：{strategy.get('name','--')} v{strategy.get('version','--')}\n\n")
-            self.detail.insert('end', decision_text(r['decision'], r['analysis_set'],
-                r['manifest'].get('llm_response_received_at'), r.get('execution_budget')))
+            detail_text = (f"正式交易策略：{strategy.get('name','--')} v{strategy.get('version','--')}\n\n"
+                           if strategy else '')
+            detail_text += decision_text(r['decision'], r['analysis_set'],
+                r['manifest'].get('llm_response_received_at'), r.get('execution_budget'))
             if r['manifest'].get('display_notice'):
-                self.detail.insert('1.0', r['manifest']['display_notice'] + '\n\n')
-            self.detail.configure(state='disabled')
+                detail_text = r['manifest']['display_notice'] + '\n\n' + detail_text
+            update_detail_text(self.detail, detail_text)
         self.broker_position_tree.delete(*self.broker_position_tree.get_children())
         for row in health.get('inventory_comparison') or []:
             self.broker_position_tree.insert('', 'end', values=[
@@ -1097,7 +1132,13 @@ class Dashboard:
         ttk.Label(win,text='成本未知可留白。股數設為 0 可清除該項持倉設定。').grid(row=6,columnspan=2,padx=10,pady=(4,12))
 
     def close(self):
+        if self.closing:
+            return
         self.closing = True
+        if self.lifecycle:
+            self.lifecycle.event('CLOSE_REQUESTED', status=self.status,
+                                 analysis_running=self.scheduler.scan_lock.locked(),
+                                 health_running=self.health_running)
         if self.simulation_window and not self.simulation_window.closed:
             self.simulation_window.close()
         self.scheduler.stop_auto()
@@ -1114,12 +1155,37 @@ def main():
     args = parser.parse_args()
     if args.interval <= 0 or (args.interval != AUTO_INTERVAL_SECONDS and not args.test_mode):
         parser.error('非 1800 秒間隔需要 --test-mode；間隔須大於 0')
-    # comtypes imports initialize the importing thread; explicit worker STA
-    # initialization is paired separately inside AnalysisService.
-    import comtypes
-    root = tk.Tk()
-    app = Dashboard(root, args.data_dir, args.interval)
-    root.mainloop()
+    lifecycle = LifecycleLog(ROOT / 'data' / 'health')
+    lifecycle.start()
+    root = None
+    app = None
+    fatal = False
+    old_thread_hook = threading.excepthook
+    def thread_exception(args):
+        lifecycle.exception('THREAD_EXCEPTION', args.exc_type, args.exc_value, args.exc_traceback)
+        old_thread_hook(args)
+    threading.excepthook = thread_exception
+    try:
+        # comtypes imports initialize the importing thread; explicit worker STA
+        # initialization is paired separately inside AnalysisService.
+        import comtypes
+        root = tk.Tk()
+        def callback_exception(exc_type, exc_value, exc_tb):
+            lifecycle.exception('TK_CALLBACK_EXCEPTION', exc_type, exc_value, exc_tb)
+            traceback.print_exception(exc_type, exc_value, exc_tb)
+        root.report_callback_exception = callback_exception
+        app = Dashboard(root, args.data_dir, args.interval, lifecycle=lifecycle)
+        lifecycle.event('WINDOW_READY', data_dir=str(args.data_dir.resolve()),
+                        interval_seconds=args.interval, test_mode=args.test_mode)
+        root.mainloop()
+    except BaseException:
+        fatal = True
+        lifecycle.exception('FATAL_EXCEPTION', *sys.exc_info())
+        raise
+    finally:
+        threading.excepthook = old_thread_hook
+        lifecycle.finish('FATAL_EXCEPTION' if fatal else
+                         'NORMAL_CLOSE' if app and app.closing else 'MAINLOOP_ENDED')
 
 
 if __name__ == '__main__':

@@ -53,7 +53,7 @@ def scan_quote(q, rules, at):
                    spread=spread, spread_pct=spread_pct, volume=volume,
                    freshness_seconds=age, liquidity_proxy_twd=turnover,
                    liquidity_proxy_definition='last_price * cumulative_odd_lot_volume_not_actual_turnover',
-                   history_status='INSUFFICIENT_VALIDATED_DAILY_BARS',
+                   history_status='INTRADAY_SNAPSHOTS_ONLY',
                    return_1d=None, return_5d=None, return_20d=None, volume_ratio=None,
                    MA5=None, MA20=None, price_vs_MA5=None, price_vs_MA20=None,
                    RSI=None, ATR=None, high_20d_distance=None, breakout_score=None,

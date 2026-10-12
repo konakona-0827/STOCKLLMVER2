@@ -20,7 +20,9 @@ class ProductionExecutionHookTests(unittest.TestCase):
             advice_path.write_text("{}", encoding="utf-8")
             runtime = SimpleNamespace(execute=Mock(return_value={"status": "COMPLETE"}))
             with patch("execution.broker_runtime.get_broker_runtime",
-                       return_value=runtime) as get_runtime:
+                       return_value=runtime) as get_runtime, \
+                    patch("execution.health_monitor.sync_broker_state",
+                          return_value={"status": "OK", "current_buy_budget_twd": "1000"}):
                 report = service._execute_after_advice_written(
                     "AUTO", {"manifest": {
                         "status": "COMPLETE", "ai_validation": "VALID",
@@ -39,9 +41,12 @@ class ProductionExecutionHookTests(unittest.TestCase):
             run_dir = root / "analysis" / "runs" / "run-1"
             run_dir.mkdir(parents=True)
             advice_path = run_dir / "advice_interface.json"
+            advice_path.write_text("{}", encoding="utf-8")
 
             runtime = SimpleNamespace(execute=Mock(return_value={"status": "NO_TRADE_ACTION"}))
-            with patch("execution.broker_runtime.get_broker_runtime", return_value=runtime):
+            with patch("execution.broker_runtime.get_broker_runtime", return_value=runtime), \
+                    patch("execution.health_monitor.sync_broker_state",
+                          return_value={"status": "OK", "current_buy_budget_twd": "1000"}):
                 report = service._execute_after_advice_written(
                     "MANUAL", {"manifest": {
                         "status": "COMPLETE", "ai_validation": "VALID",
