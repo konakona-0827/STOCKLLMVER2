@@ -30,7 +30,8 @@ class StrategyExperimentTests(unittest.TestCase):
     def candidate(self, stamp=None):
         return dict(symbol='0050',name='元大台灣50',quote_status='LIVE',
                     quote_timestamp=stamp or now().isoformat(),is_trial=False,
-                    last_price=100,ask=100,bid=99.9,quant_score=10,
+                    last_price=100,ask=100,bid=99.9,open=99,high=101,low=98,
+                    volume=10000,eligible_strategies=['intraday_recovery'],quant_score=10,
                     analysis_source='TOP10',max_buy_qty=999,
                     paper_position=dict(qty=0,cost_cents=0),
                     position=dict(ai_managed_qty=0))
@@ -39,6 +40,10 @@ class StrategyExperimentTests(unittest.TestCase):
         return dict(market_view='測試',decisions=[dict(symbol='0050',decision=side,
                     suggested_qty=qty,reason='依據策略買進',action_ratio=0,
                     confidence=1,reference_price=100,suggested_price=100,
+                    strategy_id='intraday_recovery' if side=='BUY' else 'NONE',
+                    target_price=120 if side=='BUY' else None,
+                    invalidation_price=95 if side=='BUY' else None,
+                    holding_days=10 if side=='BUY' else None,
                     data_quality='LIVE',warnings=['預算'])])
 
     def test_versioned_accounts_pause_and_forward_start(self):

@@ -19,6 +19,7 @@ import scan_store
 from advice_interface import write_advice_interface
 import paper_portfolio
 import strategy_catalog
+import strategy_evidence
 from scheduler import is_twse_oddlot_market_window
 from market_calendar import twse_closed_reason
 
@@ -43,6 +44,11 @@ def live_buy_budget(broker_health, daily_reserved, strategy_cap, daily_limit):
     strategy_cap = Decimal(str(strategy_cap))
     minimum = Decimal(str(broker_health.get('minimum_balance_twd') or 0))
     balance = broker_health.get('broker_balance_twd')
+    account_balance = broker_health.get('broker_one_account_balance_twd')
+    if account_balance is None:
+        account_balance = balance
+    if account_balance is None or Decimal(str(account_balance)) < strategy_cap:
+        sources_verified = False
     pending_raw = broker_health.get('pending_buy_reserve_twd')
     invested_raw = broker_health.get('ai_committed_capital_twd')
     if None in (balance, pending_raw, invested_raw):
@@ -96,6 +102,9 @@ def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_s
                      **{k:q.get(k) for k in ('last_price', 'open', 'high', 'low', 'bid', 'ask', 'volume', 'quote_status', 'quote_timestamp')},
                      volume_unit='shares', warnings=q.get('warnings', []),
                      market_history=scan_store.recent_history(db_path, s, at))
+            evidence = strategy_evidence.assess(q, c['market_history'])
+            c['strategy_evidence'] = evidence
+            c['eligible_strategies'] = evidence['eligible_strategies']
         c.pop('position_qty', None)
         c['is_trial'] = bool(q.get('is_trial'))
         c['analysis_source'] = 'TOP10+POSITION' if s in top_symbols & managed else ('TOP10' if s in top_symbols else 'POSITION')
@@ -125,7 +134,7 @@ def live_ai_positions(path):
 def broker_snapshot_after_execution(report, root):
     from execution.health_monitor import latest_refresh_snapshot, sync_broker_state
 
-    if report.get('status') == 'NO_TRADE_ACTION':
+    if report.get('status') in ('NO_TRADE_ACTION', 'BLOCKED_BUDGET'):
         snapshot = latest_refresh_snapshot(root)
         if snapshot is not None:
             return snapshot
@@ -230,11 +239,7 @@ class AnalysisService:
             paper_state = {**paper_state, 'available_cash_twd':float(available),
                            'available_cash_cents':int(available*100),
                            'positions':paper_positions,
-                           'source':'FRESH_BROKER_BUYING_POWER_AFTER_RESERVE_STRATEGY_CAP_AND_DAILY_RESERVATIONS',
-                           'broker_buying_power_twd':(float(budget['broker_available'])
-                                                       if budget['broker_available'] is not None else None),
-                           'broker_after_minimum_twd':float(budget['broker_after_minimum']),
-                           'broker_after_pending_twd':float(budget['broker_remaining']),
+                           'source':'CONFIGURED_CAP_REMAINING_WITH_BROKER_FUNDS_AND_RESERVE_CHECKS',
                            'pending_buy_reserve_twd':float(budget['pending_reserve']),
                            'ai_committed_capital_twd':float(budget['ai_committed']),
                            'strategy_remaining_twd':float(budget['strategy_remaining']),
@@ -249,7 +254,11 @@ class AnalysisService:
         save_json(directory/'multi_market_snapshot.json', batch)
         phase('QUANT_ANALYSIS')
         at = now()
-        scanned, ranked, top = scan_and_rank([q for q in batch['quotes'] if q['symbol'] in universe['symbols']], rules, at)
+        scanned, ranked, _ = scan_and_rank([q for q in batch['quotes'] if q['symbol'] in universe['symbols']], rules, at)
+        quote_map = {q['symbol']: q for q in batch['quotes']}
+        top = [r for r in ranked if strategy_evidence.assess(
+            quote_map[r['symbol']], scan_store.recent_history(self.db_path, r['symbol'], started)
+        )['eligible_strategies']][:rules['candidate_top_n']]
         # Position-only stocks outside the universe still receive available
         # metrics, but cannot displace the universe's Top 10 ranking.
         scanned += [scan_quote(q, rules, at) for q in batch['quotes'] if q['symbol'] not in universe['symbols']]
@@ -284,7 +293,8 @@ class AnalysisService:
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
         budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
-        if budget_ready and should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
+        has_managed_position = any((c.get('paper_position') or {}).get('qty', 0) > 0 for c in candidates)
+        if (budget_ready or has_managed_position) and should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
                               stopped=self.stop.is_set(), wall=now().timestamp()):
             decision, response = position_analyzer.analyze(candidates, request)
         else:
@@ -293,8 +303,8 @@ class AnalysisService:
                 c.get('quote_status') == 'LIVE' and not c.get('is_trial')
                 for c in candidates
             )
-            reason = ('券商可買額、未結委託保留或 AI 累計投入額不足以支持新買單，本輪已停止 AI 決策與委託。'
-                      if not budget_ready else
+            reason = ('資金總上限剩餘、券商餘額或未結委託保留不足以支持新買單，且無 AI 持股需評估；本輪不呼叫 AI。'
+                      if not budget_ready and not has_managed_position else
                       f'證交所今日休市（{market_closed}）；目前只有歷史行情，'
                       '可買股數為 0。本輪不呼叫 AI，也不送出委託。'
                       if market_closed else
@@ -343,10 +353,9 @@ class AnalysisService:
                       paper_trade_history=paper_portfolio.trades(self.db_path))
         if live_enabled:
             result['execution_budget'] = {k:paper_state.get(k) for k in (
-                'available_cash_twd','broker_buying_power_twd','minimum_balance_reserve_twd',
+                'available_cash_twd','minimum_balance_reserve_twd',
                 'strategy_cap_twd','strategy_remaining_twd',
                 'ai_committed_capital_twd','pending_buy_reserve_twd',
-                'broker_after_minimum_twd','broker_after_pending_twd',
                 'daily_buy_limit_twd','daily_buy_reserved_twd',
                 'daily_buy_remaining_twd','budget_status')}
             result['execution_budget'].update(

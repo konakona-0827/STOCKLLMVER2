@@ -468,6 +468,7 @@ def fixed_rule_decision(candidates, account):
     """Transparent benchmark: top positive score buys; +/-10/5 percent exits."""
     best = max((c for c in candidates if c.get('analysis_source','').startswith('TOP10')
                 and c.get('quote_status')=='LIVE' and not c.get('is_trial')
+                and c.get('eligible_strategies')
                 and (c.get('quant_score') or 0)>0 and not c['paper_position']['qty']),
                key=lambda c:c.get('quant_score') or 0, default=None)
     decisions = []
@@ -484,10 +485,15 @@ def fixed_rule_decision(candidates, account):
             qty = min(int((account['available_cash_twd']*.20)//(c.get('ask') or price)),c.get('max_buy_qty') or 0)
             if qty > 0:
                 side,reason = 'BUY','固定規則：量化排名最高且分數為正，配置不超過本輪預算 20%。'
+        strategy_id = (c.get('eligible_strategies') or ['NONE'])[0] if side == 'BUY' else 'NONE'
         decisions.append(dict(symbol=c['symbol'],decision=side,confidence=1,action_ratio=ratio,
                               suggested_qty=qty,reference_price=price,
                               suggested_price=(c.get('ask') or price) if side=='BUY' else
                                               (c.get('bid') or price) if side=='SELL' else None,
+                              strategy_id=strategy_id,
+                              target_price=round(price * 1.10, 2) if side=='BUY' else None,
+                              invalidation_price=round(price * .95, 2) if side=='BUY' else None,
+                              holding_days=10 if side=='BUY' else None,
                               reason=reason,data_quality=c['quote_status'],
                               warnings=['預算：遵守共同資金限制'] if side=='BUY' else
                                        ['不是即時行情'] if c['quote_status']=='LAST_KNOWN' else []))
@@ -530,7 +536,13 @@ class ExperimentService:
         save_json(directory/'market_snapshot.json',batch)
         phase('共同量化排名')
         at = now()
-        scanned, ranked, top = scan_and_rank([q for q in batch['quotes'] if q['symbol'] in universe['symbols']],scan_rules,at)
+        scanned, ranked, _ = scan_and_rank([q for q in batch['quotes'] if q['symbol'] in universe['symbols']],scan_rules,at)
+        import scan_store
+        import strategy_evidence
+        quote_map = {q['symbol']:q for q in batch['quotes']}
+        top = [r for r in ranked if strategy_evidence.assess(
+            quote_map[r['symbol']], scan_store.recent_history(self.research_db, r['symbol'], started)
+        )['eligible_strategies']][:scan_rules.get('candidate_top_n', 10)]
         scanned += [scan_quote(q,scan_rules,at) for q in batch['quotes'] if q['symbol'] not in universe['symbols']]
         save_json(directory/'ranking.json',dict(top=top,ranked=ranked,scan_rules=scan_rules))
         jobs = {}

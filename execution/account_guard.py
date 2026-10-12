@@ -184,8 +184,8 @@ def parse_real_balance_row(raw: str) -> InventoryRow | None:
 def query_inventory(
     session: CapitalReplySession,
     *,
-    max_attempts: int = 2,
-    retry_delay_seconds: float = 0.8,
+    max_attempts: int = 4,
+    retry_delay_seconds: float = 2.0,
 ) -> list[InventoryRow]:
     """Read current inventory.
 
@@ -214,11 +214,13 @@ def query_inventory(
             if not retryable_1019 or attempt >= max_attempts:
                 raise AccountCheckError(message) from exc
 
-            # Let COM callbacks / broker query state settle, then retry once.
+            # The broker can reject several immediately repeated reads. Back
+            # off up to 14 seconds (2 + 4 + 8) without retrying any order.
+            delay = retry_delay_seconds * (2 ** (attempt - 1))
             try:
-                session.pump(retry_delay_seconds)
+                session.pump(delay)
             except Exception:
-                time.sleep(retry_delay_seconds)
+                time.sleep(delay)
 
     raise AccountCheckError(str(last_exc or "Inventory query failed"))
 

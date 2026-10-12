@@ -15,6 +15,15 @@ class BrokerSnapshotAfterExecutionTests(unittest.TestCase):
                 {'status': 'NO_TRADE_ACTION'}, 'project'), previous)
         refresh.assert_not_called()
 
+    def test_budget_block_reuses_latest_snapshot_without_extra_inventory_read(self):
+        previous = {'status': 'ERROR', 'inventory_checked': False,
+                    'errors': ['inventory: AccountCheckError: GetRealBalanceReport failed: rc=1019']}
+        with patch('execution.health_monitor.latest_refresh_snapshot', return_value=previous), \
+                patch('execution.health_monitor.sync_broker_state') as refresh:
+            self.assertIs(broker_snapshot_after_execution(
+                {'status': 'BLOCKED_BUDGET'}, 'project'), previous)
+        refresh.assert_not_called()
+
     def test_order_attempt_requires_new_broker_read(self):
         after = {'status': 'OK', 'checked_at': '2026-10-12T11:55:22+08:00'}
         with patch('execution.health_monitor.latest_refresh_snapshot') as previous, \

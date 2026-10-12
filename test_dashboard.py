@@ -24,7 +24,9 @@ class DashboardTests(unittest.TestCase):
                       position=ps.context(self.p,116.2))
         self.answer = dict(market_view='非即時行情',decisions=[dict(symbol='0050',decision='SELL',
             confidence=.7,action_ratio=.5,suggested_qty=10,reference_price=116.2,
-            suggested_price=116.2,reason='降低 AI 管理部位',data_quality='LAST_KNOWN',warnings=['不是即時行情'])])
+            suggested_price=116.2,strategy_id='NONE',target_price=None,
+            invalidation_price=None,holding_days=None,
+            reason='降低 AI 管理部位',data_quality='LAST_KNOWN',warnings=['不是即時行情'])])
 
     def tearDown(self):
         self.tmp.cleanup()

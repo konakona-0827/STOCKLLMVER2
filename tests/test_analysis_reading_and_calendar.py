@@ -69,13 +69,16 @@ class ReadingAndCalendarTests(unittest.TestCase):
 
     def test_missing_daily_bars_is_not_a_local_buy_rejection(self):
         candidate = {'symbol': '0050', 'last_price': 100, 'quote_status': 'LIVE',
-                     'ask': 100, 'max_buy_qty': 2,
+                     'ask': 100, 'bid': 99.9, 'max_buy_qty': 2,
+                     'asset_type': 'ETF', 'eligible_strategies': ['intraday_recovery'],
                      'paper_position': {'qty': 0},
                      'metrics': {'history_status': 'INTRADAY_SNAPSHOTS_ONLY'}}
         decision = {'market_view': '僅有盤中資料', 'decisions': [
             {'symbol': '0050', 'decision': 'BUY', 'confidence': .4,
              'action_ratio': 0, 'suggested_qty': 1,
              'reference_price': 100, 'suggested_price': 100,
+             'strategy_id': 'intraday_recovery', 'target_price': 120,
+             'invalidation_price': 95, 'holding_days': 10,
              'reason': '盤中即時行情支持小部位，成本與失效價位已評估',
              'data_quality': 'LIVE', 'warnings': ['預算限制']} ]}
         self.assertEqual(validate(decision, [candidate])['decisions'][0]['decision'], 'BUY')

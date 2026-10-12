@@ -123,6 +123,11 @@ def current_buy_block_reasons(report: dict) -> list[str]:
         strategy = Decimal(str(report["strategy_cap_twd"]))
         daily_limit = Decimal(str(report["daily_buy_limit_twd"]))
         daily_used = Decimal(str(report["daily_buy_reserved_twd"]))
+        account_balance = report.get("broker_one_account_balance_twd")
+        if account_balance is None:
+            account_balance = report.get("broker_balance_twd")
+        if account_balance is not None and Decimal(str(account_balance)) < strategy:
+            reasons.append("BROKER_ACCOUNT_BELOW_CAP")
         if strategy - invested - pending <= 0:
             reasons.append("AI_CAPITAL_LIMIT_REACHED")
         if daily_limit - daily_used <= 0:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from config import ROOT
 
-DEFAULT_PROMPT = ROOT / 'prompt_positions.md'
+DEFAULT_PROMPT = ROOT / 'strategies' / 'prompt_positions.md'
 LIVE_SELECTION = ROOT / 'data' / 'analysis' / 'live_strategy.json'
 
 

@@ -440,6 +440,14 @@ def execute_advice_file(
                 fresh_available = fresh_buying_power.available_to_buy_twd
                 if fresh_available is None:
                     raise AccountCheckError("fresh broker buying power is unavailable")
+                strategy_cap_raw = budget_payload.get("strategy_cap_twd")
+                if strategy_cap_raw is not None:
+                    fresh_account_balance = fresh_buying_power.balance_twd
+                    if (fresh_account_balance is None or
+                            fresh_account_balance < Decimal(str(strategy_cap_raw))):
+                        raise AccountCheckError(
+                            "broker account balance is below configured capital cap"
+                        )
 
                 effective_available = min(
                     initial_buying_power - reserved_buy_twd,

@@ -8,6 +8,35 @@ from dashboard import decision_text
 
 
 class LiveBuyBudgetTests(unittest.TestCase):
+    def test_configured_cap_is_the_limit_even_with_much_more_broker_cash(self):
+        result = live_buy_budget(
+            dict(status='OK', errors=[], broker_balance_twd='1000000',
+                 minimum_balance_twd='10000', inventory_checked=True,
+                 pending_buy_reserve_twd='1200', ai_committed_capital_twd='3000'),
+            Decimal('0'), Decimal('10000'), Decimal('20000'))
+        self.assertEqual(Decimal('5800'), result['available'])
+        self.assertEqual(Decimal('5800'), result['strategy_remaining'])
+
+    def test_broker_funds_and_minimum_reserve_can_reduce_new_buy_budget(self):
+        result = live_buy_budget(
+            dict(status='OK', errors=[], broker_balance_twd='15000',
+                 minimum_balance_twd='10000', inventory_checked=True,
+                 pending_buy_reserve_twd='0', ai_committed_capital_twd='0'),
+            Decimal('0'), Decimal('10000'), Decimal('20000'))
+        self.assertEqual(Decimal('5000'), result['available'])
+
+    def test_broker_account_balance_below_configured_cap_blocks_new_buy(self):
+        result = live_buy_budget(
+            dict(status='OK', errors=[], broker_balance_twd='30000',
+                 broker_one_account_balance_twd='9000',
+                 minimum_balance_twd='0', inventory_checked=True,
+                 pending_buy_reserve_twd='0', ai_committed_capital_twd='0',
+                 strategy_cap_twd='10000', daily_buy_limit_twd='20000',
+                 daily_buy_reserved_twd='0'),
+            Decimal('0'), Decimal('10000'), Decimal('20000'))
+        self.assertEqual(Decimal('0'), result['available'])
+        self.assertEqual('BLOCKED', result['status'])
+
     def test_budget_is_lowest_of_broker_strategy_and_daily_remaining(self):
         result = live_buy_budget(
             dict(status='OK', errors=[], broker_balance_twd='30541',
@@ -65,6 +94,7 @@ class LiveBuyBudgetTests(unittest.TestCase):
                  budget_status='READY'))
         self.assertTrue(rendered.startswith('AI 分析時間：2026-10-08T12:00:00+08:00'))
         self.assertIn('本輪可用買進預算：NT$ 500', rendered)
+        self.assertNotIn('券商可買餘額', rendered)
         self.assertIn('AI BUY 估算總額（含預留）：NT$ 220', rendered)
         self.assertIn('本筆預估委託（含費用預留）：NT$ 220', rendered)
 

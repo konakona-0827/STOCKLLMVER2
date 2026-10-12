@@ -12,6 +12,7 @@ from capital_multi_quote import MultiCapitalMarket, multi_snapshot
 from quant_scanner import scan_and_rank
 import candidate_analyzer
 import scan_store
+import strategy_evidence
 
 
 def candidate_payload(top, quotes, db_path, at, etf_symbols=()):
@@ -20,13 +21,16 @@ def candidate_payload(top, quotes, db_path, at, etf_symbols=()):
     result = []
     for r in top:
         q = lookup[r['symbol']]
+        market_history = scan_store.recent_history(db_path, q['symbol'], at)
+        evidence = strategy_evidence.assess(q, market_history)
         result.append(dict(symbol=q['symbol'], name=q.get('name'), asset_type='ETF' if q['symbol'] in etf_symbols else 'STOCK',
             quant_rank=r['rank'], quant_score=r['quant_score'],
             components=r['components'], metrics=r['metrics'],
             last_price=q['last_price'], open=q['open'], high=q['high'], low=q['low'],
             bid=q['bid'], ask=q['ask'], volume=q['volume'], volume_unit='shares',
             quote_status=q['quote_status'], quote_timestamp=q['quote_timestamp'],
-            position_qty=None, market_history=scan_store.recent_history(db_path, q['symbol'], at),
+            position_qty=None, market_history=market_history,
+            strategy_evidence=evidence, eligible_strategies=evidence['eligible_strategies'],
             warnings=r['warnings']))
     return result
 
@@ -87,13 +91,17 @@ def main():
         batch['run_id'] = run_id
         save_json(directory/'raw_quotes.json', raw)
         save_json(directory/'multi_market_snapshot.json', batch)
-        scanned, ranked, top = scan_and_rank(batch['quotes'], rules, now())
+        scanned, ranked, _ = scan_and_rank(batch['quotes'], rules, now())
+        quote_map = {q['symbol']: q for q in batch['quotes']}
+        db_path = args.data_dir/'market_history.sqlite3'
+        top = [r for r in ranked if strategy_evidence.assess(
+            quote_map[r['symbol']], scan_store.recent_history(db_path, r['symbol'], started)
+        )['eligible_strategies']][:rules['candidate_top_n']]
         quant = dict(rule_config=rules, quotes=scanned)
         ranking = dict(top_n=rules['candidate_top_n'], eligible_count=len(ranked), ranking=ranked,
                        top_candidates=top, excluded=[{'symbol':r['symbol'], 'reasons':r['exclusion_reasons']} for r in scanned if not r['eligible']])
         save_json(directory/'quant_scan.json', quant)
         save_json(directory/'candidate_ranking.json', ranking)
-        db_path = args.data_dir/'market_history.sqlite3'
         candidates = candidate_payload(top, batch['quotes'], db_path, started, universe.get('etf_symbols', []))
         request = candidate_analyzer.build_request(candidates)
         save_json(directory/'openai_request.json', request)

@@ -7,6 +7,8 @@ from config import ROOT, now, redact
 from market_calendar import trading_day_context
 from candidate_analyzer import object_schema, call_openai
 from paper_portfolio import MAX_ODDLOT_QTY, fee_twd, price_cents
+from strategy_evidence import STRATEGY_IDS
+from trade_economics import evaluate_buy
 
 ITEM = object_schema(dict(
     symbol={'type': 'string'}, decision={'type': 'string', 'enum': ['BUY', 'HOLD', 'SELL', 'WAIT']},
@@ -14,6 +16,10 @@ ITEM = object_schema(dict(
     action_ratio={'type': 'number', 'minimum': 0, 'maximum': 1},
     suggested_qty={'type': ['integer', 'null'], 'minimum': 0},
     reference_price={'type': ['number', 'null']}, suggested_price={'type': ['number', 'null']},
+    strategy_id={'type': 'string', 'enum': ['NONE', *STRATEGY_IDS]},
+    target_price={'type': ['number', 'null']},
+    invalidation_price={'type': ['number', 'null']},
+    holding_days={'type': ['integer', 'null'], 'minimum': 1, 'maximum': 22},
     reason={'type': 'string'}, data_quality={'type': 'string', 'enum': ['LIVE', 'LAST_KNOWN', 'UNAVAILABLE']},
     warnings={'type': 'array', 'items': {'type': 'string'}}))
 SCHEMA = object_schema(dict(market_view={'type': 'string'}, decisions={'type': 'array', 'items': ITEM}))
@@ -31,7 +37,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
         from execution.auto_advice_executor import LiveExecutionConfig
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
     instructions = (strategy_prompt if strategy_prompt is not None else
-                    (ROOT/'prompt_positions.md').read_text(encoding='utf-8'))
+                    (ROOT/'strategies'/'prompt_positions.md').read_text(encoding='utf-8'))
     instructions += ('\n\n交易日資料判讀：連續日 K 指連續「交易日」，週末與證交所休市日不構成缺口。'
                      '讀取輸入的 trading_calendar.previous_trading_date 與 skipped_closed_dates；'
                      '不可因前一曆日休市，就說缺少前一交易日資料。'
@@ -40,7 +46,15 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                      'history_status=INTRADAY_SNAPSHOTS_ONLY 只描述資料種類，不是禁止 BUY 的條件。'
                      '不得僅因沒有日 K 就一律 WAIT；若當前 LIVE 行情的開高低現價、買賣價差與成交量、'
                      '具體進場價、失效條件、交易成本和預算共同支持交易，可提出較低信心度及保守股數的 BUY。'
-                     '若證據仍不足，就說明缺少哪項決策依據並 WAIT；不可把盤中量宣稱為跨日放量。')
+                     '有持倉時，亦不得僅因缺少多日 K 而自動 HOLD 或阻止有即時風控依據的 SELL。'
+                     '若證據仍不足，就說明缺少哪項決策依據並 WAIT 或 HOLD；不可把盤中量宣稱為跨日放量。')
+    instructions += ('\n\n每檔有 eligible_strategies 與 strategy_evidence。BUY 的 strategy_id 必須從該檔'
+                     ' eligible_strategies 選，並填目標價 target_price、失效價 invalidation_price、'
+                     '預計交易日 holding_days（1 至 22）；非 BUY 填 strategy_id=NONE，三個欄位填 null。'
+                     '策略可用只代表有資料可評估，不代表買點成立。盤中快照不能當完整日 K。'
+                     'BUY 的目標價須在保守計入雙邊手續費、股票賣出 0.3% 或 ETF 0.1% 交易稅、'
+                     '目前買賣價差及下行失效風險後，仍有正淨收益與合理報酬風險比。'
+                     '不可只因缺少跨日資料就放棄其他有證據的策略。')
     return dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=instructions,
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
@@ -61,7 +75,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
 
 
 def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=1,
-             buy_cash_buffer_rate=0):
+             buy_cash_buffer_rate=0, commission_rate='0.001425'):
     if not isinstance(result, dict) or set(result) != set(SCHEMA['required']) or not isinstance(result['market_view'], str) or not result['market_view'].strip():
         raise ValueError('INVALID_ROOT')
     if not isinstance(result['decisions'], list):
@@ -98,14 +112,11 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                 raise ValueError('BUY_EXCEEDS_AVAILABLE_CASH')
             if 'max_buy_qty' not in c and d['suggested_qty'] is not None:
                 raise ValueError('INVALID_BUY_QUANTITY')
-            if available_cash_cents is not None and d['suggested_qty'] is not None:
-                gross_cents = price_cents(c.get('budget_price') or c.get('ask') or c['last_price']) * d['suggested_qty']
-                reserve_cents = max(Decimal(str(minimum_buy_fee_twd)) * 100,
-                                    Decimal(gross_cents) * Decimal(str(buy_cash_buffer_rate)),
-                                    Decimal(fee_twd(gross_cents) * 100))
-                planned_buy_cost_cents += gross_cents + reserve_cents
         elif d['action_ratio'] != 0 or d['suggested_qty'] != 0 or d['suggested_price'] is not None:
             raise ValueError('NON_ACTION_QUANTITY')
+        if d['decision'] != 'BUY' and (d['strategy_id'] != 'NONE' or
+                any(d[key] is not None for key in ('target_price', 'invalidation_price', 'holding_days'))):
+            raise ValueError('NON_BUY_TRADE_PLAN')
         ref = d['reference_price']
         if c['last_price'] is None:
             if ref is not None:
@@ -135,6 +146,47 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
             budget = ('未知' if available_cash_cents is None
                       else str(Decimal(available_cash_cents) / 100))
             d['warnings'].append(f'預算：本輪可用買進上限 NT$ {budget}；實際委託仍由券商資金風控重查。')
+        if d['decision'] == 'BUY':
+            plan_error = None
+            economics = None
+            if d['strategy_id'] not in STRATEGY_IDS or d['strategy_id'] not in c.get('eligible_strategies', []):
+                plan_error = 'BUY_STRATEGY_EVIDENCE_UNAVAILABLE'
+            elif type(d['holding_days']) is not int or not 1 <= d['holding_days'] <= 22:
+                plan_error = 'INVALID_BUY_HOLDING_HORIZON'
+            else:
+                try:
+                    economics = evaluate_buy(c, qty=d['suggested_qty'],
+                                             limit_price=d['suggested_price'],
+                                             target_price=d['target_price'],
+                                             invalidation_price=d['invalidation_price'],
+                                             minimum_commission_twd=minimum_buy_fee_twd,
+                                             commission_rate=commission_rate)
+                    if economics['estimated_net_upside_twd'] <= 0 or (
+                            economics['reward_risk_ratio'] is None or economics['reward_risk_ratio'] < 1):
+                        plan_error = 'BUY_NET_UPSIDE_OR_RISK_REWARD_INSUFFICIENT'
+                except (ValueError, TypeError) as exc:
+                    plan_error = str(exc)
+            if plan_error:
+                # A bad plan affects this symbol only. Keep valid opportunities
+                # from other evidence paths in the same response.
+                d.update(decision='WAIT', confidence=0, action_ratio=0,
+                         suggested_qty=0, suggested_price=None, strategy_id='NONE',
+                         target_price=None, invalidation_price=None, holding_days=None)
+                d['reason'] += f'；本檔買進計畫未通過獨立檢查：{plan_error}'
+                d['warnings'].append(plan_error)
+            else:
+                d['warnings'].append(
+                    f"目標情境淨利估算 NT$ {economics['estimated_net_upside_twd']:.2f}；"
+                    f"失效情境淨損估算 NT$ {economics['estimated_net_downside_twd']:.2f}；"
+                    '未含無法驗證的未來成交滑價，實際報酬不保證。')
+                if available_cash_cents is not None:
+                    entry_price = max(c.get('budget_price') or c.get('ask') or c['last_price'],
+                                      d['suggested_price'] or 0)
+                    gross_cents = price_cents(entry_price) * d['suggested_qty']
+                    reserve_cents = max(Decimal(str(minimum_buy_fee_twd)) * 100,
+                                        Decimal(gross_cents) * Decimal(str(buy_cash_buffer_rate)),
+                                        Decimal(fee_twd(gross_cents) * 100))
+                    planned_buy_cost_cents += gross_cents + reserve_cents
     if seen != set(lookup):
         raise ValueError('MISSING_ANALYSIS_SYMBOL')
     if available_cash_cents is not None and planned_buy_cost_cents > available_cash_cents:
@@ -152,14 +204,17 @@ def analyze(candidates, request, provider=call_openai):
         rules = request_input.get('paper_simulation_rules') or {}
         result = validate(json.loads(raw), candidates, budget_cents,
                           minimum_buy_fee_twd=rules.get('minimum_commission_twd', 1),
-                          buy_cash_buffer_rate=rules.get('buy_cash_buffer_rate', 0))
+                          buy_cash_buffer_rate=rules.get('buy_cash_buffer_rate', 0),
+                          commission_rate=rules.get('commission_rate', 0.001425))
         validation = 'VALID'
     except Exception as exc:
         api['error'] = redact(f'{type(exc).__name__}: {exc}')
         validation = 'ERROR'
         result = dict(market_view='分析失敗，本輪全部 WAIT。', decisions=[dict(
             symbol=c['symbol'], decision='WAIT', confidence=0, action_ratio=0, suggested_qty=0,
-            reference_price=c['last_price'], suggested_price=None, reason='ANALYSIS_FAILED_WAIT',
+            reference_price=c['last_price'], suggested_price=None, strategy_id='NONE',
+            target_price=None, invalidation_price=None, holding_days=None,
+            reason='ANALYSIS_FAILED_WAIT',
             data_quality=c['quote_status'], warnings=['ANALYSIS_FAILED'] +
             (['不是即時行情'] if c['quote_status']=='LAST_KNOWN' else [])) for c in candidates])
     names = {c['symbol']: c.get('name') or '股票名稱未取得' for c in candidates}

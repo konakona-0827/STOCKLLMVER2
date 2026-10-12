@@ -87,6 +87,8 @@ class MultiTests(unittest.TestCase):
             candidates = candidate_payload(top, qs, Path(tmp)/'db.sqlite3', self.at.isoformat())
         payload = json.loads(build_request(candidates)['input'])
         self.assertEqual(len(payload['candidates']), 10)
+        self.assertIn('intraday_recovery', candidates[0]['eligible_strategies'])
+        self.assertNotIn('multi_day_trend', candidates[0]['eligible_strategies'])
         self.assertNotIn('1019', [q['symbol'] for q in payload['candidates']])
         self.assertNotIn('raw_fields', str(payload))
 
