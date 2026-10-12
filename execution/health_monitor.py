@@ -18,6 +18,7 @@ from .account_guard import (query_buying_power, query_inventory,
                             query_settlement_dues, realtime_cash_qty)
 from .auto_advice_executor import LiveExecutionConfig
 from .capital_crosscheck import parse_reply_row
+from .settlement_balance import assess_settlement_balance
 
 
 _broker_sync_lock = threading.Lock()
@@ -415,6 +416,8 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "errors": report.get("errors", []),
             "session_action": report.get("session_action"),
         }
+        snapshot["settlement_balance_evidence"] = assess_settlement_balance(
+            previous, snapshot)
         try:
             balance = snapshot["broker_balance_twd"]
             daily_limit = snapshot["daily_buy_limit_twd"]

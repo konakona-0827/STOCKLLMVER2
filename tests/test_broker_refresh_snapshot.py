@@ -64,6 +64,26 @@ class BrokerRefreshSnapshotTests(unittest.TestCase):
             self.assertEqual('BLOCKED', snapshot['budget_status'])
             self.assertIn('BROKER_ACCOUNT_BELOW_CAP', snapshot['buy_block_reasons'])
 
+    def test_settlement_balance_evidence_survives_refresh(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ExecutionStore(root / 'data' / 'execution' / 'live_execution.sqlite3')
+            dues = [dict(trade_date='2026-10-08', settlement_date='2026-10-13',
+                         net_twd='-6021')]
+            before = persist_refresh_snapshot(root, dict(
+                checked_at='2026-10-12T17:00:00+08:00', status='OK',
+                broker_one_account_balance_twd='30000', broker_settlement_dues=dues,
+                errors=[]))
+            self.assertEqual('NO_BASELINE', before['settlement_balance_evidence']
+                             ['2026-10-13']['status'])
+            after = persist_refresh_snapshot(root, dict(
+                checked_at='2026-10-13T10:30:00+08:00', status='OK',
+                broker_one_account_balance_twd='23979', broker_settlement_dues=dues,
+                errors=[]))
+            self.assertEqual('BALANCE_MATCH', after['settlement_balance_evidence']
+                             ['2026-10-13']['status'])
+            self.assertEqual(after, latest_refresh_snapshot(root))
+
 
 if __name__ == '__main__':
     unittest.main()

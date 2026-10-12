@@ -5,6 +5,8 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 import json
+import os
+import tempfile
 import time
 from typing import Any
 
@@ -45,6 +47,27 @@ class LiveExecutionConfig:
     min_buy_fee_reserve_twd: Decimal = Decimal("20")
     max_daily_buy_twd: Decimal = Decimal("20000")
     observe_seconds: float = 20.0
+
+    @staticmethod
+    def set_daily_buy_limit(path: str | Path, amount_twd: int) -> None:
+        """Persist the user-selected daily BUY cap without exposing a partial JSON file."""
+        if isinstance(amount_twd, bool) or not isinstance(amount_twd, int) or amount_twd <= 0:
+            raise ValueError('單日買進上限須為正整數')
+        target = Path(path)
+        data = json.loads(target.read_text(encoding='utf-8'))
+        data['max_daily_buy_twd'] = amount_twd
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile('w', encoding='utf-8', newline='\n',
+                                             dir=target.parent, prefix=target.name + '.',
+                                             suffix='.tmp', delete=False) as handle:
+                temporary = Path(handle.name)
+                json.dump(data, handle, ensure_ascii=False, indent=2)
+                handle.write('\n')
+            os.replace(temporary, target)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
 
     @classmethod
     def load(cls, path: str | Path) -> "LiveExecutionConfig":
@@ -462,13 +485,14 @@ def execute_advice_file(
                 item["fee_reserve_twd"] = str(fee_reserve)
                 item["min_available_to_buy_twd"] = str(config.min_available_to_buy_twd)
                 daily_reserved = store.daily_reserved_buy_twd()
+                current_daily_limit = LiveExecutionConfig.load(config_path).max_daily_buy_twd
                 item["daily_reserved_buy_twd_before"] = str(daily_reserved)
-                item["max_daily_buy_twd"] = str(config.max_daily_buy_twd)
+                item["max_daily_buy_twd"] = str(current_daily_limit)
 
-                if daily_reserved + required > config.max_daily_buy_twd:
+                if daily_reserved + required > current_daily_limit:
                     raise AccountCheckError(
                         f"daily BUY cap: reserved={daily_reserved}, "
-                        f"required={required}, max={config.max_daily_buy_twd}"
+                        f"required={required}, max={current_daily_limit}"
                     )
 
                 if reserved_buy_twd + required > effective_cycle_budget:
@@ -540,8 +564,8 @@ def execute_advice_file(
                 "symbol": plan.symbol, "side": plan.side.value,
                 "quantity": plan.quantity, "limit_price": str(plan.limit_price),
                 "required_twd_with_buffer": str(reserved_this_order_twd),
-            }, daily_limit_twd=(config.max_daily_buy_twd if intent.side == Side.BUY
-                                else None))
+            }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
+                                if intent.side == Side.BUY else None))
             item["send_attempted"] = True
             result = broker.send_limit_order(
                 symbol=plan.symbol,
