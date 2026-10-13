@@ -8,6 +8,8 @@ Dashboard 開啟時立即與券商對帳；有未結委託時每 1 分鐘再查�
 
 使用者重新設定持股歸屬後，設定前已結束委託的延遲成交回放只補齊原委託成交證據；設定當時的券商庫存已包含這些股份，因此不重複加入 AI 股數或覆寫使用者的新歸屬。
 
+「AI 運用」欄位依目前已核對的 AI 管理股數與券商現股分類：AI 管理 0 股為「不可運用」（兩者均為 0 也適用）；正數且等於全部現股為「全數運用」；正數且小於全部現股為「部分運用」。券商庫存尚未核實，或 AI 股數超過券商現股時顯示「待核對」。人工持股不納入 AI 可賣股數。
+
 經獨立程序對照，完整 Order/Reply 登入流程若在登入後才建立 `SKQuoteLib`，即使只訂閱 1 檔也回 3030；先建立 `SKQuoteLib` 再執行 Center 登入，則同一完整流程可取得行情。正式程式現在於登入前建立並保留 Quote 物件。原本 21 檔單次訂閱也回 3030，因此清單依序切成每批最多 20 檔；每批間確認 `LeaveMonitor()=0`，再讓同一 Quote 物件重入。手動持股仍納入行情快照供持倉市值顯示，但不因此加入 AI 管理持倉。獨立程序已以正式類別連續完成兩次 20＋1 檔掃描：共四次訂閱及四次離開都回 0，每次取得 21 檔且只登入一次。
 
 SDK 文件指出 `SKQuoteLib_LeaveMonitor` 也會中斷 Reply 連線。多批行情掃描結束後，broker runtime 會在同一 COM 執行緒確認並恢復 Reply 連線；恢復失敗就視為掃描錯誤。訂閱前以唯讀 `SKQuoteLib_GetQuoteStatus` 記錄連線數與超限旗標；訂閱回傳 3030 時會再查一次。`data/health/capital_com_events.csv` 記錄 PID、Capital session、COM object ID、建立呼叫點、Login API/旗標/回傳碼，以及 Quote monitor、訂閱和離開呼叫。程式碼沒有 `SKCenterLib_LoginSetQuote` 呼叫點。Dashboard 關閉時會在 broker COM 執行緒離開 Quote monitor。若首次 Center 登入已嘗試但後續初始化失敗，本次 Dashboard 執行期間不再重試登入。

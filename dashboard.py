@@ -1404,13 +1404,21 @@ class Dashboard:
             symbol = row['symbol']
             quote = fresh_quotes.get(symbol)
             qty = int(row.get('broker_cash_qty') or 0)
+            ai_qty = int(row.get('ai_qty') or 0)
+            if not verified or not 0 <= ai_qty <= qty:
+                ai_usage = '待核對'
+            elif ai_qty == 0:
+                ai_usage = '不可運用'
+            elif ai_qty == qty:
+                ai_usage = '全數運用'
+            else:
+                ai_usage = '部分運用'
             reference = f'{quote[1]:,.2f}' if quote else '--'
             value_twd = f'NT$ {qty*quote[1]:,.2f}' if quote else '--'
             self.position_tree.insert('', 'end', values=[
                 symbol, quote[2] if quote and quote[2] else names.get(symbol, '股票名稱未取得'),
                 qty if verified else '--', row.get('ai_qty') if verified else '--',
-                ('禁止 AI 買賣' if not health.get('ai_position_settings', {}).get(symbol, {}).get('enabled', True)
-                 else '允許 AI 運用'),
+                ai_usage,
                 row.get('configured_user_qty') if verified else '--',
                 latest_buy_strategy.get(symbol, ('','--'))[1] if verified and int(row.get('ai_qty') or 0)>0 else '--',
                 reference, value_twd, quote[0].isoformat(timespec='seconds') if quote else '--',

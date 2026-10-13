@@ -205,11 +205,18 @@ class RodAndConfigurationTests(unittest.TestCase):
         with patch('dashboard.ROOT',self.root), patch.object(Dashboard,'refresh'), \
                 patch.object(Dashboard,'update_live_strategy_label'):
             app=Dashboard(gui,self.analysis.parent)
+            for ai_qty, broker_qty, verified, expected in (
+                    (0,20,True,'不可運用'), (0,0,True,'不可運用'),
+                    (20,20,True,'全數運用'), (5,20,True,'部分運用'),
+                    (5,20,False,'待核對'), (21,20,True,'待核對')):
+                app.last_health=self.snapshot(qty=ai_qty,broker_qty=broker_qty)
+                app.last_health['broker_inventory_verified']=verified
+                app.render()
+                item=app.position_tree.get_children()[0]
+                self.assertEqual(expected,app.position_tree.set(item,'AI 運用'))
             app.last_health=self.snapshot(qty=5,cost='500')
-            app.last_health['ai_position_settings']={'0050':{'enabled':False}}
             app.render()
             item=app.position_tree.get_children()[0]
-            self.assertEqual('禁止 AI 買賣',app.position_tree.set(item,'AI 運用'))
             app.position_tree.selection_set(item)
             app.position_settings()
             win=next(child for child in gui.winfo_children() if isinstance(child,tk.Toplevel))
