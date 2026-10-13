@@ -13,6 +13,7 @@ import re
 import threading
 import time
 import traceback
+import webbrowser
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS
@@ -109,11 +110,19 @@ ORDER_LEDGER_LABELS = {
 SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
 
 
-def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None):
+def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None, web_search=None):
     asset_types = {c.get('symbol'): c.get('asset_type', 'UNKNOWN') for c in analysis_set}
     names = {c.get('symbol'): c.get('name') or '股票名稱未取得' for c in analysis_set}
     lines = [f"AI 分析時間：{analysis_at or '未取得'}（台北時間 UTC+8）\n\n",
              f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
+    if web_search is not None:
+        search_cost = web_search.get('estimated_search_tool_cost_usd')
+        cost_text = f'US$ {search_cost:.4f}（不含 token 費用）' if search_cost is not None else '尚無計費次數資料'
+        lines.append(f"\n\n網路查證：{web_search.get('tool_calls', 0)} 次工具呼叫；搜尋工具費用估算：{cost_text}")
+        if not web_search.get('tool_calls'):
+            lines.append('\n本輪未執行搜尋，外部事件未經網路查證。')
+        for source in web_search.get('sources') or []:
+            lines.append(f"\n查證來源：{source.get('title') or source['url']}\n{source['url']}")
     if budget_info:
         buys = [d for d in decision.get('decisions', []) if d.get('decision') == 'BUY']
         candidates = {c.get('symbol'): c for c in analysis_set}
@@ -180,6 +189,16 @@ def update_detail_text(widget, content):
     widget.configure(state='normal')
     widget.delete('1.0', 'end')
     widget.insert('1.0', content)
+    if hasattr(widget, 'tag_names'):
+        for tag in widget.tag_names():
+            if tag.startswith('web_source_'):
+                widget.tag_delete(tag)
+        for index, match in enumerate(re.finditer(r'https?://[^\s<>「」『』（）；，。"\]]+', content)):
+            url = match.group().rstrip(').,;')
+            tag = f'web_source_{index}'
+            widget.tag_add(tag, f'1.0+{match.start()}c', f'1.0+{match.start()+len(url)}c')
+            widget.tag_configure(tag, foreground='#2563eb', underline=True)
+            widget.tag_bind(tag, '<Button-1>', lambda event, link=url: webbrowser.open(link))
     widget.configure(state='disabled')
     widget.yview_moveto(scroll_position)
 
@@ -1131,7 +1150,7 @@ class Dashboard:
             detail_text = (f"正式交易策略：{strategy.get('name','--')} v{strategy.get('version','--')}\n\n"
                            if strategy else '')
             detail_text += decision_text(r['decision'], r['analysis_set'],
-                r['manifest'].get('llm_response_received_at'), r.get('execution_budget'))
+                r['manifest'].get('llm_response_received_at'), r.get('execution_budget'), r.get('web_search'))
             if r['manifest'].get('display_notice'):
                 detail_text = r['manifest']['display_notice'] + '\n\n' + detail_text
             update_detail_text(self.detail, detail_text)

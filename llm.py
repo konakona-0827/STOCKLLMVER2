@@ -3,6 +3,7 @@ import json
 import math
 import os
 from config import ROOT
+from web_research import enable_search, search_audit
 
 SCHEMA = {
     'type': 'object', 'additionalProperties': False,
@@ -70,11 +71,12 @@ def validate(payload, snapshot, held_qty=None):
 
 
 def build_request(payload):
-    return dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
+    request = dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=(ROOT / 'prompt.md').read_text(encoding='utf-8-sig'),
                 input=json.dumps(payload, ensure_ascii=False),
                 text={'format': {'type': 'json_schema', 'name': 'ai_trading_advice', 'strict': True, 'schema': SCHEMA}},
                 max_output_tokens=2500)
+    return enable_search(request)
 
 
 def decide(payload):
@@ -83,8 +85,9 @@ def decide(payload):
     if not key:
         raise ValueError('OPENAI_API_KEY_MISSING')
     model = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
-    with OpenAI(api_key=key, timeout=45, max_retries=0) as client:
+    with OpenAI(api_key=key, timeout=120, max_retries=0) as client:
         response = client.responses.create(**build_request(payload))
     return response.output_text, {'model': model, 'response_status': response.status, 'response_id': response.id,
                                  'response_object': response.model_dump(),
-                                 'usage': response.usage.model_dump() if response.usage else {}}
+                                 'usage': response.usage.model_dump() if response.usage else {},
+                                 'web_search': search_audit(response.model_dump())}

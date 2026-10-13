@@ -2,6 +2,7 @@ import json
 import math
 import os
 from config import ROOT, now, redact
+from web_research import enable_search, search_audit
 
 
 def object_schema(properties):
@@ -30,11 +31,12 @@ def build_request(candidates):
     payload = dict(purpose='RESEARCH_SELECTION_ONLY_NO_ORDERS', candidates=candidates,
                    overall_data_quality=overall_quality(candidates), max_selected=5,
                    daily_history_status='NOT_PROVIDED')
-    return dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
+    request = dict(model=os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=(ROOT/'prompt_selection.md').read_text(encoding='utf-8'),
                 input=json.dumps(payload, ensure_ascii=False, allow_nan=False),
                 text={'format': {'type': 'json_schema', 'name': 'candidate_selection', 'strict': True, 'schema': SCHEMA}},
                 max_output_tokens=5000)
+    return enable_search(request)
 
 
 def validate(result, candidates):
@@ -92,11 +94,12 @@ def validate(result, candidates):
 
 def call_openai(request):
     from openai import OpenAI
-    with OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), timeout=60, max_retries=0) as client:
+    with OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), timeout=120, max_retries=0) as client:
         response = client.responses.create(**request)
     return response.output_text, dict(response_id=response.id, status=response.status,
                                       usage=response.usage.model_dump() if response.usage else {},
-                                      response_object=response.model_dump())
+                                      response_object=response.model_dump(),
+                                      web_search=search_audit(response.model_dump()))
 
 
 def analyze(candidates, request, provider=call_openai):

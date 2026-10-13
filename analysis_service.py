@@ -353,6 +353,7 @@ class AnalysisService:
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
+                      web_search=response.get('api', {}).get('web_search'),
                       paper_trade_history=paper_portfolio.trades(self.db_path))
         if live_enabled:
             result['execution_budget'] = {k:paper_state.get(k) for k in (
