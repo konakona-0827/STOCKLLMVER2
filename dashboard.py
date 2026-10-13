@@ -304,6 +304,8 @@ class Dashboard:
         self.broker_shutdown_started = False
         self.broker_shutdown_complete = False
         self.refresh_pending = False
+        self.refresh_started_at = None
+        self.refresh_sync_broker = False
         self.inventory_retry_attempts = 0
         self.inventory_retry_scheduled = False
         self.heartbeat = 0
@@ -389,7 +391,10 @@ class Dashboard:
         for label, command in [('開始自動掃描', self.start_auto), ('停止自動掃描', self.stop_auto),
                                ('重新整理並與券商對帳', lambda: self.refresh(sync_broker=True)), ('開啟最近分析資料夾', self.open_folder),
                                ('設定持倉', self.position_settings)]:
-            ttk.Button(bar, text=label, command=command).pack(side='left', padx=4, ipady=3)
+            button = ttk.Button(bar, text=label, command=command)
+            button.pack(side='left', padx=4, ipady=3)
+            if label == '重新整理並與券商對帳':
+                self.refresh_button = button
         ttk.Button(bar, text='選擇 MD 策略', command=self.choose_live_strategy).pack(
             side='left', padx=4, ipady=3)
         ttk.Label(bar, text='目前策略：').pack(side='left', padx=(8, 0))
@@ -397,6 +402,14 @@ class Dashboard:
         ttk.Label(bar, textvariable=self.live_strategy_text,
                   font=('Microsoft JhengHei UI', 9, 'bold')).pack(side='left')
         self.update_live_strategy_label()
+        refresh_bar = ttk.Frame(self.live_page)
+        refresh_bar.pack(fill='x', padx=20, pady=(0, 6))
+        self.refresh_progress = ttk.Progressbar(refresh_bar, mode='indeterminate', length=100)
+        self.refresh_progress.pack(side='left', padx=(0, 8))
+        self.refresh_text = tk.StringVar(value='尚未重新整理。')
+        self.refresh_label = ttk.Label(refresh_bar, textvariable=self.refresh_text,
+                                       justify='left', wraplength=1250)
+        self.refresh_label.pack(side='left', fill='x', expand=True)
         self.market_text = tk.StringVar(value='行情摘要：尚未取得資料')
         self.notebook = ttk.Notebook(self.live_page)
         self.notebook.pack(fill='both', expand=True, padx=20, pady=(0, 8))
@@ -723,15 +736,75 @@ class Dashboard:
         threading.Thread(target=work, name='analysis-worker', daemon=False).start()
 
     def refresh(self, sync_broker=False):
-        if self.refresh_pending or self.scheduler.scan_lock.locked() or self.closing:
+        if self.refresh_pending or self.closing:
+            return
+        if self.scheduler.scan_lock.locked():
+            self.refresh_text.set('尚未開始重新整理：分析正在執行，請於分析完成後再按一次。')
+            self.refresh_label.configure(foreground='#8B4513')
             return
         self.refresh_pending = True
+        self.refresh_started_at = time.monotonic()
+        self.refresh_sync_broker = sync_broker
+        self.refresh_button.configure(state='disabled', text='重新整理中…')
+        self.refresh_label.configure(foreground='#175A9C')
+        self.refresh_progress.start(12)
+        self.update_refresh_progress()
         def work():
             try:
                 self.events.put(('refresh', self.service.refresh(sync_broker=sync_broker)))
             except Exception as exc:
-                self.events.put(('refresh_error', redact(exc)))
+                self.events.put(('refresh_error', redact(f'{type(exc).__name__}: {exc}')))
         threading.Thread(target=work, name='refresh-worker', daemon=True).start()
+
+    def update_refresh_progress(self):
+        if not self.refresh_pending:
+            return
+        elapsed = int(time.monotonic() - self.refresh_started_at)
+        action = '正在查詢券商、核對持倉並更新行情' if self.refresh_sync_broker else '正在讀取本機資料'
+        self.refresh_text.set(f'{action}… 已等待 {elapsed} 秒。')
+
+    def finish_refresh(self, snapshot=None, error=None, deferred=False):
+        self.refresh_pending = False
+        self.refresh_progress.stop()
+        self.refresh_progress.configure(value=0)
+        self.refresh_button.configure(state='normal', text='重新整理並與券商對帳')
+        elapsed = int(time.monotonic() - self.refresh_started_at)
+        stamp = now().strftime('%H:%M:%S')
+        prefix = f'{stamp}（台北時間，耗時 {elapsed} 秒）'
+        color = '#184D47'
+        if error is not None:
+            message, color = f'重新整理失敗：{redact(error)}', '#B71C1C'
+        elif deferred:
+            message, color = '本次資料尚未套用：分析正在執行，請於分析完成後重新整理。', '#8B4513'
+        elif not self.refresh_sync_broker:
+            message = '本機資料已更新。'
+        else:
+            snapshot = snapshot or {}
+            errors = snapshot.get('errors') or []
+            if errors or snapshot.get('status') == 'ERROR':
+                message = '券商對帳失敗：' + redact('；'.join(str(e) for e in errors) or '券商回報錯誤，請查看系統資訊。')
+                color = '#B71C1C'
+            elif not snapshot.get('broker_inventory_verified'):
+                message, color = '查詢已結束，但持倉尚未完成核對，請稍後重試。', '#8B4513'
+            else:
+                warnings = []
+                if snapshot.get('status') in ('WARN', 'ALERT', 'PENDING_ORDER'):
+                    warnings.extend(BUY_BLOCK_LABELS.get(code, code)
+                                    for code in snapshot.get('buy_block_reasons') or [])
+                    if not warnings:
+                        warnings.append('有對帳差異或未結委託，請查看券商持倉及委託對帳')
+                if snapshot.get('settlement_query_error'):
+                    warnings.append('交割資料查詢失敗：' + str(snapshot['settlement_query_error']))
+                if snapshot.get('position_quote_errors'):
+                    warnings.append('部分持股行情更新失敗：' + str(snapshot['position_quote_errors']))
+                message = '重新整理與券商對帳完成。'
+                if warnings:
+                    message += '需注意：' + redact('；'.join(warnings))
+                    color = '#8B4513'
+            if snapshot.get('checked_at'):
+                message += f" 對帳資料時間：{snapshot['checked_at']}。"
+        self.refresh_text.set(f'{prefix}　{message}')
+        self.refresh_label.configure(foreground=color)
 
     def schedule_inventory_refresh(self, delay_ms=12000):
         if (self.closing or self.inventory_retry_scheduled
@@ -780,7 +853,6 @@ class Dashboard:
                     self.scheduler.finish()
                     self.schedule_inventory_refresh()
                 elif kind == 'refresh':
-                    self.refresh_pending = False
                     if not self.scheduler.scan_lock.locked():
                         self.result, self.positions, broker_snapshot = payload
                         if broker_snapshot is not None:
@@ -792,9 +864,12 @@ class Dashboard:
                         if self.result:
                             self.last_scan = self.result['manifest']['finished_at']
                         self.render()
+                        self.finish_refresh(broker_snapshot)
                         self.schedule_inventory_refresh()
+                    else:
+                        self.finish_refresh(deferred=True)
                 elif kind == 'refresh_error':
-                    self.refresh_pending = False
+                    self.finish_refresh(error=payload)
                     self.last_error = payload
                     if self.lifecycle:
                         self.lifecycle.event('WORKER_ERROR', worker='refresh', error=payload)
@@ -874,6 +949,7 @@ class Dashboard:
         except queue.Empty:
             pass
         wall, mono = time.time(), time.monotonic()
+        self.update_refresh_progress()
         if self.lifecycle and mono - self.last_lifecycle_heartbeat >= 60:
             self.last_lifecycle_heartbeat = mono
             self.lifecycle.event('HEARTBEAT', status=self.status, closing=self.closing,
