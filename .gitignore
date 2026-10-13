@@ -2,6 +2,14 @@
 __pycache__/
 *.pyc
 
-# Dashboard lifecycle and runtime logs stay local.
-/data/health/dashboard_lifecycle.jsonl
-/data/health/dashboard_*.log
+# Keep all logs local to avoid merge conflicts.
+*.log
+*.log.*
+*.jsonl
+logs/
+log/
+
+# CSV and JSON files used as runtime / operations logs.
+/data/health/*.csv
+/data/**/connection.json
+/operations/issue_log.csv
