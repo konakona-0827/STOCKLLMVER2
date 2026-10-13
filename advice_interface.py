@@ -77,10 +77,15 @@ def build_advice_interface(result, generated_at=None):
         quality_counts[quality] = quality_counts.get(quality, 0) + 1
     validation = manifest.get('ai_validation', 'NOT_RECORDED')
     run_status = 'READY' if manifest.get('status') == 'COMPLETE' and validation == 'VALID' else 'ERROR'
+    if manifest.get('read_only'):
+        run_status = 'READ_ONLY'
     return {
         'interface_version': '1.0',
         'generated_at': generated_at.isoformat(timespec='seconds'),
         'run_id': manifest.get('run_id'),
+        'trading_mode': manifest.get('trading_mode', 'llm'),
+        'decision_runtime': manifest.get('runtime'),
+        'read_only': bool(manifest.get('read_only')),
         'run_status': run_status,
         'run_error': manifest.get('error') or None,
         'llm_validation': validation,

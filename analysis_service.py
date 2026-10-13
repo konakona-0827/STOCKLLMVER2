@@ -1,5 +1,6 @@
 """Background SKCOM -> ranking/position union -> OpenAI -> immutable research run."""
 import json
+import os
 import sqlite3
 from datetime import datetime
 from decimal import Decimal
@@ -7,7 +8,7 @@ from contextlib import closing
 from pathlib import Path
 import threading
 import uuid
-from config import ROOT, TAIPEI, load_env, now, redact
+from config import ROOT, TAIPEI, load_env, now, redact, trading_mode
 from main import Audit, save_json, single_instance
 from universe import load_universe, load_rules
 from capital_multi_quote import multi_snapshot
@@ -150,15 +151,19 @@ class AnalysisService:
         self.db_path = self.directory/'market_history.sqlite3'
         self.stop = threading.Event()
 
-    def run(self, trigger, phase=lambda value: None):
+    def run(self, trigger, phase=lambda value: None, read_only=False):
         if trigger not in ('AUTO', 'MANUAL'):
             raise ValueError('INVALID_TRIGGER')
         load_env()
+        mode = trading_mode()
+        if read_only and mode != 'agent':
+            raise ValueError('READ_ONLY_PROBE_REQUIRES_AGENT_MODE')
         strategy = strategy_catalog.live_selection()
         run_id = now().strftime('%Y%m%dT%H%M%S')+'-gui-'+uuid.uuid4().hex[:8]
         directory = self.directory/'runs'/run_id
         directory.mkdir(parents=True)
         manifest = dict(run_id=run_id, trigger_type=trigger, started_at=now().isoformat(),
+                        trading_mode=mode, state_root=str(ROOT), read_only=read_only,
                         run_directory=str(directory.resolve()), real_order_sent=False,
                         strategy={k: strategy[k] for k in ('name', 'path', 'version', 'sha256')})
         (directory/'strategy.md').write_text(strategy['prompt'], encoding='utf-8')
@@ -291,15 +296,33 @@ class AnalysisService:
             else:
                 c['max_buy_qty'] = 0
         save_json(directory/'analysis_set.json', candidates)
-        request = position_analyzer.build_request(candidates, paper_state,
-                                                  strategy_prompt=strategy['prompt'])
+        agent_mode = manifest.get('trading_mode') == 'agent'
+        request = position_analyzer.build_request(candidates, paper_state, strategy_prompt=strategy['prompt'],
+                            model=os.getenv('OPENAI_AGENT_MODEL') if agent_mode else None)
+        if agent_mode:
+            import trading_agent
+            manifest['runtime'] = trading_agent.execution_metadata(request['model'])
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
         budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
         has_managed_position = any((c.get('paper_position') or {}).get('qty', 0) > 0 for c in candidates)
-        if (budget_ready or has_managed_position) and should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
-                              stopped=self.stop.is_set(), wall=now().timestamp()):
-            decision, response = position_analyzer.analyze(candidates, request)
+        if (manifest.get('read_only') or budget_ready or has_managed_position) and (
+                (manifest.get('read_only') and not self.stop.is_set()) or
+                should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
+                                   stopped=self.stop.is_set(), wall=now().timestamp())):
+            if agent_mode:
+                from agent_decision import analyze_existing
+                decision, response = analyze_existing(self, directory, manifest, request, candidates,
+                                                       paper_state, live_config, live_enabled, rules)
+                # On-demand Agent quotes become the authoritative handoff data.
+                fresh_by_symbol = {c['symbol']:c for c in candidates}
+                batch['quotes'] = [{**q, **fresh_by_symbol.get(q['symbol'], {})} for q in batch['quotes']]
+                batch['symbols_unavailable'] = sum(q['quote_status']=='UNAVAILABLE' for q in batch['quotes'])
+                batch['symbols_received'] = len(batch['quotes'])-batch['symbols_unavailable']
+                save_json(directory/'analysis_set.json', candidates)
+                save_json(directory/'multi_market_snapshot.json', batch)
+            else:
+                decision, response = position_analyzer.analyze(candidates, request)
         else:
             market_closed = twse_closed_reason(now().date())
             has_live_candidate = any(
@@ -322,7 +345,7 @@ class AnalysisService:
                 'error':'BUY_BUDGET_CHECK_FAILED' if not budget_ready else None,
             }, raw_response='')
         phase('PROCESSING_RESULT')
-        if response['validation'] == 'VALID' and not self.stop.is_set() and not live_enabled:
+        if response['validation'] == 'VALID' and not self.stop.is_set() and not live_enabled and not manifest.get('read_only'):
             simulation = paper_portfolio.apply_decisions(
                 self.db_path, manifest['run_id'], decision['decisions'], candidates)
         else:
@@ -378,8 +401,13 @@ class AnalysisService:
 
         execution_report = self._execute_after_advice_written(
             manifest.get('trigger_type'), result, directory, advice_path,
-        )
+        ) if live_enabled and not manifest.get('read_only') else None
+        if manifest.get('read_only'):
+            result['execution_report'] = dict(status='READ_ONLY',trading_mode='agent',broker_order_sent=False)
+            save_json(directory/'dashboard_result.json',result)
+            save_json(self.directory/'latest_dashboard.json',result)
         if execution_report is not None:
+            execution_report['trading_mode'] = manifest.get('trading_mode','llm')
             result['execution_report'] = execution_report
             manifest['real_order_sent'] = any(x.get('broker_order_sent') is True
                                               for x in execution_report.get('results', []))
@@ -407,6 +435,8 @@ class AnalysisService:
 
     def _execute_after_advice_written(self, trigger, result, directory, advice_path):
         manifest = result.get('manifest') or {}
+        if manifest.get('read_only'):
+            return None
         if (trigger not in ('AUTO','MANUAL') or manifest.get('status') != 'COMPLETE'
                 or manifest.get('ai_validation') != 'VALID'):
             return None
@@ -439,6 +469,8 @@ class AnalysisService:
             }
             latest_execution = self.directory.parent/'execution'/'latest_live_execution.json'
             save_json(latest_execution, report)
+        if 'trading_mode' in manifest:
+            report['trading_mode'] = manifest['trading_mode']
         save_json(directory/'execution_report.json', report)
         return report
 

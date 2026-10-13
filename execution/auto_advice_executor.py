@@ -161,6 +161,8 @@ def execute_advice_file(
         return report
 
     payload, intents = load_advice_file(advice_path)
+    agent_mode = payload.get('trading_mode') == 'agent'
+    report['trading_mode'] = payload.get('trading_mode', 'llm')
     report["trade_intent_count"] = len(intents)
 
     if not intents:
@@ -328,6 +330,28 @@ def execute_advice_file(
             "planned_buy_twd_with_reserve": str(planned_buy_twd),
             "unplannable_buy_symbols": unplannable_buys,
         }
+        if agent_mode:
+            # Independent arithmetic over raw Agent JSON; never trust model totals
+            # or coercion of its quantities. The normal broker checks still run.
+            agent_total = Decimal('0')
+            try:
+                for raw in payload.get('recommendations', []):
+                    if raw.get('decision') != 'BUY':
+                        continue
+                    quantity = raw.get('suggested_qty')
+                    if type(quantity) is not int or not 1 <= quantity <= 999:
+                        raise ValueError('AGENT_INVALID_BUY_QUANTITY')
+                    price = quotes[raw['symbol']].ask
+                    if price is None or not price.is_finite() or price <= 0:
+                        raise ValueError('AGENT_UNVERIFIED_BUY_PRICE')
+                    gross = price*quantity
+                    agent_total += gross+max(gross*config.buy_cash_buffer_rate,config.min_buy_fee_reserve_twd)
+                if not agent_total.is_finite() or agent_total > effective_cycle_budget:
+                    raise ValueError('AGENT_BUY_TOTAL_EXCEEDS_PYTHON_BUDGET')
+            except (ValueError,KeyError,ArithmeticError) as exc:
+                budget_failure = str(exc)
+            report['agent_budget_check'] = dict(status='BLOCKED' if budget_failure else 'PASS',
+                required_twd=str(agent_total),available_twd=str(effective_cycle_budget))
         if budget_failure or planned_buy_twd > effective_cycle_budget:
             reason = budget_failure or (
                 f"planned BUY total {planned_buy_twd} exceeds current round limit "
@@ -355,6 +379,7 @@ def execute_advice_file(
 
     for intent in intents:
         item: dict[str, Any] = {
+            "trading_mode": payload.get('trading_mode', 'llm'),
             "decision_id": intent.decision_id,
             "run_id": intent.run_id,
             "symbol": intent.symbol,

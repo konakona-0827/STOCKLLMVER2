@@ -16,7 +16,7 @@ import traceback
 import webbrowser
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
-from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS
+from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS, trading_mode
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
 )
@@ -407,6 +407,11 @@ class Dashboard:
         bar.pack(fill='x', padx=20, pady=(0, 7))
         self.run_button = ttk.Button(bar, text='分析並送交實盤風控', command=self.manual)
         self.run_button.pack(side='left', padx=(0, 8), ipady=3)
+        self.decision_mode = tk.StringVar(value=trading_mode())
+        self.mode_selector = ttk.Combobox(bar,textvariable=self.decision_mode,values=('llm','agent'),
+                                         state='readonly',width=7)
+        self.mode_selector.pack(side='left',padx=(0,8))
+        self.mode_selector.bind('<<ComboboxSelected>>',self.select_decision_mode)
         for label, command in [('開始自動掃描', self.start_auto), ('停止自動掃描', self.stop_auto),
                                ('重新整理並與券商對帳', lambda: self.refresh(sync_broker=True)), ('開啟最近分析資料夾', self.open_folder),
                                ('設定持倉', self.position_settings)]:
@@ -538,9 +543,13 @@ class Dashboard:
     def update_live_strategy_label(self):
         try:
             strategy = strategy_catalog.live_selection()
-            self.live_strategy_text.set(Path(strategy['path']).name)
+            self.live_strategy_text.set(trading_mode().upper() + '｜' + Path(strategy['path']).name)
         except Exception as exc:
             self.live_strategy_text.set('策略檔案無法讀取：' + redact(exc))
+
+    def select_decision_mode(self, _event=None):
+        os.environ['TRADING_MODE'] = self.decision_mode.get()
+        self.update_live_strategy_label()
 
     def choose_live_strategy(self):
         path = filedialog.askopenfilename(
@@ -741,6 +750,8 @@ class Dashboard:
         threading.Thread(target=work, name='daily-limit-worker', daemon=True).start()
 
     def launch(self, trigger):
+        self.select_decision_mode()
+        self.mode_selector.configure(state='disabled')
         self.status = 'SCANNING_QUOTES'
         self.last_error = ''
         self.run_button.configure(state='disabled')
@@ -869,6 +880,7 @@ class Dashboard:
                     if self.lifecycle:
                         self.lifecycle.event('WORKER_ERROR', worker='analysis', error=payload)
                 elif kind == 'finished':
+                    self.mode_selector.configure(state='readonly')
                     self.scheduler.finish()
                     self.schedule_inventory_refresh()
                 elif kind == 'refresh':
