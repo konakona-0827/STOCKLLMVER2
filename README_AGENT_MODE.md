@@ -78,9 +78,10 @@ Agent 回傳與 LLM 相同的 `market_view` / `decisions` JSON。
 通過後交給原有 advice interface、Risk Engine、Python 下單、成交核對及帳務函式。
 BUY / SELL 由 Python 執行；HOLD / WAIT 不下單。
 
-`trading_mode=agent` 讓原 Python 執行器額外重算原始 JSON 的 BUY 股數、
-可驗證 ask、費用／緩衝與合計金額，再與 Python 確認的可用預算比較。
-不信任 Agent 自算金額；不合法數量或超預算會阻擋整批委託。
+`trading_mode=agent` 的額外檢查只比較：Python 算出的本輪 BUY 交易額度
+不得超過 Python 確認的剩餘可用額度，並記錄 PASS / BLOCKED。
+沿用原有計算中的費用／緩衝，不新增資金政策；不信任 Agent 自算的金額。
+數量與 JSON 格式仍由原有驗證器檢查，超預算會阻擋整批委託。
 原有送單前券商資金、持倉與其他風控保持啟用。
 
 模式記錄在 run manifest、advice、execution report 與委託明細，

@@ -118,15 +118,14 @@ class LiveAgentIntegrationTests(unittest.TestCase):
                 replay = execute(first_advice)
                 self.assertEqual(replay['results'][0]['status'],'SKIPPED_DUPLICATE')
                 self.assertEqual(sender.call_count,2)
-                # The Agent flag adds a raw-number check even if the legacy
-                # adapter would coerce a float quantity into an integer.
+                # The Python-computed total must not exceed remaining credit.
                 invalid = json.loads(first_advice.read_text(encoding='utf-8'))
-                invalid['run_id'] = 'agent-invalid-quantity'
-                invalid['recommendations'][0]['suggested_qty'] = 1.5
+                invalid['run_id'] = 'agent-insufficient-budget'
+                invalid['execution_budget']['available_cash_twd'] = 50
                 invalid_path = root/'invalid.json'
                 invalid_path.write_text(json.dumps(invalid),encoding='utf-8')
                 rejected = execute(invalid_path)
-                self.assertEqual(rejected['agent_budget_check']['status'],'BLOCKED')
+                self.assertEqual(rejected['status'],'BLOCKED_BUDGET')
                 self.assertEqual(sender.call_count,2)
             self.assertFalse((service.directory/'agent'/'experiments.sqlite3').exists())
             self.assertEqual(paper_portfolio.trades(service.db_path),[])

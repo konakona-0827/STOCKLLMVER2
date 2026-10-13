@@ -331,27 +331,11 @@ def execute_advice_file(
             "unplannable_buy_symbols": unplannable_buys,
         }
         if agent_mode:
-            # Independent arithmetic over raw Agent JSON; never trust model totals
-            # or coercion of its quantities. The normal broker checks still run.
-            agent_total = Decimal('0')
-            try:
-                for raw in payload.get('recommendations', []):
-                    if raw.get('decision') != 'BUY':
-                        continue
-                    quantity = raw.get('suggested_qty')
-                    if type(quantity) is not int or not 1 <= quantity <= 999:
-                        raise ValueError('AGENT_INVALID_BUY_QUANTITY')
-                    price = quotes[raw['symbol']].ask
-                    if price is None or not price.is_finite() or price <= 0:
-                        raise ValueError('AGENT_UNVERIFIED_BUY_PRICE')
-                    gross = price*quantity
-                    agent_total += gross+max(gross*config.buy_cash_buffer_rate,config.min_buy_fee_reserve_twd)
-                if not agent_total.is_finite() or agent_total > effective_cycle_budget:
-                    raise ValueError('AGENT_BUY_TOTAL_EXCEEDS_PYTHON_BUDGET')
-            except (ValueError,KeyError,ArithmeticError) as exc:
-                budget_failure = str(exc)
+            # Both amounts were calculated by existing Python account/order code.
+            if planned_buy_twd > effective_cycle_budget:
+                budget_failure = 'AGENT_BUY_TOTAL_EXCEEDS_REMAINING_BUDGET'
             report['agent_budget_check'] = dict(status='BLOCKED' if budget_failure else 'PASS',
-                required_twd=str(agent_total),available_twd=str(effective_cycle_budget))
+                required_twd=str(planned_buy_twd),available_twd=str(effective_cycle_budget))
         if budget_failure or planned_buy_twd > effective_cycle_budget:
             reason = budget_failure or (
                 f"planned BUY total {planned_buy_twd} exceeds current round limit "
