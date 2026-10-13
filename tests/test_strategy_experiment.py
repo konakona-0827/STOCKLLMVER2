@@ -22,7 +22,8 @@ class StrategyExperimentTests(unittest.TestCase):
         self.prompt = self.folder/'version.md'
         self.prompt.write_text('第一版策略',encoding='utf-8')
         self.first = self.store.add_strategy(self.prompt)
-        self.rules = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
+        self.rules = LiveExecutionConfig(max_daily_buy_twd=Decimal('20000'),
+                                         min_available_to_buy_twd=Decimal('10000'))
 
     def tearDown(self):
         self.tmp.cleanup()

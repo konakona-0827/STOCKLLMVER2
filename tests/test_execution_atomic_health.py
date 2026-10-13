@@ -106,6 +106,13 @@ class AtomicAndHealthTests(unittest.TestCase):
             )
             store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
             store.bootstrap_ai_qty("0050", 3)
+            analysis_db = root / "data" / "analysis" / "market_history.sqlite3"
+            analysis_db.parent.mkdir(parents=True)
+            with closing(sqlite3.connect(analysis_db)) as con:
+                con.execute("CREATE TABLE paper_account (account_id INTEGER, capital_limit_cents INTEGER)")
+                con.execute("INSERT INTO paper_account VALUES (1, 1000000)")
+                con.execute("CREATE TABLE positions (symbol TEXT, user_qty INTEGER, ai_managed_qty INTEGER)")
+                con.commit()
             row = InventoryRow("0050", "T", 2, 0, 0, 0, 0, 2, 2, "raw")
             power = BuyingPower(True, True, Decimal("9000"), Decimal("9000"),
                                 Decimal("9000"), "raw")

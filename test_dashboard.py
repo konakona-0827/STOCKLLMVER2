@@ -136,7 +136,11 @@ class DashboardTests(unittest.TestCase):
 
     def test_run_error_saved(self):
         svc = AnalysisService(Path(self.tmp.name))
-        with patch('analysis_service.load_env'),patch.object(svc,'_run',side_effect=RuntimeError('test failure')):
+        with patch('analysis_service.load_env'), \
+                patch('analysis_service.strategy_catalog.live_selection', return_value={
+                    'name':'fixture', 'path':'fixture.md', 'version':'test',
+                    'sha256':'test', 'prompt':'隔離測試策略'}), \
+                patch.object(svc,'_run',side_effect=RuntimeError('test failure')):
             with self.assertRaises(RuntimeError):
                 svc.run('MANUAL')
         runs = list((Path(self.tmp.name)/'runs').glob('*/run.json'))
@@ -160,7 +164,11 @@ class DashboardTests(unittest.TestCase):
         paper_portfolio.set_capital_limit(Path(self.tmp.name)/'market_history.sqlite3', 100000)
         root = tk.Tk()
         root.withdraw()
-        app = Dashboard(root,Path(self.tmp.name),120)
+        # This checks worker recovery, so neither startup nor ticks may use
+        # the production broker or persist production health snapshots.
+        with patch.object(Dashboard,'refresh'), patch.object(Dashboard,'launch_health'):
+            app = Dashboard(root,Path(self.tmp.name),120)
+        app.launch_health = lambda: None
         calls = []
         def fail(trigger, phase):
             calls.append(trigger)

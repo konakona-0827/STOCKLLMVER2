@@ -1,4 +1,4 @@
-"""Hourly, read-only broker and SQLite health report for the GUI runtime."""
+"""Broker reconciliation, ROD expiry and SQLite health reports for Dashboard."""
 from __future__ import annotations
 
 import csv
@@ -21,7 +21,7 @@ from .capital_crosscheck import parse_reply_row
 from .settlement_balance import assess_settlement_balance
 
 
-_broker_sync_lock = threading.Lock()
+_broker_sync_lock = threading.RLock()
 
 
 def _append_csv(path: Path, fields: tuple[str, ...], row: dict) -> None:
@@ -99,7 +99,8 @@ def _read_order_keys(path: Path) -> list[dict]:
                 for decision_id, symbol, side, status, detail_json in con.execute(
                     """SELECT decision_id,symbol,side,status,detail_json FROM execution_attempts
                        WHERE status IN ('FILLED','PARTIALLY_FILLED','ACKNOWLEDGED','UNCONFIRMED',
-                                        'CANCELLED','PARTIALLY_FILLED_CANCELLED')
+                                        'CANCELLED','PARTIALLY_FILLED_CANCELLED',
+                                        'EXPIRED','PARTIALLY_FILLED_EXPIRED')
                        ORDER BY started_at DESC LIMIT 100""")]
 
 
@@ -149,6 +150,7 @@ def current_buy_block_reasons(report: dict) -> list[str]:
            ("FILL_MATCH", "ARCHIVED_BROKER_FILL_VERIFIED", "FILL_MISMATCH",
             "NO_FILL_CONFIRMED", "NO_FILL_YET_VERIFIED",
             "USER_CANCEL_CONFIRMED_NO_FILL",
+            "ROD_EXPIRED",
             "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED")
            for row in checks):
         reasons.append("BROKER_FILL_UNVERIFIED")
@@ -212,19 +214,33 @@ def _ai_committed_capital(project_root: Path,
     with closing(sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro",
                                  uri=True, timeout=10)) as con:
         attempts = con.execute(
-            """SELECT symbol,side,detail_json FROM execution_attempts
+            """SELECT symbol,side,detail_json,started_at FROM execution_attempts
                ORDER BY started_at,rowid""").fetchall()
         has_adoptions = con.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='manual_ai_adoptions'"
         ).fetchone()
         adoptions = (con.execute(
-            "SELECT symbol,qty,unit_cost_twd FROM manual_ai_adoptions ORDER BY adopted_at,id"
+            "SELECT symbol,qty,unit_cost_twd,adopted_at FROM manual_ai_adoptions ORDER BY adopted_at,id"
         ).fetchall() if has_adoptions else [])
+        has_adjustments = con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ai_position_adjustments'").fetchone()
+        adjustments = (con.execute(
+            "SELECT symbol,qty,committed_cost_twd,adjusted_at FROM ai_position_adjustments ORDER BY id"
+        ).fetchall() if has_adjustments else [])
         formal = {str(symbol): int(qty) for symbol, qty in con.execute(
             "SELECT symbol,qty FROM ai_positions")}
     holdings: dict[str, tuple[int, Decimal]] = {}
+    checkpoints = {}
+    for symbol, qty, cost, stamp in adjustments:
+        value = Decimal(cost)
+        if qty < 0 or not value.is_finite() or value < 0 or (qty > 0 and value <= 0):
+            raise RuntimeError(f"{symbol}: AI configuration cost is invalid")
+        holdings[symbol] = (qty, value)
+        checkpoints[symbol] = datetime.fromisoformat(stamp)
     limit_price_estimated = False
-    for symbol, adopted_qty, unit_cost in adoptions:
+    for symbol, adopted_qty, unit_cost, stamp in adoptions:
+        if symbol in checkpoints and datetime.fromisoformat(stamp) <= checkpoints[symbol]:
+            continue
         qty, cost = holdings.get(symbol, (0, Decimal("0")))
         gross = Decimal(str(unit_cost)) * int(adopted_qty)
         if adopted_qty <= 0 or not gross.is_finite() or gross <= 0:
@@ -232,7 +248,9 @@ def _ai_committed_capital(project_root: Path,
         fee = max(cfg.min_buy_fee_reserve_twd,
                   gross * cfg.buy_cash_buffer_rate)
         holdings[symbol] = (qty + int(adopted_qty), cost + gross + fee)
-    for symbol, side, detail_json in attempts:
+    for symbol, side, detail_json, stamp in attempts:
+        if symbol in checkpoints and datetime.fromisoformat(stamp) <= checkpoints[symbol]:
+            continue
         detail = json.loads(detail_json or "{}")
         filled = int(detail.get("filled_quantity") or 0)
         if filled <= 0:
@@ -409,6 +427,8 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "position_quote_errors": report.get("position_quote_errors", previous.get("position_quote_errors", {})),
             "position_quotes_checked_at": report.get("position_quotes_checked_at", previous.get("position_quotes_checked_at")),
             "ai_positions": report.get("db_ai_positions", {}),
+            "ai_position_settings": report.get("ai_position_settings", {}),
+            "expired_rod_orders": report.get("expired_rod_orders", []),
             "unresolved_attempts": report.get("unresolved_attempts", []),
             "execution_attempt_counts": counts,
             "execution_attempts": attempts,
@@ -554,6 +574,12 @@ def run_health_check(project_root: str | Path, *, session=None,
         report["status"] = "WARN"
 
     try:
+        from .execution_store import ExecutionStore
+        store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3",
+                               must_exist=True)
+        report["expired_rod_orders"] = store.expire_rod_orders(
+            at=datetime.fromisoformat(checked_at))
+        report["ai_position_settings"] = store.position_settings()
         positions, unresolved = _read_execution_db(
             root / "data" / "execution" / "live_execution.sqlite3"
         )
@@ -684,6 +710,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                              and int(detail.get("user_fill_confirmed_qty") or 0)
                              == recorded_qty == ordered_qty)
                 has_cancel = bool(cancel_count or archived_cancel or user_cancel)
+                expired = attempt["status"] in ("EXPIRED", "PARTIALLY_FILLED_EXPIRED")
                 if broker_qty >= ordered_qty > 0:
                     event_status = "FULLY_FILLED"
                 elif broker_qty > 0:
@@ -714,6 +741,8 @@ def run_health_check(project_root: str | Path, *, session=None,
                 elif broker_qty and broker_qty != recorded_qty:
                     verification = "FILL_MISMATCH"
                     report["status"] = "ALERT"
+                elif expired and recorded_qty == 0:
+                    verification = "ROD_EXPIRED"
                 elif (user_cancel and not (cancel_count or archived_cancel)
                       and recorded_qty == 0):
                     verification = "USER_CANCEL_CONFIRMED_NO_FILL"
@@ -729,6 +758,10 @@ def run_health_check(project_root: str | Path, *, session=None,
                     verification = "ARCHIVED_BROKER_FILL_VERIFIED"
                     if not has_cancel:
                         event_status = "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED"
+                elif (expired and recorded_qty > 0
+                      and detail.get("crosscheck_performed") is True
+                      and int(detail.get("deal_event_count") or 0) > 0):
+                    verification = "ARCHIVED_BROKER_FILL_VERIFIED"
                 elif user_fill and broker_qty == 0:
                     verification = "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED"
                     event_status = "USER_PRIOR_FILL_CONFIRMED_REPLAY_NOT_RETURNED"
@@ -743,6 +776,8 @@ def run_health_check(project_root: str | Path, *, session=None,
                     gross_twd = detail.get("broker_replay_fill_gross_twd")
                 if has_cancel and 0 < verified_qty < ordered_qty:
                     event_status = "PARTIAL_FILL_REMAINDER_CANCELLED"
+                if expired and verification != "FILL_MISMATCH":
+                    event_status = "ROD_REMAINDER_EXPIRED"
                 report["broker_order_reconciliation"].append(dict(
                     decision_id=attempt["decision_id"],
                     symbol=attempt["symbol"], side=attempt["side"], seq13=str(seq13),
@@ -750,11 +785,12 @@ def run_health_check(project_root: str | Path, *, session=None,
                     ordered_qty=ordered_qty,
                     broker_replay_filled_qty=broker_qty,
                     broker_verified_filled_qty=verified_qty,
-                    unconfirmed_qty=(0 if has_cancel or user_fill else
+                    unconfirmed_qty=(0 if has_cancel or user_fill or expired else
                                      max(0, ordered_qty-verified_qty)),
                     user_confirmed_filled_qty=(recorded_qty if user_fill else 0),
                     cancelled_qty=(max(0, ordered_qty-verified_qty)
                                    if has_cancel else 0),
+                    expired_qty=(max(0, ordered_qty-verified_qty) if expired else 0),
                     broker_event_status=event_status,
                     broker_event_counts=dict(ack=accepted_count, fill=fill_event_count,
                                              cancel=cancel_count),

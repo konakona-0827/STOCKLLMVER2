@@ -80,6 +80,68 @@ class ExecutionStore:
                     updated_at TEXT NOT NULL
                 )
             """)
+            con.execute("""CREATE TABLE IF NOT EXISTS ai_position_settings (
+                symbol TEXT PRIMARY KEY, enabled INTEGER NOT NULL,
+                configured_qty INTEGER NOT NULL, updated_at TEXT NOT NULL)""")
+            con.execute("""CREATE TABLE IF NOT EXISTS ai_position_adjustments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT NOT NULL,
+                previous_qty INTEGER NOT NULL, qty INTEGER NOT NULL,
+                committed_cost_twd TEXT NOT NULL, adjusted_at TEXT NOT NULL,
+                broker_cash_qty INTEGER NOT NULL, broker_checked_at TEXT NOT NULL)""")
+
+    def position_settings(self) -> dict[str, dict]:
+        with self._connect() as con:
+            return {symbol: dict(enabled=bool(enabled), configured_qty=qty,
+                                 updated_at=stamp)
+                    for symbol, enabled, qty, stamp in con.execute(
+                        "SELECT symbol,enabled,configured_qty,updated_at FROM ai_position_settings")}
+
+    def ai_trading_enabled(self, symbol: str) -> bool:
+        with self._connect() as con:
+            row = con.execute("SELECT enabled FROM ai_position_settings WHERE symbol=?",
+                              (symbol.upper(),)).fetchone()
+        return row is None or bool(row[0])
+
+    def expire_rod_orders(self, *, at: datetime | None = None) -> list[dict]:
+        """Close yesterday's intraday ROD remainder without sending a cancel."""
+        at = at or datetime.now(TAIPEI)
+        if at.tzinfo is None:
+            raise ValueError("ROD expiry requires a timezone-aware time")
+        local_day = at.astimezone(TAIPEI).date()
+        changes = []
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            rows = con.execute("""SELECT decision_id,symbol,side,started_at,detail_json
+                FROM execution_attempts WHERE status IN
+                ('SUBMITTED','ACKNOWLEDGED','PARTIALLY_FILLED','UNCONFIRMED')""").fetchall()
+            for decision_id, symbol, side, started, raw in rows:
+                detail = json.loads(raw or "{}")
+                # Historical formal orders were all SendStockOddLotOrder,
+                # sPeriod=4/nTradeType=0. Explicit other order types never expire here.
+                if (detail.get("time_in_force", "ROD") != "ROD"
+                        or detail.get("market_session", "INTRADAY_ODD_LOT") != "INTRADAY_ODD_LOT"
+                        or detail.get("send_return_code", detail.get("return_code")) != 0
+                        or not detail.get("seq13")):
+                    continue
+                stamp = datetime.fromisoformat(detail.get("submitted_at") or started)
+                if stamp.tzinfo is None or stamp.astimezone(TAIPEI).date() >= local_day:
+                    continue
+                ordered, filled = int(detail.get("quantity") or 0), int(detail.get("filled_quantity") or 0)
+                if side not in ("BUY", "SELL") or not 0 <= filled < ordered <= 999:
+                    continue
+                status = "PARTIALLY_FILLED_EXPIRED" if filled else "EXPIRED"
+                detail.update(time_in_force="ROD", market_session="INTRADAY_ODD_LOT",
+                              send_return_code=0,
+                              expired_quantity=ordered-filled,
+                              expired_at=at.isoformat(), expiration_source="ROD_DAY_END",
+                              order_trade_date=stamp.astimezone(TAIPEI).date().isoformat())
+                con.execute("""UPDATE execution_attempts SET status=?,finished_at=?,detail_json=?
+                    WHERE decision_id=?""", (status, at.isoformat(),
+                    json.dumps(detail, ensure_ascii=False), decision_id))
+                self._insert_event(con, decision_id, "ROD_EXPIRED", at.isoformat(), detail)
+                changes.append(dict(changed=True, decision_id=decision_id, symbol=symbol,
+                                    status=status, expired_qty=ordered-filled))
+        return changes
 
     def append_event(
         self,
@@ -262,16 +324,17 @@ class ExecutionStore:
         with self._connect() as con:
             con.execute("BEGIN IMMEDIATE")
             row = con.execute(
-                """SELECT symbol,side,status,detail_json FROM execution_attempts
+                """SELECT symbol,side,status,detail_json,started_at FROM execution_attempts
                    WHERE decision_id=?""", (decision_id,),
             ).fetchone()
             if row is None:
                 raise RuntimeError("formal order is missing")
-            symbol, side, status, detail_json = row
+            symbol, side, status, detail_json, started_at = row
             detail = json.loads(detail_json or "{}")
             if (side not in ("BUY", "SELL") or status not in
                     ("ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED",
-                     "UNCONFIRMED", "CANCELLED", "PARTIALLY_FILLED_CANCELLED")
+                     "UNCONFIRMED", "CANCELLED", "PARTIALLY_FILLED_CANCELLED",
+                     "EXPIRED", "PARTIALLY_FILLED_EXPIRED")
                     or str(detail.get("seq13")) != str(seq13)
                     or detail.get("send_return_code") != 0):
                 raise RuntimeError("broker order identity is not verified")
@@ -286,12 +349,23 @@ class ExecutionStore:
                 "SELECT qty FROM ai_positions WHERE symbol=?", (symbol,),
             ).fetchone()
             current_qty = int(current_row[0]) if current_row else 0
-            new_qty = current_qty + delta if side == "BUY" else current_qty - delta
+            adjustment = con.execute("""SELECT adjusted_at FROM ai_position_adjustments
+                WHERE symbol=? ORDER BY id DESC LIMIT 1""", (symbol,)).fetchone()
+            covered_by_configuration = bool(adjustment and
+                datetime.fromisoformat(started_at) <= datetime.fromisoformat(adjustment[0]))
+            # Configuration assigns all broker inventory after old orders have
+            # closed. Late replay of those fills must preserve that assignment.
+            ai_delta = 0 if covered_by_configuration else delta
+            new_qty = current_qty + ai_delta if side == "BUY" else current_qty - ai_delta
             if new_qty < 0:
                 raise RuntimeError("broker SELL fill exceeds formal AI shares")
             if new_qty + max(0, int(configured_user_qty)) > int(broker_cash_qty):
                 raise RuntimeError("broker cash inventory does not cover confirmed AI shares")
             new_status = "FILLED" if confirmed == ordered else "PARTIALLY_FILLED"
+            if status in ("EXPIRED", "PARTIALLY_FILLED_EXPIRED"):
+                if confirmed < ordered:
+                    new_status = "PARTIALLY_FILLED_EXPIRED"
+                detail["expired_quantity"] = ordered-confirmed
             detail.update(
                 filled_quantity=confirmed,
                 broker_reconciled_seq13=str(seq13),
@@ -302,6 +376,8 @@ class ExecutionStore:
                 broker_replay_fill_gross_twd=str(gross),
                 ai_managed_qty_after_fill=new_qty,
             )
+            if covered_by_configuration:
+                detail["broker_fill_covered_by_configuration_at"] = adjustment[0]
             con.execute(
                 """INSERT INTO ai_positions(symbol,qty,updated_at) VALUES (?,?,?)
                    ON CONFLICT(symbol) DO UPDATE
@@ -316,6 +392,8 @@ class ExecutionStore:
             )
             self._insert_event(con, decision_id, "BROKER_FILL_RECONCILED", now,
                                dict(seq13=seq13, side=side, delta_qty=delta,
+                                    ai_delta_qty=ai_delta,
+                                    covered_by_configuration_at=adjustment[0] if covered_by_configuration else None,
                                     total_filled_qty=confirmed,
                                     broker_fill_gross_twd=str(gross)))
         return dict(changed=True, symbol=symbol, delta_qty=delta,

@@ -21,7 +21,8 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
     def test_buy_is_blocked_when_fresh_broker_balance_is_too_low(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
+            execution_db = root / "isolated_execution.sqlite3"
+            ExecutionStore(execution_db)
             config_path = root / "execution_live.json"
             config_path.write_text(
                 json.dumps({
@@ -102,6 +103,7 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
                     config_path=config_path,
                     session=session,
                     account_snapshot=snapshot,
+                    execution_db_path=execution_db,
                 )
 
             query.assert_called_once_with(session)
@@ -113,7 +115,7 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
     def test_over_budget_round_is_blocked_before_any_order_attempt(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
+            store = ExecutionStore(root / "isolated_execution.sqlite3")
             config_path = root / "execution_live.json"
             config_path.write_text(json.dumps({
                 "enabled": True, "max_quote_age_seconds": 120,
@@ -142,7 +144,8 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
             with patch("execution.auto_advice_executor.query_buying_power") as query, \
                     patch("execution.auto_advice_executor.CapitalOddLotExecutor.send_limit_order") as send:
                 report = execute_advice_file(advice_path, project_root=root,
-                    config_path=config_path, session=session, account_snapshot=snapshot)
+                    config_path=config_path, session=session, account_snapshot=snapshot,
+                    execution_db_path=store.path)
             self.assertEqual("BLOCKED_BUDGET", report["status"])
             self.assertFalse(any(x["broker_order_sent"] for x in report["results"]))
             query.assert_not_called()

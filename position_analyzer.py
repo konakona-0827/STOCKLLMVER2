@@ -9,6 +9,7 @@ from candidate_analyzer import object_schema, call_openai
 from paper_portfolio import MAX_ODDLOT_QTY, fee_twd, price_cents
 from strategy_evidence import STRATEGY_IDS
 from trade_economics import evaluate_buy
+from web_research import enable_search
 
 ITEM = object_schema(dict(
     symbol={'type': 'string'}, decision={'type': 'string', 'enum': ['BUY', 'HOLD', 'SELL', 'WAIT']},
@@ -55,7 +56,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                      'BUY 的目標價須在保守計入雙邊手續費、股票賣出 0.3% 或 ETF 0.1% 交易稅、'
                      '目前買賣價差及下行失效風險後，仍有正淨收益與合理報酬風險比。'
                      '不可只因缺少跨日資料就放棄其他有證據的策略。')
-    return dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
+    request = dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=instructions,
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
                                      trading_calendar=trading_day_context(now().date()),
@@ -72,6 +73,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                                  ensure_ascii=False, allow_nan=False),
                 text={'format': {'type': 'json_schema', 'name': 'position_advice', 'strict': True, 'schema': SCHEMA}},
                 max_output_tokens=min(24000, max(6000, len(candidates)*650)))
+    return enable_search(request)
 
 
 def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=1,

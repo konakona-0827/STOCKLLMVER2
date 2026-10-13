@@ -113,7 +113,8 @@ class MultiTests(unittest.TestCase):
                               SKQuoteLib_GetStockByMarketAndNo=Mock(side_effect=lookup))
         market.objects={'SKQuoteLib':quote}
         market.sk=SimpleNamespace(SKSTOCKLONG=lambda: SimpleNamespace())
-        with patch('capital_multi_quote.time.monotonic',side_effect=[0,2]):
+        with patch('capital_multi_quote.time.monotonic',side_effect=[0,2]), \
+                patch('capital_multi_quote.record_capital_event'):
             raw,errors=market.fetch_batch(['2330','2454'],timeout=1)
         market.connect.assert_called_once()
         quote.SKQuoteLib_RequestStocksWithMarketNo.assert_called_once_with(1,5,'2330,2454')
