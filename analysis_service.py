@@ -77,7 +77,7 @@ def live_buy_budget(broker_health, daily_reserved, strategy_cap, daily_limit):
                 daily_remaining=daily_remaining, status='READY' if ready else 'BLOCKED')
 
 
-def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_symbols=(), paper_positions=(), live_managed=False):
+def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_symbols=(), paper_positions=(), live_managed=False, ai_settings=None):
     qmap = {q['symbol']: q for q in quotes}
     pmap = {p['symbol']: p for p in positions}
     rmap = {r['symbol']: r for r in ranked}
@@ -91,6 +91,8 @@ def build_union(top, ranked, quotes, positions, db_path, at, scanned=None, etf_s
                                  sorted(set(paper_map)-top_symbols)))
     result = []
     for s in symbols:
+        if live_managed and not (ai_settings or {}).get(s, {}).get('enabled', True):
+            continue
         q, r = qmap[s], rmap.get(s)
         if r:
             c = candidate_payload([r], quotes, db_path, at, etf_symbols)[0]
@@ -265,7 +267,8 @@ class AnalysisService:
         save_json(directory/'quant_scan.json', dict(rule_config=rules, quotes=scanned))
         save_json(directory/'candidate_ranking.json', dict(ranking=ranked, top_candidates=top))
         candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
-                                 universe.get('etf_symbols', []), paper_positions, live_managed=live_enabled)
+                                 universe.get('etf_symbols', []), paper_positions, live_managed=live_enabled,
+                                 ai_settings=(broker_health or {}).get('ai_position_settings'))
         for c in candidates:
             if c['last_price'] is not None and c['quote_status'] == 'LIVE' and not c.get('is_trial'):
                 entry_price = ((c.get('ask') or c['last_price'])

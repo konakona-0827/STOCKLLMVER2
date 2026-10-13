@@ -2,6 +2,7 @@
 import argparse
 import json
 import sqlite3
+from contextlib import closing
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import math
@@ -68,6 +69,7 @@ STATUS_LABELS = {
     'PAUSED_LOW_BALANCE': '券商資金低於保留額；自動掃描已停止',
 }
 BROKER_EVENT_LABELS = {
+    'ROD_REMAINDER_EXPIRED': 'ROD 跨日，未成交餘量已失效',
     'FULLY_FILLED': '券商成交事件：全部成交',
     'PARTIALLY_FILLED_REMAINDER_UNCONFIRMED': '券商成交事件：部分成交，餘量未確認',
     'PARTIAL_FILL_REMAINDER_CANCELLED': '券商成交事件：部分成交，餘量已取消',
@@ -101,6 +103,8 @@ ORDER_LEDGER_LABELS = {
     'PARTIALLY_FILLED_CANCELLED': '部分成交，餘量已取消',
     'ACKNOWLEDGED': '券商已受理', 'UNCONFIRMED': '券商回覆待確認',
     'CANCELLED': '已取消',
+    'EXPIRED': 'ROD 跨日失效',
+    'PARTIALLY_FILLED_EXPIRED': '部分成交，ROD 餘量跨日失效',
 }
 SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
 
@@ -401,13 +405,14 @@ class Dashboard:
             ['股票代號','股票名稱','納入原因','量化排名','目前 AI 持股','持股核對','持股對帳時間','建議','信心度'],
             hint='目前 AI 持股取自最近券商對帳後的正式帳本；建議與量化排名仍屬分析當時結果。')
         self.position_tree = self.table('持倉概況',
-            ['股票代號','股票名稱','券商現股','AI 管理股數','人工設定股數','AI 最近買進策略','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
-            hint='請按「重新整理並與券商對帳」以取得最新資訊；持倉數量以券商回傳為準。')
+            ['股票代號','股票名稱','券商現股','AI 管理股數','AI 運用','人工設定股數','AI 最近買進策略','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
+            hint='選取股票後按「設定持倉」，或雙擊股票，設定 AI 管理股數；設為 0 即禁止 AI 買賣。')
+        self.position_tree.bind('<Double-1>', lambda event: self.position_settings())
         self.quote_tree = self.table('行情與時間（台北時間 UTC+8）', ['股票代號','股票名稱','行情狀態','最新價','資料年齡（秒）','行情時間','請求開始','資料收到','請求完成'])
         self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','正式 AI 股數','人工設定股數','差異狀態'])
         self.live_trade_tree = self.table('正式委託與成交紀錄',
             ['委託時間','股票代號','方向','採用策略','AI 理由','委託股數','帳本成交股數','券商回報成交明細',
-             '券商回報成交價金','未確認成交股數','已取消餘量','券商事件推定','事件數',
+             '券商回報成交價金','未確認成交股數','已取消餘量','已失效餘量','券商事件推定','事件數',
              '委託價','帳本狀態','券商回報核對','券商序號','分析回合'])
         settlement_tab = ttk.Frame(self.notebook)
         self.notebook.add(settlement_tab, text='交割明細')
@@ -557,7 +562,7 @@ class Dashboard:
             return {}
         labels = {}
         try:
-            with sqlite3.connect('file:'+str(path.resolve())+'?mode=ro',uri=True,timeout=5) as db:
+            with closing(sqlite3.connect('file:'+str(path.resolve())+'?mode=ro',uri=True,timeout=5)) as db:
                 for run_id,symbol,detail_json,status in db.execute(
                         "SELECT run_id,symbol,detail_json,status FROM execution_attempts "
                         "WHERE side='BUY' ORDER BY started_at DESC"):
@@ -827,7 +832,20 @@ class Dashboard:
                     messagebox.showerror('單日買進上限設定失敗', payload,
                                          parent=self.root)
                 elif kind == 'position_saved':
-                    self.refresh()
+                    win, result = payload
+                    if win.winfo_exists():
+                        win.destroy()
+                    self.refresh(sync_broker=True)
+                    messagebox.showinfo('持倉設定已更新',
+                        f"{result['symbol']}：AI 管理 {result['ai_qty']} 股，人工持有 {result['user_qty']} 股。\n"
+                        + ('已禁止 AI 買進與賣出此股票。' if not result['enabled'] else 'AI 可以運用此股票。'),
+                        parent=self.root)
+                elif kind == 'position_save_error':
+                    win, button, error = payload
+                    if win.winfo_exists():
+                        button.configure(state='normal')
+                    messagebox.showerror('持倉設定失敗', error,
+                                         parent=win if win.winfo_exists() else self.root)
                 elif kind == 'health':
                     self.health_running = False
                     self.last_health = payload
@@ -1095,6 +1113,7 @@ class Dashboard:
                 '；'.join(fill_parts) if fill_parts else '--', gross_text,
                 order_check.get('unconfirmed_qty', '--'),
                 order_check.get('cancelled_qty', '--'),
+                order_check.get('expired_qty', 0),
                 BROKER_EVENT_LABELS.get(order_check.get('broker_event_status'),
                                         '待券商事件核對'),
                 '受理 {ack}／成交 {fill}／取消 {cancel}'.format(
@@ -1109,6 +1128,7 @@ class Dashboard:
                  'USER_CANCEL_CONFIRMED_NO_FILL':'使用者確認取消，未見成交',
                  'USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED':'使用者確認成交，本次未重播',
                  'NO_FILL_YET_VERIFIED':'券商已受理，尚未見成交',
+                 'ROD_EXPIRED':'ROD 已跨日失效，依帳本保留成交紀錄',
                  'FILL_UNVERIFIED':'成交尚未確認'}.get(
                     order_check.get('status'),
                     order_check.get('status', '無券商成交核對')),
@@ -1389,6 +1409,8 @@ class Dashboard:
             self.position_tree.insert('', 'end', values=[
                 symbol, quote[2] if quote and quote[2] else names.get(symbol, '股票名稱未取得'),
                 qty if verified else '--', row.get('ai_qty') if verified else '--',
+                ('禁止 AI 買賣' if not health.get('ai_position_settings', {}).get(symbol, {}).get('enabled', True)
+                 else '允許 AI 運用'),
                 row.get('configured_user_qty') if verified else '--',
                 latest_buy_strategy.get(symbol, ('','--'))[1] if verified and int(row.get('ai_qty') or 0)>0 else '--',
                 reference, value_twd, quote[0].isoformat(timespec='seconds') if quote else '--',
@@ -1403,36 +1425,73 @@ class Dashboard:
         if self.scheduler.scan_lock.locked():
             messagebox.showinfo('持倉設定', '本輪分析中，完成後再編輯。')
             return
+        if self.service.directory.resolve() != (ROOT/'data'/'analysis').resolve():
+            messagebox.showinfo('持倉設定', '正式 AI 持股設定請在正式資料目錄的 Dashboard 操作。')
+            return
         win = tk.Toplevel(self.root)
-        win.title('手動持倉配置（不會送出委託）')
-        entries = {}
-        for i, name in enumerate(['symbol','user_qty','ai_managed_qty','user_average_cost','ai_average_cost']):
-            label = {'symbol':'股票代號', 'user_qty':'人工持有股數', 'ai_managed_qty':'AI 管理股數',
-                     'user_average_cost':'人工平均成本', 'ai_average_cost':'AI 平均成本'}[name]
-            ttk.Label(win, text=label).grid(row=i,column=0,sticky='w',padx=10,pady=9)
-            e = ttk.Entry(win)
-            e.grid(row=i,column=1,sticky='ew',padx=10,pady=5)
-            entries[name] = e
+        win.title('設定每檔股票的 AI 管理股數')
+        health = self.last_health or {}
+        rows = {row['symbol']: row for row in health.get('inventory_comparison') or []}
+        symbols = sorted(set(rows) | {p['symbol'] for p in self.positions})
+        symbol = tk.StringVar()
+        ai_qty = tk.StringVar(value='0')
+        cost = tk.StringVar()
+        summary = tk.StringVar()
+        ttk.Label(win, text='股票代號').grid(row=0, column=0, padx=12, pady=9, sticky='w')
+        choice = ttk.Combobox(win, textvariable=symbol, values=symbols)
+        choice.grid(row=0, column=1, padx=12, pady=9, sticky='ew')
+        ttk.Label(win, textvariable=summary, wraplength=390).grid(row=1, columnspan=2, padx=12, pady=8, sticky='w')
+        ttk.Label(win, text='AI 管理股數').grid(row=2, column=0, padx=12, pady=9, sticky='w')
+        ttk.Entry(win, textvariable=ai_qty).grid(row=2, column=1, padx=12, pady=9, sticky='ew')
+        ttk.Label(win, text='轉入股數的每股成本').grid(row=3, column=0, padx=12, pady=9, sticky='w')
+        ttk.Entry(win, textvariable=cost).grid(row=3, column=1, padx=12, pady=9, sticky='ew')
+
+        def load_symbol(*unused):
+            row = rows.get(symbol.get().strip(), {})
+            ai_qty.set(str(row.get('ai_qty') or 0))
+            cost.set('')
+            summary.set(f"最近對帳：券商現股 {row.get('broker_cash_qty', '待查詢')} 股，"
+                        f"目前 AI 管理 {row.get('ai_qty', '待查詢')} 股。\n儲存時會重新與券商對帳。")
+        choice.bind('<<ComboboxSelected>>', load_symbol)
+        choice.bind('<FocusOut>', load_symbol)
+        selected = self.position_tree.selection()
+        symbol.set(str(self.position_tree.item(selected[0], 'values')[0]) if selected
+                   else symbols[0] if symbols else '')
+        load_symbol()
+
         def save():
             try:
-                data = {k:e.get().strip() for k,e in entries.items()}
-                args = (data['symbol'], int(data['user_qty']), int(data['ai_managed_qty']),
-                        float(data['user_average_cost']) if data['user_average_cost'] else None,
-                        float(data['ai_average_cost']) if data['ai_average_cost'] else None)
-            except ValueError:
-                messagebox.showerror('格式錯誤','股數請輸入整數；成本請輸入數字，或留白。',parent=win)
+                target = symbol.get().strip().upper()
+                shares = int(ai_qty.get().strip())
+                unit = Decimal(cost.get().strip()) if cost.get().strip() else None
+                if shares < 0 or (unit is not None and (not unit.is_finite() or unit <= 0)):
+                    raise ValueError()
+            except (ValueError, InvalidOperation):
+                messagebox.showerror('格式錯誤','股數須為非負整數；轉入成本須為正數，沒有增加股數時可留白。',parent=win)
                 return
+            if not self.scheduler.scan_lock.acquire(blocking=False):
+                messagebox.showinfo('持倉設定', '目前分析進行中，完成後再儲存。', parent=win)
+                return
+            save_button.configure(state='disabled')
             def work():
                 try:
-                    position_store.save_manual(self.service.db_path, *args)
-                    self.events.put(('position_saved',None))
+                    from execution.position_configuration import configure_ai_holding
+                    result = configure_ai_holding(ROOT, self.service.db_path, target, shares,
+                                                  unit_cost_twd=unit)
+                    self.events.put(('position_saved', (win, result)))
                 except Exception as exc:
-                    self.events.put(('refresh_error',redact(exc)))
+                    self.events.put(('position_save_error', (win, save_button, redact(exc))))
+                finally:
+                    self.scheduler.scan_lock.release()
             threading.Thread(target=work, daemon=True).start()
-            win.destroy()
         win.columnconfigure(1, weight=1)
-        ttk.Button(win,text='儲存持倉設定',command=save).grid(row=5,columnspan=2,pady=(12,8),ipady=3)
-        ttk.Label(win,text='成本未知可留白。股數設為 0 可清除該項持倉設定。').grid(row=6,columnspan=2,padx=10,pady=(4,12))
+        save_button = ttk.Button(win,text='儲存持倉設定',command=save)
+        save_button.grid(row=4,columnspan=2,pady=(12,8),ipady=3)
+        ttk.Label(win, wraplength=400, justify='left', text=
+            'AI 管理股數設為 0，即禁止 AI 買進與賣出此股票。\n'
+            '股數不可超過券商現股；其餘股數歸為人工持有。\n'
+            '增加 AI 股數時必須填入轉入成本。此設定會更新持股歸屬，不會送出委託。'
+        ).grid(row=5,columnspan=2,padx=12,pady=(4,12),sticky='w')
 
     def close(self):
         if self.closing:

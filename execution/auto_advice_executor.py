@@ -208,7 +208,8 @@ def execute_advice_file(
         else None
     )
 
-    buy_intents = [intent for intent in intents if intent.side == Side.BUY]
+    buy_intents = [intent for intent in intents if intent.side == Side.BUY
+                   and store.ai_trading_enabled(intent.symbol)]
     effective_cycle_budget = Decimal('0')
     formal_db = root / 'data' / 'execution' / 'live_execution.sqlite3'
     if buy_intents and store.path.resolve() == formal_db.resolve():
@@ -286,7 +287,8 @@ def execute_advice_file(
             ) for x in intents]
             return report
 
-    buy_intents = [intent for intent in intents if intent.side == Side.BUY]
+    buy_intents = [intent for intent in intents if intent.side == Side.BUY
+                   and store.ai_trading_enabled(intent.symbol)]
     if buy_intents:
         budget_payload = payload.get("execution_budget") or payload.get("paper_simulation") or {}
         cycle_budget_raw = budget_payload.get("available_cash_twd")
@@ -375,6 +377,8 @@ def execute_advice_file(
             continue
 
         try:
+            if not store.ai_trading_enabled(intent.symbol):
+                raise RiskRejected(f"{intent.symbol}: AI trading disabled by Dashboard (configured shares = 0)")
             health = session.ensure_ready()
             item["session_health"] = {
                 "ready": health.ready,
@@ -557,13 +561,20 @@ def execute_advice_file(
                         "required_twd_with_buffer": str(reserved_this_order_twd),
                         "return_code": sent.return_code,
                         "seq13": sent.seq13,
+                        "time_in_force": "ROD",
+                        "market_session": "INTRADAY_ODD_LOT",
+                        "submitted_at": item["submitted_at"],
                     },
                 )
 
+            item.update(time_in_force="ROD", market_session="INTRADAY_ODD_LOT",
+                        submitted_at=datetime.now().astimezone().isoformat())
             store.mark_send_pending(intent.decision_id, {
                 "symbol": plan.symbol, "side": plan.side.value,
                 "quantity": plan.quantity, "limit_price": str(plan.limit_price),
                 "required_twd_with_buffer": str(reserved_this_order_twd),
+                "time_in_force": "ROD", "market_session": "INTRADAY_ODD_LOT",
+                "submitted_at": item["submitted_at"],
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
                                 if intent.side == Side.BUY else None))
             item["send_attempted"] = True
