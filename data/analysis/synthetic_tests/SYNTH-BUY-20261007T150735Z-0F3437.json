@@ -1,0 +1,52 @@
+{
+  "interface_version": "1.0",
+  "generated_at": "2026-10-07T15:07:35.010982+00:00",
+  "run_id": "SYNTH-BUY-20261007T150735Z-0F3437",
+  "run_status": "READY",
+  "run_error": null,
+  "llm_validation": "VALID",
+  "llm_model": "synthetic-llm-buy-test",
+  "real_order_sent": false,
+  "market": {
+    "quotes": [
+      {
+        "symbol": "0050",
+        "source": "SYNTHETIC_LLM_TEST",
+        "quote_status": "LIVE",
+        "price": 115.0,
+        "bid": 115.0,
+        "ask": 115.0,
+        "volume": null,
+        "exchange_time": "2026-10-07T15:07:35.010982+00:00",
+        "received_at": "2026-10-07T15:07:35.010982+00:00",
+        "callback_received_at": "2026-10-07T15:07:35.010982+00:00",
+        "age_seconds": 0,
+        "retrieval_method": "synthetic_test_input",
+        "warnings": []
+      }
+    ]
+  },
+  "market_view": "Synthetic BUY signal used to test the post-LLM execution pipeline.",
+  "recommendations": [
+    {
+      "decision_id": "SYNTH-BUY-20261007T150735Z-0F3437:0050",
+      "symbol": "0050",
+      "decision": "BUY",
+      "confidence": 80.0,
+      "reference_price": 115.0,
+      "suggested_price": 115.0,
+      "suggested_qty": 1,
+      "action_ratio": 0,
+      "reason": "Synthetic LLM BUY instruction for end-to-end pipeline test.",
+      "warnings": [],
+      "analysis_source": "SYNTHETIC_LLM_BUY_TEST",
+      "ai_managed_qty": 0,
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-07T15:07:35.010982+00:00",
+      "quote_age_seconds": 0,
+      "evidence_ids": [
+        "synthetic-buy-test"
+      ]
+    }
+  ]
+}

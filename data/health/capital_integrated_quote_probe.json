@@ -1,0 +1,115 @@
+{
+  "pid": 12076,
+  "started_at": "2026-10-08T10:08:44.847362+08:00",
+  "probe": "production_login_then_quote_one_symbol",
+  "order_sent": false,
+  "events": [
+    {
+      "timestamp": "2026-10-08T10:08:52.938763+08:00",
+      "kind": "CAPITAL_LOGIN_REUSED",
+      "detail": {
+        "code": {
+          "action": "REUSE"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:52.978788+08:00",
+      "kind": "CAPITAL_ENTER_MONITOR",
+      "detail": {
+        "code": 0
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:52.980922+08:00",
+      "kind": "CAPITAL_QUOTE_CONNECTION",
+      "detail": {
+        "code": {
+          "kind": 3001,
+          "return_code": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:57.280332+08:00",
+      "kind": "CAPITAL_QUOTE_CONNECTION",
+      "detail": {
+        "code": {
+          "kind": 3003,
+          "return_code": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:57.480963+08:00",
+      "kind": "CAPITAL_QUOTE_STATUS",
+      "detail": {
+        "code": {
+          "phase": "PRE_SUBSCRIBE",
+          "return_code": 0,
+          "reported_connection_count": 0,
+          "over_limit": false,
+          "count_meaning": "previous_connections_excluding_current",
+          "available": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:57.481816+08:00",
+      "kind": "CAPITAL_QUOTE_STATUS",
+      "detail": {
+        "code": {
+          "phase": "PRE_SUBSCRIBE_BATCH_1",
+          "return_code": 0,
+          "reported_connection_count": 0,
+          "over_limit": false,
+          "count_meaning": "previous_connections_excluding_current",
+          "available": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:57.483595+08:00",
+      "kind": "CAPITAL_BATCH_SUBSCRIBE",
+      "detail": {
+        "code": {
+          "return_code": 3030,
+          "symbols": [
+            "2330"
+          ],
+          "symbol_count": 1,
+          "batch_index": 1,
+          "batch_count": 1
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:57.485127+08:00",
+      "kind": "CAPITAL_QUOTE_STATUS",
+      "detail": {
+        "code": {
+          "phase": "POST_SUBSCRIBE_REJECT_BATCH_1",
+          "return_code": 0,
+          "reported_connection_count": 0,
+          "over_limit": false,
+          "count_meaning": "previous_connections_excluding_current",
+          "available": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:08:57.487837+08:00",
+      "kind": "CAPITAL_LEAVE_MONITOR",
+      "detail": {
+        "code": {
+          "return_code": 0
+        }
+      }
+    }
+  ],
+  "login": "OK",
+  "outcome": "ERROR",
+  "error": "RuntimeError:BATCH_SUBSCRIBE_REJECTED_3030",
+  "close": "COMPLETED",
+  "finished_at": "2026-10-08T10:08:57.489595+08:00"
+}

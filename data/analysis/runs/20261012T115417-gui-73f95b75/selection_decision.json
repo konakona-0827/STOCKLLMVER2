@@ -1,0 +1,181 @@
+{
+  "market_view": "2026-10-12 11:54 左右為 LIVE 盤中快照。多數標的盤中上漲且收盤位置偏高，但 market_history 僅有少量盤中快照，且明確標示 INSUFFICIENT_VALIDATED_DAILY_BARS，無法驗證連續多交易日趨勢、量價結構、支撐壓力與有效突破。依策略規則，本輪不追價買進，保留可用買進預算 3923.7 元；持有的 2345 與 3231 僅依 AI 管理持倉評估。",
+  "decisions": [
+    {
+      "symbol": "2891",
+      "decision": "WAIT",
+      "confidence": 0.37,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 70,
+      "suggested_price": null,
+      "reason": "中信金（2891）：候選 中信金（2891）：盤面偏強，盤中漲幅約 3.09%，收盤位置 0.955，接近當日高位，具上攻外觀；但缺少足夠連續交易日 OHLC 與成交量，無法確認是否為有效突破或短線追高失敗。雖然一般使用者持有 7 股，但 paper_position.qty=0，不能視為 AI 可賣持倉，因此不提出 SELL；資料不足以支持 BUY，先等待回檔支撐或後續突破確認。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，但跨日趨勢與量價驗證不足。",
+        "一般使用者持倉不等同 AI 策略持倉，未納入可賣數量。",
+        "未提供成本、手續費後目標空間與明確支撐壓力。"
+      ]
+    },
+    {
+      "symbol": "2609",
+      "decision": "WAIT",
+      "confidence": 0.38,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 64.1,
+      "suggested_price": null,
+      "reason": "陽明（2609）：候選 陽明（2609）：盤中漲幅約 3.05%，收盤位置 0.750，量能與流動性表現較佳，盤面分類偏強反彈；但相較 10 月 8 日快照價格明顯上移，缺乏連續日 K、前高及回檔支撐驗證，無法確認突破品質與剩餘淨獲利空間。未持有且資料不足，不追價 BUY，等待整理或有效突破確認。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，但 history_status 為 INSUFFICIENT_VALIDATED_DAILY_BARS。",
+        "未提供 1日、5日、20日報酬、均線、ATR 或有效前高資料。",
+        "未買進，故本輪不使用買進預算。"
+      ]
+    },
+    {
+      "symbol": "2881",
+      "decision": "WAIT",
+      "confidence": 0.38,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 159,
+      "suggested_price": null,
+      "reason": "富邦金（2881）：候選 富邦金（2881）：盤中漲幅約 3.25%，收盤位置 0.833，偏強上攻，但買賣價差 0.5 元相對較寬。當日接近高位且缺少足夠多交易日量價資料，無法判斷是否已接近壓力或形成有效突破；未持有，資料不足以支持風險報酬合理的 BUY，先等待。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，但跨日趨勢驗證不足。",
+        "買賣價差約 0.31%，需留意零股滑價與交易成本。",
+        "未提供明確支撐、壓力與成本後目標價。"
+      ]
+    },
+    {
+      "symbol": "2882",
+      "decision": "WAIT",
+      "confidence": 0.36,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 114,
+      "suggested_price": null,
+      "reason": "國泰金（2882）：候選 國泰金（2882）：盤中漲幅約 2.70%，收盤位置 1.000，收在當日高點，表面動能強；但高位追價風險較高，且缺少連續交易日 K 線與成交量基準，無法確認有效突破或測頂失敗。未持有，不在未驗證下 BUY，等待回測承接或後續站穩。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，無足夠多交易日資料確認趨勢。",
+        "收在當日高點，需防盤中追高後回落。",
+        "買賣價差約 0.44%，可能侵蝕短中期淨獲利。"
+      ]
+    },
+    {
+      "symbol": "2345",
+      "decision": "HOLD",
+      "confidence": 0.49,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 2100,
+      "suggested_price": null,
+      "reason": "智邦（2345）：候選 智邦（2345）：AI 管理持倉 2 股；盤中漲幅約 2.19%，收盤位置 0.833，盤面偏強且暫未見明確轉弱訊號，原持有邏輯尚未被當日資料破壞，因此 HOLD。成本未知，無法計算實際損益或剩餘淨獲利空間；同時缺少連續日 K 與量價驗證，不加碼、不因單日上漲追買。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "AI 持倉成本為未知，無法計算成本後報酬。",
+        "行情為 LIVE 盤中快照，但跨日趨勢驗證不足。",
+        "高價股單股波動與買賣價差需留意，暫不新增部位。"
+      ]
+    },
+    {
+      "symbol": "0050",
+      "decision": "WAIT",
+      "confidence": 0.43,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 114.65,
+      "suggested_price": null,
+      "reason": "元大台灣50（0050）：候選 元大台灣50（0050）：一般型 ETF，流動性高且買賣價差窄；盤中漲幅約 0.66%，收盤位置 0.950，短線偏強。然而相較 10 月 8 日快照仍低，且沒有足夠連續日 K、指數趨勢與回檔支撐資料，無法驗證短中期具足夠淨獲利空間。未持有，先 WAIT 而非追價 BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，但 ETF 跨日趨勢與追蹤表現資料不足。",
+        "未提供費用率、追蹤誤差及明確成本後目標空間。",
+        "未買進，故不使用本輪買進預算。"
+      ]
+    },
+    {
+      "symbol": "2330",
+      "decision": "WAIT",
+      "confidence": 0.44,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 2545,
+      "suggested_price": null,
+      "reason": "台積電（2330）：候選 台積電（2330）：盤中漲幅約 0.79%，收盤位置 0.800，盤面偏強且流動性佳；但相較 10 月 8 日快照價格仍較低，缺少連續交易日 OHLC、量能基準及前高資料，無法確認修復轉強或有效突破。未持有，現階段等待更明確的支撐或突破確認。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，history_status 顯示跨日驗證不足。",
+        "單股零股可買數量受預算及費用限制，當前不提出 BUY。",
+        "未提供 ATR、均線、支撐壓力與成本後報酬估計。"
+      ]
+    },
+    {
+      "symbol": "2454",
+      "decision": "WAIT",
+      "confidence": 0.32,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 4635,
+      "suggested_price": null,
+      "reason": "聯發科（2454）：候選 聯發科（2454）：盤中漲幅約 0.76%，收盤位置 0.778，短線尚有承接，但 10 月 8 日快照至今價格走弱，且缺少連續交易日資料，無法判斷是否為弱勢反彈或支撐修復。未持有，且 max_buy_qty=0，資金與費用保留後不具備可執行 BUY 條件，故 WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，但跨日趨勢驗證不足。",
+        "max_buy_qty=0，無法提出符合限制的買進數量。",
+        "未提供成本後目標空間與明確停損依據。"
+      ]
+    },
+    {
+      "symbol": "1101",
+      "decision": "WAIT",
+      "confidence": 0.35,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 26.6,
+      "suggested_price": null,
+      "reason": "台泥（1101）：候選 台泥（1101）：盤中漲幅約 1.33%，但收盤位置僅 0.444，位於當日區間中段，顯示上攻承接不如高位收盤標的明確；缺少連續日 K 與成交量基準，也無法確認修復轉強。未持有，不因單日上漲 BUY，等待重新站穩壓力或回測支撐確認。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，跨日量價驗證不足。",
+        "收盤位置中性，盤中高點 27.1 未被有效站穩。",
+        "未買進，故本輪不使用買進預算。"
+      ]
+    },
+    {
+      "symbol": "2356",
+      "decision": "WAIT",
+      "confidence": 0.35,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 58.1,
+      "suggested_price": null,
+      "reason": "英業達（2356）：候選 英業達（2356）：盤中漲幅約 0.69%，收盤位置 0.636，僅屬溫和承接；相較 10 月 8 日價格變化有限，缺少足夠連續日 K、前高與量價驗證，尚不足以構成回檔修復或有效突破。未持有，維持 WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "行情為 LIVE 盤中快照，但跨日趨勢資料不足。",
+        "未提供明確支撐、壓力、停損及成本後收益估計。",
+        "未買進，故本輪不使用買進預算。"
+      ]
+    },
+    {
+      "symbol": "3231",
+      "decision": "HOLD",
+      "confidence": 0.42,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 189.5,
+      "suggested_price": null,
+      "reason": "緯創（3231）：候選 緯創（3231）：AI 管理持倉 10 股；盤中下跌約 0.26%，收盤位置 0.333，短線偏弱且未能收在區間高位，屬弱勢整理觀察。但現有資料只有少量盤中快照，無法確認重要支撐已失守，也沒有足夠反向證據支持 SELL；在成本未知與跨日驗證不足下先 HOLD，持續觀察低點是否下移及後續能否站回壓力。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "AI 持倉成本為未知，無法計算實際損益與回撤。",
+        "當日收盤位置偏弱，若後續跌破已知低點且放量，需重新評估 SELL。",
+        "缺少足夠連續交易日 OHLC 與成交量，暫不任意減碼。"
+      ]
+    }
+  ]
+}

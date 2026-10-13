@@ -1,0 +1,52 @@
+{
+  "interface_version": "1.0",
+  "generated_at": "2026-10-07T15:08:19.118640+00:00",
+  "run_id": "SYNTH-SELL-20261007T150819Z-DADD7E",
+  "run_status": "READY",
+  "run_error": null,
+  "llm_validation": "VALID",
+  "llm_model": "synthetic-llm-sell-test",
+  "real_order_sent": false,
+  "market": {
+    "quotes": [
+      {
+        "symbol": "0050",
+        "source": "SYNTHETIC_LLM_TEST",
+        "quote_status": "LIVE",
+        "price": 160.0,
+        "bid": 160.0,
+        "ask": 160.0,
+        "volume": null,
+        "exchange_time": "2026-10-07T15:08:19.118640+00:00",
+        "received_at": "2026-10-07T15:08:19.118640+00:00",
+        "callback_received_at": "2026-10-07T15:08:19.118640+00:00",
+        "age_seconds": 0,
+        "retrieval_method": "synthetic_test_input",
+        "warnings": []
+      }
+    ]
+  },
+  "market_view": "Synthetic SELL signal used to test the post-LLM execution pipeline.",
+  "recommendations": [
+    {
+      "decision_id": "SYNTH-SELL-20261007T150819Z-DADD7E:0050",
+      "symbol": "0050",
+      "decision": "SELL",
+      "confidence": 80.0,
+      "reference_price": 160.0,
+      "suggested_price": 160.0,
+      "suggested_qty": 1,
+      "action_ratio": 0,
+      "reason": "Synthetic LLM SELL instruction for end-to-end pipeline test.",
+      "warnings": [],
+      "analysis_source": "SYNTHETIC_LLM_SELL_TEST",
+      "ai_managed_qty": 0,
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-07T15:08:19.118640+00:00",
+      "quote_age_seconds": 0,
+      "evidence_ids": [
+        "synthetic-sell-test"
+      ]
+    }
+  ]
+}

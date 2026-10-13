@@ -1,0 +1,55 @@
+{
+  "enabled": true,
+  "advice_path": "C:\\Users\\user\\OneDrive\\ドキュメント\\STOCKLLMVER2\\STOCKLLMVER2\\data\\analysis\\runs\\20261012T120531-gui-502a9cd5\\advice_interface.json",
+  "results": [
+    {
+      "decision_id": "20261012T120531-gui-502a9cd5:0050",
+      "run_id": "20261012T120531-gui-502a9cd5",
+      "symbol": "0050",
+      "side": "BUY",
+      "status": "SKIPPED_CHECK_FAILED",
+      "reason": "planned BUY total 3470.8650 exceeds current round limit 0; no orders in this round were sent",
+      "broker_order_sent": false,
+      "crosscheck_performed": false
+    },
+    {
+      "decision_id": "20261012T120531-gui-502a9cd5:3231",
+      "run_id": "20261012T120531-gui-502a9cd5",
+      "symbol": "3231",
+      "side": "SELL",
+      "status": "SKIPPED_CHECK_FAILED",
+      "reason": "planned BUY total 3470.8650 exceeds current round limit 0; no orders in this round were sent",
+      "broker_order_sent": false,
+      "crosscheck_performed": false
+    }
+  ],
+  "trade_intent_count": 2,
+  "account_snapshot": {
+    "captured_at": "2026-10-12T04:06:35.925989+00:00",
+    "buying_power_available": true,
+    "inventory_available": false,
+    "buying_power_error": null,
+    "inventory_error": "AccountCheckError: GetRealBalanceReport failed: rc=1019"
+  },
+  "live_budget_recheck": {
+    "checked_at": "2026-10-12T12:06:35+08:00",
+    "status": "BLOCKED",
+    "buy_block_reasons": [
+      "BROKER_CHECK_ERROR",
+      "INVENTORY_UNVERIFIED"
+    ],
+    "original_budget_twd": "3923.7",
+    "current_budget_twd": "0",
+    "effective_budget_twd": "0"
+  },
+  "budget_preflight": {
+    "cycle_budget_twd": "0",
+    "broker_remaining_after_minimum_twd": "14520",
+    "daily_reserved_before_twd": "0",
+    "daily_remaining_twd": "20000",
+    "effective_cycle_budget_twd": "0",
+    "planned_buy_twd_with_reserve": "3470.8650"
+  },
+  "status": "BLOCKED_BUDGET",
+  "block_reason": "planned BUY total 3470.8650 exceeds current round limit 0; no orders in this round were sent"
+}

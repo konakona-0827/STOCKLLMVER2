@@ -1,0 +1,52 @@
+{
+  "interface_version": "1.0",
+  "generated_at": "2026-10-07T15:40:56.580638+00:00",
+  "run_id": "SYNTH-SELL-20261007T154056Z-C66E52",
+  "run_status": "READY",
+  "run_error": null,
+  "llm_validation": "VALID",
+  "llm_model": "synthetic-llm-sell-test",
+  "real_order_sent": false,
+  "market": {
+    "quotes": [
+      {
+        "symbol": "2891",
+        "source": "SYNTHETIC_LLM_TEST",
+        "quote_status": "LIVE",
+        "price": 150.0,
+        "bid": 150.0,
+        "ask": 150.0,
+        "volume": null,
+        "exchange_time": "2026-10-07T15:40:56.580638+00:00",
+        "received_at": "2026-10-07T15:40:56.580638+00:00",
+        "callback_received_at": "2026-10-07T15:40:56.580638+00:00",
+        "age_seconds": 0,
+        "retrieval_method": "synthetic_test_input",
+        "warnings": []
+      }
+    ]
+  },
+  "market_view": "Synthetic SELL signal for end-to-end execution test.",
+  "recommendations": [
+    {
+      "decision_id": "SYNTH-SELL-20261007T154056Z-C66E52:2891",
+      "symbol": "2891",
+      "decision": "SELL",
+      "confidence": 80.0,
+      "reference_price": 150.0,
+      "suggested_price": 150.0,
+      "suggested_qty": 1,
+      "action_ratio": 0,
+      "reason": "Synthetic final-LLM SELL instruction.",
+      "warnings": [],
+      "analysis_source": "SYNTHETIC_LLM_SELL_TEST",
+      "ai_managed_qty": 1,
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-07T15:40:56.580638+00:00",
+      "quote_age_seconds": 0,
+      "evidence_ids": [
+        "synthetic-sell-test"
+      ]
+    }
+  ]
+}

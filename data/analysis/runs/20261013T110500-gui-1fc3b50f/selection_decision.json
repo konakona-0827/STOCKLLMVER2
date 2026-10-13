@@ -1,0 +1,225 @@
+{
+  "market_view": "2026-10-13 11:05 左右即時盤面分化：2603、金融股與部分大型股偏強，但2317、2330、0050、2376及2345走弱；多數標的現價仍位於當日區間中高位或中位。資料主要是盤中快照，沒有完整連續日K，無法驗證多日趨勢、前高突破或跨日量價。紙上帳戶可用買進預算為0元且budget_status=BLOCKED，因此本輪不提出任何買進建議；僅對既有AI策略持倉進行即時風控評估。",
+  "decisions": [
+    {
+      "symbol": "2603",
+      "decision": "WAIT",
+      "confidence": 0.61,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 260.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "長榮（2603）：候選 長榮（2603）：盤中上漲3.78%，現價位於當日區間約95.5%，短線動能強；但260.5相對買一260.5、賣一261.0仍接近當日高點，且僅能比較盤中抽樣，不能確認多日前高有效突破。無持倉且可用買進預算為0元、max_buy_qty為0，故不追價，等待回測或更明確的突破確認。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，跨日趨勢與多日前高無法驗證",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "目前價格接近當日高點，存在追高與滑價風險"
+      ]
+    },
+    {
+      "symbol": "2881",
+      "decision": "WAIT",
+      "confidence": 0.58,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 160.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "富邦金（2881）：候選 富邦金（2881）：盤中上漲0.95%並位於當日區間高點，但賣一160.0、買一159.5，價差約0.31%；目前只能確認盤中偏強，不能宣稱已突破多日前高。無持倉且可用買進預算為0元、max_buy_qty為0，故等待較佳風險報酬位置。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證跨日趨勢或多日突破",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "價差相對偏寬，短線交易成本較不利"
+      ]
+    },
+    {
+      "symbol": "2891",
+      "decision": "HOLD",
+      "confidence": 0.67,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 71.1,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "中信金（2891）：候選 中信金（2891）：已有AI策略持倉30股。現價71.1較開盤上漲0.85%，位於當日區間約81.8%，且高於前期盤中抽樣價格69.8，短線承接仍偏正面；目前沒有可驗證的放量測頂或關鍵支撐失守訊號。成本未知，無法計算實現淨損益；在缺少完整日K下先維持持有，並觀察現價能否守住當日中位區域。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "AI持倉成本未知，無法精確估算立即賣出的淨損益",
+        "資料不是完整日K，跨日支撐、壓力與趨勢尚未充分驗證",
+        "僅評估AI策略持倉30股，不將使用者另有持倉視為可賣AI庫存"
+      ]
+    },
+    {
+      "symbol": "2382",
+      "decision": "WAIT",
+      "confidence": 0.59,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 324.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "廣達（2382）：候選 廣達（2382）：盤中上漲0.78%，現價位於當日區間約85.7%，但僅略高於前期盤中抽樣323.5，不能確認多日突破；在接近當日高點時追價的下行風險尚未獲得足夠補償。無持倉且可用買進預算為0元、max_buy_qty為0，故等待回檔承接或更明確的有效突破。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證多日趨勢與前高突破",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "現價接近當日高點，需防範盤中突破失敗"
+      ]
+    },
+    {
+      "symbol": "2882",
+      "decision": "WAIT",
+      "confidence": 0.53,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 114.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "國泰金（2882）：候選 國泰金（2882）：盤中上漲0.88%，但現價114.0只位於當日區間約66.7%，低於盤中高點114.5，顯示尚未形成明確高位突破；賣一114.5造成約0.44%價差，扣除成本後短線空間不具吸引力。無持倉且可用買進預算為0元、max_buy_qty為0，故等待較佳進場條件。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證跨日趨勢與支撐壓力",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "價差約0.44%，對零股短線淨獲利不利"
+      ]
+    },
+    {
+      "symbol": "2609",
+      "decision": "WAIT",
+      "confidence": 0.57,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 63.9,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "陽明（2609）：候選 陽明（2609）：盤中上漲0.63%，現價位於當日區間約63.6%，略高於前期盤中抽樣高點63.7，但尚不能稱為多日前高突破；目前上行空間與失效條件未能在缺少完整日K下充分界定。無持倉且可用買進預算為0元、max_buy_qty為0，故等待確認站穩或回測。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，不能驗證多日突破或跨日量價",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "當日區間位置僅中高位，尚非明確突破型態"
+      ]
+    },
+    {
+      "symbol": "2317",
+      "decision": "WAIT",
+      "confidence": 0.6,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 242.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "鴻海（2317）：候選 鴻海（2317）：盤中下跌0.41%，現價低於開盤243.0，雖位於當日區間約62.5%，但尚未顯示明確止跌或重新站回壓力；量為累積盤中成交量，不能單獨判定放量。無持倉且可用買進預算為0元、max_buy_qty為0，故不在弱勢盤中接刀。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證跨日止跌與趨勢",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "盤中動能為負，短線反轉證據不足"
+      ]
+    },
+    {
+      "symbol": "2330",
+      "decision": "WAIT",
+      "confidence": 0.6,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 2505.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台積電（2330）：候選 台積電（2330）：盤中下跌0.40%，現價低於開盤2515，位於當日區間約60%，且買一2500、賣一2505形成5元價差；目前只看到盤中下跌後的中位震盪，沒有足夠反轉確認。無持倉且可用買進預算為0元、max_buy_qty為0，故等待重新站回開盤或形成可核對的修復訊號。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證跨日支撐與趨勢",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "5元價差與盤中下跌使短線淨獲利門檻較高"
+      ]
+    },
+    {
+      "symbol": "0050",
+      "decision": "WAIT",
+      "confidence": 0.62,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 112.7,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "元大台灣50（0050）：候選 元大台灣50（0050）：一般型ETF，流動性高且買賣價差約0.05元，但盤中下跌0.53%，現價位於當日區間約53.8%，尚未呈現明確修復或突破；ETF交易稅較低仍不能抵銷目前方向與反轉證據不足。無持倉且可用買進預算為0元、max_buy_qty為0，故等待止跌確認。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證ETF跨日趨勢及支撐",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "盤中走弱且位於當日區間中位，尚無明確買進觸發條件"
+      ]
+    },
+    {
+      "symbol": "2376",
+      "decision": "WAIT",
+      "confidence": 0.61,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 354.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "技嘉（2376）：候選 技嘉（2376）：盤中下跌0.42%，現價低於開盤356.0，位於當日區間約54.5%，且相對前期盤中抽樣357.5仍偏弱；沒有足夠資料確認短期止跌或反轉。無持倉且可用買進預算為0元、max_buy_qty為0，故等待重新站回開盤並改善盤中結構。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "資料不是完整日K，無法驗證跨日支撐與反轉",
+        "紙上帳戶可用買進預算為0元，資金限制使本輪無法買進",
+        "盤中動能為負，現階段不宜僅因價格回落而接買"
+      ]
+    },
+    {
+      "symbol": "2345",
+      "decision": "SELL",
+      "confidence": 0.78,
+      "action_ratio": 1,
+      "suggested_qty": 2,
+      "reference_price": 2055.0,
+      "suggested_price": 2050.0,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "智邦（2345）：候選 智邦（2345）：已有AI策略持倉2股，成本未知。盤中下跌3.29%，由開盤2125大幅回落，現價2055僅位於當日區間約28%，接近低位；即使曾自2020低點反彈，仍未形成可驗證的修復結構，持續持有的回撤風險偏高。建議以買一2050附近評估全部退出，避免在缺少成本資料下延後必要風控。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "AI持倉成本未知，無法精確計算立即實現損益",
+        "資料不是完整日K，無法確認跨日支撐是否有效",
+        "建議數量為AI策略持倉2股的100%，不包含其他非AI庫存"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "pid": 12132,
+  "started_at": "2026-10-08T10:09:08.223528+08:00",
+  "probe": "minimal_quote_one_symbol_while_dashboard_active",
+  "order_sent": false,
+  "events": [
+    {
+      "timestamp": "2026-10-08T10:09:11.069161+08:00",
+      "kind": "CAPITAL_LOGIN",
+      "detail": {
+        "code": 0
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:11.711619+08:00",
+      "kind": "CAPITAL_ENTER_MONITOR",
+      "detail": {
+        "code": 0
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:11.718961+08:00",
+      "kind": "CAPITAL_QUOTE_CONNECTION",
+      "detail": {
+        "code": {
+          "kind": 3001,
+          "return_code": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:15.458102+08:00",
+      "kind": "CAPITAL_QUOTE_CONNECTION",
+      "detail": {
+        "code": {
+          "kind": 3003,
+          "return_code": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:15.662824+08:00",
+      "kind": "CAPITAL_QUOTE_STATUS",
+      "detail": {
+        "code": {
+          "phase": "PRE_SUBSCRIBE",
+          "return_code": 0,
+          "reported_connection_count": 0,
+          "over_limit": false,
+          "count_meaning": "previous_connections_excluding_current",
+          "available": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:15.665199+08:00",
+      "kind": "CAPITAL_QUOTE_STATUS",
+      "detail": {
+        "code": {
+          "phase": "PRE_SUBSCRIBE_BATCH_1",
+          "return_code": 0,
+          "reported_connection_count": 0,
+          "over_limit": false,
+          "count_meaning": "previous_connections_excluding_current",
+          "available": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:15.672354+08:00",
+      "kind": "CAPITAL_BATCH_SUBSCRIBE",
+      "detail": {
+        "code": {
+          "return_code": 0,
+          "symbols": [
+            "2330"
+          ],
+          "symbol_count": 1,
+          "batch_index": 1,
+          "batch_count": 1
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-08T10:09:16.071507+08:00",
+      "kind": "CAPITAL_LEAVE_MONITOR",
+      "detail": {
+        "code": {
+          "return_code": 0
+        }
+      }
+    }
+  ],
+  "quotes": {
+    "2330": {
+      "quality": "FRESH",
+      "price_available": true
+    }
+  },
+  "errors": {},
+  "outcome": "QUOTE_OK",
+  "close": "COMPLETED",
+  "finished_at": "2026-10-08T10:09:16.212471+08:00"
+}
