@@ -73,8 +73,10 @@ BROKER_EVENT_LABELS = {
     'PARTIAL_FILL_REMAINDER_CANCELLED': '券商成交事件：部分成交，餘量已取消',
     'ACKNOWLEDGED_NO_FILL_EVENT': '券商已受理，尚未見成交事件',
     'CANCELLED_NO_FILL': '券商取消，未見成交事件',
+    'USER_CONFIRMED_CANCELLED_NO_FILL': '使用者確認取消，券商未見成交事件',
     'NO_MATCHING_BROKER_EVENT': '本次未找到對應券商事件',
     'PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED': '先前成交已存證，本次未重播',
+    'USER_PRIOR_FILL_CONFIRMED_REPLAY_NOT_RETURNED': '使用者確認先前成交，本次未重播',
 }
 BUY_BLOCK_LABELS = {
     'BROKER_CHECK_ERROR': '券商查詢錯誤',
@@ -1104,6 +1106,8 @@ class Dashboard:
                  'ARCHIVED_BROKER_FILL_VERIFIED':'先前券商成交已存證',
                  'FILL_MISMATCH':'券商成交與帳本不一致',
                  'NO_FILL_CONFIRMED':'券商取消，確認無成交',
+                 'USER_CANCEL_CONFIRMED_NO_FILL':'使用者確認取消，未見成交',
+                 'USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED':'使用者確認成交，本次未重播',
                  'NO_FILL_YET_VERIFIED':'券商已受理，尚未見成交',
                  'FILL_UNVERIFIED':'成交尚未確認'}.get(
                     order_check.get('status'),
@@ -1450,6 +1454,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data-dir', type=Path, default=ROOT/'data'/'analysis')
     parser.add_argument('--test-mode', action='store_true')
+    parser.add_argument('--resume-auto', action='store_true',
+                        help='resume the previously enabled automatic scan after restart')
     parser.add_argument('--interval', type=int, default=AUTO_INTERVAL_SECONDS)
     args = parser.parse_args()
     if args.interval <= 0 or (args.interval != AUTO_INTERVAL_SECONDS and not args.test_mode):
@@ -1474,6 +1480,8 @@ def main():
             traceback.print_exception(exc_type, exc_value, exc_tb)
         root.report_callback_exception = callback_exception
         app = Dashboard(root, args.data_dir, args.interval, lifecycle=lifecycle)
+        if args.resume_auto:
+            root.after(1000, app.start_auto)
         lifecycle.event('WINDOW_READY', data_dir=str(args.data_dir.resolve()),
                         interval_seconds=args.interval, test_mode=args.test_mode)
         root.mainloop()

@@ -372,6 +372,78 @@ class ExecutionStore:
                                     filled_qty=int(broker_filled_qty)))
         return dict(changed=True, symbol=symbol, status=new_status, side=side)
 
+    def confirm_user_cancel_no_fill(self, decision_id: str, seq13: str,
+                                    *, checked_at: str) -> dict:
+        """Close a zero-fill BUY on explicit user confirmation, preserving its source."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute(
+                "SELECT symbol,side,status,detail_json FROM execution_attempts WHERE decision_id=?",
+                (decision_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("formal order is missing")
+            symbol, side, status, detail_json = row
+            detail = json.loads(detail_json or "{}")
+            if (side != "BUY" or status not in ("ACKNOWLEDGED", "UNCONFIRMED")
+                    or str(detail.get("seq13")) != str(seq13)
+                    or detail.get("send_return_code") != 0
+                    or int(detail.get("filled_quantity") or 0) != 0):
+                raise RuntimeError("user cancellation does not match an open zero-fill BUY")
+            detail.update(user_cancel_confirmed_seq13=str(seq13),
+                          user_cancel_confirmed_at=now,
+                          user_cancel_broker_checked_at=checked_at,
+                          cancellation_source="USER_CONFIRMATION")
+            con.execute(
+                "UPDATE execution_attempts SET finished_at=?,status='CANCELLED',detail_json=? WHERE decision_id=?",
+                (now, json.dumps(detail, ensure_ascii=False, default=str), decision_id),
+            )
+            self._insert_event(con, decision_id, "USER_CANCEL_CONFIRMED_NO_FILL", now,
+                               dict(seq13=str(seq13), symbol=symbol,
+                                    broker_checked_at=checked_at,
+                                    source="USER_CONFIRMATION"))
+        return dict(changed=True, symbol=symbol, status="CANCELLED")
+
+    def confirm_user_completed_fill(self, decision_id: str, seq13: str,
+                                    *, side: str, qty: int, checked_at: str) -> dict:
+        """Archive user confirmation of an already recorded full fill."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute(
+                "SELECT symbol,side,status,detail_json FROM execution_attempts WHERE decision_id=?",
+                (decision_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("formal order is missing")
+            symbol, recorded_side, status, detail_json = row
+            detail = json.loads(detail_json or "{}")
+            if (recorded_side != side or side not in ("BUY", "SELL")
+                    or status != "FILLED" or qty <= 0
+                    or str(detail.get("seq13")) != str(seq13)
+                    or detail.get("send_return_code") != 0
+                    or detail.get("crosscheck_performed") is not True
+                    or int(detail.get("deal_event_count") or 0) <= 0
+                    or int(detail.get("quantity") or 0) != qty
+                    or int(detail.get("filled_quantity") or 0) != qty
+                    or detail.get("user_fill_confirmed_seq13")):
+                raise RuntimeError("user fill confirmation does not match a completed order")
+            detail.update(user_fill_confirmed_seq13=str(seq13),
+                          user_fill_confirmed_qty=qty,
+                          user_fill_confirmed_at=now,
+                          user_fill_broker_checked_at=checked_at,
+                          fill_confirmation_source="USER_CONFIRMATION")
+            con.execute(
+                "UPDATE execution_attempts SET detail_json=? WHERE decision_id=?",
+                (json.dumps(detail, ensure_ascii=False, default=str), decision_id),
+            )
+            self._insert_event(con, decision_id, "USER_COMPLETED_FILL_CONFIRMED", now,
+                               dict(seq13=str(seq13), symbol=symbol, side=side,
+                                    qty=qty, broker_checked_at=checked_at,
+                                    source="USER_CONFIRMATION"))
+        return dict(changed=True, symbol=symbol, side=side, qty=qty)
+
     def ai_positions(self) -> dict[str, int]:
         with self._connect() as con:
             rows = con.execute("SELECT symbol, qty FROM ai_positions").fetchall()
@@ -443,6 +515,37 @@ class ExecutionStore:
                 (symbol,),
             ).fetchone()
         return int(row[0])
+
+    def adopt_manual_holding(self, symbol: str, qty: int, unit_cost_twd: Decimal,
+                             *, broker_cash_qty: int, user_qty: int = 0) -> int:
+        """Assign independently purchased broker shares to AI with a cost audit."""
+        symbol = symbol.upper()
+        cost = Decimal(str(unit_cost_twd))
+        if qty <= 0 or not cost.is_finite() or cost <= 0:
+            raise ValueError("adoption requires positive shares and unit cost")
+        if broker_cash_qty < qty + user_qty or user_qty < 0:
+            raise ValueError("broker shares do not cover the proposed AI holding")
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            con.execute("""CREATE TABLE IF NOT EXISTS manual_ai_adoptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL, qty INTEGER NOT NULL,
+                unit_cost_twd TEXT NOT NULL, adopted_at TEXT NOT NULL,
+                source TEXT NOT NULL)""")
+            current_row = con.execute(
+                "SELECT qty FROM ai_positions WHERE symbol=?", (symbol,)).fetchone()
+            current = int(current_row[0]) if current_row else 0
+            if current + qty + user_qty > broker_cash_qty:
+                raise ValueError("adoption would exceed broker cash inventory")
+            con.execute("""INSERT INTO manual_ai_adoptions
+                (symbol,qty,unit_cost_twd,adopted_at,source)
+                VALUES (?,?,?,?,?)""",
+                (symbol, qty, str(cost), now, "USER_CONFIRMED_MANUAL_PURCHASE"))
+            con.execute("""INSERT INTO ai_positions(symbol,qty,updated_at) VALUES (?,?,?)
+                ON CONFLICT(symbol) DO UPDATE SET qty=excluded.qty,
+                updated_at=excluded.updated_at""", (symbol, current + qty, now))
+        return current + qty
 
     def apply_fill(self, symbol: str, side: Side, qty: int) -> int:
         symbol = symbol.upper()

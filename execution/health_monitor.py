@@ -147,7 +147,9 @@ def current_buy_block_reasons(report: dict) -> list[str]:
         reasons.append("BROKER_FILL_LEDGER_MISMATCH")
     if any(row.get("status") not in
            ("FILL_MATCH", "ARCHIVED_BROKER_FILL_VERIFIED", "FILL_MISMATCH",
-            "NO_FILL_CONFIRMED", "NO_FILL_YET_VERIFIED")
+            "NO_FILL_CONFIRMED", "NO_FILL_YET_VERIFIED",
+            "USER_CANCEL_CONFIRMED_NO_FILL",
+            "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED")
            for row in checks):
         reasons.append("BROKER_FILL_UNVERIFIED")
     if report.get("last_execution_status") == "ERROR":
@@ -212,10 +214,24 @@ def _ai_committed_capital(project_root: Path,
         attempts = con.execute(
             """SELECT symbol,side,detail_json FROM execution_attempts
                ORDER BY started_at,rowid""").fetchall()
+        has_adoptions = con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='manual_ai_adoptions'"
+        ).fetchone()
+        adoptions = (con.execute(
+            "SELECT symbol,qty,unit_cost_twd FROM manual_ai_adoptions ORDER BY adopted_at,id"
+        ).fetchall() if has_adoptions else [])
         formal = {str(symbol): int(qty) for symbol, qty in con.execute(
             "SELECT symbol,qty FROM ai_positions")}
     holdings: dict[str, tuple[int, Decimal]] = {}
     limit_price_estimated = False
+    for symbol, adopted_qty, unit_cost in adoptions:
+        qty, cost = holdings.get(symbol, (0, Decimal("0")))
+        gross = Decimal(str(unit_cost)) * int(adopted_qty)
+        if adopted_qty <= 0 or not gross.is_finite() or gross <= 0:
+            raise RuntimeError(f"{symbol}: manual AI adoption cost is invalid")
+        fee = max(cfg.min_buy_fee_reserve_twd,
+                  gross * cfg.buy_cash_buffer_rate)
+        holdings[symbol] = (qty + int(adopted_qty), cost + gross + fee)
     for symbol, side, detail_json in attempts:
         detail = json.loads(detail_json or "{}")
         filled = int(detail.get("filled_quantity") or 0)
@@ -661,14 +677,22 @@ def run_health_check(project_root: str | Path, *, session=None,
                 archived_cancel = (attempt["status"] in
                                    ("CANCELLED", "PARTIALLY_FILLED_CANCELLED")
                                    and detail.get("broker_cancel_seq13") == str(seq13))
-                has_cancel = bool(cancel_count or archived_cancel)
+                user_cancel = (attempt["status"] == "CANCELLED"
+                               and detail.get("user_cancel_confirmed_seq13") == str(seq13))
+                user_fill = (attempt["status"] == "FILLED"
+                             and detail.get("user_fill_confirmed_seq13") == str(seq13)
+                             and int(detail.get("user_fill_confirmed_qty") or 0)
+                             == recorded_qty == ordered_qty)
+                has_cancel = bool(cancel_count or archived_cancel or user_cancel)
                 if broker_qty >= ordered_qty > 0:
                     event_status = "FULLY_FILLED"
                 elif broker_qty > 0:
                     event_status = ("PARTIAL_FILL_REMAINDER_CANCELLED" if has_cancel
                                     else "PARTIALLY_FILLED_REMAINDER_UNCONFIRMED")
                 elif has_cancel:
-                    event_status = "CANCELLED_NO_FILL"
+                    event_status = ("USER_CONFIRMED_CANCELLED_NO_FILL"
+                                    if user_cancel and not (cancel_count or archived_cancel)
+                                    else "CANCELLED_NO_FILL")
                 elif accepted_count:
                     event_status = "ACKNOWLEDGED_NO_FILL_EVENT"
                 else:
@@ -690,6 +714,9 @@ def run_health_check(project_root: str | Path, *, session=None,
                 elif broker_qty and broker_qty != recorded_qty:
                     verification = "FILL_MISMATCH"
                     report["status"] = "ALERT"
+                elif (user_cancel and not (cancel_count or archived_cancel)
+                      and recorded_qty == 0):
+                    verification = "USER_CANCEL_CONFIRMED_NO_FILL"
                 elif (has_cancel and (cross.replay_complete or archived_cancel)
                       and recorded_qty == 0):
                     verification = "NO_FILL_CONFIRMED"
@@ -702,6 +729,9 @@ def run_health_check(project_root: str | Path, *, session=None,
                     verification = "ARCHIVED_BROKER_FILL_VERIFIED"
                     if not has_cancel:
                         event_status = "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED"
+                elif user_fill and broker_qty == 0:
+                    verification = "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED"
+                    event_status = "USER_PRIOR_FILL_CONFIRMED_REPLAY_NOT_RETURNED"
                 else:
                     verification = "FILL_UNVERIFIED"
                     if report["status"] == "OK":
@@ -720,8 +750,9 @@ def run_health_check(project_root: str | Path, *, session=None,
                     ordered_qty=ordered_qty,
                     broker_replay_filled_qty=broker_qty,
                     broker_verified_filled_qty=verified_qty,
-                    unconfirmed_qty=(0 if has_cancel else
+                    unconfirmed_qty=(0 if has_cancel or user_fill else
                                      max(0, ordered_qty-verified_qty)),
+                    user_confirmed_filled_qty=(recorded_qty if user_fill else 0),
                     cancelled_qty=(max(0, ordered_qty-verified_qty)
                                    if has_cancel else 0),
                     broker_event_status=event_status,
