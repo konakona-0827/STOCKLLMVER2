@@ -129,7 +129,7 @@ def live_ai_positions(path):
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError('正式交易資料庫不存在，停止分析')
-    with sqlite3.connect('file:' + str(path.resolve()) + '?mode=ro', uri=True) as db:
+    with closing(sqlite3.connect('file:' + str(path.resolve()) + '?mode=ro', uri=True)) as db:
         return [dict(symbol=symbol, qty=qty, cost_cents=None)
                 for symbol, qty in db.execute('SELECT symbol,qty FROM ai_positions WHERE qty>0')]
 
