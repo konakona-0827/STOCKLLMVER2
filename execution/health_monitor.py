@@ -104,6 +104,69 @@ def _read_order_keys(path: Path) -> list[dict]:
                        ORDER BY started_at DESC LIMIT 100""")]
 
 
+def _archived_fill_evidence(path: Path, attempts: list[dict]) -> dict[str, dict]:
+    """Recover exact fills previously seen in a complete broker replay.
+
+    SKReply's later reconnects need not replay an older trade. The saved
+    refresh snapshots are durable broker evidence, but only an exact order
+    identity, quantity and priced fill may be carried forward.
+    """
+    wanted = {}
+    for attempt in attempts:
+        detail = attempt["detail"]
+        filled = int(detail.get("filled_quantity") or 0)
+        if (filled > 0 and detail.get("seq13") and
+                detail.get("send_return_code") == 0 and
+                detail.get("broker_reconciled_seq13") != str(detail["seq13"]) and
+                detail.get("user_fill_confirmed_seq13") != str(detail["seq13"])):
+            wanted[attempt["decision_id"]] = attempt
+    if not wanted:
+        return {}
+    found = {}
+    with closing(sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True,
+                                 timeout=10)) as con:
+        if not con.execute("""SELECT 1 FROM sqlite_master WHERE type='table'
+                              AND name='broker_refresh_snapshots'""").fetchone():
+            return found
+        for (payload_json,) in con.execute(
+                "SELECT payload_json FROM broker_refresh_snapshots ORDER BY id DESC"):
+            payload = json.loads(payload_json)
+            for check in payload.get("broker_order_reconciliation") or []:
+                decision_id = check.get("decision_id")
+                attempt = wanted.get(decision_id)
+                if attempt is None or decision_id in found:
+                    continue
+                detail = attempt["detail"]
+                filled = int(detail["filled_quantity"])
+                rows = check.get("broker_replay_fill_details") or []
+                try:
+                    valid_rows = bool(rows) and all(
+                        int(row["quantity"]) > 0 and
+                        Decimal(str(row["price_twd"])).is_finite() and
+                        Decimal(str(row["price_twd"])) > 0 for row in rows)
+                    total = sum(int(row["quantity"]) for row in rows)
+                except (KeyError, TypeError, ValueError, ArithmeticError):
+                    continue
+                if (check.get("status") == "FILL_MATCH" and
+                        check.get("broker_replay_complete") is True and
+                        check.get("symbol") == attempt["symbol"] and
+                        check.get("side") == attempt["side"] and
+                        str(check.get("seq13")) == str(detail["seq13"]) and
+                        int(check.get("ordered_qty") or 0) == int(detail.get("quantity") or 0) and
+                        int(check.get("ledger_filled_qty") or 0) == filled and
+                        int(check.get("broker_replay_filled_qty") or 0) == filled and
+                        valid_rows and total == filled):
+                    found[decision_id] = dict(
+                        fills=rows,
+                        gross_twd=str(sum(Decimal(str(row["price_twd"])) *
+                                          int(row["quantity"]) for row in rows)),
+                        checked_at=payload.get("checked_at"),
+                    )
+            if len(found) == len(wanted):
+                break
+    return found
+
+
 def current_buy_block_reasons(report: dict) -> list[str]:
     """Explain why new BUY orders are paused without calling broker cash zero."""
     reasons = []
@@ -684,7 +747,10 @@ def run_health_check(project_root: str | Path, *, session=None,
 
     if broker_session_ready and not any(x.startswith("database:") for x in report["errors"]):
         try:
-            for attempt in _read_order_keys(root / "data" / "execution" / "live_execution.sqlite3"):
+            db_path = root / "data" / "execution" / "live_execution.sqlite3"
+            attempts = _read_order_keys(db_path)
+            archived_fills = None
+            for attempt in attempts:
                 detail = attempt["detail"]
                 seq13 = detail.get("seq13")
                 if not seq13:
@@ -696,6 +762,9 @@ def run_health_check(project_root: str | Path, *, session=None,
                 cross = session.crosscheck_seq13(str(seq13), include_report9=True)
                 recorded_qty = int(detail.get("filled_quantity") or 0)
                 broker_qty = cross.filled_quantity
+                if broker_qty == 0 and recorded_qty > 0 and archived_fills is None:
+                    archived_fills = _archived_fill_evidence(db_path, attempts)
+                archived_fill = (archived_fills or {}).get(attempt["decision_id"])
                 ordered_qty = int(detail.get("quantity") or 0)
                 accepted_count = len(cross.accepted_rows)
                 fill_event_count = len(cross.fill_rows)
@@ -758,6 +827,10 @@ def run_health_check(project_root: str | Path, *, session=None,
                     verification = "ARCHIVED_BROKER_FILL_VERIFIED"
                     if not has_cancel:
                         event_status = "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED"
+                elif broker_qty == 0 and cross.replay_complete and archived_fill:
+                    verification = "ARCHIVED_BROKER_FILL_VERIFIED"
+                    if not has_cancel:
+                        event_status = "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED"
                 elif (expired and recorded_qty > 0
                       and detail.get("crosscheck_performed") is True
                       and int(detail.get("deal_event_count") or 0) > 0):
@@ -772,8 +845,10 @@ def run_health_check(project_root: str | Path, *, session=None,
                 verified_qty = broker_qty
                 if verification == "ARCHIVED_BROKER_FILL_VERIFIED":
                     verified_qty = recorded_qty
-                    fills = detail.get("broker_replay_fill_details") or []
-                    gross_twd = detail.get("broker_replay_fill_gross_twd")
+                    fills = (archived_fill["fills"] if archived_fill else
+                             detail.get("broker_replay_fill_details") or [])
+                    gross_twd = (archived_fill["gross_twd"] if archived_fill else
+                                 detail.get("broker_replay_fill_gross_twd"))
                 if has_cancel and 0 < verified_qty < ordered_qty:
                     event_status = "PARTIAL_FILL_REMAINDER_CANCELLED"
                 if expired and verification != "FILL_MISMATCH":
@@ -797,6 +872,10 @@ def run_health_check(project_root: str | Path, *, session=None,
                     broker_replay_complete=cross.replay_complete,
                     broker_replay_fill_details=fills,
                     broker_replay_fill_gross_twd=gross_twd,
+                    archived_broker_fill_checked_at=(
+                        archived_fill["checked_at"] if archived_fill and
+                        verification == "ARCHIVED_BROKER_FILL_VERIFIED"
+                        else None),
                     broker_report9_contains_seq=cross.report9_contains_seq,
                     status=verification))
         except Exception as exc:

@@ -1,10 +1,15 @@
 {
-  "checked_at": "2026-10-13T18:45:03+08:00",
+  "checked_at": "2026-10-14T19:22:36+08:00",
   "status": "OK",
-  "broker_balance_twd": "23116",
-  "broker_one_account_balance_twd": "24520",
-  "broker_withdrawable_twd": "24296",
+  "broker_balance_twd": "24433",
+  "broker_one_account_balance_twd": "24296",
+  "broker_withdrawable_twd": "23116",
   "broker_settlement_dues": [
+    {
+      "trade_date": "2026-10-14",
+      "settlement_date": "2026-10-16",
+      "net_twd": "1317"
+    },
     {
       "trade_date": "2026-10-13",
       "settlement_date": "2026-10-15",
@@ -14,37 +19,27 @@
       "trade_date": "2026-10-12",
       "settlement_date": "2026-10-14",
       "net_twd": "-224"
-    },
-    {
-      "trade_date": "2026-10-08",
-      "settlement_date": "2026-10-13",
-      "net_twd": "-6021"
     }
   ],
   "settlement_query_error": null,
   "minimum_balance_twd": "10000",
   "daily_buy_limit_twd": "30000",
-  "daily_buy_reserved_twd": "2636.100",
+  "daily_buy_reserved_twd": "3439.050",
   "strategy_cap_twd": "10000",
   "pending_buy_orders": [],
   "pending_buy_reserve_twd": "0",
   "pending_buy_reserve_error": null,
-  "ai_committed_capital_twd": "7433.600",
+  "ai_committed_capital_twd": "6115.550",
   "ai_committed_positions": [
+    {
+      "symbol": "0050",
+      "qty": 30,
+      "committed_cost_twd": "3439.050"
+    },
     {
       "symbol": "1101",
       "qty": 100,
       "committed_cost_twd": "2676.500"
-    },
-    {
-      "symbol": "2603",
-      "qty": 10,
-      "committed_cost_twd": "2636.100"
-    },
-    {
-      "symbol": "2891",
-      "qty": 30,
-      "committed_cost_twd": "2121.000"
     }
   ],
   "ai_committed_capital_estimated": true,
@@ -53,9 +48,10 @@
   "db_ai_positions": {
     "2345": 0,
     "3231": 0,
-    "2891": 30,
+    "2891": 0,
     "1101": 100,
-    "2603": 10
+    "2603": 0,
+    "0050": 30
   },
   "analysis_positions": {
     "2449": {
@@ -72,6 +68,17 @@
     }
   },
   "inventory_comparison": [
+    {
+      "symbol": "0050",
+      "ai_qty": 30,
+      "broker_cash_qty": 30,
+      "configured_user_qty": null,
+      "configured_ai_qty": null,
+      "configured_total_qty": null,
+      "difference_broker_minus_configured": null,
+      "difference_broker_minus_ai": 0,
+      "status": "MATCH"
+    },
     {
       "symbol": "1101",
       "ai_qty": 100,
@@ -107,8 +114,8 @@
     },
     {
       "symbol": "2603",
-      "ai_qty": 10,
-      "broker_cash_qty": 10,
+      "ai_qty": 0,
+      "broker_cash_qty": 0,
       "configured_user_qty": null,
       "configured_ai_qty": null,
       "configured_total_qty": null,
@@ -118,12 +125,12 @@
     },
     {
       "symbol": "2891",
-      "ai_qty": 30,
-      "broker_cash_qty": 37,
+      "ai_qty": 0,
+      "broker_cash_qty": 7,
       "configured_user_qty": 7,
       "configured_ai_qty": 0,
       "configured_total_qty": 7,
-      "difference_broker_minus_configured": 30,
+      "difference_broker_minus_configured": 0,
       "difference_broker_minus_ai": 7,
       "status": "MATCH"
     },
@@ -141,10 +148,74 @@
   ],
   "broker_order_reconciliation": [
     {
-      "decision_id": "20261013T120500-gui-d248d7cc:2603",
-      "symbol": "2603",
+      "decision_id": "20261014T115303-gui-6bc0458d:0050",
+      "symbol": "0050",
       "side": "BUY",
-      "seq13": "2313277056277",
+      "seq13": "2313278566720",
+      "ledger_status": "FILLED",
+      "ledger_filled_qty": 30,
+      "ordered_qty": 30,
+      "broker_replay_filled_qty": 30,
+      "broker_verified_filled_qty": 30,
+      "unconfirmed_qty": 0,
+      "user_confirmed_filled_qty": 0,
+      "cancelled_qty": 0,
+      "expired_qty": 0,
+      "broker_event_status": "FULLY_FILLED",
+      "broker_event_counts": {
+        "ack": 1,
+        "fill": 1,
+        "cancel": 0
+      },
+      "broker_replay_complete": true,
+      "broker_replay_fill_details": [
+        {
+          "quantity": 30,
+          "price_twd": "113.4500"
+        }
+      ],
+      "broker_replay_fill_gross_twd": "3403.5000",
+      "archived_broker_fill_checked_at": null,
+      "broker_report9_contains_seq": false,
+      "status": "FILL_MATCH"
+    },
+    {
+      "decision_id": "20261014T110548-gui-a598ee84:2891",
+      "symbol": "2891",
+      "side": "SELL",
+      "seq13": "2313277735132",
+      "ledger_status": "FILLED",
+      "ledger_filled_qty": 30,
+      "ordered_qty": 30,
+      "broker_replay_filled_qty": 30,
+      "broker_verified_filled_qty": 30,
+      "unconfirmed_qty": 0,
+      "user_confirmed_filled_qty": 0,
+      "cancelled_qty": 0,
+      "expired_qty": 0,
+      "broker_event_status": "FULLY_FILLED",
+      "broker_event_counts": {
+        "ack": 1,
+        "fill": 1,
+        "cancel": 0
+      },
+      "broker_replay_complete": true,
+      "broker_replay_fill_details": [
+        {
+          "quantity": 30,
+          "price_twd": "71.0000"
+        }
+      ],
+      "broker_replay_fill_gross_twd": "2130.0000",
+      "archived_broker_fill_checked_at": null,
+      "broker_report9_contains_seq": false,
+      "status": "FILL_MATCH"
+    },
+    {
+      "decision_id": "20261014T110548-gui-a598ee84:2603",
+      "symbol": "2603",
+      "side": "SELL",
+      "seq13": "2313277735126",
       "ledger_status": "FILLED",
       "ledger_filled_qty": 10,
       "ordered_qty": 10,
@@ -168,8 +239,41 @@
         }
       ],
       "broker_replay_fill_gross_twd": "2610.0000",
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
       "status": "FILL_MATCH"
+    },
+    {
+      "decision_id": "20261013T120500-gui-d248d7cc:2603",
+      "symbol": "2603",
+      "side": "BUY",
+      "seq13": "2313277056277",
+      "ledger_status": "FILLED",
+      "ledger_filled_qty": 10,
+      "ordered_qty": 10,
+      "broker_replay_filled_qty": 0,
+      "broker_verified_filled_qty": 10,
+      "unconfirmed_qty": 0,
+      "user_confirmed_filled_qty": 0,
+      "cancelled_qty": 0,
+      "expired_qty": 0,
+      "broker_event_status": "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED",
+      "broker_event_counts": {
+        "ack": 0,
+        "fill": 0,
+        "cancel": 0
+      },
+      "broker_replay_complete": true,
+      "broker_replay_fill_details": [
+        {
+          "quantity": 10,
+          "price_twd": "261.0000"
+        }
+      ],
+      "broker_replay_fill_gross_twd": "2610.0000",
+      "archived_broker_fill_checked_at": "2026-10-13T17:36:58+08:00",
+      "broker_report9_contains_seq": false,
+      "status": "ARCHIVED_BROKER_FILL_VERIFIED"
     },
     {
       "decision_id": "20261013T112831-gui-ce0ddabd:2345",
@@ -179,16 +283,16 @@
       "ledger_status": "FILLED",
       "ledger_filled_qty": 2,
       "ordered_qty": 2,
-      "broker_replay_filled_qty": 2,
+      "broker_replay_filled_qty": 0,
       "broker_verified_filled_qty": 2,
       "unconfirmed_qty": 0,
       "user_confirmed_filled_qty": 0,
       "cancelled_qty": 0,
       "expired_qty": 0,
-      "broker_event_status": "FULLY_FILLED",
+      "broker_event_status": "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED",
       "broker_event_counts": {
-        "ack": 1,
-        "fill": 1,
+        "ack": 0,
+        "fill": 0,
         "cancel": 0
       },
       "broker_replay_complete": true,
@@ -199,8 +303,9 @@
         }
       ],
       "broker_replay_fill_gross_twd": "4100.0000",
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
-      "status": "FILL_MATCH"
+      "status": "ARCHIVED_BROKER_FILL_VERIFIED"
     },
     {
       "decision_id": "20261012T123416-gui-15675fa5:1101",
@@ -225,6 +330,7 @@
       "broker_replay_complete": true,
       "broker_replay_fill_details": [],
       "broker_replay_fill_gross_twd": null,
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
       "status": "USER_CANCEL_CONFIRMED_NO_FILL"
     },
@@ -251,6 +357,7 @@
       "broker_replay_complete": true,
       "broker_replay_fill_details": [],
       "broker_replay_fill_gross_twd": null,
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
       "status": "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED"
     },
@@ -277,6 +384,7 @@
       "broker_replay_complete": true,
       "broker_replay_fill_details": [],
       "broker_replay_fill_gross_twd": null,
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
       "status": "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED"
     },
@@ -308,6 +416,7 @@
         }
       ],
       "broker_replay_fill_gross_twd": "1885.0000",
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
       "status": "ARCHIVED_BROKER_FILL_VERIFIED"
     },
@@ -339,6 +448,7 @@
         }
       ],
       "broker_replay_fill_gross_twd": "4130.0000",
+      "archived_broker_fill_checked_at": null,
       "broker_report9_contains_seq": false,
       "status": "ARCHIVED_BROKER_FILL_VERIFIED"
     }
@@ -346,7 +456,7 @@
   "unresolved_attempts": [],
   "errors": [],
   "last_scan_status": "COMPLETE",
-  "last_scan_at": "2026-10-13T13:05:49.748769+08:00",
+  "last_scan_at": "2026-10-14T13:06:00.121215+08:00",
   "last_execution_status": "NO_TRADE_ACTION",
   "analysis_running": true,
   "expired_rod_orders": [],

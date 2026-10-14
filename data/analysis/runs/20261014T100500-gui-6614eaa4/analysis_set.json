@@ -1,0 +1,2037 @@
+[
+  {
+    "symbol": "1101",
+    "name": "台泥",
+    "asset_type": "STOCK",
+    "quant_rank": 1,
+    "quant_score": 6.686256,
+    "components": {
+      "momentum": 1.679104,
+      "volume": 1.697506,
+      "breakout": 1.8,
+      "liquidity": 1.63197,
+      "spread_penalty": -0.122324,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.01679104477611948,
+      "range_position": 0.8999999999999986,
+      "spread": 0.05000000000000071,
+      "spread_pct": 0.001834862385321127,
+      "volume": 123741,
+      "freshness_seconds": 12.186372,
+      "liquidity_proxy_twd": 3371942.25,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 27.25,
+    "open": 26.8,
+    "high": 27.3,
+    "low": 26.8,
+    "bid": 27.25,
+    "ask": 27.3,
+    "volume": 123741,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:03+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 25.55,
+        "volume_shares": 113619
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:36+08:00",
+        "price": 25.8,
+        "volume_shares": 93917
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:26+08:00",
+        "price": 25.8,
+        "volume_shares": 94808
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 25.8,
+        "volume_shares": 144388
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:20+08:00",
+        "price": 26.9,
+        "volume_shares": 384463
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:48+08:00",
+        "price": 27.1,
+        "volume_shares": 505334
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:00+08:00",
+        "price": 27.0,
+        "volume_shares": 513136
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:01+08:00",
+        "price": 26.45,
+        "volume_shares": 251660
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:04+08:00",
+        "price": 26.55,
+        "volume_shares": 265926
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:01+08:00",
+        "price": 26.45,
+        "volume_shares": 293267
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:27+08:00",
+        "price": 27.15,
+        "volume_shares": 79395
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.8999999999999986,
+            "price_vs_open": 0.01679104477611948,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 26.45,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 27.15,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10+POSITION",
+    "position": {
+      "symbol": "1101",
+      "user_qty": 0,
+      "ai_managed_qty": 100,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": "2026-10-13T11:12:42.961956+08:00",
+      "total_qty": 100,
+      "ai_managed_ratio": 1.0,
+      "current_price": 27.25,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": null,
+      "total_unrealized_pnl": null,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "1101",
+      "qty": 100,
+      "cost_cents": null,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 27.3,
+    "max_buy_qty": 93
+  },
+  {
+    "symbol": "0050",
+    "name": "元大台灣50",
+    "asset_type": "ETF",
+    "quant_rank": 2,
+    "quant_score": 6.546375,
+    "components": {
+      "momentum": 0.575731,
+      "volume": 2,
+      "breakout": 2.0,
+      "liquidity": 2,
+      "spread_penalty": -0.029356,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.005757307351638596,
+      "range_position": 1.0,
+      "spread": 0.04999999999999716,
+      "spread_pct": 0.00044033465433727134,
+      "volume": 1357905,
+      "freshness_seconds": 12.186372,
+      "liquidity_proxy_twd": 154190112.75,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 113.55,
+    "open": 112.9,
+    "high": 113.55,
+    "low": 112.8,
+    "bid": 113.5,
+    "ask": 113.55,
+    "volume": 1357905,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:03+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 116.2,
+        "volume_shares": 5638410
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:36+08:00",
+        "price": 115.25,
+        "volume_shares": 5554702
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:32+08:00",
+        "price": 115.25,
+        "volume_shares": 5611465
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 115.05,
+        "volume_shares": 11285306
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:19+08:00",
+        "price": 114.85,
+        "volume_shares": 9571089
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:47+08:00",
+        "price": 114.9,
+        "volume_shares": 10215106
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 114.9,
+        "volume_shares": 10304165
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:03+08:00",
+        "price": 112.6,
+        "volume_shares": 23822640
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:04+08:00",
+        "price": 112.55,
+        "volume_shares": 25799585
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:01+08:00",
+        "price": 112.4,
+        "volume_shares": 29705770
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:30+08:00",
+        "price": 113.3,
+        "volume_shares": 998444
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.005757307351638596,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 112.4,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 113.3,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "0050",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 113.55,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "0050",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 113.55,
+    "max_buy_qty": 22
+  },
+  {
+    "symbol": "2308",
+    "name": "台達電",
+    "asset_type": "STOCK",
+    "quant_rank": 3,
+    "quant_score": 6.337436,
+    "components": {
+      "momentum": 1.114206,
+      "volume": 1.740218,
+      "breakout": 1.666667,
+      "liquidity": 2,
+      "spread_penalty": -0.183655,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.011142061281337101,
+      "range_position": 0.8333333333333334,
+      "spread": 5.0,
+      "spread_pct": 0.0027548209366391185,
+      "volume": 166208,
+      "freshness_seconds": 13.186372,
+      "liquidity_proxy_twd": 301667520.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 1815.0,
+    "open": 1795.0,
+    "high": 1820.0,
+    "low": 1790.0,
+    "bid": 1815.0,
+    "ask": 1820.0,
+    "volume": 166208,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:02+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 1995.0,
+        "volume_shares": 982776
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:35+08:00",
+        "price": 1990.0,
+        "volume_shares": 276183
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:36+08:00",
+        "price": 1990.0,
+        "volume_shares": 278120
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 1980.0,
+        "volume_shares": 439302
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 1905.0,
+        "volume_shares": 1153054
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 1910.0,
+        "volume_shares": 1219787
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 1915.0,
+        "volume_shares": 1226851
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 1790.0,
+        "volume_shares": 1958237
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:02+08:00",
+        "price": 1785.0,
+        "volume_shares": 2290321
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:04+08:00",
+        "price": 1785.0,
+        "volume_shares": 2678242
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:30+08:00",
+        "price": 1805.0,
+        "volume_shares": 112183
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.8333333333333334,
+            "price_vs_open": 0.011142061281337101,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 1785.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 1805.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2308",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 1815.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2308",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 1820.0,
+    "max_buy_qty": 1
+  },
+  {
+    "symbol": "2317",
+    "name": "鴻海",
+    "asset_type": "STOCK",
+    "quant_rank": 4,
+    "quant_score": 6.273435,
+    "components": {
+      "momentum": 1.028807,
+      "volume": 1.7807,
+      "breakout": 1.666667,
+      "liquidity": 1.933038,
+      "spread_penalty": -0.135777,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.010288065843621297,
+      "range_position": 0.8333333333333334,
+      "spread": 0.5,
+      "spread_pct": 0.002036659877800407,
+      "volume": 219836,
+      "freshness_seconds": 10.186372,
+      "liquidity_proxy_twd": 53969738.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 245.5,
+    "open": 243.0,
+    "high": 246.0,
+    "low": 243.0,
+    "bid": 245.5,
+    "ask": 246.0,
+    "volume": 219836,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:05+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 254.0,
+        "volume_shares": 1049279
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:37+08:00",
+        "price": 251.0,
+        "volume_shares": 616491
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:33+08:00",
+        "price": 251.0,
+        "volume_shares": 619622
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 250.5,
+        "volume_shares": 1723356
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:17+08:00",
+        "price": 245.5,
+        "volume_shares": 1941723
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 245.5,
+        "volume_shares": 2119772
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:02+08:00",
+        "price": 245.5,
+        "volume_shares": 2145772
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 242.0,
+        "volume_shares": 1887543
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:01+08:00",
+        "price": 241.5,
+        "volume_shares": 2031812
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:03+08:00",
+        "price": 241.5,
+        "volume_shares": 2149854
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:29+08:00",
+        "price": 244.5,
+        "volume_shares": 121197
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.8333333333333334,
+            "price_vs_open": 0.010288065843621297,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 241.5,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 244.5,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2317",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 245.5,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2317",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 246.0,
+    "max_buy_qty": 10
+  },
+  {
+    "symbol": "2357",
+    "name": "華碩",
+    "asset_type": "STOCK",
+    "quant_rank": 5,
+    "quant_score": 6.0639,
+    "components": {
+      "momentum": 1.223242,
+      "volume": 1.451151,
+      "breakout": 1.619048,
+      "liquidity": 1.837596,
+      "spread_penalty": -0.067137,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.012232415902140747,
+      "range_position": 0.8095238095238095,
+      "spread": 1.0,
+      "spread_pct": 0.0010070493454179255,
+      "volume": 22565,
+      "freshness_seconds": 13.186372,
+      "liquidity_proxy_twd": 22407045.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 993.0,
+    "open": 981.0,
+    "high": 997.0,
+    "low": 976.0,
+    "bid": 993.0,
+    "ask": 994.0,
+    "volume": 22565,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:02+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 995.0,
+        "volume_shares": 74149
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:33+08:00",
+        "price": 1000.0,
+        "volume_shares": 74167
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:34+08:00",
+        "price": 1000.0,
+        "volume_shares": 74233
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 1000.0,
+        "volume_shares": 98862
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 974.0,
+        "volume_shares": 88728
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 976.0,
+        "volume_shares": 97571
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 978.0,
+        "volume_shares": 98269
+      },
+      {
+        "exchange_time": "2026-10-13T12:04:56+08:00",
+        "price": 975.0,
+        "volume_shares": 31095
+      },
+      {
+        "exchange_time": "2026-10-13T12:34:57+08:00",
+        "price": 975.0,
+        "volume_shares": 33460
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:04+08:00",
+        "price": 970.0,
+        "volume_shares": 40950
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:26+08:00",
+        "price": 977.0,
+        "volume_shares": 6530
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.8095238095238095,
+            "price_vs_open": 0.012232415902140747,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 970.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 977.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2357",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 993.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2357",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 994.0,
+    "max_buy_qty": 2
+  },
+  {
+    "symbol": "2891",
+    "name": "中信金",
+    "asset_type": "STOCK",
+    "quant_rank": 6,
+    "quant_score": 6.039361,
+    "components": {
+      "momentum": 0.846262,
+      "volume": 1.613008,
+      "breakout": 2.0,
+      "liquidity": 1.673331,
+      "spread_penalty": -0.09324,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.008462623413258097,
+      "range_position": 1.0,
+      "spread": 0.09999999999999432,
+      "spread_pct": 0.001398601398601319,
+      "volume": 69027,
+      "freshness_seconds": 10.186372,
+      "liquidity_proxy_twd": 4935430.5,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 71.5,
+    "open": 70.9,
+    "high": 71.5,
+    "low": 70.7,
+    "bid": 71.4,
+    "ask": 71.5,
+    "volume": 69027,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:05+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 68.9,
+        "volume_shares": 140310
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:34+08:00",
+        "price": 67.9,
+        "volume_shares": 219857
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:34+08:00",
+        "price": 67.9,
+        "volume_shares": 221147
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 67.8,
+        "volume_shares": 568755
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:14+08:00",
+        "price": 69.9,
+        "volume_shares": 330664
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:42+08:00",
+        "price": 69.7,
+        "volume_shares": 359770
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:04+08:00",
+        "price": 69.8,
+        "volume_shares": 363385
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 71.7,
+        "volume_shares": 467999
+      },
+      {
+        "exchange_time": "2026-10-13T12:34:56+08:00",
+        "price": 71.8,
+        "volume_shares": 501775
+      },
+      {
+        "exchange_time": "2026-10-13T13:04:58+08:00",
+        "price": 71.6,
+        "volume_shares": 541941
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:23+08:00",
+        "price": 71.1,
+        "volume_shares": 46814
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.008462623413258097,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 71.6,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 71.1,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10+POSITION",
+    "position": {
+      "symbol": "2891",
+      "user_qty": 7,
+      "ai_managed_qty": 30,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": "2026-10-08T08:39:47.199788+08:00",
+      "total_qty": 37,
+      "ai_managed_ratio": 0.8108108108108109,
+      "current_price": 71.5,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": null,
+      "total_unrealized_pnl": null,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2891",
+      "qty": 30,
+      "cost_cents": null,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 71.5,
+    "max_buy_qty": 35
+  },
+  {
+    "symbol": "2454",
+    "name": "聯發科",
+    "asset_type": "STOCK",
+    "quant_rank": 7,
+    "quant_score": 5.961759,
+    "components": {
+      "momentum": 0.443951,
+      "volume": 1.877187,
+      "breakout": 1.714286,
+      "liquidity": 2,
+      "spread_penalty": -0.073665,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.004439511653718142,
+      "range_position": 0.8571428571428571,
+      "spread": 5.0,
+      "spread_pct": 0.0011049723756906078,
+      "volume": 428116,
+      "freshness_seconds": 9.186372,
+      "liquidity_proxy_twd": 1937224900.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 4525.0,
+    "open": 4505.0,
+    "high": 4530.0,
+    "low": 4495.0,
+    "bid": 4520.0,
+    "ask": 4525.0,
+    "volume": 428116,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:06+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 4865.0,
+        "volume_shares": 1948078
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:34+08:00",
+        "price": 4760.0,
+        "volume_shares": 1164719
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:35+08:00",
+        "price": 4765.0,
+        "volume_shares": 1170415
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 4725.0,
+        "volume_shares": 2331549
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 4640.0,
+        "volume_shares": 1191895
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:47+08:00",
+        "price": 4645.0,
+        "volume_shares": 1305573
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 4640.0,
+        "volume_shares": 1365784
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:03+08:00",
+        "price": 4535.0,
+        "volume_shares": 1364234
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:05+08:00",
+        "price": 4535.0,
+        "volume_shares": 1439840
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:02+08:00",
+        "price": 4525.0,
+        "volume_shares": 1507005
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:30+08:00",
+        "price": 4505.0,
+        "volume_shares": 316880
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.8571428571428571,
+            "price_vs_open": 0.004439511653718142,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 4525.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 4505.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2454",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 4525.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2454",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 4525.0,
+    "max_buy_qty": 0
+  },
+  {
+    "symbol": "2882",
+    "name": "國泰金",
+    "asset_type": "STOCK",
+    "quant_rank": 8,
+    "quant_score": 5.728801,
+    "components": {
+      "momentum": 0.884956,
+      "volume": 1.498297,
+      "breakout": 2.0,
+      "liquidity": 1.637946,
+      "spread_penalty": -0.292398,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.008849557522123908,
+      "range_position": 1.0,
+      "spread": 0.5,
+      "spread_pct": 0.0043859649122807015,
+      "volume": 31252,
+      "freshness_seconds": 11.186372,
+      "liquidity_proxy_twd": 3562728.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 114.0,
+    "open": 113.0,
+    "high": 114.0,
+    "low": 112.5,
+    "bid": 113.5,
+    "ask": 114.0,
+    "volume": 31252,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:04+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 112.5,
+        "volume_shares": 122222
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:36+08:00",
+        "price": 111.5,
+        "volume_shares": 48798
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:32+08:00",
+        "price": 112.0,
+        "volume_shares": 48981
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 111.5,
+        "volume_shares": 126895
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 113.5,
+        "volume_shares": 116359
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:31+08:00",
+        "price": 113.0,
+        "volume_shares": 120722
+      },
+      {
+        "exchange_time": "2026-10-12T13:13:58+08:00",
+        "price": 113.0,
+        "volume_shares": 122265
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 114.5,
+        "volume_shares": 173827
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:06+08:00",
+        "price": 114.5,
+        "volume_shares": 186010
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:03+08:00",
+        "price": 115.0,
+        "volume_shares": 201974
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:28+08:00",
+        "price": 113.0,
+        "volume_shares": 14102
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.008849557522123908,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 115.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 113.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2882",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 114.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2882",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 114.0,
+    "max_buy_qty": 22
+  },
+  {
+    "symbol": "3231",
+    "name": "緯創",
+    "asset_type": "STOCK",
+    "quant_rank": 9,
+    "quant_score": 5.711126,
+    "components": {
+      "momentum": 0.531915,
+      "volume": 1.592265,
+      "breakout": 2.0,
+      "liquidity": 1.763313,
+      "spread_penalty": -0.176367,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.005319148936170137,
+      "range_position": 1.0,
+      "spread": 0.5,
+      "spread_pct": 0.0026455026455026454,
+      "volume": 59812,
+      "freshness_seconds": 13.186372,
+      "liquidity_proxy_twd": 11304468.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 189.0,
+    "open": 188.0,
+    "high": 189.0,
+    "low": 187.5,
+    "bid": 188.5,
+    "ask": 189.0,
+    "volume": 59812,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:02+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 186.0,
+        "volume_shares": 520305
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:38+08:00",
+        "price": 187.5,
+        "volume_shares": 220331
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:33+08:00",
+        "price": 188.5,
+        "volume_shares": 242367
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 188.5,
+        "volume_shares": 403384
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:20+08:00",
+        "price": 188.5,
+        "volume_shares": 341546
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:48+08:00",
+        "price": 189.0,
+        "volume_shares": 359905
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:00+08:00",
+        "price": 189.5,
+        "volume_shares": 369361
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:01+08:00",
+        "price": 188.0,
+        "volume_shares": 211239
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:02+08:00",
+        "price": 188.0,
+        "volume_shares": 228137
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:04+08:00",
+        "price": 187.5,
+        "volume_shares": 265338
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:26+08:00",
+        "price": 188.0,
+        "volume_shares": 39337
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.005319148936170137,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 187.5,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 188.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "3231",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 189.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "3231",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 189.0,
+    "max_buy_qty": 13
+  },
+  {
+    "symbol": "2356",
+    "name": "英業達",
+    "asset_type": "STOCK",
+    "quant_rank": 10,
+    "quant_score": 5.695514,
+    "components": {
+      "momentum": 0.865052,
+      "volume": 1.430515,
+      "breakout": 2.0,
+      "liquidity": 1.514298,
+      "spread_penalty": -0.114351,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.00865051903114189,
+      "range_position": 1.0,
+      "spread": 0.09999999999999432,
+      "spread_pct": 0.001715265866209165,
+      "volume": 19567,
+      "freshness_seconds": 13.186372,
+      "liquidity_proxy_twd": 1140756.0999999999,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 58.3,
+    "open": 57.8,
+    "high": 58.3,
+    "low": 57.7,
+    "bid": 58.2,
+    "ask": 58.3,
+    "volume": 19567,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:02+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 58.5,
+        "volume_shares": 154964
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:36+08:00",
+        "price": 57.9,
+        "volume_shares": 91632
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:36+08:00",
+        "price": 57.9,
+        "volume_shares": 92275
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 57.8,
+        "volume_shares": 169161
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 58.1,
+        "volume_shares": 145360
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 58.1,
+        "volume_shares": 162933
+      },
+      {
+        "exchange_time": "2026-10-12T13:13:58+08:00",
+        "price": 58.2,
+        "volume_shares": 165512
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:01+08:00",
+        "price": 57.5,
+        "volume_shares": 142081
+      },
+      {
+        "exchange_time": "2026-10-13T12:34:43+08:00",
+        "price": 57.7,
+        "volume_shares": 152093
+      },
+      {
+        "exchange_time": "2026-10-13T13:04:49+08:00",
+        "price": 57.6,
+        "volume_shares": 161236
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:30+08:00",
+        "price": 58.1,
+        "volume_shares": 9912
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.00865051903114189,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 57.6,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 58.1,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2356",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 58.3,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2356",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 58.3,
+    "max_buy_qty": 43
+  },
+  {
+    "symbol": "2603",
+    "name": "長榮",
+    "asset_type": "STOCK",
+    "quant_rank": 17,
+    "quant_score": 3.922327,
+    "components": {
+      "momentum": -0.189394,
+      "volume": 1.733159,
+      "breakout": 0.6,
+      "liquidity": 1.905064,
+      "spread_penalty": -0.126502,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": -0.0018939393939394478,
+      "range_position": 0.3,
+      "spread": 0.5,
+      "spread_pct": 0.0018975332068311196,
+      "volume": 158298,
+      "freshness_seconds": 13.186372,
+      "liquidity_proxy_twd": 41711523.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 263.5,
+    "open": 264.0,
+    "high": 267.0,
+    "low": 262.0,
+    "bid": 263.0,
+    "ask": 263.5,
+    "volume": 158298,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-14T10:05:02+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-07T13:30:00+08:00",
+        "price": 234.0,
+        "volume_shares": 152453
+      },
+      {
+        "exchange_time": "2026-10-08T11:24:35+08:00",
+        "price": 235.5,
+        "volume_shares": 68050
+      },
+      {
+        "exchange_time": "2026-10-08T11:27:36+08:00",
+        "price": 235.5,
+        "volume_shares": 68426
+      },
+      {
+        "exchange_time": "2026-10-08T13:30:00+08:00",
+        "price": 234.0,
+        "volume_shares": 100686
+      },
+      {
+        "exchange_time": "2026-10-12T12:34:20+08:00",
+        "price": 255.5,
+        "volume_shares": 1298748
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:49+08:00",
+        "price": 255.5,
+        "volume_shares": 1352681
+      },
+      {
+        "exchange_time": "2026-10-12T13:13:55+08:00",
+        "price": 255.5,
+        "volume_shares": 1359476
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 261.0,
+        "volume_shares": 603196
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:06+08:00",
+        "price": 261.0,
+        "volume_shares": 645476
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:02+08:00",
+        "price": 262.5,
+        "volume_shares": 748757
+      },
+      {
+        "exchange_time": "2026-10-14T09:35:29+08:00",
+        "price": 264.5,
+        "volume_shares": 127794
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.3,
+            "price_vs_open": -0.0018939393939394478,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 262.5,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 264.5,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": false,
+          "missing": [
+            "FIVE_CONSECUTIVE_VERIFIED_DAILY_OHLCV_BARS"
+          ],
+          "observed": {
+            "complete_daily_sessions": 0,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "INTRADAY_SAMPLES_NOT_DAILY_BARS"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "POSITION",
+    "position": {
+      "symbol": "2603",
+      "user_qty": 0,
+      "ai_managed_qty": 10,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 10,
+      "ai_managed_ratio": 1.0,
+      "current_price": 263.5,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": null,
+      "total_unrealized_pnl": null,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2603",
+      "qty": 10,
+      "cost_cents": null,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "budget_price": 263.5,
+    "max_buy_qty": 9
+  }
+]

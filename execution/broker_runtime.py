@@ -117,9 +117,16 @@ class BrokerRuntime:
                                     "old_symbol_count": len(quote_symbols or ()),
                                     "new_symbol_count": len(requested_symbols),
                                 })
-                                quote_market.close()
-                                quote_market = None
-                                quote_symbols = None
+                                # Retain the original SKQuoteLib event connection.
+                                # Disconnecting GetEvents and attaching a new sink
+                                # to the same COM object immediately before
+                                # EnterMonitor preceded access violations on
+                                # the first AUTO scan (2026-10-12 and 10-14).
+                                # LeaveMonitor clears the subscription; the same
+                                # monitor/sink can then subscribe to the new set.
+                                quote_market.leave_monitor()
+                                quote_market.stopped = args[2]
+                                quote_symbols = requested_symbols
                             if quote_market is None:
                                 quote_market = MultiCapitalMarket(
                                     args[1], stopped=args[2], login_session=session,
