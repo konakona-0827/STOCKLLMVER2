@@ -184,7 +184,7 @@ class AtomicAndHealthTests(unittest.TestCase):
                 con.execute("INSERT INTO paper_account VALUES (1, 1000000)")
                 con.execute("CREATE TABLE positions (symbol TEXT, user_qty INTEGER, ai_managed_qty INTEGER)")
                 con.commit()
-            row = InventoryRow("0050", "T", 2, 0, 0, 0, 0, 2, 2, "raw")
+            row = InventoryRow("0050", "T", 2, 0, 0, 0, 0, 0, 2, "raw")
             power = BuyingPower(True, True, Decimal("9000"), Decimal("9000"),
                                 Decimal("9000"), "raw")
             session = SimpleNamespace(ensure_ready=lambda: SimpleNamespace(action="REUSE"))
@@ -196,6 +196,8 @@ class AtomicAndHealthTests(unittest.TestCase):
             self.assertTrue(report["balance_below_floor"])
             self.assertEqual("AI_EXCEEDS_BROKER",
                              report["inventory_comparison"][0]["status"])
+            self.assertEqual(2, report["inventory_comparison"][0]["broker_cash_qty"])
+            self.assertEqual(0, report["inventory_comparison"][0]["broker_sellable_qty"])
             self.assertEqual(3, store.get_ai_qty("0050"))
             with (root / "data" / "health" / "health_checks.csv").open(
                 encoding="utf-8-sig", newline=""

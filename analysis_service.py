@@ -16,6 +16,7 @@ from multi_scan import candidate_payload
 import position_store
 import position_analyzer
 import scan_store
+import daily_history
 from advice_interface import write_advice_interface
 import paper_portfolio
 import strategy_catalog
@@ -131,6 +132,41 @@ def live_ai_positions(path):
     with sqlite3.connect('file:' + str(path.resolve()) + '?mode=ro', uri=True) as db:
         return [dict(symbol=symbol, qty=qty, cost_cents=None)
                 for symbol, qty in db.execute('SELECT symbol,qty FROM ai_positions WHERE qty>0')]
+
+
+def apply_live_sell_limits(candidates, broker_health):
+    """Bound AI SELL advice by the broker's verified cash sellable quantity."""
+    rows = {row['symbol']: row for row in (broker_health or {}).get('inventory_comparison') or []}
+    inventory_checked = (broker_health or {}).get('inventory_checked') is True
+    for candidate in candidates:
+        held = max(0, int((candidate.get('paper_position') or {}).get('qty') or 0))
+        row = rows.get(candidate['symbol']) if inventory_checked else None
+        sellable = max(0, int(row.get('broker_sellable_qty') or 0)) if row else 0
+        candidate['max_sell_qty'] = min(held, sellable)
+
+
+def apply_live_cost_basis(candidates, costs):
+    """Expose reconstructed acquisition price without claiming broker fee precision."""
+    for candidate in candidates:
+        held = int((candidate.get('paper_position') or {}).get('qty') or 0)
+        basis = costs.get(candidate['symbol'])
+        if (not basis or held <= 0 or int(basis['quantity']) != held
+                or basis.get('average_unit_cost_twd') is None):
+            candidate['ai_cost_basis'] = {'available': False}
+            continue
+        unit_cost = Decimal(str(basis['average_unit_cost_twd']))
+        if not unit_cost.is_finite() or unit_cost <= 0:
+            candidate['ai_cost_basis'] = {'available': False}
+            continue
+        candidate['ai_cost_basis'] = {
+            'available': True,
+            'average_unit_cost_twd': str(unit_cost),
+            'quantity': held,
+            'estimated': bool(basis['estimated']),
+            'excludes_fees_and_tax': True,
+            'source': 'RECONSTRUCTED_FORMAL_AI_LEDGER',
+        }
+        candidate['position']['ai_average_cost'] = float(unit_cost)
 
 
 def broker_snapshot_after_execution(report, root):
@@ -269,6 +305,26 @@ class AnalysisService:
         candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
                                  universe.get('etf_symbols', []), paper_positions, live_managed=live_enabled,
                                  ai_settings=(broker_health or {}).get('ai_position_settings'))
+        phase('DAILY_HISTORY')
+        daily_history.enrich_candidates(candidates, quote_map, at.date(),
+                                        self.directory/'daily_history')
+        if live_enabled:
+            apply_live_sell_limits(candidates, broker_health)
+            from execution.trade_dates import dated_ai_trades
+            from execution.trade_pnl import remaining_acquisition_costs
+            trade_dates = dated_ai_trades(
+                ROOT/'data'/'execution'/'live_execution.sqlite3',
+                (c['symbol'] for c in candidates))
+            for candidate in candidates:
+                candidate['ai_trade_dates'] = trade_dates[candidate['symbol']]
+            try:
+                costs = remaining_acquisition_costs(
+                    ROOT/'data'/'execution'/'live_execution.sqlite3',
+                    (broker_health or {}).get('broker_order_reconciliation'))
+            except (OSError, sqlite3.Error, ValueError, TypeError, KeyError, ArithmeticError) as exc:
+                costs = {}
+                audit.event('AI_COST_BASIS_UNAVAILABLE', {'reason': redact(exc)})
+            apply_live_cost_basis(candidates, costs)
         for c in candidates:
             if c['last_price'] is not None and c['quote_status'] == 'LIVE' and not c.get('is_trial'):
                 entry_price = ((c.get('ask') or c['last_price'])

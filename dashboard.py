@@ -4,7 +4,7 @@ import json
 import sqlite3
 from contextlib import closing
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import math
 import os
 from pathlib import Path
@@ -27,6 +27,7 @@ import position_store
 import paper_portfolio
 import strategy_catalog
 from lifecycle_log import LifecycleLog
+from execution.trade_pnl import realized_price_difference
 
 
 def value(v, percent=False):
@@ -65,6 +66,7 @@ DECISION_LABELS = {'BUY': '買進', 'HOLD': '持有', 'SELL': '賣出', 'WAIT': 
 QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情'}
 STATUS_LABELS = {
     'IDLE': '閒置', 'SCANNING_QUOTES': '取得行情中', 'QUANT_ANALYSIS': '量化分析中',
+    'DAILY_HISTORY': '取得歷史日線中',
     'WAITING_OPENAI': '等待 AI 分析', 'PROCESSING_RESULT': '整理分析結果中',
     'COMPLETE': '完成', 'ERROR': '錯誤', 'RUNNING': '執行中',
     'PAUSED_LOW_BALANCE': '券商資金低於保留額；自動掃描已停止',
@@ -106,6 +108,7 @@ ORDER_LEDGER_LABELS = {
     'CANCELLED': '已取消',
     'EXPIRED': 'ROD 跨日失效',
     'PARTIALLY_FILLED_EXPIRED': '部分成交，ROD 餘量跨日失效',
+    'SKIPPED_CHECK_FAILED': '未送單：交易前檢查未通過',
 }
 SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
 
@@ -437,15 +440,20 @@ class Dashboard:
             ['股票代號','股票名稱','納入原因','量化排名','目前 AI 持股','持股核對','持股對帳時間','建議','信心度'],
             hint='目前 AI 持股取自最近券商對帳後的正式帳本；建議與量化排名仍屬分析當時結果。')
         self.position_tree = self.table('持倉概況',
-            ['股票代號','股票名稱','券商現股','AI 管理股數','AI 運用','人工設定股數','AI 最近買進策略','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
+            ['股票代號','股票名稱','券商現股','券商可賣','AI 管理股數','AI 運用','人工設定股數','AI 最近買進策略','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
             hint='選取股票後按「設定持倉」，或雙擊股票，設定 AI 管理股數；設為 0 即禁止 AI 買賣。')
         self.position_tree.bind('<Double-1>', lambda event: self.position_settings())
         self.quote_tree = self.table('行情與時間（台北時間 UTC+8）', ['股票代號','股票名稱','行情狀態','最新價','資料年齡（秒）','行情時間','請求開始','資料收到','請求完成'])
-        self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','正式 AI 股數','人工設定股數','差異狀態'])
+        self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','券商可賣','正式 AI 股數','人工設定股數','差異狀態'])
         self.live_trade_tree = self.table('正式委託與成交紀錄',
-            ['委託時間','股票代號','方向','採用策略','AI 理由','委託股數','帳本成交股數','券商回報成交明細',
+            ['委託時間','股票代號','方向','已實現損益','AI 理由','委託股數','帳本成交股數','券商回報成交明細',
              '券商回報成交價金','未確認成交股數','已取消餘量','已失效餘量','券商事件推定','事件數',
-             '委託價','帳本狀態','券商回報核對','券商序號','分析回合'])
+             '委託價','帳本狀態','券商回報核對','採用策略','券商序號','分析回合'])
+        self.live_trade_tree.tag_configure('pnl_gain', foreground='#087A35')
+        self.live_trade_tree.tag_configure('pnl_loss', foreground='#B00020')
+        self.live_trade_tree.heading('AI 理由', text='AI 理由（雙擊查看全文）')
+        self.live_trade_tree.bind('<Configure>', self.expand_trade_reason_column)
+        self.live_trade_tree.bind('<Double-1>', self.show_trade_reason)
         settlement_tab = ttk.Frame(self.notebook)
         self.notebook.add(settlement_tab, text='交割明細')
         self.settlement_status_text = tk.StringVar(value='等待券商查詢交割資料。')
@@ -517,6 +525,7 @@ class Dashboard:
             '券商回報成交明細': 235, '券商回報成交價金': 155,
             '券商事件推定': 260, '事件數': 155,
             'AI 最近買進策略': 180, '採用策略': 175, 'AI 理由': 360,
+            '已實現損益': 145, '券商可賣': 100,
         }
         for col in columns:
             tree.heading(col, text=col)
@@ -534,6 +543,35 @@ class Dashboard:
         frame.rowconfigure(table_row, weight=1)
         frame.columnconfigure(0, weight=1)
         return tree
+
+    def expand_trade_reason_column(self, _event=None):
+        """Give window growth to the reason without capping manual column drag."""
+        target = 360 + max(0, self.root.winfo_width() - 1500)
+        current = self.live_trade_tree.column('AI 理由', 'width')
+        if current < target:
+            self.live_trade_tree.column('AI 理由', width=target)
+
+    def show_trade_reason(self, event):
+        tree = self.live_trade_tree
+        item = tree.identify_row(event.y)
+        if not item:
+            return
+        values = tree.item(item, 'values')
+        columns = list(tree['columns'])
+        reason = values[columns.index('AI 理由')]
+        symbol = values[columns.index('股票代號')]
+        win = tk.Toplevel(self.root)
+        win.title(f'AI 理由全文｜{symbol}')
+        win.geometry('900x500')
+        win.minsize(400, 250)
+        content = tk.Text(win, wrap='word', padx=18, pady=14,
+                          font=('Microsoft JhengHei UI', 12))
+        scroll = ttk.Scrollbar(win, orient='vertical', command=content.yview)
+        content.configure(yscrollcommand=scroll.set)
+        content.pack(side='left', fill='both', expand=True)
+        scroll.pack(side='right', fill='y')
+        content.insert('1.0', reason)
+        content.configure(state='disabled')
 
     def update_live_strategy_label(self):
         try:
@@ -1158,10 +1196,17 @@ class Dashboard:
         for row in health.get('inventory_comparison') or []:
             self.broker_position_tree.insert('', 'end', values=[
                 health.get('checked_at') or '--', row.get('symbol'), row.get('broker_cash_qty'),
+                row.get('broker_sellable_qty', '--') if verified else '--',
                 row.get('ai_qty'), row.get('configured_user_qty'),
                 row.get('status') if verified else '券商查詢未完整驗證'])
         self.live_trade_tree.delete(*self.live_trade_tree.get_children())
         order_checks = {x['decision_id']: x for x in health.get('broker_order_reconciliation') or []}
+        try:
+            pnl_by_order = realized_price_difference(
+                ROOT / 'data' / 'execution' / 'live_execution.sqlite3',
+                health.get('broker_order_reconciliation'))
+        except (OSError, sqlite3.Error, ValueError, TypeError, KeyError, InvalidOperation):
+            pnl_by_order = {}
         latest_buy_strategy = {}
         for attempt in health.get('execution_attempts') or []:
             if attempt.get('side') != 'BUY':
@@ -1201,9 +1246,22 @@ class Dashboard:
                                                           order_check.get('broker_replay_filled_qty')) else '--')
             except (ValueError, InvalidOperation):
                 gross_text = '待確認'
-            self.live_trade_tree.insert('', 'end', values=[
+            pnl = pnl_by_order.get(attempt.get('decision_id'))
+            rounded_pnl = pnl[0].quantize(Decimal('1'), rounding=ROUND_HALF_UP) if pnl else None
+            pnl_text = (f'{"約 " if pnl[1] else ""}{rounded_pnl:+,}'
+                        if rounded_pnl else '0' if pnl else '--')
+            pnl_tag = ('pnl_gain',) if rounded_pnl and rounded_pnl > 0 else (
+                ('pnl_loss',) if rounded_pnl and rounded_pnl < 0 else ())
+            ledger_status = attempt.get('status')
+            if (ledger_status == 'SKIPPED_CHECK_FAILED'
+                    and 'target stock not found as available sellable cash inventory'
+                    in str(detail.get('reason') or '')):
+                ledger_label = '未送單：當時可賣股數 0'
+            else:
+                ledger_label = ORDER_LEDGER_LABELS.get(ledger_status, ledger_status)
+            self.live_trade_tree.insert('', 'end', tags=pnl_tag, values=[
                 attempt.get('started_at'), attempt.get('symbol'), attempt.get('side'),
-                strategy_label, ai_reason,
+                pnl_text, ai_reason,
                 detail.get('quantity', '--'), detail.get('filled_quantity', '--'),
                 '；'.join(fill_parts) if fill_parts else '--', gross_text,
                 order_check.get('unconfirmed_qty', '--'),
@@ -1215,7 +1273,7 @@ class Dashboard:
                     **(order_check.get('broker_event_counts') or
                        dict(ack=0, fill=0, cancel=0))),
                 detail.get('limit_price', '--'),
-                ORDER_LEDGER_LABELS.get(attempt.get('status'), attempt.get('status')),
+                ledger_label,
                 {'FILL_MATCH':'成交與帳本相符',
                  'ARCHIVED_BROKER_FILL_VERIFIED':'先前券商成交已存證',
                  'FILL_MISMATCH':'券商成交與帳本不一致',
@@ -1227,6 +1285,7 @@ class Dashboard:
                  'FILL_UNVERIFIED':'成交尚未確認'}.get(
                     order_check.get('status'),
                     order_check.get('status', '無券商成交核對')),
+                strategy_label,
                 detail.get('seq13', '--'), attempt.get('run_id')])
         checks = health.get('broker_order_reconciliation') or []
         fill_totals, fills_by_date, undated_fills, incomplete_fills = (
@@ -1512,7 +1571,9 @@ class Dashboard:
             value_twd = f'NT$ {qty*quote[1]:,.2f}' if quote else '--'
             self.position_tree.insert('', 'end', values=[
                 symbol, quote[2] if quote and quote[2] else names.get(symbol, '股票名稱未取得'),
-                qty if verified else '--', row.get('ai_qty') if verified else '--',
+                qty if verified else '--',
+                row.get('broker_sellable_qty', '--') if verified else '--',
+                row.get('ai_qty') if verified else '--',
                 ai_usage,
                 row.get('configured_user_qty') if verified else '--',
                 latest_buy_strategy.get(symbol, ('','--'))[1] if verified and int(row.get('ai_qty') or 0)>0 else '--',

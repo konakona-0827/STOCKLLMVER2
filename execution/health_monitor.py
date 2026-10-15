@@ -14,8 +14,9 @@ from datetime import datetime
 from pathlib import Path
 
 from config import TAIPEI
-from .account_guard import (query_buying_power, query_inventory,
-                            query_settlement_dues, realtime_cash_qty)
+from .account_guard import (cash_sellable_qty, query_buying_power,
+                            query_inventory, query_settlement_dues,
+                            realtime_cash_qty)
 from .auto_advice_executor import LiveExecutionConfig
 from .capital_crosscheck import parse_reply_row
 from .settlement_balance import assess_settlement_balance
@@ -702,6 +703,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                              set(report["analysis_positions"])):
             ai_qty = report["db_ai_positions"].get(symbol, 0)
             broker_qty = realtime_cash_qty(inventory, symbol)
+            sellable_qty = cash_sellable_qty(inventory, symbol)
             configured = report["analysis_positions"].get(symbol, {})
             configured_total = (
                 configured["user_qty"] + configured["configured_ai_qty"]
@@ -719,6 +721,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                 comparison_status = "MATCH"
             comparison = dict(symbol=symbol, ai_qty=ai_qty,
                               broker_cash_qty=broker_qty,
+                              broker_sellable_qty=sellable_qty,
                               configured_user_qty=configured.get("user_qty"),
                               configured_ai_qty=configured.get("configured_ai_qty"),
                               configured_total_qty=configured_total,

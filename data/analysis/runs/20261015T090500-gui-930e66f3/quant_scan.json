@@ -1,0 +1,1094 @@
+{
+  "rule_config": {
+    "version": "snapshot-score-v1",
+    "candidate_top_n": 10,
+    "min_volume_shares": 1000,
+    "min_turnover_proxy_twd": 100000,
+    "max_spread_pct": 0.03,
+    "momentum_return_scale": 0.03,
+    "volume_reference_shares": 1000000,
+    "liquidity_reference_twd": 100000000,
+    "weights": {
+      "momentum": 3,
+      "volume": 2,
+      "breakout": 2,
+      "liquidity": 2,
+      "spread_penalty": 2,
+      "stale_penalty": 2
+    },
+    "notes": "return及spread_pct是比值不是百分數；breakout第一版僅代表當日區間位置，不代表突破20日高。所有門檻只供研究，可在此調整。"
+  },
+  "quotes": [
+    {
+      "symbol": "0050",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.04999999999999716,
+        "spread_pct": 0.00045537340619305247,
+        "volume": 0,
+        "freshness_seconds": 12.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.030358,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2330",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 5.0,
+        "spread_pct": 0.002008032128514056,
+        "volume": 0,
+        "freshness_seconds": 15.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.133869,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2454",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 5.0,
+        "spread_pct": 0.0011173184357541898,
+        "volume": 0,
+        "freshness_seconds": 13.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.074488,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2317",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.002061855670103093,
+        "volume": 0,
+        "freshness_seconds": 12.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.137457,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2382",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0015503875968992248,
+        "volume": 0,
+        "freshness_seconds": 12.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.103359,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "3231",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0027100271002710027,
+        "volume": 0,
+        "freshness_seconds": 13.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.180668,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "3017",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 5.0,
+        "spread_pct": 0.0015527950310559005,
+        "volume": 0,
+        "freshness_seconds": 14.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.10352,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2891",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.10000000000000853,
+        "spread_pct": 0.0013947001394701327,
+        "volume": 0,
+        "freshness_seconds": 11.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.09298,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2881",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.003125,
+        "volume": 0,
+        "freshness_seconds": 14.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.208333,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2882",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0043859649122807015,
+        "volume": 0,
+        "freshness_seconds": 15.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.292398,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2303",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0035714285714285713,
+        "volume": 0,
+        "freshness_seconds": 14.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.238095,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2308",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 5.0,
+        "spread_pct": 0.0028169014084507044,
+        "volume": 0,
+        "freshness_seconds": 12.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.187793,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2345",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 5.0,
+        "spread_pct": 0.0025188916876574307,
+        "volume": 0,
+        "freshness_seconds": 14.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.167926,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2357",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 4.0,
+        "spread_pct": 0.0041025641025641026,
+        "volume": 0,
+        "freshness_seconds": 11.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.273504,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2376",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0014084507042253522,
+        "volume": 0,
+        "freshness_seconds": 11.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.093897,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2356",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.09999999999999432,
+        "spread_pct": 0.001700680272108747,
+        "volume": 0,
+        "freshness_seconds": 15.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.113379,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2377",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 1.0,
+        "spread_pct": 0.006329113924050633,
+        "volume": 0,
+        "freshness_seconds": 14.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.421941,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2603",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0019267822736030828,
+        "volume": 0,
+        "freshness_seconds": 10.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.128452,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2609",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.09999999999999432,
+        "spread_pct": 0.0015432098765431222,
+        "volume": 0,
+        "freshness_seconds": 12.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.102881,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "1101",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.05000000000000071,
+        "spread_pct": 0.0018484288354898599,
+        "volume": 0,
+        "freshness_seconds": 15.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.123229,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    },
+    {
+      "symbol": "2449",
+      "quote_status": "LIVE",
+      "eligible": false,
+      "exclusion_reasons": [
+        "LOW_OR_MISSING_VOLUME",
+        "TRIAL_QUOTE",
+        "LOW_LIQUIDITY_PROXY"
+      ],
+      "warnings": [
+        "試撮資訊不是確定成交。",
+        "MISSING_OPEN_MOMENTUM_UNAVAILABLE",
+        "MISSING_FLAT_OR_INVALID_RANGE"
+      ],
+      "metrics": {
+        "intraday_return": null,
+        "range_position": null,
+        "spread": 0.5,
+        "spread_pct": 0.0016891891891891893,
+        "volume": 0,
+        "freshness_seconds": 4.68972,
+        "liquidity_proxy_twd": 0.0,
+        "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+        "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+        "return_1d": null,
+        "return_5d": null,
+        "return_20d": null,
+        "volume_ratio": null,
+        "MA5": null,
+        "MA20": null,
+        "price_vs_MA5": null,
+        "price_vs_MA20": null,
+        "RSI": null,
+        "ATR": null,
+        "high_20d_distance": null,
+        "breakout_score": null,
+        "drawdown_from_recent_high": null,
+        "volatility": null
+      },
+      "components": {
+        "momentum": 0.0,
+        "volume": 0,
+        "breakout": 0,
+        "liquidity": 0,
+        "spread_penalty": -0.112613,
+        "stale_penalty": 0
+      },
+      "quant_score": null,
+      "score_version": "snapshot-score-v1",
+      "component_note": "breakout component is intraday range position, not historical breakout"
+    }
+  ]
+}
