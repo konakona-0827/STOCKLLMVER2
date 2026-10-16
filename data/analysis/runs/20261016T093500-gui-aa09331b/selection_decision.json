@@ -1,0 +1,211 @@
+{
+  "market_view": "2026-10-16 09:35（Asia/Taipei）盤中資料顯示多數標的上漲，但市場與個股均未提供完整 65 個交易日資料，無法驗證日線趨勢突破 v1 的 0050 SMA60、個股 SMA20/SMA60、H20、ATR20 與量能條件。盤中快照不能替代完整日 K；本輪不提出新買進。1101 為已確認持倉，因尚未出現可由輸入資料確認的退出觸發，維持 HOLD。",
+  "decisions": [
+    {
+      "symbol": "2345",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 1985,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "智邦（2345）：LIVE 報價有效，但日線僅有 22 個完整交易日，且最新價 1985 低於 5 日均價 2048；無法驗證 v1 所需 65 日資料、SMA60、H20、ATR20 與 0050 市場濾網。盤中反彈與抽樣高點不足以構成可執行買進訊號。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "本輪外部查證在 TWSE 公司資訊揭露頁看到 2345 智邦於 2026-10-08 的重大訊息；未將此舊公告直接解讀為今日利多或利空。來源：臺灣證券交易所，發布日期 2026-10-08，https://wwwc.twse.com.tw/IIH2/zh/company/information.html?code=2345。([wwwc.twse.com.tw](https://wwwc.twse.com.tw/IIH2/zh/company/information.html?code=2345&utm_source=openai))",
+        "未查得可核實的 2026-10-16 當日事件；未查得不等於沒有未公告或未搜尋到的風險。"
+      ]
+    },
+    {
+      "symbol": "2603",
+      "decision": "WAIT",
+      "confidence": 0.87,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 264,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "長榮（2603）：日線趨勢偏強，20 日報酬約 8.44%、5 日報酬約 10.54%，但目前只有 22 個完整交易日，無法完成 v1 的 65 日市場與個股條件；盤中價也不能替代次日有效 ask 驗證及完整成本／風險枚舉。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status 僅涵蓋 22 個完整交易日，不能宣稱已完成多日突破 v1 驗證。",
+        "成交量為盤中零股累積量，不可直接宣稱符合 V20_before 量能條件。"
+      ]
+    },
+    {
+      "symbol": "2356",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 58.9,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "英業達（2356）：當日上漲且位於區間高點，但完整日線顯示 20 日報酬約 -6.65%、現價仍低於 20 日均價 59.525；盤中回升尚未證明反轉，亦不足以建立有正淨收益與合理報酬風險比的目標價。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "僅 22 個完整交易日，無法驗證 65 日資料要求。",
+        "intraday_recovery 的輸入明確指出尚未證明止跌。"
+      ]
+    },
+    {
+      "symbol": "2881",
+      "decision": "WAIT",
+      "confidence": 0.86,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 160.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "富邦金（2881）：日線仍偏正向，現價高於 5 日與 20 日均價，但只具 22 個完整交易日；缺少 65 日市場濾網、ATR20、H20 與除權息核對，不能將盤中高點直接當作 v1 突破買點。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "現價 160.5、有效 ask 161.0，仍須由執行器於成交前重新確認報價年齡、價差與費用可行性。"
+      ]
+    },
+    {
+      "symbol": "2891",
+      "decision": "WAIT",
+      "confidence": 0.85,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 73.7,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "中信金（2891）：日線動能與量能偏強，20 日報酬約 7.05%、5 日報酬約 6.11%，但目前只有 22 個完整交易日；尚不能驗證 v1 的市場濾網、ATR20、H20 與 65 日資料要求。現有持倉資料為使用者 7 股且 max_sell_qty=0，不提出賣出。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "max_sell_qty 為 0；即使帳本有使用者持股，本輪不得提出 SELL。",
+        "盤中快照量不能替代 V20_before。"
+      ]
+    },
+    {
+      "symbol": "2317",
+      "decision": "WAIT",
+      "confidence": 0.92,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 245,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "鴻海（2317）：完整日線偏弱，20 日報酬約 -3.62%、現價低於 5 日均價 243.2? 目前現價高於 5 日均價但仍低於 20 日均價 249.5；不足以確認中期趨勢恢復。缺少 65 日資料與 v1 所需 ATR、H20、0050 SMA60。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status 為 22 個完整交易日，跨日樣本不足以完成 v1。"
+      ]
+    },
+    {
+      "symbol": "2609",
+      "decision": "WAIT",
+      "confidence": 0.88,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 64.3,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "陽明（2609）：日線 20 日與 5 日報酬均為正，現價高於 5 日均價，但仍只有 22 個完整交易日；無法確認 65 日市場條件、H20、ATR20 與正式突破訊號。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "盤中價 64.3 低於當日高點 64.4，盤中抽樣不足以確認收盤突破。"
+      ]
+    },
+    {
+      "symbol": "2882",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 114.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "國泰金（2882）：日線僅溫和偏強，20 日報酬約 0.89%、5 日報酬約 0.44%；目前資料不足以支持具備正淨收益的目標價，且無 65 日資料驗證 v1 趨勢與市場濾網。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "目前買賣價差約 0.5 元，約 0.44%，高於策略 v1 的 0.3% 價差限制；即使其他條件成立，本輪也不應進場。"
+      ]
+    },
+    {
+      "symbol": "0050",
+      "decision": "WAIT",
+      "confidence": 0.94,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 109.55,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "元大台灣50（0050）：0050 是市場濾網所需代表，但最新完整日線僅到 2026-10-15 且只有 22 個交易日，無法計算或驗證 v1 所需 SMA60 及其 5 日斜率條件。近 5 日報酬約 -6.16%，盤中小幅回升不足以改寫收盤判斷。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "0050 不應因盤中報價高於開盤就視為市場濾網成立。",
+        "本輪不混持 0050 與個股。"
+      ]
+    },
+    {
+      "symbol": "3017",
+      "decision": "WAIT",
+      "confidence": 0.95,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 3125,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "奇鋐（3017）：完整日線明顯偏弱，5 日報酬約 -12.98%、20 日報酬約 -6.80%，現價雖較前一交易日盤中回升，仍不足以證明反轉或突破；無法建立符合成本與失效風險要求的買進目標。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_trend 顯示現價所在趨勢仍弱，盤中反彈不可替代完整收盤確認。",
+        "僅 22 個完整交易日，無法驗證 v1 的 65 日條件。"
+      ]
+    },
+    {
+      "symbol": "1101",
+      "decision": "HOLD",
+      "confidence": 0.88,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 27.55,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台泥（1101）：已確認持有 100 股，ai_cost_basis 可用且估計成本為每股 26.5 元；現價 27.55 高於成本。完整日線仍偏強，20 日報酬約 12.13%、現價高於 5 日與 20 日均價，且本輪沒有可由輸入資料確認的即時停損、追蹤價、前 10 日低點或市場濾網退出觸發，因此維持 HOLD，不加碼。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "max_sell_qty=100，但目前沒有足以支持 SELL 的明確退出觸發；若後續有效 bid 觸及券商核實的退出價，需由執行器重新查詢可賣股數後處理。",
+        "ai_cost_basis 為估計成本，未含實際手續費與交易稅。",
+        "本輪未建立新目標價；不得將 3R 或固定獲利目標自行加入。"
+      ]
+    }
+  ]
+}

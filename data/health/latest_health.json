@@ -1,10 +1,15 @@
 {
-  "checked_at": "2026-10-15T21:53:47+08:00",
+  "checked_at": "2026-10-16T12:01:07+08:00",
   "status": "OK",
   "broker_balance_twd": "27718",
-  "broker_one_account_balance_twd": "23116",
-  "broker_withdrawable_twd": "23116",
+  "broker_one_account_balance_twd": "24433",
+  "broker_withdrawable_twd": "24433",
   "broker_settlement_dues": [
+    {
+      "trade_date": "2026-10-16",
+      "settlement_date": "2026-10-20",
+      "net_twd": "-5325"
+    },
     {
       "trade_date": "2026-10-15",
       "settlement_date": "2026-10-19",
@@ -14,27 +19,27 @@
       "trade_date": "2026-10-14",
       "settlement_date": "2026-10-16",
       "net_twd": "1317"
-    },
-    {
-      "trade_date": "2026-10-13",
-      "settlement_date": "2026-10-15",
-      "net_twd": "-1180"
     }
   ],
   "settlement_query_error": null,
   "minimum_balance_twd": "10000",
   "daily_buy_limit_twd": "30000",
-  "daily_buy_reserved_twd": "0",
+  "daily_buy_reserved_twd": "5383.300",
   "strategy_cap_twd": "10000",
   "pending_buy_orders": [],
   "pending_buy_reserve_twd": "0",
   "pending_buy_reserve_error": null,
-  "ai_committed_capital_twd": "2676.500",
+  "ai_committed_capital_twd": "8059.800",
   "ai_committed_positions": [
     {
       "symbol": "1101",
       "qty": 100,
       "committed_cost_twd": "2676.500"
+    },
+    {
+      "symbol": "2603",
+      "qty": 20,
+      "committed_cost_twd": "5383.300"
     }
   ],
   "ai_committed_capital_estimated": true,
@@ -45,7 +50,7 @@
     "3231": 0,
     "2891": 0,
     "1101": 100,
-    "2603": 0,
+    "2603": 20,
     "0050": 0
   },
   "analysis_positions": {
@@ -113,8 +118,8 @@
     },
     {
       "symbol": "2603",
-      "ai_qty": 0,
-      "broker_cash_qty": 0,
+      "ai_qty": 20,
+      "broker_cash_qty": 20,
       "broker_sellable_qty": 0,
       "configured_user_qty": null,
       "configured_ai_qty": null,
@@ -150,15 +155,15 @@
   ],
   "broker_order_reconciliation": [
     {
-      "decision_id": "20261015T093500-gui-eba214a6:0050",
-      "symbol": "0050",
-      "side": "SELL",
-      "seq13": "2313279434708",
+      "decision_id": "20261016T112348-gui-2119bf55:2603",
+      "symbol": "2603",
+      "side": "BUY",
+      "seq13": "2313281238039",
       "ledger_status": "FILLED",
-      "ledger_filled_qty": 30,
-      "ordered_qty": 30,
-      "broker_replay_filled_qty": 30,
-      "broker_verified_filled_qty": 30,
+      "ledger_filled_qty": 20,
+      "ordered_qty": 20,
+      "broker_replay_filled_qty": 20,
+      "broker_verified_filled_qty": 20,
       "unconfirmed_qty": 0,
       "user_confirmed_filled_qty": 0,
       "cancelled_qty": 0,
@@ -166,7 +171,43 @@
       "broker_event_status": "FULLY_FILLED",
       "broker_event_counts": {
         "ack": 1,
-        "fill": 1,
+        "fill": 2,
+        "cancel": 0
+      },
+      "broker_replay_complete": true,
+      "broker_replay_fill_details": [
+        {
+          "quantity": 7,
+          "price_twd": "266.0000"
+        },
+        {
+          "quantity": 13,
+          "price_twd": "266.0000"
+        }
+      ],
+      "broker_replay_fill_gross_twd": "5320.0000",
+      "archived_broker_fill_checked_at": null,
+      "broker_report9_contains_seq": false,
+      "status": "FILL_MATCH"
+    },
+    {
+      "decision_id": "20261015T093500-gui-eba214a6:0050",
+      "symbol": "0050",
+      "side": "SELL",
+      "seq13": "2313279434708",
+      "ledger_status": "FILLED",
+      "ledger_filled_qty": 30,
+      "ordered_qty": 30,
+      "broker_replay_filled_qty": 0,
+      "broker_verified_filled_qty": 30,
+      "unconfirmed_qty": 0,
+      "user_confirmed_filled_qty": 0,
+      "cancelled_qty": 0,
+      "expired_qty": 0,
+      "broker_event_status": "PRIOR_FILL_VERIFIED_REPLAY_NOT_RETURNED",
+      "broker_event_counts": {
+        "ack": 0,
+        "fill": 0,
         "cancel": 0
       },
       "broker_replay_complete": true,
@@ -177,9 +218,9 @@
         }
       ],
       "broker_replay_fill_gross_twd": "3291.0000",
-      "archived_broker_fill_checked_at": null,
+      "archived_broker_fill_checked_at": "2026-10-16T09:05:00+08:00",
       "broker_report9_contains_seq": false,
-      "status": "FILL_MATCH"
+      "status": "ARCHIVED_BROKER_FILL_VERIFIED"
     },
     {
       "decision_id": "20261014T115303-gui-6bc0458d:0050",
@@ -490,7 +531,7 @@
   "unresolved_attempts": [],
   "errors": [],
   "last_scan_status": "COMPLETE",
-  "last_scan_at": "2026-10-15T12:06:02.919816+08:00",
+  "last_scan_at": "2026-10-16T11:36:01.248675+08:00",
   "last_execution_status": "NO_TRADE_ACTION",
   "analysis_running": true,
   "expired_rod_orders": [],

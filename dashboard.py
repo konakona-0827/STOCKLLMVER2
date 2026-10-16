@@ -529,7 +529,10 @@ class Dashboard:
         }
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, width=widths.get(col, 110), minwidth=75, anchor='center' if col in widths else 'w')
+            default_width = widths.get(col, 110)
+            tree.column(col, width=default_width,
+                        minwidth=default_width if col == 'AI 理由' else 75,
+                        anchor='center' if col in widths else 'w')
         ys = ttk.Scrollbar(frame, orient='vertical', command=tree.yview)
         xs = ttk.Scrollbar(frame, orient='horizontal', command=tree.xview)
         tree.configure(yscrollcommand=ys.set, xscrollcommand=xs.set)

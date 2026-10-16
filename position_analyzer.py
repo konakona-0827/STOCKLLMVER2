@@ -80,6 +80,11 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                          '此時舊相容欄位 paper_position.cost_cents=null 不代表成本未知。'
                          'SELL 應以可賣買價、股數及交易成本估算退出損益，'
                          '不可只因小幅低於開盤或前期盤中抽樣就認定持股理由失效。')
+    instructions += ('\n\n輸出完整性：analysis_set 的每個 symbol 必須在 decisions 中恰好出現一次，'
+                     '包括沒有買賣訊號及僅因持倉而納入的標的；不得省略。'
+                     '沒有適合動作時填 WAIT，已確認持倉而繼續持有時填 HOLD。'
+                     'WAIT/HOLD 的 action_ratio=0、suggested_qty=0、suggested_price=null；'
+                     'reference_price 必須等於該檔 last_price，缺價時填 null。')
     request = dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=instructions,
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
@@ -144,13 +149,22 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                 raise ValueError('BUY_EXCEEDS_AVAILABLE_CASH')
             if 'max_buy_qty' not in c and d['suggested_qty'] is not None:
                 raise ValueError('INVALID_BUY_QUANTITY')
-        elif d['action_ratio'] != 0 or d['suggested_qty'] != 0 or d['suggested_price'] is not None:
-            raise ValueError('NON_ACTION_QUANTITY')
+        else:
+            if (d['action_ratio'] != 0 or d['suggested_qty'] not in (None, 0)
+                    or d['suggested_price'] is not None):
+                raise ValueError('NON_ACTION_QUANTITY')
+            # The response schema permits null for an absent quantity. Keep the
+            # downstream advice interface's zero-quantity representation.
+            d['suggested_qty'] = 0
         if d['decision'] != 'BUY' and (d['strategy_id'] != 'NONE' or
                 any(d[key] is not None for key in ('target_price', 'invalidation_price', 'holding_days'))):
             raise ValueError('NON_BUY_TRADE_PLAN')
         ref = d['reference_price']
-        if c['last_price'] is None:
+        if d['decision'] in ('WAIT', 'HOLD'):
+            if ref != c['last_price']:
+                d['reference_price'] = c['last_price']
+                d['warnings'].append('參考價已依本輪行情資料校正；本建議不產生交易委託。')
+        elif c['last_price'] is None:
             if ref is not None:
                 raise ValueError('INVENTED_REFERENCE')
         elif type(ref) not in (int, float) or not math.isfinite(ref) or abs(ref-c['last_price']) > 1e-8:
@@ -219,8 +233,21 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                                         Decimal(gross_cents) * Decimal(str(buy_cash_buffer_rate)),
                                         Decimal(fee_twd(gross_cents) * 100))
                     planned_buy_cost_cents += gross_cents + reserve_cents
-    if seen != set(lookup):
-        raise ValueError('MISSING_ANALYSIS_SYMBOL')
+    missing = [c for c in candidates if c['symbol'] not in seen]
+    if missing:
+        for c in missing:
+            warnings = ['AI_MISSING_SYMBOL_WAIT：AI 回覆未包含此標的，程式保守補入 WAIT。']
+            if c['quote_status'] == 'LAST_KNOWN':
+                warnings.append(f"不是即時行情；資料時間：{c.get('quote_timestamp') or '未知'}。")
+            result['decisions'].append(dict(
+                symbol=c['symbol'], decision='WAIT', confidence=0,
+                action_ratio=0, suggested_qty=0, reference_price=c['last_price'],
+                suggested_price=None, strategy_id='NONE', target_price=None,
+                invalidation_price=None, holding_days=None,
+                reason=f"{c.get('name') or '股票名稱未取得'}（{c['symbol']}）：AI 未回覆此標的；本輪不採取交易動作。",
+                data_quality=c['quote_status'], warnings=warnings))
+        symbols = '、'.join(c['symbol'] for c in missing)
+        result['market_view'] += f'；AI 未回覆 {symbols}，程式已保守補入 WAIT。'
     if available_cash_cents is not None and planned_buy_cost_cents > available_cash_cents:
         raise ValueError('AGGREGATE_BUY_COST_EXCEEDS_AVAILABLE_CASH')
     return result

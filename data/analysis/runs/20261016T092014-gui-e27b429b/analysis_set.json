@@ -1,0 +1,4990 @@
+[
+  {
+    "symbol": "2454",
+    "name": "聯發科",
+    "asset_type": "STOCK",
+    "quant_rank": 1,
+    "quant_score": 6.6126,
+    "components": {
+      "momentum": 1.280559,
+      "volume": 1.716361,
+      "breakout": 1.692308,
+      "liquidity": 2,
+      "spread_penalty": -0.076628,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.012805587892898762,
+      "range_position": 0.8461538461538461,
+      "spread": 5.0,
+      "spread_pct": 0.0011494252873563218,
+      "volume": 140955,
+      "freshness_seconds": 13.169368,
+      "liquidity_proxy_twd": 613154250.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 4350.0,
+    "open": 4295.0,
+    "high": 4360.0,
+    "low": 4295.0,
+    "bid": 4345.0,
+    "ask": 4350.0,
+    "volume": 140955,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:16+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 4640.0,
+        "volume_shares": 1191895
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:47+08:00",
+        "price": 4645.0,
+        "volume_shares": 1305573
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 4640.0,
+        "volume_shares": 1365784
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:03+08:00",
+        "price": 4535.0,
+        "volume_shares": 1364234
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:05+08:00",
+        "price": 4535.0,
+        "volume_shares": 1439840
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:02+08:00",
+        "price": 4525.0,
+        "volume_shares": 1507005
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:03+08:00",
+        "price": 4540.0,
+        "volume_shares": 782186
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:01+08:00",
+        "price": 4530.0,
+        "volume_shares": 864340
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:04+08:00",
+        "price": 4530.0,
+        "volume_shares": 962287
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:04+08:00",
+        "price": 4220.0,
+        "volume_shares": 2243838
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:01+08:00",
+        "price": 4200.0,
+        "volume_shares": 2989248
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:03+08:00",
+        "price": 4170.0,
+        "volume_shares": 3329081
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:35+08:00",
+        "price": 4350.0,
+        "volume_shares": 129389
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.8461538461538461,
+            "price_vs_open": 0.012805587892898762,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 4170.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 4350.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2454",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 4350.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2454",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 4635.0,
+        "high": 4655.0,
+        "low": 4535.0,
+        "close": 4585.0,
+        "volume": 7591878,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 4475.0,
+        "high": 4650.0,
+        "low": 4435.0,
+        "close": 4560.0,
+        "volume": 6122500,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 4505.0,
+        "high": 4575.0,
+        "low": 4430.0,
+        "close": 4430.0,
+        "volume": 6209254,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 4435.0,
+        "high": 4625.0,
+        "low": 4435.0,
+        "close": 4530.0,
+        "volume": 6640865,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 4565.0,
+        "high": 4700.0,
+        "low": 4500.0,
+        "close": 4500.0,
+        "volume": 6495763,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 4600.0,
+        "high": 4735.0,
+        "low": 4545.0,
+        "close": 4710.0,
+        "volume": 10365174,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 4800.0,
+        "high": 5035.0,
+        "low": 4780.0,
+        "close": 5010.0,
+        "volume": 11237165,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 5280.0,
+        "high": 5480.0,
+        "low": 5150.0,
+        "close": 5180.0,
+        "volume": 12131543,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 5220.0,
+        "high": 5265.0,
+        "low": 5140.0,
+        "close": 5185.0,
+        "volume": 6430491,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 5105.0,
+        "high": 5360.0,
+        "low": 5105.0,
+        "close": 5285.0,
+        "volume": 7817443,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 5150.0,
+        "high": 5195.0,
+        "low": 4890.0,
+        "close": 4910.0,
+        "volume": 13758267,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 5010.0,
+        "high": 5100.0,
+        "low": 4920.0,
+        "close": 4920.0,
+        "volume": 8292336,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 4875.0,
+        "high": 4980.0,
+        "low": 4875.0,
+        "close": 4980.0,
+        "volume": 4378234,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 4950.0,
+        "high": 4970.0,
+        "low": 4880.0,
+        "close": 4950.0,
+        "volume": 4503961,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 4980.0,
+        "high": 5165.0,
+        "low": 4980.0,
+        "close": 5165.0,
+        "volume": 7580538,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 5080.0,
+        "high": 5085.0,
+        "low": 4915.0,
+        "close": 4920.0,
+        "volume": 9987983,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 4920.0,
+        "high": 4940.0,
+        "low": 4835.0,
+        "close": 4835.0,
+        "volume": 7695137,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 4800.0,
+        "high": 4850.0,
+        "low": 4690.0,
+        "close": 4690.0,
+        "volume": 8868204,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 4615.0,
+        "high": 4660.0,
+        "low": 4545.0,
+        "close": 4625.0,
+        "volume": 7865862,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 4485.0,
+        "high": 4575.0,
+        "low": 4460.0,
+        "close": 4525.0,
+        "volume": 8227071,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 4525.0,
+        "high": 4600.0,
+        "low": 4475.0,
+        "close": 4475.0,
+        "volume": 7854685,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 4195.0,
+        "high": 4295.0,
+        "low": 4145.0,
+        "close": 4165.0,
+        "volume": 18630989,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.138573,
+      "return_20d": -0.086623,
+      "ma5": 4496.0,
+      "ma20": 4799.5,
+      "volume_5d_vs_prior_5d": 1.506678,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2454",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2454"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:45.640249+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 4350.0,
+    "max_buy_qty": 1
+  },
+  {
+    "symbol": "2317",
+    "name": "鴻海",
+    "asset_type": "STOCK",
+    "quant_rank": 2,
+    "quant_score": 6.020415,
+    "components": {
+      "momentum": 0.616016,
+      "volume": 1.681807,
+      "breakout": 2.0,
+      "liquidity": 1.858646,
+      "spread_penalty": -0.136054,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.006160164271047153,
+      "range_position": 1.0,
+      "spread": 0.5,
+      "spread_pct": 0.0020408163265306124,
+      "volume": 111024,
+      "freshness_seconds": 14.169368,
+      "liquidity_proxy_twd": 27200880.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 245.0,
+    "open": 243.5,
+    "high": 245.0,
+    "low": 243.5,
+    "bid": 244.5,
+    "ask": 245.0,
+    "volume": 111024,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:15+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:17+08:00",
+        "price": 245.5,
+        "volume_shares": 1941723
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 245.5,
+        "volume_shares": 2119772
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:02+08:00",
+        "price": 245.5,
+        "volume_shares": 2145772
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 242.0,
+        "volume_shares": 1887543
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:01+08:00",
+        "price": 241.5,
+        "volume_shares": 2031812
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:03+08:00",
+        "price": 241.5,
+        "volume_shares": 2149854
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:02+08:00",
+        "price": 244.0,
+        "volume_shares": 458968
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:05+08:00",
+        "price": 244.0,
+        "volume_shares": 553065
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:08+08:00",
+        "price": 244.5,
+        "volume_shares": 609833
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:05+08:00",
+        "price": 239.5,
+        "volume_shares": 1040655
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:01+08:00",
+        "price": 239.0,
+        "volume_shares": 1262408
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:03+08:00",
+        "price": 239.0,
+        "volume_shares": 1649135
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:35+08:00",
+        "price": 245.0,
+        "volume_shares": 104995
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.006160164271047153,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 239.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 245.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2317",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 245.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2317",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 247.5,
+        "high": 249.5,
+        "low": 247.0,
+        "close": 248.0,
+        "volume": 24164352,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 244.5,
+        "high": 249.5,
+        "low": 243.5,
+        "close": 248.5,
+        "volume": 25260973,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 247.5,
+        "high": 250.0,
+        "low": 246.5,
+        "close": 246.5,
+        "volume": 15812094,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 247.5,
+        "high": 248.5,
+        "low": 246.0,
+        "close": 248.0,
+        "volume": 19737377,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 249.5,
+        "high": 253.5,
+        "low": 249.5,
+        "close": 250.5,
+        "volume": 26522419,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 252.5,
+        "high": 253.0,
+        "low": 249.0,
+        "close": 250.5,
+        "volume": 44803117,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 251.5,
+        "high": 252.0,
+        "low": 249.0,
+        "close": 250.0,
+        "volume": 16771284,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 252.0,
+        "high": 254.0,
+        "low": 250.5,
+        "close": 253.0,
+        "volume": 38635614,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 255.0,
+        "high": 257.0,
+        "low": 255.0,
+        "close": 256.0,
+        "volume": 35754545,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 253.0,
+        "high": 253.0,
+        "low": 249.5,
+        "close": 250.5,
+        "volume": 34510344,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 247.0,
+        "high": 254.0,
+        "low": 247.0,
+        "close": 250.5,
+        "volume": 31188879,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 253.5,
+        "high": 254.0,
+        "low": 251.5,
+        "close": 251.5,
+        "volume": 27366648,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 253.0,
+        "high": 254.0,
+        "low": 250.5,
+        "close": 254.0,
+        "volume": 30526551,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 253.0,
+        "high": 253.0,
+        "low": 250.5,
+        "close": 251.0,
+        "volume": 30466967,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 254.0,
+        "high": 256.0,
+        "low": 253.5,
+        "close": 254.0,
+        "volume": 52629375,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 263.0,
+        "high": 266.5,
+        "low": 253.5,
+        "close": 256.0,
+        "volume": 96969300,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 254.0,
+        "high": 254.5,
+        "low": 251.5,
+        "close": 252.0,
+        "volume": 36168012,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 251.0,
+        "high": 251.0,
+        "low": 249.0,
+        "close": 249.0,
+        "volume": 40251153,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 245.0,
+        "high": 246.0,
+        "low": 243.5,
+        "close": 244.5,
+        "volume": 52408677,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 243.5,
+        "high": 243.5,
+        "low": 239.0,
+        "close": 240.0,
+        "volume": 45072851,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 241.5,
+        "high": 246.0,
+        "low": 241.0,
+        "close": 243.0,
+        "volume": 34513643,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 240.0,
+        "high": 240.0,
+        "low": 238.0,
+        "close": 239.5,
+        "volume": 49562688,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.049603,
+      "return_20d": -0.036217,
+      "ma5": 243.2,
+      "ma20": 249.5,
+      "volume_5d_vs_prior_5d": 0.898885,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2317",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2317"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:45.614010+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 245.0,
+    "max_buy_qty": 29
+  },
+  {
+    "symbol": "2345",
+    "name": "智邦",
+    "asset_type": "STOCK",
+    "quant_rank": 3,
+    "quant_score": 5.956461,
+    "components": {
+      "momentum": 0.769231,
+      "volume": 1.447731,
+      "breakout": 2.0,
+      "liquidity": 1.909134,
+      "spread_penalty": -0.169635,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.007692307692307665,
+      "range_position": 1.0,
+      "spread": 5.0,
+      "spread_pct": 0.002544529262086514,
+      "volume": 22038,
+      "freshness_seconds": 12.169368,
+      "liquidity_proxy_twd": 43304670.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 1965.0,
+    "open": 1950.0,
+    "high": 1965.0,
+    "low": 1940.0,
+    "bid": 1965.0,
+    "ask": 1970.0,
+    "volume": 22038,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:17+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:19+08:00",
+        "price": 2115.0,
+        "volume_shares": 232612
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:48+08:00",
+        "price": 2125.0,
+        "volume_shares": 276306
+      },
+      {
+        "exchange_time": "2026-10-12T13:13:59+08:00",
+        "price": 2120.0,
+        "volume_shares": 281699
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:05+08:00",
+        "price": 2040.0,
+        "volume_shares": 267238
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:02+08:00",
+        "price": 2045.0,
+        "volume_shares": 286506
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:04+08:00",
+        "price": 2035.0,
+        "volume_shares": 310828
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:01+08:00",
+        "price": 2080.0,
+        "volume_shares": 154190
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:03+08:00",
+        "price": 2080.0,
+        "volume_shares": 163523
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:07+08:00",
+        "price": 2065.0,
+        "volume_shares": 194922
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:03+08:00",
+        "price": 1965.0,
+        "volume_shares": 194292
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:01+08:00",
+        "price": 1960.0,
+        "volume_shares": 229362
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:04+08:00",
+        "price": 1940.0,
+        "volume_shares": 272612
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:31+08:00",
+        "price": 1955.0,
+        "volume_shares": 20431
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.007692307692307665,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 1940.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 1955.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2345",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 1965.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2345",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 1910.0,
+        "high": 1925.0,
+        "low": 1870.0,
+        "close": 1885.0,
+        "volume": 4090126,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 1840.0,
+        "high": 1895.0,
+        "low": 1830.0,
+        "close": 1875.0,
+        "volume": 3068576,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 1870.0,
+        "high": 1895.0,
+        "low": 1830.0,
+        "close": 1840.0,
+        "volume": 2272078,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 1840.0,
+        "high": 1860.0,
+        "low": 1830.0,
+        "close": 1840.0,
+        "volume": 3116998,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 1865.0,
+        "high": 1885.0,
+        "low": 1790.0,
+        "close": 1800.0,
+        "volume": 4448162,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 1810.0,
+        "high": 1855.0,
+        "low": 1810.0,
+        "close": 1855.0,
+        "volume": 5848473,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 1840.0,
+        "high": 1880.0,
+        "low": 1810.0,
+        "close": 1840.0,
+        "volume": 3499481,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 1900.0,
+        "high": 1935.0,
+        "low": 1865.0,
+        "close": 1915.0,
+        "volume": 3976822,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 1935.0,
+        "high": 1955.0,
+        "low": 1845.0,
+        "close": 1890.0,
+        "volume": 4143392,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 1880.0,
+        "high": 1905.0,
+        "low": 1855.0,
+        "close": 1895.0,
+        "volume": 2611500,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 1845.0,
+        "high": 1880.0,
+        "low": 1800.0,
+        "close": 1810.0,
+        "volume": 4157981,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 1830.0,
+        "high": 1855.0,
+        "low": 1770.0,
+        "close": 1775.0,
+        "volume": 7123574,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 1795.0,
+        "high": 1910.0,
+        "low": 1785.0,
+        "close": 1900.0,
+        "volume": 5872368,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 1955.0,
+        "high": 1980.0,
+        "low": 1920.0,
+        "close": 1965.0,
+        "volume": 5328800,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 2070.0,
+        "high": 2110.0,
+        "low": 2015.0,
+        "close": 2075.0,
+        "volume": 6386760,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 2080.0,
+        "high": 2105.0,
+        "low": 2035.0,
+        "close": 2050.0,
+        "volume": 3700393,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 2050.0,
+        "high": 2140.0,
+        "low": 2005.0,
+        "close": 2015.0,
+        "volume": 5207562,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 1990.0,
+        "high": 2100.0,
+        "low": 1970.0,
+        "close": 2070.0,
+        "volume": 4468860,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 2120.0,
+        "high": 2130.0,
+        "low": 2020.0,
+        "close": 2130.0,
+        "volume": 4616437,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 2090.0,
+        "high": 2145.0,
+        "low": 2015.0,
+        "close": 2040.0,
+        "volume": 5547308,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 2075.0,
+        "high": 2110.0,
+        "low": 2050.0,
+        "close": 2050.0,
+        "volume": 4565228,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 1915.0,
+        "high": 2005.0,
+        "low": 1910.0,
+        "close": 1950.0,
+        "volume": 4611728,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.032258,
+      "return_20d": 0.04,
+      "ma5": 2048.0,
+      "ma20": 1935.25,
+      "volume_5d_vs_prior_5d": 0.898614,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2345",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2345"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:46.018134+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": [
+        {
+          "side": "BUY",
+          "date": "2026-10-08",
+          "quantity": 2,
+          "date_basis": "FILLED_ORDER_SUBMISSION_DATE"
+        },
+        {
+          "side": "SELL",
+          "date": "2026-10-13",
+          "quantity": 2,
+          "date_basis": "FILLED_ORDER_SUBMISSION_DATE"
+        }
+      ]
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 1970.0,
+    "max_buy_qty": 3
+  },
+  {
+    "symbol": "0050",
+    "name": "元大台灣50",
+    "asset_type": "ETF",
+    "quant_rank": 4,
+    "quant_score": 5.469559,
+    "components": {
+      "momentum": 0.0,
+      "volume": 2,
+      "breakout": 1.5,
+      "liquidity": 2,
+      "spread_penalty": -0.030441,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.0,
+      "range_position": 0.7500000000000178,
+      "spread": 0.04999999999999716,
+      "spread_pct": 0.00045662100456618406,
+      "volume": 1161035,
+      "freshness_seconds": 11.169368,
+      "liquidity_proxy_twd": 127133332.5,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 109.5,
+    "open": 109.5,
+    "high": 109.55,
+    "low": 109.35,
+    "bid": 109.5,
+    "ask": 109.55,
+    "volume": 1161035,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:18+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:19+08:00",
+        "price": 114.85,
+        "volume_shares": 9571089
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:47+08:00",
+        "price": 114.9,
+        "volume_shares": 10215106
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 114.9,
+        "volume_shares": 10304165
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:03+08:00",
+        "price": 112.6,
+        "volume_shares": 23822640
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:04+08:00",
+        "price": 112.55,
+        "volume_shares": 25799585
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:01+08:00",
+        "price": 112.4,
+        "volume_shares": 29705770
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:01+08:00",
+        "price": 113.5,
+        "volume_shares": 2590553
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:04+08:00",
+        "price": 113.5,
+        "volume_shares": 2837052
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:06+08:00",
+        "price": 113.35,
+        "volume_shares": 3462905
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:05+08:00",
+        "price": 109.15,
+        "volume_shares": 36039620
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:02+08:00",
+        "price": 109.05,
+        "volume_shares": 44408641
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:03+08:00",
+        "price": 108.85,
+        "volume_shares": 49264337
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:32+08:00",
+        "price": 109.5,
+        "volume_shares": 1087244
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.7500000000000178,
+            "price_vs_open": 0.0,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 108.85,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 109.5,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "0050",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 109.5,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "0050",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 107.4,
+        "high": 108.0,
+        "low": 106.9,
+        "close": 107.7,
+        "volume": 102009319,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 106.3,
+        "high": 107.15,
+        "low": 105.85,
+        "close": 106.9,
+        "volume": 91951392,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 106.75,
+        "high": 106.95,
+        "low": 106.15,
+        "close": 106.25,
+        "volume": 63373313,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 106.15,
+        "high": 107.4,
+        "low": 106.15,
+        "close": 106.9,
+        "volume": 72446738,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 107.9,
+        "high": 109.2,
+        "low": 107.85,
+        "close": 108.05,
+        "volume": 49931752,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 109.6,
+        "high": 109.95,
+        "low": 108.85,
+        "close": 109.85,
+        "volume": 86731065,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 109.9,
+        "high": 111.45,
+        "low": 109.85,
+        "close": 111.35,
+        "volume": 119595084,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 113.35,
+        "high": 113.75,
+        "low": 111.85,
+        "close": 111.85,
+        "volume": 84309564,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 112.8,
+        "high": 113.15,
+        "low": 112.3,
+        "close": 112.45,
+        "volume": 58059253,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 112.0,
+        "high": 112.45,
+        "low": 111.75,
+        "close": 112.4,
+        "volume": 70487939,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 111.8,
+        "high": 112.25,
+        "low": 111.05,
+        "close": 111.3,
+        "volume": 110505674,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 112.5,
+        "high": 113.05,
+        "low": 112.05,
+        "close": 112.05,
+        "volume": 60951975,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 112.2,
+        "high": 112.9,
+        "low": 111.7,
+        "close": 112.9,
+        "volume": 55443347,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 112.85,
+        "high": 112.95,
+        "low": 112.3,
+        "close": 112.8,
+        "volume": 68967747,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 115.75,
+        "high": 116.15,
+        "low": 115.25,
+        "close": 115.95,
+        "volume": 102872428,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 116.3,
+        "high": 116.6,
+        "low": 115.7,
+        "close": 116.5,
+        "volume": 70945715,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 116.15,
+        "high": 116.55,
+        "low": 115.95,
+        "close": 116.05,
+        "volume": 61571679,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 115.35,
+        "high": 115.55,
+        "low": 114.9,
+        "close": 114.95,
+        "volume": 99877876,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 114.2,
+        "high": 114.95,
+        "low": 113.4,
+        "close": 114.8,
+        "volume": 106348658,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 112.55,
+        "high": 113.2,
+        "low": 111.9,
+        "close": 112.4,
+        "volume": 242070746,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 113.0,
+        "high": 113.75,
+        "low": 112.75,
+        "close": 113.0,
+        "volume": 64109641,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 110.15,
+        "high": 110.15,
+        "low": 108.55,
+        "close": 108.9,
+        "volume": 453386198,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.061611,
+      "return_20d": 0.018709,
+      "ma5": 112.81,
+      "ma20": 112.035,
+      "volume_5d_vs_prior_5d": 2.684243,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=0050",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=0050"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:45.612755+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": [
+        {
+          "side": "BUY",
+          "date": "2026-10-14",
+          "quantity": 30,
+          "date_basis": "FILLED_ORDER_SUBMISSION_DATE"
+        },
+        {
+          "side": "SELL",
+          "date": "2026-10-15",
+          "quantity": 30,
+          "date_basis": "FILLED_ORDER_SUBMISSION_DATE"
+        }
+      ]
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 109.55,
+    "max_buy_qty": 66
+  },
+  {
+    "symbol": "2882",
+    "name": "國泰金",
+    "asset_type": "STOCK",
+    "quant_rank": 5,
+    "quant_score": 5.41465,
+    "components": {
+      "momentum": 0.881057,
+      "volume": 1.320014,
+      "breakout": 2.0,
+      "liquidity": 1.5047,
+      "spread_penalty": -0.291121,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.008810572687224738,
+      "range_position": 1.0,
+      "spread": 0.5,
+      "spread_pct": 0.004366812227074236,
+      "volume": 9120,
+      "freshness_seconds": 10.169368,
+      "liquidity_proxy_twd": 1044240.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 114.5,
+    "open": 113.5,
+    "high": 114.5,
+    "low": 113.5,
+    "bid": 114.0,
+    "ask": 114.5,
+    "volume": 9120,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:19+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 113.5,
+        "volume_shares": 116359
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:31+08:00",
+        "price": 113.0,
+        "volume_shares": 120722
+      },
+      {
+        "exchange_time": "2026-10-12T13:13:58+08:00",
+        "price": 113.0,
+        "volume_shares": 122265
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 114.5,
+        "volume_shares": 173827
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:06+08:00",
+        "price": 114.5,
+        "volume_shares": 186010
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:03+08:00",
+        "price": 115.0,
+        "volume_shares": 201974
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:01+08:00",
+        "price": 113.5,
+        "volume_shares": 65738
+      },
+      {
+        "exchange_time": "2026-10-14T12:34:43+08:00",
+        "price": 113.5,
+        "volume_shares": 75120
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:07+08:00",
+        "price": 113.5,
+        "volume_shares": 79343
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:02+08:00",
+        "price": 114.0,
+        "volume_shares": 62676
+      },
+      {
+        "exchange_time": "2026-10-15T11:34:54+08:00",
+        "price": 113.5,
+        "volume_shares": 90548
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:05+08:00",
+        "price": 114.0,
+        "volume_shares": 98846
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:33+08:00",
+        "price": 114.5,
+        "volume_shares": 7680
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.008810572687224738,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 114.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 114.5,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2882",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 114.5,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2882",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 109.0,
+        "high": 111.0,
+        "low": 108.0,
+        "close": 110.5,
+        "volume": 15394406,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 109.0,
+        "high": 114.0,
+        "low": 108.5,
+        "close": 112.5,
+        "volume": 18700175,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 113.5,
+        "high": 114.0,
+        "low": 109.5,
+        "close": 110.0,
+        "volume": 16604431,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 110.5,
+        "high": 112.5,
+        "low": 109.5,
+        "close": 112.5,
+        "volume": 27370591,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 113.0,
+        "high": 114.0,
+        "low": 111.0,
+        "close": 112.0,
+        "volume": 19698413,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 113.0,
+        "high": 113.0,
+        "low": 109.0,
+        "close": 110.5,
+        "volume": 43826072,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 110.5,
+        "high": 114.0,
+        "low": 109.5,
+        "close": 113.0,
+        "volume": 15970215,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 114.5,
+        "high": 114.5,
+        "low": 111.0,
+        "close": 112.0,
+        "volume": 15772789,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 112.5,
+        "high": 112.5,
+        "low": 110.5,
+        "close": 111.5,
+        "volume": 17346843,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 110.5,
+        "high": 111.5,
+        "low": 110.0,
+        "close": 110.5,
+        "volume": 11811664,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 112.0,
+        "high": 113.5,
+        "low": 110.5,
+        "close": 111.5,
+        "volume": 19177458,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 111.5,
+        "high": 112.5,
+        "low": 111.0,
+        "close": 111.0,
+        "volume": 22090817,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 112.0,
+        "high": 112.0,
+        "low": 109.0,
+        "close": 110.5,
+        "volume": 20285318,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 110.0,
+        "high": 111.5,
+        "low": 110.0,
+        "close": 111.5,
+        "volume": 13877928,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 113.0,
+        "high": 113.0,
+        "low": 111.5,
+        "close": 111.5,
+        "volume": 13948307,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 112.0,
+        "high": 113.0,
+        "low": 111.0,
+        "close": 112.0,
+        "volume": 17740300,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 112.5,
+        "high": 114.0,
+        "low": 111.5,
+        "close": 113.0,
+        "volume": 21904476,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 113.0,
+        "high": 113.5,
+        "low": 110.0,
+        "close": 110.0,
+        "volume": 19899995,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 110.0,
+        "high": 114.0,
+        "low": 110.0,
+        "close": 113.0,
+        "volume": 17973931,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 111.5,
+        "high": 115.0,
+        "low": 111.5,
+        "close": 114.5,
+        "volume": 20275380,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 114.0,
+        "high": 115.0,
+        "low": 112.0,
+        "close": 114.0,
+        "volume": 21362123,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 114.0,
+        "high": 114.5,
+        "low": 112.5,
+        "close": 113.5,
+        "volume": 20714474,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": 0.004425,
+      "return_20d": 0.008889,
+      "ma5": 113.0,
+      "ma20": 111.9,
+      "volume_5d_vs_prior_5d": 1.142093,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2882",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2882"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:45.648178+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 114.5,
+    "max_buy_qty": 63
+  },
+  {
+    "symbol": "2308",
+    "name": "台達電",
+    "asset_type": "STOCK",
+    "quant_rank": 6,
+    "quant_score": 5.145746,
+    "components": {
+      "momentum": 0.606061,
+      "volume": 1.740488,
+      "breakout": 1.0,
+      "liquidity": 2,
+      "spread_penalty": -0.200803,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.0060606060606061,
+      "range_position": 0.5,
+      "spread": 5.0,
+      "spread_pct": 0.0030120481927710845,
+      "volume": 166518,
+      "freshness_seconds": 13.169368,
+      "liquidity_proxy_twd": 276419880.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 1660.0,
+    "open": 1650.0,
+    "high": 1670.0,
+    "low": 1650.0,
+    "bid": 1655.0,
+    "ask": 1660.0,
+    "volume": 166518,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:16+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 1905.0,
+        "volume_shares": 1153054
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 1910.0,
+        "volume_shares": 1219787
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 1915.0,
+        "volume_shares": 1226851
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 1790.0,
+        "volume_shares": 1958237
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:02+08:00",
+        "price": 1785.0,
+        "volume_shares": 2290321
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:04+08:00",
+        "price": 1785.0,
+        "volume_shares": 2678242
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:01+08:00",
+        "price": 1800.0,
+        "volume_shares": 432218
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:03+08:00",
+        "price": 1800.0,
+        "volume_shares": 525636
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:06+08:00",
+        "price": 1800.0,
+        "volume_shares": 584770
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:04+08:00",
+        "price": 1645.0,
+        "volume_shares": 3242956
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:01+08:00",
+        "price": 1635.0,
+        "volume_shares": 3814203
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:03+08:00",
+        "price": 1625.0,
+        "volume_shares": 4045818
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:31+08:00",
+        "price": 1665.0,
+        "volume_shares": 135477
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.5,
+            "price_vs_open": 0.0060606060606061,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 1625.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 1665.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2308",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 1660.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2308",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 1595.0,
+        "high": 1635.0,
+        "low": 1595.0,
+        "close": 1620.0,
+        "volume": 15924565,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 1560.0,
+        "high": 1630.0,
+        "low": 1560.0,
+        "close": 1620.0,
+        "volume": 9470308,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 1590.0,
+        "high": 1715.0,
+        "low": 1585.0,
+        "close": 1670.0,
+        "volume": 14802962,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 1680.0,
+        "high": 1730.0,
+        "low": 1655.0,
+        "close": 1710.0,
+        "volume": 10673726,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 1730.0,
+        "high": 1745.0,
+        "low": 1685.0,
+        "close": 1685.0,
+        "volume": 10796328,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 1730.0,
+        "high": 1750.0,
+        "low": 1715.0,
+        "close": 1735.0,
+        "volume": 13051318,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 1750.0,
+        "high": 1885.0,
+        "low": 1740.0,
+        "close": 1875.0,
+        "volume": 19102054,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 1965.0,
+        "high": 1965.0,
+        "low": 1900.0,
+        "close": 1900.0,
+        "volume": 16957990,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 1910.0,
+        "high": 1920.0,
+        "low": 1890.0,
+        "close": 1900.0,
+        "volume": 9734322,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 1875.0,
+        "high": 1935.0,
+        "low": 1875.0,
+        "close": 1910.0,
+        "volume": 8983854,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 1880.0,
+        "high": 1950.0,
+        "low": 1810.0,
+        "close": 1835.0,
+        "volume": 14404821,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 1885.0,
+        "high": 1930.0,
+        "low": 1870.0,
+        "close": 1890.0,
+        "volume": 11094898,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 1925.0,
+        "high": 1935.0,
+        "low": 1860.0,
+        "close": 1905.0,
+        "volume": 6119811,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 1895.0,
+        "high": 1915.0,
+        "low": 1880.0,
+        "close": 1885.0,
+        "volume": 6064409,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 1920.0,
+        "high": 2010.0,
+        "low": 1920.0,
+        "close": 2005.0,
+        "volume": 17838513,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 2045.0,
+        "high": 2115.0,
+        "low": 2010.0,
+        "close": 2050.0,
+        "volume": 15043571,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 2025.0,
+        "high": 2045.0,
+        "low": 1975.0,
+        "close": 1990.0,
+        "volume": 10861290,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 1980.0,
+        "high": 1990.0,
+        "low": 1950.0,
+        "close": 1965.0,
+        "volume": 5522606,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 1940.0,
+        "high": 1940.0,
+        "low": 1855.0,
+        "close": 1900.0,
+        "volume": 11974441,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 1830.0,
+        "high": 1855.0,
+        "low": 1770.0,
+        "close": 1775.0,
+        "volume": 15203082,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 1790.0,
+        "high": 1820.0,
+        "low": 1775.0,
+        "close": 1785.0,
+        "volume": 9705664,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 1690.0,
+        "high": 1700.0,
+        "low": 1610.0,
+        "close": 1630.0,
+        "volume": 25335685,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.180905,
+      "return_20d": 0.006173,
+      "ma5": 1811.0,
+      "ma20": 1850.0,
+      "volume_5d_vs_prior_5d": 1.211235,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2308",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2308"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:45.657291+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 1660.0,
+    "max_buy_qty": 4
+  },
+  {
+    "symbol": "2881",
+    "name": "富邦金",
+    "asset_type": "STOCK",
+    "quant_rank": 7,
+    "quant_score": 5.051432,
+    "components": {
+      "momentum": 0.315457,
+      "volume": 1.36873,
+      "breakout": 2.0,
+      "liquidity": 1.576889,
+      "spread_penalty": -0.209644,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.003154574132492094,
+      "range_position": 1.0,
+      "spread": 0.5,
+      "spread_pct": 0.0031446540880503146,
+      "volume": 12769,
+      "freshness_seconds": 14.169368,
+      "liquidity_proxy_twd": 2030271.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 159.0,
+    "open": 158.5,
+    "high": 159.0,
+    "low": 158.5,
+    "bid": 159.0,
+    "ask": 159.5,
+    "volume": 12769,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:15+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:17+08:00",
+        "price": 158.5,
+        "volume_shares": 322992
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:45+08:00",
+        "price": 158.0,
+        "volume_shares": 335598
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:02+08:00",
+        "price": 158.0,
+        "volume_shares": 339663
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:01+08:00",
+        "price": 160.5,
+        "volume_shares": 211035
+      },
+      {
+        "exchange_time": "2026-10-13T12:34:58+08:00",
+        "price": 160.5,
+        "volume_shares": 224596
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:00+08:00",
+        "price": 161.0,
+        "volume_shares": 299547
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:03+08:00",
+        "price": 157.0,
+        "volume_shares": 235790
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:01+08:00",
+        "price": 157.5,
+        "volume_shares": 245168
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:04+08:00",
+        "price": 158.0,
+        "volume_shares": 258755
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:03+08:00",
+        "price": 159.5,
+        "volume_shares": 90421
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:01+08:00",
+        "price": 158.5,
+        "volume_shares": 106439
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:03+08:00",
+        "price": 158.5,
+        "volume_shares": 129526
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:34+08:00",
+        "price": 159.0,
+        "volume_shares": 7300
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 1.0,
+            "price_vs_open": 0.003154574132492094,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 158.5,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 159.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2881",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 159.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2881",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 146.0,
+        "high": 148.5,
+        "low": 144.0,
+        "close": 148.5,
+        "volume": 10662888,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 146.5,
+        "high": 154.5,
+        "low": 146.0,
+        "close": 154.0,
+        "volume": 19008138,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 154.0,
+        "high": 154.5,
+        "low": 149.5,
+        "close": 151.0,
+        "volume": 15894184,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 152.0,
+        "high": 153.0,
+        "low": 150.0,
+        "close": 153.0,
+        "volume": 20793317,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 153.0,
+        "high": 154.5,
+        "low": 151.0,
+        "close": 151.5,
+        "volume": 14045882,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 152.5,
+        "high": 152.5,
+        "low": 148.0,
+        "close": 150.5,
+        "volume": 28248424,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 150.5,
+        "high": 156.0,
+        "low": 149.5,
+        "close": 154.5,
+        "volume": 15221165,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 156.5,
+        "high": 156.5,
+        "low": 153.5,
+        "close": 154.5,
+        "volume": 17070787,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 155.5,
+        "high": 155.5,
+        "low": 152.5,
+        "close": 153.0,
+        "volume": 14875887,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 151.5,
+        "high": 153.0,
+        "low": 150.0,
+        "close": 150.0,
+        "volume": 8417116,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 150.0,
+        "high": 155.0,
+        "low": 150.0,
+        "close": 151.5,
+        "volume": 14184273,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 153.0,
+        "high": 153.5,
+        "low": 151.0,
+        "close": 151.0,
+        "volume": 11350421,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 151.0,
+        "high": 151.5,
+        "low": 147.5,
+        "close": 150.5,
+        "volume": 18246085,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 149.0,
+        "high": 151.5,
+        "low": 149.0,
+        "close": 150.5,
+        "volume": 10614902,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 152.5,
+        "high": 153.0,
+        "low": 151.0,
+        "close": 152.0,
+        "volume": 11116444,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 151.5,
+        "high": 154.5,
+        "low": 151.5,
+        "close": 154.5,
+        "volume": 16607313,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 154.5,
+        "high": 155.5,
+        "low": 154.0,
+        "close": 155.5,
+        "volume": 12226914,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 154.5,
+        "high": 155.5,
+        "low": 152.5,
+        "close": 153.0,
+        "volume": 14629239,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 152.5,
+        "high": 160.0,
+        "low": 152.5,
+        "close": 158.5,
+        "volume": 16847357,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 156.0,
+        "high": 161.5,
+        "low": 156.0,
+        "close": 160.0,
+        "volume": 19441471,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 158.5,
+        "high": 160.5,
+        "low": 155.5,
+        "close": 160.5,
+        "volume": 28828049,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 160.5,
+        "high": 160.5,
+        "low": 157.0,
+        "close": 159.5,
+        "volume": 24375430,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": 0.025723,
+      "return_20d": 0.035714,
+      "ma5": 158.3,
+      "ma20": 153.75,
+      "volume_5d_vs_prior_5d": 1.513138,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2881",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2881"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:46.034713+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 159.5,
+    "max_buy_qty": 45
+  },
+  {
+    "symbol": "3017",
+    "name": "奇鋐",
+    "asset_type": "STOCK",
+    "quant_rank": 8,
+    "quant_score": 4.978894,
+    "components": {
+      "momentum": 0.482315,
+      "volume": 1.369262,
+      "breakout": 1.333333,
+      "liquidity": 1.900651,
+      "spread_penalty": -0.106667,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.004823151125401992,
+      "range_position": 0.6666666666666666,
+      "spread": 5.0,
+      "spread_pct": 0.0016,
+      "volume": 12816,
+      "freshness_seconds": 11.169368,
+      "liquidity_proxy_twd": 40050000.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 3125.0,
+    "open": 3110.0,
+    "high": 3135.0,
+    "low": 3105.0,
+    "bid": 3120.0,
+    "ask": 3125.0,
+    "volume": 12816,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:18+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:19+08:00",
+        "price": 3375.0,
+        "volume_shares": 160525
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:47+08:00",
+        "price": 3400.0,
+        "volume_shares": 174767
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:04+08:00",
+        "price": 3410.0,
+        "volume_shares": 176345
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:04+08:00",
+        "price": 3325.0,
+        "volume_shares": 98093
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:05+08:00",
+        "price": 3310.0,
+        "volume_shares": 117387
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:02+08:00",
+        "price": 3295.0,
+        "volume_shares": 168420
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:02+08:00",
+        "price": 3325.0,
+        "volume_shares": 56679
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:04+08:00",
+        "price": 3345.0,
+        "volume_shares": 62723
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:07+08:00",
+        "price": 3350.0,
+        "volume_shares": 70045
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:04+08:00",
+        "price": 3115.0,
+        "volume_shares": 228076
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:01+08:00",
+        "price": 3090.0,
+        "volume_shares": 296736
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:04+08:00",
+        "price": 3070.0,
+        "volume_shares": 326114
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:32+08:00",
+        "price": 3125.0,
+        "volume_shares": 12097
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.6666666666666666,
+            "price_vs_open": 0.004823151125401992,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 3070.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 3125.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "3017",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 3125.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "3017",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 3360.0,
+        "high": 3390.0,
+        "low": 3300.0,
+        "close": 3370.0,
+        "volume": 2111512,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 3255.0,
+        "high": 3360.0,
+        "low": 3210.0,
+        "close": 3310.0,
+        "volume": 2215371,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 3265.0,
+        "high": 3300.0,
+        "low": 3100.0,
+        "close": 3115.0,
+        "volume": 3217593,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 3115.0,
+        "high": 3225.0,
+        "low": 3100.0,
+        "close": 3175.0,
+        "volume": 2744795,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 3285.0,
+        "high": 3350.0,
+        "low": 3175.0,
+        "close": 3185.0,
+        "volume": 3034388,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 3345.0,
+        "high": 3450.0,
+        "low": 3290.0,
+        "close": 3430.0,
+        "volume": 3785048,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 3480.0,
+        "high": 3495.0,
+        "low": 3365.0,
+        "close": 3415.0,
+        "volume": 1743425,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 3500.0,
+        "high": 3505.0,
+        "low": 3385.0,
+        "close": 3390.0,
+        "volume": 2288258,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 3425.0,
+        "high": 3590.0,
+        "low": 3410.0,
+        "close": 3470.0,
+        "volume": 2649367,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 3460.0,
+        "high": 3600.0,
+        "low": 3455.0,
+        "close": 3555.0,
+        "volume": 2261001,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 3420.0,
+        "high": 3460.0,
+        "low": 3285.0,
+        "close": 3400.0,
+        "volume": 3928028,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 3455.0,
+        "high": 3575.0,
+        "low": 3405.0,
+        "close": 3435.0,
+        "volume": 3653169,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 3435.0,
+        "high": 3520.0,
+        "low": 3300.0,
+        "close": 3510.0,
+        "volume": 3303220,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 3570.0,
+        "high": 3570.0,
+        "low": 3385.0,
+        "close": 3440.0,
+        "volume": 3274994,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 3570.0,
+        "high": 3690.0,
+        "low": 3420.0,
+        "close": 3585.0,
+        "volume": 4606753,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 3650.0,
+        "high": 3700.0,
+        "low": 3515.0,
+        "close": 3685.0,
+        "volume": 3260797,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 3650.0,
+        "high": 3655.0,
+        "low": 3505.0,
+        "close": 3545.0,
+        "volume": 3515134,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 3445.0,
+        "high": 3515.0,
+        "low": 3410.0,
+        "close": 3440.0,
+        "volume": 3162171,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 3380.0,
+        "high": 3410.0,
+        "low": 3330.0,
+        "close": 3385.0,
+        "volume": 2401855,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 3310.0,
+        "high": 3420.0,
+        "low": 3275.0,
+        "close": 3280.0,
+        "volume": 2786644,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 3330.0,
+        "high": 3350.0,
+        "low": 3275.0,
+        "close": 3315.0,
+        "volume": 2311534,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 3200.0,
+        "high": 3220.0,
+        "low": 3050.0,
+        "close": 3085.0,
+        "volume": 4128297,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.12976,
+      "return_20d": -0.067976,
+      "ma5": 3301.0,
+      "ma20": 3392.0,
+      "volume_5d_vs_prior_5d": 0.823483,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=3017",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=3017"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:18:45.647396+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 3125.0,
+    "max_buy_qty": 2
+  },
+  {
+    "symbol": "2357",
+    "name": "華碩",
+    "asset_type": "STOCK",
+    "quant_rank": 9,
+    "quant_score": 4.970708,
+    "components": {
+      "momentum": 0.607903,
+      "volume": 1.246128,
+      "breakout": 1.5,
+      "liquidity": 1.683814,
+      "spread_penalty": -0.067137,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.006079027355623046,
+      "range_position": 0.75,
+      "spread": 1.0,
+      "spread_pct": 0.0010070493454179255,
+      "volume": 5474,
+      "freshness_seconds": 13.169368,
+      "liquidity_proxy_twd": 5435682.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 993.0,
+    "open": 987.0,
+    "high": 995.0,
+    "low": 987.0,
+    "bid": 993.0,
+    "ask": 994.0,
+    "volume": 5474,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:16+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:18+08:00",
+        "price": 974.0,
+        "volume_shares": 88728
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:46+08:00",
+        "price": 976.0,
+        "volume_shares": 97571
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:03+08:00",
+        "price": 978.0,
+        "volume_shares": 98269
+      },
+      {
+        "exchange_time": "2026-10-13T12:04:56+08:00",
+        "price": 975.0,
+        "volume_shares": 31095
+      },
+      {
+        "exchange_time": "2026-10-13T12:34:57+08:00",
+        "price": 975.0,
+        "volume_shares": 33460
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:04+08:00",
+        "price": 970.0,
+        "volume_shares": 40950
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:05+08:00",
+        "price": 993.0,
+        "volume_shares": 68107
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:02+08:00",
+        "price": 990.0,
+        "volume_shares": 71978
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:05+08:00",
+        "price": 989.0,
+        "volume_shares": 74715
+      },
+      {
+        "exchange_time": "2026-10-15T11:04:56+08:00",
+        "price": 978.0,
+        "volume_shares": 30665
+      },
+      {
+        "exchange_time": "2026-10-15T11:35:02+08:00",
+        "price": 973.0,
+        "volume_shares": 39526
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:04+08:00",
+        "price": 970.0,
+        "volume_shares": 49333
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:35+08:00",
+        "price": 992.0,
+        "volume_shares": 4382
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.75,
+            "price_vs_open": 0.006079027355623046,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 970.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 992.0,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2357",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 993.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2357",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 930.0,
+        "high": 930.0,
+        "low": 912.0,
+        "close": 924.0,
+        "volume": 5904124,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 900.0,
+        "high": 936.0,
+        "low": 900.0,
+        "close": 934.0,
+        "volume": 2899208,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 930.0,
+        "high": 933.0,
+        "low": 908.0,
+        "close": 928.0,
+        "volume": 2598522,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 928.0,
+        "high": 947.0,
+        "low": 925.0,
+        "close": 939.0,
+        "volume": 2547613,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 943.0,
+        "high": 967.0,
+        "low": 943.0,
+        "close": 948.0,
+        "volume": 3407956,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 964.0,
+        "high": 964.0,
+        "low": 947.0,
+        "close": 960.0,
+        "volume": 4548145,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 973.0,
+        "high": 973.0,
+        "low": 943.0,
+        "close": 946.0,
+        "volume": 2037308,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 956.0,
+        "high": 956.0,
+        "low": 942.0,
+        "close": 953.0,
+        "volume": 1339183,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 953.0,
+        "high": 958.0,
+        "low": 942.0,
+        "close": 958.0,
+        "volume": 1349204,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 948.0,
+        "high": 961.0,
+        "low": 947.0,
+        "close": 953.0,
+        "volume": 1296816,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 967.0,
+        "high": 969.0,
+        "low": 950.0,
+        "close": 963.0,
+        "volume": 2455352,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 969.0,
+        "high": 973.0,
+        "low": 958.0,
+        "close": 961.0,
+        "volume": 2057274,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 961.0,
+        "high": 971.0,
+        "low": 960.0,
+        "close": 965.0,
+        "volume": 1566104,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 965.0,
+        "high": 969.0,
+        "low": 959.0,
+        "close": 962.0,
+        "volume": 1166554,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 975.0,
+        "high": 995.0,
+        "low": 968.0,
+        "close": 995.0,
+        "volume": 2807714,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 995.0,
+        "high": 1005.0,
+        "low": 977.0,
+        "close": 1000.0,
+        "volume": 1559387,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 1000.0,
+        "high": 1010.0,
+        "low": 983.0,
+        "close": 989.0,
+        "volume": 2487312,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 989.0,
+        "high": 1005.0,
+        "low": 987.0,
+        "close": 996.0,
+        "volume": 1843783,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 988.0,
+        "high": 991.0,
+        "low": 964.0,
+        "close": 977.0,
+        "volume": 3151295,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 973.0,
+        "high": 983.0,
+        "low": 964.0,
+        "close": 966.0,
+        "volume": 2115321,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 980.0,
+        "high": 1005.0,
+        "low": 975.0,
+        "close": 990.0,
+        "volume": 3144844,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 971.0,
+        "high": 985.0,
+        "low": 966.0,
+        "close": 975.0,
+        "volume": 2801632,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": -0.014156,
+      "return_20d": 0.043897,
+      "ma5": 980.8,
+      "ma20": 966.2,
+      "volume_5d_vs_prior_5d": 1.361925,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2357",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2357"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:20:29.721506+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 994.0,
+    "max_buy_qty": 7
+  },
+  {
+    "symbol": "2609",
+    "name": "陽明",
+    "asset_type": "STOCK",
+    "quant_rank": 10,
+    "quant_score": 4.822262,
+    "components": {
+      "momentum": 0.470958,
+      "volume": 1.430818,
+      "breakout": 1.5,
+      "liquidity": 1.524653,
+      "spread_penalty": -0.104167,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.0047095761381474865,
+      "range_position": 0.7500000000000089,
+      "spread": 0.09999999999999432,
+      "spread_pct": 0.0015624999999999112,
+      "volume": 19608,
+      "freshness_seconds": 13.169368,
+      "liquidity_proxy_twd": 1254912.0,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 64.0,
+    "open": 63.7,
+    "high": 64.1,
+    "low": 63.7,
+    "bid": 64.0,
+    "ask": 64.1,
+    "volume": 19608,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:16+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:20+08:00",
+        "price": 63.8,
+        "volume_shares": 746946
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:49+08:00",
+        "price": 63.8,
+        "volume_shares": 780401
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:00+08:00",
+        "price": 63.8,
+        "volume_shares": 789248
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:03+08:00",
+        "price": 64.3,
+        "volume_shares": 377324
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:05+08:00",
+        "price": 64.3,
+        "volume_shares": 406625
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:02+08:00",
+        "price": 64.3,
+        "volume_shares": 499622
+      },
+      {
+        "exchange_time": "2026-10-14T12:05:01+08:00",
+        "price": 64.7,
+        "volume_shares": 283718
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:03+08:00",
+        "price": 64.7,
+        "volume_shares": 307004
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:06+08:00",
+        "price": 64.7,
+        "volume_shares": 338315
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:00+08:00",
+        "price": 63.1,
+        "volume_shares": 123920
+      },
+      {
+        "exchange_time": "2026-10-15T11:34:43+08:00",
+        "price": 63.4,
+        "volume_shares": 155478
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:01+08:00",
+        "price": 63.0,
+        "volume_shares": 182327
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:36+08:00",
+        "price": 63.9,
+        "volume_shares": 18472
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.7500000000000089,
+            "price_vs_open": 0.0047095761381474865,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 63.0,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 63.9,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "TOP10",
+    "position": {
+      "symbol": "2609",
+      "user_qty": 0,
+      "ai_managed_qty": 0,
+      "user_average_cost": null,
+      "ai_average_cost": null,
+      "updated_at": null,
+      "total_qty": 0,
+      "ai_managed_ratio": 0,
+      "current_price": 64.0,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": 0,
+      "total_unrealized_pnl": 0,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "2609",
+      "qty": 0,
+      "cost_cents": 0,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 57.6,
+        "high": 60.7,
+        "low": 57.6,
+        "close": 59.4,
+        "volume": 79512906,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 60.0,
+        "high": 60.0,
+        "low": 58.3,
+        "close": 59.3,
+        "volume": 30195141,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 59.4,
+        "high": 59.9,
+        "low": 58.6,
+        "close": 58.8,
+        "volume": 22032722,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 58.8,
+        "high": 61.2,
+        "low": 58.7,
+        "close": 60.2,
+        "volume": 41409617,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 59.8,
+        "high": 62.0,
+        "low": 59.8,
+        "close": 62.0,
+        "volume": 41269391,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 61.5,
+        "high": 63.1,
+        "low": 60.3,
+        "close": 61.0,
+        "volume": 47583928,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 61.0,
+        "high": 61.4,
+        "low": 59.8,
+        "close": 61.1,
+        "volume": 22246087,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 61.3,
+        "high": 61.4,
+        "low": 60.4,
+        "close": 60.8,
+        "volume": 16601037,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 61.0,
+        "high": 61.1,
+        "low": 59.5,
+        "close": 59.9,
+        "volume": 27682926,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 59.9,
+        "high": 60.2,
+        "low": 59.0,
+        "close": 59.6,
+        "volume": 12099033,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 59.6,
+        "high": 59.6,
+        "low": 58.1,
+        "close": 58.4,
+        "volume": 23606564,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 58.8,
+        "high": 59.6,
+        "low": 58.7,
+        "close": 59.4,
+        "volume": 16623183,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 58.9,
+        "high": 59.4,
+        "low": 58.7,
+        "close": 58.8,
+        "volume": 12469577,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 59.0,
+        "high": 59.9,
+        "low": 58.5,
+        "close": 59.7,
+        "volume": 11663046,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 59.5,
+        "high": 59.6,
+        "low": 58.7,
+        "close": 58.7,
+        "volume": 13578075,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 58.7,
+        "high": 59.9,
+        "low": 58.3,
+        "close": 59.2,
+        "volume": 14016414,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 59.1,
+        "high": 59.6,
+        "low": 58.8,
+        "close": 59.1,
+        "volume": 10003733,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 59.3,
+        "high": 60.4,
+        "low": 58.8,
+        "close": 59.7,
+        "volume": 18040282,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 61.3,
+        "high": 64.9,
+        "low": 60.8,
+        "close": 63.6,
+        "volume": 109474138,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 63.0,
+        "high": 64.8,
+        "low": 62.4,
+        "close": 64.5,
+        "volume": 64674613,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 64.8,
+        "high": 66.5,
+        "low": 64.3,
+        "close": 65.0,
+        "volume": 60333012,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 65.0,
+        "high": 65.3,
+        "low": 63.0,
+        "close": 63.3,
+        "volume": 31466290,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": 0.071066,
+      "return_20d": 0.067454,
+      "ma5": 63.22,
+      "ma20": 60.64,
+      "volume_5d_vs_prior_5d": 4.600428,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=2609",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2609"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:20:29.988948+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 0,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": []
+    },
+    "ai_cost_basis": {
+      "available": false
+    },
+    "budget_price": 64.1,
+    "max_buy_qty": 113
+  },
+  {
+    "symbol": "1101",
+    "name": "台泥",
+    "asset_type": "STOCK",
+    "quant_rank": 13,
+    "quant_score": 4.354649,
+    "components": {
+      "momentum": 0.364299,
+      "volume": 1.572179,
+      "breakout": 1.0,
+      "liquidity": 1.539163,
+      "spread_penalty": -0.120992,
+      "stale_penalty": 0
+    },
+    "metrics": {
+      "intraday_return": 0.0036429872495447047,
+      "range_position": 0.5000000000000089,
+      "spread": 0.05000000000000071,
+      "spread_pct": 0.0018148820326679023,
+      "volume": 52063,
+      "freshness_seconds": 11.169368,
+      "liquidity_proxy_twd": 1434335.6500000001,
+      "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+      "history_status": "INTRADAY_SNAPSHOTS_ONLY",
+      "return_1d": null,
+      "return_5d": null,
+      "return_20d": null,
+      "volume_ratio": null,
+      "MA5": null,
+      "MA20": null,
+      "price_vs_MA5": null,
+      "price_vs_MA20": null,
+      "RSI": null,
+      "ATR": null,
+      "high_20d_distance": null,
+      "breakout_score": null,
+      "drawdown_from_recent_high": null,
+      "volatility": null
+    },
+    "last_price": 27.55,
+    "open": 27.45,
+    "high": 27.65,
+    "low": 27.45,
+    "bid": 27.55,
+    "ask": 27.6,
+    "volume": 52063,
+    "volume_unit": "shares",
+    "quote_status": "LIVE",
+    "quote_timestamp": "2026-10-16T09:20:18+08:00",
+    "market_history": [
+      {
+        "exchange_time": "2026-10-12T12:34:20+08:00",
+        "price": 26.9,
+        "volume_shares": 384463
+      },
+      {
+        "exchange_time": "2026-10-12T13:08:48+08:00",
+        "price": 27.1,
+        "volume_shares": 505334
+      },
+      {
+        "exchange_time": "2026-10-12T13:14:00+08:00",
+        "price": 27.0,
+        "volume_shares": 513136
+      },
+      {
+        "exchange_time": "2026-10-13T12:05:01+08:00",
+        "price": 26.45,
+        "volume_shares": 251660
+      },
+      {
+        "exchange_time": "2026-10-13T12:35:04+08:00",
+        "price": 26.55,
+        "volume_shares": 265926
+      },
+      {
+        "exchange_time": "2026-10-13T13:05:01+08:00",
+        "price": 26.45,
+        "volume_shares": 293267
+      },
+      {
+        "exchange_time": "2026-10-14T12:04:55+08:00",
+        "price": 27.1,
+        "volume_shares": 254952
+      },
+      {
+        "exchange_time": "2026-10-14T12:35:03+08:00",
+        "price": 27.15,
+        "volume_shares": 272846
+      },
+      {
+        "exchange_time": "2026-10-14T13:05:06+08:00",
+        "price": 27.1,
+        "volume_shares": 296238
+      },
+      {
+        "exchange_time": "2026-10-15T11:05:03+08:00",
+        "price": 26.75,
+        "volume_shares": 145916
+      },
+      {
+        "exchange_time": "2026-10-15T11:34:45+08:00",
+        "price": 26.75,
+        "volume_shares": 154350
+      },
+      {
+        "exchange_time": "2026-10-15T12:05:03+08:00",
+        "price": 26.8,
+        "volume_shares": 169111
+      },
+      {
+        "exchange_time": "2026-10-16T09:18:32+08:00",
+        "price": 27.6,
+        "volume_shares": 50598
+      }
+    ],
+    "strategy_evidence": {
+      "eligible_strategies": [
+        "intraday_recovery",
+        "short_term_reversal",
+        "multi_day_trend"
+      ],
+      "strategies": {
+        "intraday_recovery": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "range_position": 0.5000000000000089,
+            "price_vs_open": 0.0036429872495447047,
+            "interpretation": "當日區間證據；尚未證明已止跌"
+          }
+        },
+        "short_term_reversal": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "prior_session_count": 4,
+            "latest_prior_sample_price": 26.8,
+            "interpretation": "前期價格僅是盤中抽樣，不能聲稱前日收盤或完整日 K"
+          }
+        },
+        "breakout": {
+          "eligible": false,
+          "missing": [
+            "TWO_PRIOR_INTRADAY_SAMPLES"
+          ],
+          "observed": {
+            "prior_intraday_samples": 1,
+            "prior_sample_high": 27.6,
+            "interpretation": "只能比較盤中抽樣高點，不能稱為突破多日前高"
+          }
+        },
+        "multi_day_trend": {
+          "eligible": true,
+          "missing": [],
+          "observed": {
+            "complete_daily_sessions": 22,
+            "interpretation": "完整日 K 專用；盤中快照不計入"
+          }
+        }
+      },
+      "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+    },
+    "eligible_strategies": [
+      "intraday_recovery",
+      "short_term_reversal",
+      "multi_day_trend"
+    ],
+    "warnings": [],
+    "is_trial": false,
+    "analysis_source": "POSITION",
+    "position": {
+      "symbol": "1101",
+      "user_qty": 0,
+      "ai_managed_qty": 100,
+      "user_average_cost": null,
+      "ai_average_cost": 26.5,
+      "updated_at": "2026-10-13T11:12:42.961956+08:00",
+      "total_qty": 100,
+      "ai_managed_ratio": 1.0,
+      "current_price": 27.55,
+      "source": "LIVE_AI_LEDGER_PLUS_USER_CONFIGURATION",
+      "ai_unrealized_pnl": null,
+      "total_unrealized_pnl": null,
+      "ai_unrealized_pnl_pct": null
+    },
+    "paper_position": {
+      "symbol": "1101",
+      "qty": 100,
+      "cost_cents": null,
+      "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+    },
+    "daily_bars": [
+      {
+        "date": "2026-09-11",
+        "open": 24.65,
+        "high": 24.75,
+        "low": 24.5,
+        "close": 24.5,
+        "volume": 14583409,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-14",
+        "open": 24.4,
+        "high": 24.4,
+        "low": 23.9,
+        "close": 23.9,
+        "volume": 35778533,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-15",
+        "open": 24.0,
+        "high": 24.05,
+        "low": 23.8,
+        "close": 23.8,
+        "volume": 20277886,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-16",
+        "open": 23.85,
+        "high": 24.05,
+        "low": 23.75,
+        "close": 24.05,
+        "volume": 18247875,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-17",
+        "open": 24.1,
+        "high": 24.6,
+        "low": 24.05,
+        "close": 24.45,
+        "volume": 23063655,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-18",
+        "open": 24.5,
+        "high": 24.55,
+        "low": 24.15,
+        "close": 24.35,
+        "volume": 22255754,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-21",
+        "open": 24.3,
+        "high": 24.3,
+        "low": 24.05,
+        "close": 24.15,
+        "volume": 12445836,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-22",
+        "open": 24.35,
+        "high": 24.8,
+        "low": 24.15,
+        "close": 24.55,
+        "volume": 29414044,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-23",
+        "open": 24.85,
+        "high": 26.1,
+        "low": 24.65,
+        "close": 25.65,
+        "volume": 130648955,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-24",
+        "open": 25.7,
+        "high": 25.7,
+        "low": 25.1,
+        "close": 25.25,
+        "volume": 39328798,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-29",
+        "open": 25.4,
+        "high": 25.6,
+        "low": 25.05,
+        "close": 25.3,
+        "volume": 31598983,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-09-30",
+        "open": 25.35,
+        "high": 26.7,
+        "low": 25.2,
+        "close": 26.3,
+        "volume": 104957435,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-01",
+        "open": 26.3,
+        "high": 26.4,
+        "low": 25.45,
+        "close": 25.55,
+        "volume": 54833108,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-02",
+        "open": 25.75,
+        "high": 25.75,
+        "low": 25.3,
+        "close": 25.35,
+        "volume": 25248148,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-05",
+        "open": 25.6,
+        "high": 25.6,
+        "low": 25.0,
+        "close": 25.0,
+        "volume": 35720704,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-06",
+        "open": 25.0,
+        "high": 25.3,
+        "low": 24.8,
+        "close": 25.2,
+        "volume": 26891285,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-07",
+        "open": 25.25,
+        "high": 25.7,
+        "low": 25.1,
+        "close": 25.5,
+        "volume": 24862063,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-08",
+        "open": 25.5,
+        "high": 25.9,
+        "low": 25.45,
+        "close": 25.7,
+        "volume": 33060614,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-12",
+        "open": 25.95,
+        "high": 27.2,
+        "low": 25.95,
+        "close": 27.0,
+        "volume": 128673485,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-13",
+        "open": 26.85,
+        "high": 26.85,
+        "low": 26.25,
+        "close": 26.35,
+        "volume": 55126796,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-14",
+        "open": 26.7,
+        "high": 27.4,
+        "low": 26.6,
+        "close": 27.05,
+        "volume": 80795741,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      },
+      {
+        "date": "2026-10-15",
+        "open": 26.95,
+        "high": 27.05,
+        "low": 26.6,
+        "close": 26.8,
+        "volume": 42215985,
+        "complete": true,
+        "source": "TWSE_DAILY"
+      }
+    ],
+    "daily_trend": {
+      "latest_date": "2026-10-15",
+      "return_5d": 0.05098,
+      "return_20d": 0.121339,
+      "ma5": 26.58,
+      "ma20": 25.3675,
+      "volume_5d_vs_prior_5d": 2.02842,
+      "price_basis": "UNADJUSTED_TWSE_DAILY_CLOSE",
+      "note": "歷史日線為證交所上市證券日成交資料；未經除權息調整，非盤中零股可成交價。"
+    },
+    "daily_history_status": {
+      "source": "TWSE_DAILY",
+      "as_of": "2026-10-16",
+      "market": "TWSE_LISTED_DAILY_NOT_ODD_LOT",
+      "prior_complete_sessions": 22,
+      "latest_date": "2026-10-15",
+      "source_urls": [
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20260901&stockNo=1101",
+        "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=1101"
+      ],
+      "latest_retrieved_at": "2026-10-16T09:05:17.619723+08:00",
+      "expected_latest_date": "2026-10-15",
+      "coverage": "SUFFICIENT_FOR_20D_COMPARISON",
+      "failed_months": []
+    },
+    "max_sell_qty": 100,
+    "ai_trade_dates": {
+      "timezone": "Asia/Taipei",
+      "records": [
+        {
+          "side": "BUY",
+          "date": "2026-10-13",
+          "quantity": 100,
+          "date_basis": "MANUAL_PURCHASE_ENTRY_DATE"
+        }
+      ]
+    },
+    "ai_cost_basis": {
+      "available": true,
+      "average_unit_cost_twd": "26.5",
+      "quantity": 100,
+      "estimated": true,
+      "excludes_fees_and_tax": true,
+      "source": "RECONSTRUCTED_FORMAL_AI_LEDGER"
+    },
+    "budget_price": 27.6,
+    "max_buy_qty": 262
+  }
+]
