@@ -32,11 +32,13 @@ def connect(path):
         price_cents INTEGER NOT NULL, gross_cents INTEGER NOT NULL,
         fee_twd INTEGER NOT NULL, cash_change_cents INTEGER NOT NULL,
         cost_basis_cents INTEGER NOT NULL, realized_pnl_cents INTEGER NOT NULL,
-        reason TEXT NOT NULL);
+        reason TEXT NOT NULL, plan_json TEXT);
     ''')
     trade_columns = {row[1] for row in db.execute('PRAGMA table_info(paper_trades)')}
     if 'name' not in trade_columns:
         db.execute("ALTER TABLE paper_trades ADD COLUMN name TEXT NOT NULL DEFAULT ''")
+    if 'plan_json' not in trade_columns:
+        db.execute('ALTER TABLE paper_trades ADD COLUMN plan_json TEXT')
     return db
 
 
@@ -62,6 +64,35 @@ def trades(path, limit=100):
     try:
         return [dict(r) for r in db.execute(
             'SELECT * FROM paper_trades ORDER BY id DESC LIMIT ?', (limit,))]
+    finally:
+        db.close()
+
+
+def trade_context(path, quantities):
+    from trade_plan_context import remaining_plans
+
+    db = connect(path)
+    try:
+        result = {}
+        for symbol, held in quantities.items():
+            rows = db.execute('SELECT side,occurred_at,qty,plan_json FROM paper_trades '
+                              'WHERE symbol=? ORDER BY id', (symbol,)).fetchall()
+            events = []
+            for row in rows:
+                try:
+                    plan = json.loads(row['plan_json']) if row['plan_json'] else None
+                except (TypeError, ValueError):
+                    plan = None
+                events.append(dict(side=row['side'], at=row['occurred_at'],
+                                   quantity=row['qty'], plan=plan,
+                                   date_basis='PAPER_SIMULATED_FILL_DATE'))
+            result[symbol] = dict(
+                buy_plans=remaining_plans(events, held),
+                ai_trade_dates=dict(timezone='Asia/Taipei', records=[
+                    dict(side=row['side'], date=row['occurred_at'][:10],
+                         quantity=row['qty'], date_basis='PAPER_SIMULATED_FILL_DATE')
+                    for row in rows[-24:]]))
+        return result
     finally:
         db.close()
 
@@ -185,10 +216,14 @@ def apply_decisions(path, run_id, decisions, candidates):
                 cash_change = -total_cost if side == 'BUY' else gross - fee * 100
                 db.execute('''INSERT INTO paper_trades(
                     run_id,occurred_at,symbol,name,side,qty,price_cents,gross_cents,fee_twd,
-                    cash_change_cents,cost_basis_cents,realized_pnl_cents,reason)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                    cash_change_cents,cost_basis_cents,realized_pnl_cents,reason,plan_json)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                     (run_id, at, symbol, candidate.get('name') or '股票名稱未取得', side, qty, cents, gross, fee, cash_change,
-                     cost_basis, realized, decision.get('reason', '')))
+                     cost_basis, realized, decision.get('reason', ''),
+                     json.dumps({key: decision.get(key) for key in
+                                 ('strategy_id', 'target_price', 'invalidation_price',
+                                  'holding_days', 'reason', 'suggested_price')},
+                                ensure_ascii=False) if side == 'BUY' else None))
                 fills.append(dict(symbol=symbol, side=side, qty=qty, price_twd=cents/100,
                                   gross_twd=gross/100, fee_twd=fee,
                                   cash_change_twd=cash_change/100,

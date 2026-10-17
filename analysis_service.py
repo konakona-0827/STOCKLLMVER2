@@ -308,6 +308,8 @@ class AnalysisService:
         phase('DAILY_HISTORY')
         daily_history.enrich_candidates(candidates, quote_map, at.date(),
                                         self.directory/'daily_history')
+        held_quantities = {c['symbol']: int((c.get('paper_position') or {}).get('qty') or 0)
+                           for c in candidates if (c.get('paper_position') or {}).get('qty', 0) > 0}
         if live_enabled:
             apply_live_sell_limits(candidates, broker_health)
             from execution.trade_dates import dated_ai_trades
@@ -317,6 +319,11 @@ class AnalysisService:
                 (c['symbol'] for c in candidates))
             for candidate in candidates:
                 candidate['ai_trade_dates'] = trade_dates[candidate['symbol']]
+            from trade_plan_context import live_plans
+            plans = live_plans(ROOT/'data'/'execution'/'live_execution.sqlite3', held_quantities)
+            for candidate in candidates:
+                candidate['buy_plans'] = plans.get(candidate['symbol'],
+                                                   {'available': False, 'lots': []})
             try:
                 costs = remaining_acquisition_costs(
                     ROOT/'data'/'execution'/'live_execution.sqlite3',
@@ -325,6 +332,17 @@ class AnalysisService:
                 costs = {}
                 audit.event('AI_COST_BASIS_UNAVAILABLE', {'reason': redact(exc)})
             apply_live_cost_basis(candidates, costs)
+        else:
+            paper_context = paper_portfolio.trade_context(
+                self.db_path,
+                {c['symbol']: int((c.get('paper_position') or {}).get('qty') or 0)
+                 for c in candidates})
+            for candidate in candidates:
+                context = paper_context.get(candidate['symbol'], {})
+                candidate['ai_trade_dates'] = context.get('ai_trade_dates',
+                    {'timezone': 'Asia/Taipei', 'records': []})
+                candidate['buy_plans'] = context.get('buy_plans',
+                    {'available': False, 'lots': []})
         for c in candidates:
             if c['last_price'] is not None and c['quote_status'] == 'LIVE' and not c.get('is_trial'):
                 entry_price = ((c.get('ask') or c['last_price'])
@@ -409,6 +427,7 @@ class AnalysisService:
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
+                      pretrade_review=response.get('pretrade_review'),
                       web_search=response.get('api', {}).get('web_search'),
                       paper_trade_history=paper_portfolio.trades(self.db_path))
         if live_enabled:

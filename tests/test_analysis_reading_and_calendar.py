@@ -69,6 +69,7 @@ class ReadingAndCalendarTests(unittest.TestCase):
 
     def test_missing_daily_bars_is_not_a_local_buy_rejection(self):
         candidate = {'symbol': '0050', 'last_price': 100, 'quote_status': 'LIVE',
+                     'quote_timestamp': '2026-10-12T11:00:00+08:00',
                      'ask': 100, 'bid': 99.9, 'max_buy_qty': 2,
                      'asset_type': 'ETF', 'eligible_strategies': ['intraday_recovery'],
                      'paper_position': {'qty': 0},

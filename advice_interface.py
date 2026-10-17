@@ -57,6 +57,10 @@ def build_advice_interface(result, generated_at=None):
             'strategy_version': strategy.get('version'),
             'asset_type': candidate.get('asset_type', 'UNKNOWN'),
             'decision': decision.get('decision', 'WAIT'),
+            'buy_plan': ({key: decision.get(key) for key in
+                          ('strategy_id', 'target_price', 'invalidation_price',
+                           'holding_days', 'reason', 'suggested_price')}
+                         if decision.get('decision') == 'BUY' else None),
             'confidence': decision.get('confidence', 0),
             'reference_price': decision.get('reference_price'),
             'suggested_price': decision.get('suggested_price'),
@@ -84,6 +88,7 @@ def build_advice_interface(result, generated_at=None):
         'run_status': run_status,
         'run_error': manifest.get('error') or None,
         'llm_validation': validation,
+        'pretrade_review_status': (result.get('pretrade_review') or {}).get('status'),
         'llm_model': manifest.get('llm_model'),
         'strategy': strategy,
         'request_timing': {

@@ -35,6 +35,35 @@ from .risk_guard import (
 )
 
 
+def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
+                        minimum_commission_twd):
+    """Re-evaluate an approved BUY at the executable quote immediately before send."""
+    from pretrade_policy import MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
+    from trade_economics import evaluate_buy
+
+    buy_plan = recommendation.get('buy_plan')
+    if not isinstance(buy_plan, dict):
+        raise RiskRejected(f'{order_plan.symbol}: reviewed BUY plan missing')
+    try:
+        economics = evaluate_buy(
+            dict(ask=float(quote.ask), bid=float(quote.bid),
+                 asset_type=recommendation.get('asset_type')),
+            qty=order_plan.quantity, limit_price=order_plan.limit_price,
+            target_price=buy_plan['target_price'],
+            invalidation_price=buy_plan['invalidation_price'],
+            minimum_commission_twd=minimum_commission_twd)
+        net_return = (Decimal(str(economics['estimated_net_upside_twd'])) /
+                      Decimal(str(economics['estimated_buy_cost_twd'])))
+        reward_risk = Decimal(str(economics['reward_risk_ratio']))
+        capital = Decimal(str(capital_twd))
+    except (KeyError, ValueError, TypeError, ArithmeticError) as exc:
+        raise RiskRejected(f'{order_plan.symbol}: cannot recheck BUY economics: {exc}') from exc
+    if (net_return < MIN_NET_RETURN or reward_risk < MIN_REWARD_RISK or
+            Decimal(str(economics['estimated_net_downside_twd'])) > capital * MAX_POSITION_RISK):
+        raise RiskRejected(f'{order_plan.symbol}: refreshed BUY price fails net return, reward/risk or risk budget')
+    return economics
+
+
 @dataclass(frozen=True)
 class LiveExecutionConfig:
     enabled: bool = False
@@ -161,6 +190,8 @@ def execute_advice_file(
         return report
 
     payload, intents = load_advice_file(advice_path)
+    if intents and payload.get('pretrade_review_status') not in (None, 'VALID'):
+        raise ValueError('pretrade review did not approve all trade intents')
     report["trade_intent_count"] = len(intents)
 
     if not intents:
@@ -352,6 +383,7 @@ def execute_advice_file(
 
     reserved_buy_twd = Decimal("0")
     reserved_sell_qty: dict[str, int] = {}
+    recommendation_map = {row['symbol']: row for row in payload.get('recommendations', [])}
 
     for intent in intents:
         item: dict[str, Any] = {
@@ -362,6 +394,8 @@ def execute_advice_file(
             "broker_order_sent": False,
             "crosscheck_performed": False,
         }
+        if intent.side == Side.BUY:
+            item['buy_plan'] = recommendation_map.get(intent.symbol, {}).get('buy_plan')
 
         if not store.claim(
             intent.decision_id,
@@ -445,6 +479,11 @@ def execute_advice_file(
                 position=position if intent.side == Side.SELL else None,
                 config=risk_cfg,
             )
+
+            if intent.side == Side.BUY and payload.get('pretrade_review_status') == 'VALID':
+                check_refreshed_buy(quote, plan, recommendation_map[intent.symbol],
+                                    budget_payload.get('strategy_cap_twd'),
+                                    config.min_buy_fee_reserve_twd)
 
             reserved_this_order_twd = Decimal("0")
 
@@ -564,6 +603,7 @@ def execute_advice_file(
                         "time_in_force": "ROD",
                         "market_session": "INTRADAY_ODD_LOT",
                         "submitted_at": item["submitted_at"],
+                        "buy_plan": item.get("buy_plan"),
                     },
                 )
 
@@ -575,6 +615,7 @@ def execute_advice_file(
                 "required_twd_with_buffer": str(reserved_this_order_twd),
                 "time_in_force": "ROD", "market_session": "INTRADAY_ODD_LOT",
                 "submitted_at": item["submitted_at"],
+                "buy_plan": item.get("buy_plan"),
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
                                 if intent.side == Side.BUY else None))
             item["send_attempted"] = True

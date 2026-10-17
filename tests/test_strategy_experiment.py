@@ -197,7 +197,9 @@ class StrategyExperimentTests(unittest.TestCase):
         position_analyzer.validate(result,[c],account['available_cash_cents'],
                                    self.rules.min_buy_fee_reserve_twd,
                                    self.rules.buy_cash_buffer_rate)
-        self.assertEqual(result['decisions'][0]['decision'],'BUY')
+        self.assertEqual(result['decisions'][0]['decision'],'WAIT')
+        self.assertIn('BUY_NET_UPSIDE_OR_RISK_REWARD_INSUFFICIENT',
+                      result['decisions'][0]['warnings'])
 
     def test_one_shared_market_cycle_runs_two_isolated_strategies(self):
         rule_id = self.store.add_strategy(ROOT/'strategies'/'fixed_rules.md','RULE')
@@ -208,6 +210,9 @@ class StrategyExperimentTests(unittest.TestCase):
             return {}, {}
         def ai_provider(request):
             requests.append(request)
+            if request['text']['format']['name'] == 'pretrade_review':
+                return json.dumps({'reviews': [{'symbol': '0050', 'approved': True,
+                                                'reason': '成本及風險已核對'}]}, ensure_ascii=False), {}
             return json.dumps(self.decision(),ensure_ascii=False), {
                 'usage':{'input_tokens':100,'output_tokens':50}}
         quote = self.candidate()
@@ -231,9 +236,9 @@ class StrategyExperimentTests(unittest.TestCase):
              patch('strategy_experiment.should_call_openai',return_value=True):
             result = service.run()
         self.assertEqual(len(quote_calls),1)
-        self.assertEqual(len(requests),1)
+        self.assertEqual(len(requests),2)
         self.assertEqual(self.store.positions(self.first)[0]['qty'],10)
-        self.assertGreater(self.store.positions(rule_id)[0]['qty'],10)
+        self.assertEqual(self.store.positions(rule_id), [])
         self.assertFalse(result['manifest']['broker_order_sent'])
         self.assertEqual(len(result['summaries']),2)
 
