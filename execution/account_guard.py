@@ -235,6 +235,22 @@ def cash_sellable_qty(rows: Iterable[InventoryRow], symbol: str) -> int:
     )
 
 
+def ai_sellable_qty(broker_cash_qty: int, broker_sellable_qty: int,
+                    ai_managed_qty: int) -> int:
+    """Conservative AI share limit when broker sellability is account-wide.
+
+    The broker does not identify which owner's lots are sellable. Reserve all
+    shares outside the AI ledger before assigning sellability to AI shares.
+    """
+    cash = int(broker_cash_qty)
+    sellable = int(broker_sellable_qty)
+    ai = int(ai_managed_qty)
+    if min(cash, sellable, ai) < 0 or ai > cash or sellable > cash:
+        return 0
+    non_ai = cash - ai
+    return min(ai, max(0, sellable - non_ai))
+
+
 def realtime_cash_qty(rows: Iterable[InventoryRow], symbol: str) -> int:
     wanted = symbol.strip().upper()
     return sum(

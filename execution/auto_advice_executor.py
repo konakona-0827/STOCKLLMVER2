@@ -12,6 +12,7 @@ from typing import Any
 
 from .account_guard import (
     AccountCheckError,
+    ai_sellable_qty,
     cash_sellable_qty,
     query_buying_power,
     realtime_cash_qty,
@@ -567,12 +568,16 @@ def execute_advice_file(
                     )
 
                 broker_initial = initial_sellable.get(intent.symbol, 0)
+                broker_cash = realtime_cash_qty(account_snapshot.inventory, intent.symbol)
+                ai_initial = ai_sellable_qty(broker_cash, broker_initial, ai_qty)
                 already_reserved = reserved_sell_qty.get(intent.symbol, 0)
-                effective_sellable = max(0, broker_initial - already_reserved)
+                effective_sellable = max(0, ai_initial - already_reserved)
 
                 item["broker_sellable_qty_snapshot"] = broker_initial
+                item["broker_cash_qty_snapshot"] = broker_cash
+                item["ai_sellable_qty_snapshot"] = ai_initial
                 item["batch_reserved_sell_qty_before"] = already_reserved
-                item["effective_broker_sellable_qty"] = effective_sellable
+                item["effective_ai_sellable_qty"] = effective_sellable
                 item["ai_managed_qty"] = ai_qty
 
                 if effective_sellable <= 0:
@@ -582,7 +587,7 @@ def execute_advice_file(
                     )
                 if effective_sellable < plan.quantity:
                     raise AccountCheckError(
-                        f"{intent.symbol}: effective broker sellable qty "
+                        f"{intent.symbol}: effective AI sellable qty "
                         f"{effective_sellable} < requested {plan.quantity}"
                     )
 

@@ -191,6 +191,8 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                      '包括沒有買賣訊號及僅因持倉而納入的標的；不得省略。'
                      '沒有適合動作時填 WAIT，已確認持倉而繼續持有時填 HOLD。'
                      'WAIT/HOLD 的 action_ratio=0、suggested_qty=0、suggested_price=null；'
+                     '這個 suggested_qty=0 只代表本輪不下單，不代表持倉或券商可賣數量為零；'
+                     '持股與可賣上限分別看 paper_position.qty、max_sell_qty。'
                      'reference_price 必須等於該檔 last_price，缺價時填 null。')
     request = dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=instructions,

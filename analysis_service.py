@@ -136,13 +136,24 @@ def live_ai_positions(path):
 
 def apply_live_sell_limits(candidates, broker_health):
     """Bound AI SELL advice by the broker's verified cash sellable quantity."""
+    from execution.account_guard import ai_sellable_qty
+
     rows = {row['symbol']: row for row in (broker_health or {}).get('inventory_comparison') or []}
     inventory_checked = (broker_health or {}).get('inventory_checked') is True
     for candidate in candidates:
         held = max(0, int((candidate.get('paper_position') or {}).get('qty') or 0))
         row = rows.get(candidate['symbol']) if inventory_checked else None
-        sellable = max(0, int(row.get('broker_sellable_qty') or 0)) if row else 0
-        candidate['max_sell_qty'] = min(held, sellable)
+        broker_cash = row.get('broker_cash_qty') if row else None
+        broker_sellable = row.get('broker_sellable_qty') if row else None
+        candidate['max_sell_qty'] = (ai_sellable_qty(broker_cash, broker_sellable, held)
+                                     if broker_cash is not None and broker_sellable is not None
+                                     else 0)
+        candidate['sellable_context'] = dict(
+            inventory_checked=inventory_checked and row is not None,
+            broker_cash_qty=broker_cash, broker_sellable_qty=broker_sellable,
+            ai_managed_qty=held,
+            non_ai_cash_qty=max(0, int(broker_cash)-held) if broker_cash is not None else None,
+            ai_sellable_limit=candidate['max_sell_qty'])
 
 
 def apply_live_cost_basis(candidates, costs):

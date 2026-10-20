@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from execution.account_guard import (
     cash_sellable_qty,
+    ai_sellable_qty,
     parse_get_balance,
     parse_real_balance_row,
 )
@@ -36,6 +37,11 @@ class AccountGuardTests(unittest.TestCase):
             "2891,C,0,0,0,0,3,0,0,0,0,3,0,0,3,X,0,LOGIN,ACC"
         )
         self.assertEqual(7, cash_sellable_qty([a, b], "2891"))
+
+    def test_ai_sellable_excludes_other_shares(self):
+        self.assertEqual(0, ai_sellable_qty(32, 7, 25))
+        self.assertEqual(25, ai_sellable_qty(32, 32, 25))
+        self.assertEqual(0, ai_sellable_qty(20, 20, 25))
 
 
 if __name__ == "__main__":

@@ -70,6 +70,8 @@ def build_advice_interface(result, generated_at=None):
             'warnings': warnings,
             'analysis_source': candidate.get('analysis_source'),
             'ai_managed_qty': position.get('ai_managed_qty'),
+            'ai_sellable_qty': candidate.get('max_sell_qty'),
+            'broker_sellable_qty': (candidate.get('sellable_context') or {}).get('broker_sellable_qty'),
             'quote_status': quote.get('quote_status', quote.get('data_quality', 'UNAVAILABLE')),
             'quote_timestamp': quote.get('quote_timestamp') or quote.get('exchange_time'),
             'quote_age_seconds': _age_seconds(quote.get('quote_timestamp') or quote.get('exchange_time'), generated_at),

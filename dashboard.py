@@ -116,6 +116,7 @@ SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+
 def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None, web_search=None):
     asset_types = {c.get('symbol'): c.get('asset_type', 'UNKNOWN') for c in analysis_set}
     names = {c.get('symbol'): c.get('name') or '股票名稱未取得' for c in analysis_set}
+    candidates = {c.get('symbol'): c for c in analysis_set}
     lines = [f"AI 分析時間：{analysis_at or '未取得'}（台北時間 UTC+8）\n\n",
              f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
     if web_search is not None:
@@ -165,9 +166,16 @@ def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None,
         lines.append(f"\n建議：{DECISION_LABELS.get(item.get('decision'), item.get('decision', '--'))}")
         lines.append(f"\n信心度：{value(item.get('confidence'), True)}")
         lines.append(f"\n參考價：{value(item.get('reference_price'))}　建議價：{value(item.get('suggested_price'))}")
-        lines.append(f"\n建議股數：{value(item.get('suggested_qty'))}　減碼比例：{value(item.get('action_ratio'), True)}")
+        lines.append(f"\n本輪建議下單股數：{value(item.get('suggested_qty'))}　減碼比例：{value(item.get('action_ratio'), True)}")
+        candidate = candidates.get(symbol, {})
+        held = int((candidate.get('paper_position') or {}).get('qty') or 0)
+        if held:
+            context = candidate.get('sellable_context') or {}
+            broker_sellable = context.get('broker_sellable_qty')
+            lines.append(f"\nAI 管理持股：{held} 股　"
+                         f"券商整戶可賣：{broker_sellable if broker_sellable is not None else '待核對'} 股　"
+                         f"AI 本輪可賣上限：{candidate.get('max_sell_qty', '待核對')} 股")
         if item.get('decision') == 'BUY':
-            candidate = next((c for c in analysis_set if c.get('symbol') == symbol), {})
             price = candidate.get('budget_price') or candidate.get('ask') or candidate.get('last_price')
             qty = item.get('suggested_qty') or 0
             if isinstance(price, (int, float)) and qty > 0:
