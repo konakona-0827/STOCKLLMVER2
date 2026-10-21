@@ -1,0 +1,557 @@
+{
+  "interface_version": "1.0",
+  "generated_at": "2026-10-21T09:05:22+08:00",
+  "run_id": "20261021T090500-gui-84ed673d",
+  "run_status": "ERROR",
+  "run_error": null,
+  "llm_validation": "NOT_CALLED",
+  "pretrade_review_status": null,
+  "llm_model": "gpt-5.6-luna",
+  "strategy": {
+    "name": "PRETRADE_POLICY",
+    "path": "C:\\Users\\user\\OneDrive\\ドキュメント\\STOCKLLMVER2\\STOCKLLMVER2\\strategies\\PRETRADE_POLICY.md",
+    "version": "1e617c6e688c",
+    "sha256": "1e617c6e688ce83b75cb0be426ba6beb03c1099e50ed2c32e147292d2695a6b5"
+  },
+  "request_timing": {
+    "market_started_at": "2026-10-21T09:05:03.821335+08:00",
+    "market_completed_at": "2026-10-21T09:05:19.998885+08:00",
+    "llm_started_at": null,
+    "llm_response_received_at": null,
+    "run_finished_at": "2026-10-21T09:05:22.483087+08:00"
+  },
+  "market": {
+    "source": "CAPITAL_SKCOM",
+    "quote_basis": "capital_intraday_odd_lot",
+    "request_started_at": "2026-10-21T09:05:03.821335+08:00",
+    "request_completed_at": "2026-10-21T09:05:19.998885+08:00",
+    "symbols_requested": 21,
+    "symbols_received": 21,
+    "quality_counts": {
+      "LIVE": 21
+    },
+    "quotes": [
+      {
+        "symbol": "0050",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 108.7,
+        "bid": 108.7,
+        "ask": 108.75,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:08+08:00",
+        "received_at": "2026-10-21T09:05:11.572768+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.450947+08:00",
+        "age_seconds": 14.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2330",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 2425.0,
+        "bid": 2425.0,
+        "ask": 2430.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:08+08:00",
+        "received_at": "2026-10-21T09:05:11.572602+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451358+08:00",
+        "age_seconds": 14.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2454",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 4255.0,
+        "bid": 4255.0,
+        "ask": 4260.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:06+08:00",
+        "received_at": "2026-10-21T09:05:11.572875+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451230+08:00",
+        "age_seconds": 16.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2317",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 244.0,
+        "bid": 243.5,
+        "ask": 244.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:11+08:00",
+        "received_at": "2026-10-21T09:05:11.572947+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451098+08:00",
+        "age_seconds": 11.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2382",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 323.5,
+        "bid": 323.5,
+        "ask": 324.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:10+08:00",
+        "received_at": "2026-10-21T09:05:11.573042+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451335+08:00",
+        "age_seconds": 12.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "3231",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 192.5,
+        "bid": 192.0,
+        "ask": 192.5,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:07+08:00",
+        "received_at": "2026-10-21T09:05:11.572850+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451011+08:00",
+        "age_seconds": 15.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "3017",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 3400.0,
+        "bid": 3385.0,
+        "ask": 3400.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:10+08:00",
+        "received_at": "2026-10-21T09:05:11.572706+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451370+08:00",
+        "age_seconds": 12.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2891",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 72.0,
+        "bid": 71.9,
+        "ask": 72.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:08+08:00",
+        "received_at": "2026-10-21T09:05:11.573065+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451381+08:00",
+        "age_seconds": 14.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2881",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 155.0,
+        "bid": 154.5,
+        "ask": 155.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:11+08:00",
+        "received_at": "2026-10-21T09:05:11.572923+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451347+08:00",
+        "age_seconds": 11.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2882",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 110.5,
+        "bid": 110.5,
+        "ask": 111.5,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:10+08:00",
+        "received_at": "2026-10-21T09:05:11.573107+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451058+08:00",
+        "age_seconds": 12.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2303",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 129.0,
+        "bid": 129.0,
+        "ask": 129.5,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:07+08:00",
+        "received_at": "2026-10-21T09:05:11.450060+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.341008+08:00",
+        "age_seconds": 15.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2308",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 1640.0,
+        "bid": 1640.0,
+        "ask": 1645.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:07+08:00",
+        "received_at": "2026-10-21T09:05:11.573087+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451273+08:00",
+        "age_seconds": 15.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2345",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 2030.0,
+        "bid": 2025.0,
+        "ask": 2030.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:07+08:00",
+        "received_at": "2026-10-21T09:05:11.573019+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451299+08:00",
+        "age_seconds": 15.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2357",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 990.0,
+        "bid": 985.0,
+        "ask": 990.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:08+08:00",
+        "received_at": "2026-10-21T09:05:11.572898+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451323+08:00",
+        "age_seconds": 14.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2376",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 358.0,
+        "bid": 357.0,
+        "ask": 358.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:04+08:00",
+        "received_at": "2026-10-21T09:05:11.572825+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451259+08:00",
+        "age_seconds": 18.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2356",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 60.5,
+        "bid": 60.3,
+        "ask": 60.5,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:05+08:00",
+        "received_at": "2026-10-21T09:05:11.572739+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451311+08:00",
+        "age_seconds": 17.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2377",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 165.0,
+        "bid": 165.0,
+        "ask": 165.5,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:10+08:00",
+        "received_at": "2026-10-21T09:05:11.572994+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451137+08:00",
+        "age_seconds": 12.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2603",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 260.0,
+        "bid": 259.5,
+        "ask": 260.0,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:03+08:00",
+        "received_at": "2026-10-21T09:05:11.572969+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451393+08:00",
+        "age_seconds": 19.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2609",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 62.1,
+        "bid": 62.1,
+        "ask": 62.2,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:01+08:00",
+        "received_at": "2026-10-21T09:05:11.572797+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.451287+08:00",
+        "age_seconds": 21.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "1101",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 27.0,
+        "bid": 27.0,
+        "ask": 27.1,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:06+08:00",
+        "received_at": "2026-10-21T09:05:11.450717+08:00",
+        "callback_received_at": "2026-10-21T09:05:11.340895+08:00",
+        "age_seconds": 16.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      },
+      {
+        "symbol": "2449",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LIVE",
+        "price": 266.0,
+        "bid": 266.0,
+        "ask": 266.5,
+        "volume": 0,
+        "volume_unit": "shares",
+        "is_trial": true,
+        "exchange_time": "2026-10-21T09:05:15+08:00",
+        "received_at": "2026-10-21T09:05:16.611722+08:00",
+        "callback_received_at": "2026-10-21T09:05:16.503364+08:00",
+        "age_seconds": 7.77,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "試撮資訊不是確定成交。"
+        ]
+      }
+    ]
+  },
+  "market_view": "沒有可驗證的即時行情；可買股數為 0。本輪不呼叫 AI，也不送出委託。",
+  "recommendations": [
+    {
+      "symbol": "1101",
+      "strategy_name": "PRETRADE_POLICY",
+      "strategy_version": "1e617c6e688c",
+      "asset_type": "STOCK",
+      "decision": "WAIT",
+      "buy_plan": null,
+      "confidence": 0,
+      "reference_price": null,
+      "suggested_price": null,
+      "suggested_qty": null,
+      "action_ratio": 0,
+      "reason": "本輪沒有有效的 LLM 建議。",
+      "warnings": [
+        "試撮資訊不是確定成交。"
+      ],
+      "analysis_source": "POSITION",
+      "ai_managed_qty": 100,
+      "ai_sellable_qty": 100,
+      "broker_sellable_qty": 100,
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-21T09:05:06+08:00",
+      "quote_age_seconds": 16.77
+    },
+    {
+      "symbol": "2603",
+      "strategy_name": "PRETRADE_POLICY",
+      "strategy_version": "1e617c6e688c",
+      "asset_type": "STOCK",
+      "decision": "WAIT",
+      "buy_plan": null,
+      "confidence": 0,
+      "reference_price": null,
+      "suggested_price": null,
+      "suggested_qty": null,
+      "action_ratio": 0,
+      "reason": "本輪沒有有效的 LLM 建議。",
+      "warnings": [
+        "試撮資訊不是確定成交。"
+      ],
+      "analysis_source": "POSITION",
+      "ai_managed_qty": 20,
+      "ai_sellable_qty": 20,
+      "broker_sellable_qty": 20,
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-21T09:05:03+08:00",
+      "quote_age_seconds": 19.77
+    },
+    {
+      "symbol": "2891",
+      "strategy_name": "PRETRADE_POLICY",
+      "strategy_version": "1e617c6e688c",
+      "asset_type": "STOCK",
+      "decision": "WAIT",
+      "buy_plan": null,
+      "confidence": 0,
+      "reference_price": null,
+      "suggested_price": null,
+      "suggested_qty": null,
+      "action_ratio": 0,
+      "reason": "本輪沒有有效的 LLM 建議。",
+      "warnings": [
+        "試撮資訊不是確定成交。"
+      ],
+      "analysis_source": "POSITION",
+      "ai_managed_qty": 25,
+      "ai_sellable_qty": 25,
+      "broker_sellable_qty": 32,
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-21T09:05:08+08:00",
+      "quote_age_seconds": 14.77
+    }
+  ],
+  "paper_simulation": {
+    "account": {
+      "account_id": 1,
+      "capital_limit_cents": 1000000,
+      "cash_cents": 1000000,
+      "updated_at": "2026-10-08T10:48:30.985364+08:00"
+    },
+    "available_cash_twd": 50.2,
+    "capital_limit_twd": 10000.0,
+    "positions": [
+      {
+        "symbol": "2891",
+        "qty": 25,
+        "cost_cents": null,
+        "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+      },
+      {
+        "symbol": "1101",
+        "qty": 100,
+        "cost_cents": null,
+        "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+      },
+      {
+        "symbol": "2603",
+        "qty": 20,
+        "cost_cents": null,
+        "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+      }
+    ],
+    "trades": [],
+    "execution_mode": "LIVE_NO_PAPER_FILL"
+  },
+  "execution_budget": {
+    "available_cash_twd": 50.2,
+    "minimum_balance_reserve_twd": 10000.0,
+    "strategy_cap_twd": 10000.0,
+    "strategy_remaining_twd": 50.2,
+    "ai_committed_capital_twd": 9949.8,
+    "pending_buy_reserve_twd": 0.0,
+    "daily_buy_limit_twd": 30000.0,
+    "daily_buy_reserved_twd": 0.0,
+    "daily_buy_remaining_twd": 30000.0,
+    "budget_status": "READY",
+    "min_buy_fee_reserve_twd": 20.0,
+    "buy_cash_buffer_rate": 0.01
+  },
+  "real_order_sent": false
+}

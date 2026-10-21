@@ -1,0 +1,235 @@
+{
+  "market_view": "2026-10-21 12:05 Asia/Taipei：共14檔均無法通過本輪可執行BUY條件。主要限制是max_buy_qty為0、可用策略資金僅50.2元，且台股最低手續費使單股交易無法達到成本後報酬門檻。既有持倉未出現足以由可驗證資料確認的退出觸發條件，採HOLD；不加碼2891，因現價低於每股成本。日線資料均為2026-10-20以前完整TWSE日K，且prior_complete_sessions=22、coverage足夠20日比較；盤中快照僅作即時行情，不作跨日K線替代。外部查證：本輪已查詢公開資訊觀測站，但取得頁面未能確認各候選股的逐檔近期重大事件；未查到不代表沒有利空。來源：公開資訊觀測站，2026-10-21，https://mops.twse.com.tw/",
+  "decisions": [
+    {
+      "symbol": "2317",
+      "decision": "WAIT",
+      "confidence": 0.98,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 248.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "鴻海（2317）：無持倉；max_buy_qty=0且可用策略資金僅50.2元。雖即時價248.0高於2026-10-20前收241.5，且完整22個交易日日線可供20日比較，但無法形成可送單的BUY股數與成本後報酬。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆，coverage=SUFFICIENT_FOR_20D_COMPARISON。",
+        "公開資訊觀測站本輪未取得逐檔2317候選公司的可驗證近期事件；未查到不代表沒有利空。"
+      ]
+    },
+    {
+      "symbol": "2891",
+      "decision": "HOLD",
+      "confidence": 0.78,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 73.9,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "中信金（2891）：持有AI管理25股，可賣上限25股；正式成本74.7元，現價73.9元低於成本，依規則不得加碼。原買進計畫未知，不能捏造原假設；目前完整日線顯示現價仍高於MA5=72.58與MA20=69.765，未有足夠可驗證的新重大風險觸發SELL，先HOLD。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "buy_plans.available=false且該25股plan=null，原策略、目標及失效條件未知。",
+        "現價低於每股成本74.7元，不得加碼。",
+        "公開資訊觀測站本輪未取得逐檔2891候選公司的可驗證近期事件；未查到不代表沒有利空。"
+      ]
+    },
+    {
+      "symbol": "2881",
+      "decision": "WAIT",
+      "confidence": 0.96,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 156.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "富邦金（2881）：無持倉；max_buy_qty=0。雖現價156.5高於2026-10-20前收153.5，但完整日線顯示近5日報酬-4.06%、現價低於MA5=158.7，且無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。",
+        "公開資訊觀測站本輪未取得逐檔2881候選公司的可驗證近期事件；未查到不代表沒有利空。"
+      ]
+    },
+    {
+      "symbol": "2382",
+      "decision": "WAIT",
+      "confidence": 0.96,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 326.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "廣達（2382）：無持倉；max_buy_qty=0。完整日線近20日報酬-6.83%、現價326.5仍低於MA20=330.6，且無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。"
+      ]
+    },
+    {
+      "symbol": "2882",
+      "decision": "WAIT",
+      "confidence": 0.96,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 113.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "國泰金（2882）：無持倉；max_buy_qty=0。完整日線近5日報酬-3.93%，即時價113.5雖高於2026-10-20前收110.0，但無可執行股數與足夠成本後優勢，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。",
+        "公開資訊觀測站本輪未取得逐檔2882候選公司的可驗證近期事件；未查到不代表沒有利空。"
+      ]
+    },
+    {
+      "symbol": "2308",
+      "decision": "WAIT",
+      "confidence": 0.98,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 1635.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台達電（2308）：無持倉；max_buy_qty=0。完整日線近5日報酬-9.58%、近20日報酬-4.75%，現價1635低於MA5=1659與MA20=1840.75，且無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "spread=5.0元，盤中價差及波動風險偏高。",
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。"
+      ]
+    },
+    {
+      "symbol": "2376",
+      "decision": "WAIT",
+      "confidence": 0.94,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 357.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "技嘉（2376）：無持倉；max_buy_qty=0。完整日線近5日報酬-0.14%、現價357.0接近2026-10-20前收355.0但低於MA20=362.775，無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "完整日線近5日成交量僅為前5日約0.54倍，未形成足夠的量能確認。",
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。"
+      ]
+    },
+    {
+      "symbol": "0050",
+      "decision": "WAIT",
+      "confidence": 0.98,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 108.45,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "元大台灣50（0050）：無持倉；max_buy_qty=0。即時價108.45位於當日區間低位，完整日線近5日報酬-4.58%、低於MA5=109.26與MA20=112.195，且無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "ETF賣出交易稅率雖較股票低，但本輪資金與max_buy_qty仍不允許送單。",
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。"
+      ]
+    },
+    {
+      "symbol": "2377",
+      "decision": "WAIT",
+      "confidence": 0.97,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 164.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "微星（2377）：無持倉；max_buy_qty=0。完整日線近5日報酬+4.78%、近20日報酬+7.52%，但即時價164.5已接近2026-10-20前收164.5，且無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "完整日線近5日成交量約為前5日2.02倍，但這不足以繞過資金與股數硬限制。",
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。"
+      ]
+    },
+    {
+      "symbol": "2330",
+      "decision": "WAIT",
+      "confidence": 0.98,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 2420.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台積電（2330）：無持倉；max_buy_qty=0。完整日線近5日報酬-3.41%、現價2420低於MA5=2435與MA20=2492，且即時價位於當日低點，無可執行股數，不能BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "spread=5.0元；即時報價與日線均未提供足夠的保守成本後上行空間。",
+        "daily_history_status顯示2026-10-20為最新完整日K，共22筆。"
+      ]
+    },
+    {
+      "symbol": "1101",
+      "decision": "HOLD",
+      "confidence": 0.8,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 26.75,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台泥（1101）：持有AI管理100股，可賣上限100股；估計成本26.5元，現價26.75高於成本，但原買進計畫未知，不能捏造原假設。完整日線近20日報酬+9.61%、現價仍高於MA20=25.815，未有足夠可驗證的新重大風險觸發SELL，先HOLD。雖max_buy_qty=1，單股交易在最低20元手續費、股票0.3%賣出交易稅及價差下無法滿足成本後至少2%淨報酬與1.5報酬風險比，因此不加碼。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "buy_plans.available=false且100股plan=null；成本26.5元為estimated=true的人工登錄重建成本。",
+        "現金50.2元僅勉強覆蓋單股買進金額，無法通過成本後報酬門檻。",
+        "公開資訊觀測站本輪未取得逐檔1101候選公司的可驗證近期事件；未查到不代表沒有利空。"
+      ]
+    },
+    {
+      "symbol": "2603",
+      "decision": "HOLD",
+      "confidence": 0.74,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 257.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "長榮（2603）：持有AI管理20股，可賣上限20股；成本266.0元，現價257.5低於成本，禁止加碼。原買進計畫未知，不能捏造原假設；完整日線近20日報酬+7.01%、現價仍高於MA20=246.45，雖低於MA5=261.4且短線回落，尚不足以確認原假設失效或新增重大風險，先HOLD。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "buy_plans.available=false且20股plan=null，原策略、目標及失效條件未知。",
+        "現價低於每股成本266.0元，不得加碼。",
+        "公開資訊觀測站本輪未取得逐檔2603候選公司的可驗證近期事件；未查到不代表沒有利空。"
+      ]
+    }
+  ]
+}
