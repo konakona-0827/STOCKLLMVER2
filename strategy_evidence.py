@@ -103,4 +103,6 @@ def assess(quote, history=()):
         dict(complete_daily_sessions=len(set(valid_bars)),
              interpretation='完整日 K 專用；盤中快照不計入'))
     return dict(eligible_strategies=[key for key in STRATEGY_IDS if specs[key]['eligible']],
-                strategies=specs, history_kind='INTRADAY_SAMPLES_NOT_DAILY_BARS')
+                strategies=specs,
+                history_kind=('TWSE_DAILY_AND_INTRADAY_SAMPLES' if valid_bars else
+                              'INTRADAY_SAMPLES_NOT_DAILY_BARS'))

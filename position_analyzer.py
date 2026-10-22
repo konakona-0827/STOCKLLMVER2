@@ -32,14 +32,21 @@ def sell_qty(qty, ratio):
 
 def build_request(candidates, paper_account=None, strategy_prompt=None, model=None):
     source = str((paper_account or {}).get('source', ''))
-    live_account = source.startswith('FRESH_BROKER_BUYING_POWER_AFTER_')
+    live_account = (source.startswith('FRESH_BROKER_BUYING_POWER_AFTER_') or
+                    source == 'CONFIGURED_CAP_REMAINING_WITH_BROKER_FUNDS_AND_RESERVE_CHECKS')
     matched_rules = live_account or source == 'SIMULATION_MATCHED_LIVE_RULES'
     if matched_rules:
         from execution.auto_advice_executor import LiveExecutionConfig
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
     instructions = (strategy_prompt if strategy_prompt is not None else
                     (ROOT/'strategies'/'prompt_positions.md').read_text(encoding='utf-8'))
-    instructions += ('\n\n交易日資料判讀：連續日 K 指連續「交易日」，週末與證交所休市日不構成缺口。'
+    instructions += ('\n\n交易日資料判讀：每檔 daily_bars 是程式取得的證交所已完成歷史日 OHLCV，'
+                     'daily_trend 是依這些日線收盤與成交量算出的摘要；請先逐檔查看 daily_history_status、'
+                     'daily_bars 的實際日期與筆數，再判斷多日趨勢。這些是上市證券日成交資料，'
+                     '未經除權息調整，也不是盤中零股可成交價格。'
+                     'metrics.history_status 只描述原本的盤中快照量化掃描；當 daily_bars 有效時，'
+                     '不可因這個舊欄位或 market_history 的性質而概括說完全沒有歷史資料。'
+                     '連續日 K 指連續「交易日」，週末與證交所休市日不構成缺口。'
                      '讀取輸入的 trading_calendar.previous_trading_date 與 skipped_closed_dates；'
                      '不可因前一曆日休市，就說缺少前一交易日資料。'
                      'market_history 是盤中快照，不是完整日 K；若實際沒有足夠的多交易日 OHLC 與成交量，'
@@ -56,6 +63,28 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                      'BUY 的目標價須在保守計入雙邊手續費、股票賣出 0.3% 或 ETF 0.1% 交易稅、'
                      '目前買賣價差及下行失效風險後，仍有正淨收益與合理報酬風險比。'
                      '不可只因缺少跨日資料就放棄其他有證據的策略。')
+    if any('max_sell_qty' in c for c in candidates):
+        instructions += ('\n\n正式交易的 max_sell_qty 是本輪券商核實的現股可賣上限。'
+                         'SELL 的 suggested_qty 不得超過 max_sell_qty；若為 0，'
+                         '即使帳本或即時庫存有持股，也只能 HOLD 或 WAIT，不能提出 SELL。'
+                         '盤中零股不適用當日沖銷；送單前仍會重新查詢券商可賣股數。')
+    if any('ai_trade_dates' in c for c in candidates):
+        instructions += ('\n\nai_trade_dates.records 是已記錄的買賣日期與股數。'
+                         'FILLED_ORDER_SUBMISSION_DATE 是已成交委託的送單日，'
+                         'MANUAL_PURCHASE_ENTRY_DATE 是人工買入登錄日；'
+                         '兩者都不能冒充券商逐筆成交時間。日期缺漏不得自行補造。')
+    if any('ai_cost_basis' in c for c in candidates):
+        instructions += ('\n\n正式持股成本以 ai_cost_basis 為準；若 available=true，'
+                         'average_unit_cost_twd 是重建的每股買入成本，未含實際手續費與交易稅，'
+                         'estimated=true 表示含使用者登錄或委託限價估算。'
+                         '此時舊相容欄位 paper_position.cost_cents=null 不代表成本未知。'
+                         'SELL 應以可賣買價、股數及交易成本估算退出損益，'
+                         '不可只因小幅低於開盤或前期盤中抽樣就認定持股理由失效。')
+    instructions += ('\n\n輸出完整性：analysis_set 的每個 symbol 必須在 decisions 中恰好出現一次，'
+                     '包括沒有買賣訊號及僅因持倉而納入的標的；不得省略。'
+                     '沒有適合動作時填 WAIT，已確認持倉而繼續持有時填 HOLD。'
+                     'WAIT/HOLD 的 action_ratio=0、suggested_qty=0、suggested_price=null；'
+                     'reference_price 必須等於該檔 last_price，缺價時填 null。')
     request = dict(model=model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna'), store=False,
                 instructions=instructions,
                 input=json.dumps(dict(purpose='ADVICE_FOR_DETERMINISTIC_LIVE_EXECUTION' if live_account else 'ADVICE_ONLY_NO_ORDERS', analysis_set=candidates,
@@ -107,6 +136,12 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
             expected = sell_qty(qty, d['action_ratio'])
             if expected <= 0 or expected > MAX_ODDLOT_QTY or d['suggested_qty'] != expected:
                 raise ValueError('SELL_REJECTED_LOCAL_OWNERSHIP_OR_RATIO')
+            if 'max_sell_qty' in c and expected > c['max_sell_qty']:
+                d.update(decision='HOLD', confidence=0, action_ratio=0,
+                         suggested_qty=0, suggested_price=None)
+                d['reason'] += (f'；券商本輪可賣上限 {c["max_sell_qty"]} 股，'
+                                '賣出建議已被交易前檢查取消')
+                d['warnings'].append('SELL_BLOCKED_BY_BROKER_SELLABLE_QTY')
         elif d['decision'] == 'BUY':
             if ('max_buy_qty' in c and
                     (type(d['suggested_qty']) is not int or d['suggested_qty'] < 1 or
@@ -114,13 +149,22 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                 raise ValueError('BUY_EXCEEDS_AVAILABLE_CASH')
             if 'max_buy_qty' not in c and d['suggested_qty'] is not None:
                 raise ValueError('INVALID_BUY_QUANTITY')
-        elif d['action_ratio'] != 0 or d['suggested_qty'] != 0 or d['suggested_price'] is not None:
-            raise ValueError('NON_ACTION_QUANTITY')
+        else:
+            if (d['action_ratio'] != 0 or d['suggested_qty'] not in (None, 0)
+                    or d['suggested_price'] is not None):
+                raise ValueError('NON_ACTION_QUANTITY')
+            # The response schema permits null for an absent quantity. Keep the
+            # downstream advice interface's zero-quantity representation.
+            d['suggested_qty'] = 0
         if d['decision'] != 'BUY' and (d['strategy_id'] != 'NONE' or
                 any(d[key] is not None for key in ('target_price', 'invalidation_price', 'holding_days'))):
             raise ValueError('NON_BUY_TRADE_PLAN')
         ref = d['reference_price']
-        if c['last_price'] is None:
+        if d['decision'] in ('WAIT', 'HOLD'):
+            if ref != c['last_price']:
+                d['reference_price'] = c['last_price']
+                d['warnings'].append('參考價已依本輪行情資料校正；本建議不產生交易委託。')
+        elif c['last_price'] is None:
             if ref is not None:
                 raise ValueError('INVENTED_REFERENCE')
         elif type(ref) not in (int, float) or not math.isfinite(ref) or abs(ref-c['last_price']) > 1e-8:
@@ -189,8 +233,21 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                                         Decimal(gross_cents) * Decimal(str(buy_cash_buffer_rate)),
                                         Decimal(fee_twd(gross_cents) * 100))
                     planned_buy_cost_cents += gross_cents + reserve_cents
-    if seen != set(lookup):
-        raise ValueError('MISSING_ANALYSIS_SYMBOL')
+    missing = [c for c in candidates if c['symbol'] not in seen]
+    if missing:
+        for c in missing:
+            warnings = ['AI_MISSING_SYMBOL_WAIT：AI 回覆未包含此標的，程式保守補入 WAIT。']
+            if c['quote_status'] == 'LAST_KNOWN':
+                warnings.append(f"不是即時行情；資料時間：{c.get('quote_timestamp') or '未知'}。")
+            result['decisions'].append(dict(
+                symbol=c['symbol'], decision='WAIT', confidence=0,
+                action_ratio=0, suggested_qty=0, reference_price=c['last_price'],
+                suggested_price=None, strategy_id='NONE', target_price=None,
+                invalidation_price=None, holding_days=None,
+                reason=f"{c.get('name') or '股票名稱未取得'}（{c['symbol']}）：AI 未回覆此標的；本輪不採取交易動作。",
+                data_quality=c['quote_status'], warnings=warnings))
+        symbols = '、'.join(c['symbol'] for c in missing)
+        result['market_view'] += f'；AI 未回覆 {symbols}，程式已保守補入 WAIT。'
     if available_cash_cents is not None and planned_buy_cost_cents > available_cash_cents:
         raise ValueError('AGGREGATE_BUY_COST_EXCEEDS_AVAILABLE_CASH')
     return result

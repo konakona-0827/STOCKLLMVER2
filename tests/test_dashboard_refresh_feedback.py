@@ -1,3 +1,4 @@
+import gc
 import tempfile
 import time
 import tkinter as tk
@@ -14,7 +15,7 @@ class RefreshFeedbackTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = tk.Tk()
         self.root.withdraw()
-        self.addCleanup(self.root.destroy)
+        self.addCleanup(self.close_gui)
         self.addCleanup(patch.stopall)
         patch('dashboard.ROOT', Path(self.tmp.name)).start()
         patch.object(Dashboard, 'update_live_strategy_label').start()
@@ -29,6 +30,13 @@ class RefreshFeedbackTests(unittest.TestCase):
         # Any accidental real broker access must fail this isolated GUI test.
         patch('execution.health_monitor.sync_broker_state',
               side_effect=AssertionError('Unexpected broker access')).start()
+
+    def close_gui(self):
+        # Tk variables must be collected on the creating thread, before later
+        # broker/SDK worker tests can trigger cyclic garbage collection.
+        self.root.destroy()
+        self.app = self.root = self.worker = self.service = None
+        gc.collect()
 
     def finish(self, snapshot=None, error=None):
         self.service.side_effect = error

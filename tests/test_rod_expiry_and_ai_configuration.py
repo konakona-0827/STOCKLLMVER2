@@ -196,15 +196,22 @@ class RodAndConfigurationTests(unittest.TestCase):
         self.assertEqual(Decimal('0'),_ai_committed_capital(self.root,LiveExecutionConfig.load(self.config_path))[0])
 
     def test_dashboard_prefills_selected_stock_and_routes_save_to_formal_configuration(self):
+        import gc
         import tkinter as tk
         from tkinter import ttk
         from dashboard import Dashboard
         gui = tk.Tk()
         gui.withdraw()
-        self.addCleanup(gui.destroy)
+        gui_objects = [gui]
+        def close_gui():
+            gui_objects[0].destroy()
+            gui_objects.clear()
+            gc.collect()
+        self.addCleanup(close_gui)
         with patch('dashboard.ROOT',self.root), patch.object(Dashboard,'refresh'), \
                 patch.object(Dashboard,'update_live_strategy_label'):
             app=Dashboard(gui,self.analysis.parent)
+            gui_objects.append(app)
             for ai_qty, broker_qty, verified, expected in (
                     (0,20,True,'不可運用'), (0,0,True,'不可運用'),
                     (20,20,True,'全數運用'), (5,20,True,'部分運用'),

@@ -47,6 +47,10 @@ class LiveAgentIntegrationTests(unittest.TestCase):
                 return {s:dict(symbol=s,source='CAPITAL_SKCOM',name='真實介面測試ETF',exchange_time=stamp,
                                price=100,ask=100,bid=99.9,open=99,high=101,low=98,volume_shares=100000,is_trial=False)
                         for s in symbols},{}
+            def health_snapshot(*args, **kwargs):
+                fresh = {**healthy, 'inventory_comparison': [dict(
+                    symbol='0050', status='MATCH', broker_sellable_qty=store.get_ai_qty('0050'))]}
+                return (fresh, {}) if kwargs.get('return_report') else fresh
             power = BuyingPower(True,True,Decimal('100000'),Decimal('100000'),Decimal('100000'),'test')
             session = SimpleNamespace(connected=True,ensure_ready=Mock(return_value=SimpleNamespace(
                 ready=True,reply_state=1,reply_connected=True,action='REUSE')))
@@ -83,8 +87,9 @@ class LiveAgentIntegrationTests(unittest.TestCase):
                     patch('analysis_service.load_universe',return_value=dict(symbols=['0050'],etf_symbols=['0050'])), \
                     patch('analysis_service.ROOT',root), patch('agent_decision.ROOT',root), \
                     patch('strategy_catalog.live_selection',return_value=strategy_catalog.read_strategy(prompt)), \
+                    patch('daily_history._fetch_month',return_value=([], 'OFFLINE_TEST')), \
                     patch('execution.broker_runtime.get_broker_runtime',return_value=runtime), \
-                    patch('execution.health_monitor.sync_broker_state',side_effect=lambda *a,**k:(healthy,{}) if k.get('return_report') else healthy), \
+                    patch('execution.health_monitor.sync_broker_state',side_effect=health_snapshot), \
                     patch('execution.health_monitor.latest_refresh_snapshot',return_value=healthy), \
                     patch('execution.health_monitor.run_health_check',return_value=healthy), \
                     patch('execution.health_monitor.persist_refresh_snapshot',return_value=healthy), \

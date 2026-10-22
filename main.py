@@ -15,6 +15,7 @@ from capital import CapitalMarket
 from history import History
 from universe import load_universe
 import llm
+import daily_history
 from scheduler import is_twse_oddlot_market_window
 
 
@@ -113,11 +114,15 @@ def snapshot(symbol, quote=None, warnings=None, at=None, asset_type='UNKNOWN'):
     return result
 
 
-def analyze(snap, held_qty=None, budget=None, provider=llm.decide, observations=None, on_request=None):
+def analyze(snap, held_qty=None, budget=None, provider=llm.decide, observations=None, on_request=None,
+            daily=None):
     payload = dict(market_snapshot=snap, user_position={'qty': held_qty, 'source': 'USER_PROVIDED' if held_qty is not None else 'UNKNOWN'},
                    user_budget_twd=budget, purpose='ANALYSIS_ONLY_NO_ORDER',
                    market_history=observations or [],
-                   history_note='Real stored snapshots only; duplicate exchange times excluded; not daily bars')
+                   history_note='Real stored snapshots only; duplicate exchange times excluded; not daily bars',
+                   daily_bars=(daily or {}).get('bars', []),
+                   daily_trend=(daily or {}).get('trend'),
+                   daily_history_status=(daily or {}).get('status'))
     raw, api = '', {}
     started = now().isoformat()
     request = llm.build_request(payload)
@@ -225,11 +230,14 @@ def main():
         save_json(args.data_dir / 'market_snapshot.json', snap)
         history.save_snapshot(run_id, snap, quote)
         observations = history.recent(args.symbol, now().isoformat())
+        daily = daily_history.load_many([args.symbol], now().date(),
+                                        args.data_dir/'daily_history').get(args.symbol)
         if stop.exists():
             result, record = llm.fallback(snap, '使用者已要求停止。', 'STOP_REQUESTED'), {}
         else:
             result, record = analyze(snap, args.held_qty, args.budget_twd, observations=observations,
-                                     on_request=lambda body: save_json(run_dir / 'openai_request.json', body))
+                                     on_request=lambda body: save_json(run_dir / 'openai_request.json', body),
+                                     daily=daily)
         save_json(run_dir / 'openai_response.json', record)
         save_json(run_dir / 'decision.json', result)
         history.save_analysis(run_id, record, result)

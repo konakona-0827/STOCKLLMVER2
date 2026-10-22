@@ -13,6 +13,7 @@ from quant_scanner import scan_and_rank
 import candidate_analyzer
 import scan_store
 import strategy_evidence
+import daily_history
 
 
 def candidate_payload(top, quotes, db_path, at, etf_symbols=()):
@@ -103,6 +104,8 @@ def main():
         save_json(directory/'quant_scan.json', quant)
         save_json(directory/'candidate_ranking.json', ranking)
         candidates = candidate_payload(top, batch['quotes'], db_path, started, universe.get('etf_symbols', []))
+        daily_history.enrich_candidates(candidates, {q['symbol']: q for q in batch['quotes']},
+                                        now().date(), args.data_dir/'daily_history')
         request = candidate_analyzer.build_request(candidates)
         save_json(directory/'openai_request.json', request)
         if candidates and not stop.exists():

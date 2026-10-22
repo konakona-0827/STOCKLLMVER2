@@ -62,10 +62,50 @@ class AgentDecisionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 trading_mode()
 
-    def scripted_model(self,endless=False,delay=0):
+    def test_refreshes_use_the_same_live_fee_and_order_limits(self):
+        self.context.rules = LiveExecutionConfig(
+            min_buy_fee_reserve_twd=Decimal('100'), max_order_twd=Decimal('550'))
+        self.candidate['ask'] = 110
+        self.context.get_portfolio()
+        self.assertEqual(self.context.get_market_data('0050')['max_buy_qty'], 5)
+        self.context.portfolio_reader = lambda: dict(available_cash_cents=30000, positions=[])
+        self.context.get_portfolio()
+        self.assertEqual(self.candidate['max_buy_qty'], 1)
+        self.assertEqual(self.candidate['budget_price'], 110)
+        self.context.live_enabled = False
+        self.context.get_portfolio()
+        self.assertEqual(self.candidate['max_buy_qty'], 2)
+        self.assertEqual(self.candidate['budget_price'], 100)
+
+    def test_latest_failed_tool_read_cannot_reuse_an_earlier_success(self):
+        for reader, method in (('portfolio_reader', 'get_portfolio'),
+                               ('history_reader', 'get_trade_history'),
+                               ('quote_reader', 'get_market_data')):
+            with self.subTest(tool=method):
+                async def runner(context, *args):
+                    self.read(context)
+                    with patch.object(context, reader, side_effect=RuntimeError('test outage')):
+                        result = getattr(context, method)(*(['0050'] if method == 'get_market_data' else []))
+                    self.assertIn('error', result)
+                    return copy.deepcopy(self.decision), {}
+                decision, response = analyze(self.context, '策略', runner=runner)
+                self.assertEqual(response['validation'], 'ERROR')
+                self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
+
+    def test_tool_log_preserves_the_original_snapshot(self):
+        portfolio = dict(available_cash_cents=100000, positions=[dict(symbol='0050', qty=10)])
+        self.context.portfolio_reader = lambda: portfolio
+        self.context.get_portfolio()
+        portfolio['positions'][0]['qty'] = 5
+        self.context.get_portfolio()
+        self.assertEqual(self.context.calls[0]['result']['positions'][0]['qty'], 10)
+        self.assertEqual(self.context.calls[1]['result']['positions'][0]['qty'], 5)
+
+    def scripted_model(self,endless=False,delay=0,web_search=False,excess_search=False):
         try:
             from agents import Model,ModelResponse,Usage
-            from openai.types.responses import ResponseFunctionToolCall,ResponseOutputMessage,ResponseOutputText
+            from openai.types.responses import (ResponseFunctionToolCall, ResponseFunctionWebSearch,
+                                               ResponseOutputMessage, ResponseOutputText)
         except ImportError:
             self.skipTest('Optional Agents SDK not installed')
         actions = [('get_portfolio',{}),('get_trade_history',{}),('get_market_data',{'symbol':'0050'}),
@@ -74,11 +114,15 @@ class AgentDecisionTests(unittest.TestCase):
         class ScriptedModel(Model):
             def __init__(self):
                 self.requests,self.tools = 0,set()
+                self.tool_sets, self.search_limits = [], []
             async def get_response(self,*args,**kwargs):
                 import asyncio
                 if delay:
                     await asyncio.sleep(delay)
-                self.tools.update(t.name for t in kwargs.get('tools',[]))
+                current_tools = {t.name for t in kwargs.get('tools', [])}
+                self.tools.update(current_tools)
+                self.tool_sets.append(current_tools)
+                self.search_limits.append((kwargs['model_settings'].extra_args or {}).get('max_tool_calls'))
                 i = self.requests
                 self.requests += 1
                 if i<len(actions) or endless:
@@ -88,11 +132,92 @@ class AgentDecisionTests(unittest.TestCase):
                 else:
                     out = [ResponseOutputMessage(type='message',role='assistant',id='final',status='completed',
                         content=[ResponseOutputText(type='output_text',text=json.dumps(report),annotations=[])])]
+                if web_search and 'web_search' in current_tools and i < 2:
+                    for search_index in range(3 if excess_search else 1):
+                        out.insert(0, ResponseFunctionWebSearch(
+                            id=f'web-{i}-{search_index}', type='web_search_call', status='completed',
+                            action=dict(type='search', queries=['測試公司公告'], sources=[
+                                dict(type='url', url='https://example.com/announcement')])))
                 return ModelResponse(output=out,usage=Usage(requests=1,input_tokens=10,output_tokens=5),response_id=f'r-{i}')
             async def stream_response(self,*args,**kwargs):
                 raise NotImplementedError
                 yield
         return ScriptedModel()
+
+    def test_sdk_search_reuses_config_and_caps_the_whole_run(self):
+        self.context.search_request = dict(
+            tools=[dict(type='web_search', external_web_access=True,
+                        search_context_size='medium', user_location=dict(
+                            type='approximate', country='TW', timezone='Asia/Taipei'))],
+            max_tool_calls=2, include=['web_search_call.action.sources'])
+        model = self.scripted_model(web_search=True)
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'sk-test'}), \
+                patch('agents.OpenAIResponsesModel', return_value=model):
+            decision, response = analyze(self.context, '策略')
+        self.assertEqual(response['validation'], 'VALID', response)
+        self.assertEqual(decision['decisions'][0]['decision'], 'BUY')
+        self.assertEqual(model.search_limits[:2], [2, 1])
+        self.assertTrue(all('web_search' not in tools for tools in model.tool_sets[2:]))
+        self.assertEqual(response['api']['web_search']['tool_calls'], 2)
+        self.assertEqual(response['api']['web_search']['sources'][0]['url'],
+                         'https://example.com/announcement')
+        self.assertIsNone(response['api']['web_search']['billed_search_requests'])
+
+    def test_sdk_search_over_limit_discards_decision(self):
+        self.context.search_request = dict(tools=[dict(type='web_search')], max_tool_calls=2)
+        model = self.scripted_model(web_search=True, excess_search=True)
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'sk-test'}), \
+                patch('agents.OpenAIResponsesModel', return_value=model):
+            decision, response = analyze(self.context, '策略')
+        self.assertEqual(response['validation'], 'ERROR')
+        self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
+        self.assertIn('AGENT_WEB_SEARCH_LIMIT_EXCEEDED', response['api']['error'])
+
+    def test_real_responses_adapter_serializes_search_budget_and_sources(self):
+        try:
+            import agents
+            try:
+                import httpx2 as httpx
+            except ImportError:
+                import httpx
+            from openai import AsyncOpenAI
+        except ImportError:
+            self.skipTest('Optional Agents SDK not installed')
+        self.context.search_request = dict(tools=[dict(type='web_search', external_web_access=True)],
+                                           max_tool_calls=2, include=['web_search_call.action.sources'])
+        requests = []
+        actions = [('get_portfolio', {}), ('get_trade_history', {}), ('get_market_data', {'symbol': '0050'})]
+        def handler(request):
+            body = json.loads(request.content)
+            requests.append(body)
+            index = len(requests) - 1
+            if index < len(actions):
+                name, arguments = actions[index]
+                output = [dict(type='function_call', name=name, arguments=json.dumps(arguments),
+                               call_id=f'call-{index}', id=f'fc-{index}')]
+            else:
+                output = [dict(type='message', role='assistant', id='final', status='completed',
+                               content=[dict(type='output_text', text=json.dumps(self.decision), annotations=[])])]
+            if index < 2:
+                output.insert(0, dict(type='web_search_call', id=f'web-{index}', status='completed',
+                                     action=dict(type='search', queries=['test announcement'], sources=[
+                                         dict(type='url', url='https://example.com/announcement')])))
+            return httpx.Response(200, json=dict(
+                id=f'resp-{index}', object='response', created_at=0, model='test-model', status='completed',
+                parallel_tool_calls=False, tool_choice='auto', tools=body['tools'], output=output,
+                usage=dict(input_tokens=10, output_tokens=5, total_tokens=15)))
+        def client(**kwargs):
+            return AsyncOpenAI(api_key='sk-test', http_client=httpx.AsyncClient(
+                transport=httpx.MockTransport(handler)), **kwargs)
+        with patch('openai.AsyncOpenAI', side_effect=client):
+            decision, response = analyze(self.context, '策略', model='test-model')
+        self.assertEqual(response['validation'], 'VALID', response)
+        self.assertEqual(decision['decisions'][0]['decision'], 'BUY')
+        self.assertEqual([body.get('max_tool_calls') for body in requests], [2, 1, None, None])
+        self.assertTrue(all(body['store'] is False for body in requests))
+        self.assertIn('web_search', {tool['type'] for tool in requests[0]['tools']})
+        self.assertNotIn('web_search', {tool['type'] for tool in requests[2]['tools']})
+        self.assertEqual(response['api']['web_search']['tool_calls'], 2)
 
     def test_actual_sdk_loop_returns_original_json_and_only_read_tools(self):
         model = self.scripted_model()

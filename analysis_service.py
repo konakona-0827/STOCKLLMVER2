@@ -17,6 +17,7 @@ from multi_scan import candidate_payload
 import position_store
 import position_analyzer
 import scan_store
+import daily_history
 from advice_interface import write_advice_interface
 import paper_portfolio
 import strategy_catalog
@@ -132,6 +133,85 @@ def live_ai_positions(path):
     with closing(sqlite3.connect('file:' + str(path.resolve()) + '?mode=ro', uri=True)) as db:
         return [dict(symbol=symbol, qty=qty, cost_cents=None)
                 for symbol, qty in db.execute('SELECT symbol,qty FROM ai_positions WHERE qty>0')]
+
+
+def apply_live_sell_limits(candidates, broker_health):
+    """Bound AI SELL advice by the broker's verified cash sellable quantity."""
+    rows = {row['symbol']: row for row in (broker_health or {}).get('inventory_comparison') or []}
+    inventory_checked = (broker_health or {}).get('inventory_checked') is True
+    for candidate in candidates:
+        held = max(0, int((candidate.get('paper_position') or {}).get('qty') or 0))
+        row = rows.get(candidate['symbol']) if inventory_checked else None
+        sellable = max(0, int(row.get('broker_sellable_qty') or 0)) if row else 0
+        candidate['max_sell_qty'] = min(held, sellable)
+
+
+def apply_live_cost_basis(candidates, costs):
+    """Expose reconstructed acquisition price without claiming broker fee precision."""
+    for candidate in candidates:
+        candidate['position'].pop('ai_average_cost', None)
+        held = int((candidate.get('paper_position') or {}).get('qty') or 0)
+        basis = costs.get(candidate['symbol'])
+        if (not basis or held <= 0 or int(basis['quantity']) != held
+                or basis.get('average_unit_cost_twd') is None):
+            candidate['ai_cost_basis'] = {'available': False}
+            continue
+        unit_cost = Decimal(str(basis['average_unit_cost_twd']))
+        if not unit_cost.is_finite() or unit_cost <= 0:
+            candidate['ai_cost_basis'] = {'available': False}
+            continue
+        candidate['ai_cost_basis'] = {
+            'available': True,
+            'average_unit_cost_twd': str(unit_cost),
+            'quantity': held,
+            'estimated': bool(basis['estimated']),
+            'excludes_fees_and_tax': True,
+            'source': 'RECONSTRUCTED_FORMAL_AI_LEDGER',
+        }
+        candidate['position']['ai_average_cost'] = float(unit_cost)
+
+
+def apply_live_position_context(candidates, broker_health, execution_db, audit):
+    """Use the same verified sell limits, dates and costs after every account read."""
+    from execution.trade_dates import dated_ai_trades
+    from execution.trade_pnl import remaining_acquisition_costs
+
+    apply_live_sell_limits(candidates, broker_health)
+    dates = dated_ai_trades(execution_db, (c['symbol'] for c in candidates))
+    for candidate in candidates:
+        candidate['ai_trade_dates'] = dates[candidate['symbol']]
+    try:
+        costs = remaining_acquisition_costs(
+            execution_db, (broker_health or {}).get('broker_order_reconciliation'))
+    except (OSError, sqlite3.Error, ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        costs = {}
+        audit.event('AI_COST_BASIS_UNAVAILABLE', {'reason': redact(exc)})
+    apply_live_cost_basis(candidates, costs)
+
+
+def apply_buy_limits(candidates, account, live_config=None):
+    """Keep initial and Agent-refreshed quotes on the existing budget policy."""
+    for candidate in candidates:
+        candidate['max_buy_qty'] = 0
+        if (candidate['last_price'] is None or candidate['quote_status'] != 'LIVE'
+                or candidate.get('is_trial')):
+            continue
+        price = ((candidate.get('ask') or candidate['last_price'])
+                 if live_config is not None else candidate['last_price'])
+        candidate['budget_price'] = price
+        quantity = paper_portfolio.max_affordable_qty(account['available_cash_cents'], price)
+        if live_config is not None:
+            from paper_portfolio import price_cents
+            while quantity:
+                gross = Decimal(price_cents(price) * quantity) / 100
+                reserve = max(live_config.min_buy_fee_reserve_twd,
+                              gross * live_config.buy_cash_buffer_rate)
+                if (gross + reserve <= Decimal(str(account['available_cash_twd']))
+                        and (live_config.max_order_twd is None
+                             or gross <= live_config.max_order_twd)):
+                    break
+                quantity -= 1
+        candidate['max_buy_qty'] = quantity
 
 
 def broker_snapshot_after_execution(report, root):
@@ -274,27 +354,13 @@ class AnalysisService:
         candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
                                  universe.get('etf_symbols', []), paper_positions, live_managed=live_enabled,
                                  ai_settings=(broker_health or {}).get('ai_position_settings'))
-        for c in candidates:
-            if c['last_price'] is not None and c['quote_status'] == 'LIVE' and not c.get('is_trial'):
-                entry_price = ((c.get('ask') or c['last_price'])
-                               if live_enabled else c['last_price'])
-                c['budget_price'] = entry_price
-                c['max_buy_qty'] = paper_portfolio.max_affordable_qty(
-                    paper_state['available_cash_cents'], entry_price)
-                if live_enabled:
-                    from paper_portfolio import price_cents
-                    while c['max_buy_qty'] and (
-                        Decimal(price_cents(entry_price)*c['max_buy_qty']) / 100
-                        + max(live_config.min_buy_fee_reserve_twd,
-                              Decimal(price_cents(entry_price)*c['max_buy_qty']) / 100
-                              * live_config.buy_cash_buffer_rate)
-                        > Decimal(str(paper_state['available_cash_twd']))
-                        or (live_config.max_order_twd is not None and
-                            Decimal(price_cents(entry_price)*c['max_buy_qty']) / 100
-                            > live_config.max_order_twd)):
-                        c['max_buy_qty']-=1
-            else:
-                c['max_buy_qty'] = 0
+        phase('DAILY_HISTORY')
+        daily_history.enrich_candidates(candidates, quote_map, at.date(),
+                                        self.directory/'daily_history')
+        if live_enabled:
+            apply_live_position_context(candidates, broker_health,
+                                       ROOT/'data'/'execution'/'live_execution.sqlite3', audit)
+        apply_buy_limits(candidates, paper_state, live_config if live_enabled else None)
         save_json(directory/'analysis_set.json', candidates)
         agent_mode = manifest.get('trading_mode') == 'agent'
         request = position_analyzer.build_request(candidates, paper_state, strategy_prompt=strategy['prompt'],
@@ -313,7 +379,9 @@ class AnalysisService:
             if agent_mode:
                 from agent_decision import analyze_existing
                 decision, response = analyze_existing(self, directory, manifest, request, candidates,
-                                                       paper_state, live_config, live_enabled, rules)
+                                                       paper_state, live_config, live_enabled, rules,
+                                                       broker_health=broker_health)
+                budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
                 # On-demand Agent quotes become the authoritative handoff data.
                 fresh_by_symbol = {c['symbol']:c for c in candidates}
                 batch['quotes'] = [{**q, **fresh_by_symbol.get(q['symbol'], {})} for q in batch['quotes']]

@@ -73,6 +73,13 @@ AGENT_TIMEOUT_SECONDS=180
 資料來自 SKCOM、目前券商核對及正式帳本。不提供 Shell、Skill、其他 Agent 或下單工具。
 SDK 接法依 [OpenAI 官方快速入門](https://developers.openai.com/api/docs/guides/agents/quickstart?lang=python)。
 
+Agent 與 LLM 共用 `config/web_search.json`；啟用時另外提供 SDK 的唯讀 `web_search`，
+沿用相同位置、搜尋範圍、來源紀錄與每輪呼叫上限。上限跨 SDK 多次模型回合累計，
+用完後移除搜尋工具，三個本機查詢工具仍可使用。
+搜尋接法與每次 Responses 請求的限制依 [OpenAI 網路搜尋說明](https://developers.openai.com/api/docs/guides/tools-web-search)
+及 [Responses API 參考](https://developers.openai.com/api/reference/python/resources/responses/methods/create)；
+SDK 未回傳可核實的計費次數時，費用保持未知。
+
 Agent 回傳與 LLM 相同的 `market_view` / `decisions` JSON。
 原有 `position_analyzer.validate` 檢查格式、持倉、行情、交易計畫與總預算。
 通過後交給原有 advice interface、Risk Engine、Python 下單、成交核對及帳務函式。
@@ -99,10 +106,30 @@ SDK 錯誤、超時或回合上限會產生 WAIT，不送單。
 .\.venv\Scripts\python.exe -m pip check
 ```
 
-原版 172 項加新增 7 項，共 179 項通過；另 3 項原有 JSON interface 測試通過。
+2026-10-22：203 項測試通過；另 3 項原有 JSON interface 測試通過，`pip check` 通過。
 驗證真正 SDK 多輪工具迴圈、JSON 契約、不合法數字、超時、BUY / SELL / HOLD、
 承接既有持倉、Agent 額外預算檢查、送單前資金下降、委託重播與切回 LLM 後持倉保留。
 執行測試替換模型／券商外部 API，風控與正式帳務使用原 Python 函式。
+
+## 2026-10-22 與 develop 差異檢查
+
+比較 Agent 分支 `1c56c37` 與另一工作目錄 `STOCKLLM` 的 develop `363fe8f`，
+共同祖先為 `edf6478`。已納入 develop 在共同祖先後的 29 個程式、測試、策略及操作文件變更。
+日誌、歷史分析、正式交易資料庫、健康快照與策略稽核輸出不作為程式修正複製；
+承接正式帳戶時仍用上方的 `TRADING_STATE_ROOT`。
+
+- 保留行情 COM 物件及事件連線，切換查價標的時不再重建回呼；沿用已保存的完整券商成交證據。
+- 提供已完成歷史日線、買賣日期及可重建成本，沿用 develop 的可賣股數限制、缺漏標的 WAIT、非交易欄位校正與損益顯示。
+- Agent 重新查價時保留日線策略證據；重新查帳戶時更新可賣股數、日期、成本及最終執行預算。
+- 初次分析與 Agent 後續查詢共用買進額度計算，保留原本費用預留、買賣價差與每筆金額限制。
+- 後續查詢失敗會撤銷該工具之前的成功狀態，阻止採用舊結果交易；工具日誌保留當時快照。
+- 補上 Agent 的既有網路查證功能；測試包含真正 SDK／Responses 轉接器，以本機假 HTTP 回應核對序列化與累計上限。
+- 修正既有 GUI 測試的 Tk 物件清理，避免後續背景測試觸發錯誤執行緒回收而崩潰。
+
+此檢查只修改 `STOCKLLM-agent`；develop 工作目錄、正式帳戶及交易設定未修改。
+驗證未呼叫正式模型、券商或送單；原生 SKCOM 崩潰修正仍需盤中實際切換標的確認。
+
+## 既有唯讀連線驗證
 
 使用目前帳戶但禁止下單的連線驗證：
 
