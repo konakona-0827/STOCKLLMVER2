@@ -88,6 +88,51 @@ class StrategyEvidenceTests(unittest.TestCase):
             validate(dict(market_view='測試', decisions=[order]),
                      [candidate], available_cash_cents=15000)
 
+    def test_non_action_null_quantity_is_accepted_but_positive_quantity_is_rejected(self):
+        candidate = self.quote()
+        for decision, held in [('WAIT', 0), ('HOLD', 2)]:
+            candidate['paper_position']['qty'] = held
+            row = self.decision('2330')
+            row.update(decision=decision, suggested_qty=None, suggested_price=None,
+                       strategy_id='NONE', target_price=None,
+                       invalidation_price=None, holding_days=None)
+            result = validate(dict(market_view='測試', decisions=[row]), [candidate])
+            self.assertEqual(result['decisions'][0]['suggested_qty'], 0)
+            row['suggested_qty'] = 1
+            with self.assertRaisesRegex(ValueError, 'NON_ACTION_QUANTITY'):
+                validate(dict(market_view='測試', decisions=[row]), [candidate])
+
+    def test_non_action_reference_uses_verified_quote(self):
+        candidate = self.quote()
+        row = self.decision('2330')
+        row.update(decision='WAIT', suggested_qty=None, suggested_price=None,
+                   reference_price=101, strategy_id='NONE', target_price=None,
+                   invalidation_price=None, holding_days=None)
+        result = validate(dict(market_view='測試', decisions=[row]), [candidate])
+        self.assertEqual(result['decisions'][0]['reference_price'], 100)
+        self.assertTrue(any('參考價' in warning for warning in result['decisions'][0]['warnings']))
+        row.update(decision='BUY', suggested_qty=1, suggested_price=100,
+                   reference_price=101)
+        with self.assertRaisesRegex(ValueError, 'INCORRECT_REFERENCE'):
+            validate(dict(market_view='測試', decisions=[row]), [candidate])
+
+    def test_missing_candidate_is_audited_wait_without_losing_valid_buy(self):
+        buy, omitted = self.quote('2330'), self.quote('2317')
+        buy['eligible_strategies'] = assess(buy)['eligible_strategies']
+        omitted['paper_position']['qty'] = 2
+        result = validate(dict(market_view='測試', decisions=[self.decision('2330')]),
+                          [buy, omitted], available_cash_cents=50000)
+        self.assertEqual([d['decision'] for d in result['decisions']], ['BUY', 'WAIT'])
+        missing = result['decisions'][1]
+        self.assertEqual(missing['symbol'], '2317')
+        self.assertEqual(missing['suggested_qty'], 0)
+        self.assertEqual(missing['reference_price'], omitted['last_price'])
+        self.assertIn('AI_MISSING_SYMBOL_WAIT', missing['warnings'][0])
+        self.assertIn('2317', result['market_view'])
+        with self.assertRaisesRegex(ValueError, 'UNKNOWN_OR_DUPLICATE_SYMBOL'):
+            validate(dict(market_view='測試', decisions=[
+                self.decision('2330'), self.decision('2330')]), [buy, omitted])
+
 
 if __name__ == '__main__':
     unittest.main()
