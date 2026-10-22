@@ -1,16 +1,20 @@
 """Versioned Markdown strategy inputs shared by live and simulation screens."""
 import hashlib
 import json
+import os
 from pathlib import Path
 
-from config import ROOT
+from config import CODE_ROOT, ROOT
 
 DEFAULT_PROMPT = ROOT / 'strategies' / 'prompt_positions.md'
 LIVE_SELECTION = ROOT / 'data' / 'analysis' / 'live_strategy.json'
 
 
 def read_strategy(path):
-    path = Path(path).expanduser().resolve()
+    path = Path(path).expanduser()
+    if not path.is_absolute():
+        path = CODE_ROOT / path
+    path = path.resolve()
     if path.suffix.lower() != '.md' or not path.is_file():
         raise ValueError('請選擇存在的 .md 策略檔案')
     content = path.read_text(encoding='utf-8-sig')
@@ -22,6 +26,9 @@ def read_strategy(path):
 
 
 def live_selection():
+    override = os.getenv('TRADING_STRATEGY_PATH')
+    if override:
+        return read_strategy(override)
     if LIVE_SELECTION.is_file():
         saved = json.loads(LIVE_SELECTION.read_text(encoding='utf-8'))
         return read_strategy(saved['path'])

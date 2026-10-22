@@ -13,17 +13,24 @@ import paper_portfolio
 import position_analyzer
 
 AGENT_VERSION = 'agent-decision-v1'
+DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 先呼叫 get_portfolio、get_trade_history，再自行選擇標的呼叫 get_market_data；可多次查詢。
 BUY / SELL 前必須查詢該標的行情。只依據提供的真實行情、資金與持倉，不得虛構資料。
 每檔都要回傳一筆 BUY / SELL / HOLD / WAIT 決策、股數、理由與原有其他欄位。
 未持倉時不可 HOLD / SELL；觀望填 WAIT。HOLD / WAIT 的股數與 action_ratio 都是 0。
 SELL 股數與 action_ratio 必須符合目前 AI 管理持倉；不可賣出人工持股。
+正式交易的 SELL 還須遵守 get_market_data 傳回的最新 max_sell_qty。
 BUY 須遵守 eligible_strategies，填目標價、失效價與持有天數，所有 BUY 合計含費用不得超過預算。
 只讀、非 LIVE、試撮合或過期行情只回傳 HOLD / WAIT。
 你只產生與現有 LLM 相同格式的決策 JSON；既有 Python 負責預算複檢、風控及下單。
 不得聲稱委託已送出或成交。請以繁體中文說明理由。
 '''
+
+
+def agent_model():
+    """Keep Agent model choice independent from the existing LLM mode."""
+    return os.getenv('OPENAI_AGENT_MODEL') or DEFAULT_AGENT_MODEL
 
 
 def execution_metadata(model):
@@ -74,8 +81,11 @@ class TradingTools:
             self.account = self.portfolio_reader()
             held = {p['symbol']:p for p in self.account['positions']}
             for symbol,c in self.candidates.items():
-                c['paper_position'] = held.get(symbol,dict(symbol=symbol,qty=0,cost_cents=0))
+                holding = held.get(symbol,dict(symbol=symbol,qty=0,cost_cents=0))
+                c['paper_position'] = {**c.get('paper_position', {}), **holding}
                 c['position']['ai_managed_qty'] = c['paper_position']['qty']
+            # A later account refresh invalidates earlier market observations.
+            self.observed.clear()
             self.portfolio_read = True
             return self.account
         return self._call('get_portfolio',{},read)
@@ -91,15 +101,24 @@ class TradingTools:
         def read():
             if symbol not in self.candidates:
                 raise ValueError('SYMBOL_OUTSIDE_ANALYSIS_SET')
+            if self.account is None:
+                raise ValueError('PORTFOLIO_MUST_BE_READ_FIRST')
             row = self.quote_reader(symbol,self.candidates[symbol])
             if row.get('symbol') != symbol:
                 raise ValueError('QUOTE_SYMBOL_MISMATCH')
             self.candidates[symbol].update(row)
             c = self.candidates[symbol]
             c['budget_price'] = c.get('ask') or c.get('last_price')
-            if self.account is not None:
-                c['max_buy_qty'] = (paper_portfolio.max_affordable_qty(self.account['available_cash_cents'],c['budget_price'])
-                                    if c['budget_price'] and c['quote_status']=='LIVE' and not c.get('is_trial') else 0)
+            if c['budget_price'] and c['quote_status']=='LIVE' and not c.get('is_trial'):
+                if 'max_sell_qty' in c:
+                    from analysis_service import live_max_buy_qty
+                    c['max_buy_qty'] = live_max_buy_qty(
+                        self.account['available_cash_cents'], c['budget_price'], self.rules)
+                else:
+                    c['max_buy_qty'] = paper_portfolio.max_affordable_qty(
+                        self.account['available_cash_cents'], c['budget_price'])
+            else:
+                c['max_buy_qty'] = 0
             self.observed.add(symbol)
             return dict(c)
         return self._call('get_market_data',dict(symbol=symbol),read)
@@ -166,7 +185,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
 
 
 def analyze(context,strategy_prompt,model=None,runner=None):
-    model = model or os.getenv('OPENAI_AGENT_MODEL') or os.getenv('OPENAI_MODEL','gpt-5.6-luna')
+    model = model or agent_model()
     response = dict(request_started_at=now().isoformat(),api=execution_metadata(model),raw_response='')
     try:
         turns,timeout = int(os.getenv('AGENT_MAX_TURNS','24')),float(os.getenv('AGENT_TIMEOUT_SECONDS','180'))

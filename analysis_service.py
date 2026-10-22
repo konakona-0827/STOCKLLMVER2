@@ -1,6 +1,5 @@
 """Background SKCOM -> ranking/position union -> OpenAI -> immutable research run."""
 import json
-import os
 import sqlite3
 from datetime import datetime
 from decimal import Decimal
@@ -154,10 +153,12 @@ def apply_live_cost_basis(candidates, costs):
         if (not basis or held <= 0 or int(basis['quantity']) != held
                 or basis.get('average_unit_cost_twd') is None):
             candidate['ai_cost_basis'] = {'available': False}
+            candidate['position']['ai_average_cost'] = None
             continue
         unit_cost = Decimal(str(basis['average_unit_cost_twd']))
         if not unit_cost.is_finite() or unit_cost <= 0:
             candidate['ai_cost_basis'] = {'available': False}
+            candidate['position']['ai_average_cost'] = None
             continue
         candidate['ai_cost_basis'] = {
             'available': True,
@@ -168,6 +169,21 @@ def apply_live_cost_basis(candidates, costs):
             'source': 'RECONSTRUCTED_FORMAL_AI_LEDGER',
         }
         candidate['position']['ai_average_cost'] = float(unit_cost)
+
+
+def live_max_buy_qty(available_cash_cents, entry_price, live_config):
+    """Use the same broker reserve and order cap for scans and Agent refreshes."""
+    quantity = paper_portfolio.max_affordable_qty(available_cash_cents, entry_price)
+    from paper_portfolio import price_cents
+    while quantity:
+        gross = Decimal(price_cents(entry_price) * quantity) / 100
+        reserved = max(live_config.min_buy_fee_reserve_twd,
+                       gross * live_config.buy_cash_buffer_rate)
+        if (gross + reserved <= Decimal(available_cash_cents) / 100
+                and (live_config.max_order_twd is None or gross <= live_config.max_order_twd)):
+            break
+        quantity -= 1
+    return quantity
 
 
 def broker_snapshot_after_execution(report, root):
@@ -335,28 +351,19 @@ class AnalysisService:
                 entry_price = ((c.get('ask') or c['last_price'])
                                if live_enabled else c['last_price'])
                 c['budget_price'] = entry_price
-                c['max_buy_qty'] = paper_portfolio.max_affordable_qty(
-                    paper_state['available_cash_cents'], entry_price)
-                if live_enabled:
-                    from paper_portfolio import price_cents
-                    while c['max_buy_qty'] and (
-                        Decimal(price_cents(entry_price)*c['max_buy_qty']) / 100
-                        + max(live_config.min_buy_fee_reserve_twd,
-                              Decimal(price_cents(entry_price)*c['max_buy_qty']) / 100
-                              * live_config.buy_cash_buffer_rate)
-                        > Decimal(str(paper_state['available_cash_twd']))
-                        or (live_config.max_order_twd is not None and
-                            Decimal(price_cents(entry_price)*c['max_buy_qty']) / 100
-                            > live_config.max_order_twd)):
-                        c['max_buy_qty']-=1
+                c['max_buy_qty'] = (live_max_buy_qty(paper_state['available_cash_cents'],
+                                                     entry_price, live_config)
+                                    if live_enabled else paper_portfolio.max_affordable_qty(
+                                        paper_state['available_cash_cents'], entry_price))
             else:
                 c['max_buy_qty'] = 0
         save_json(directory/'analysis_set.json', candidates)
         agent_mode = manifest.get('trading_mode') == 'agent'
-        request = position_analyzer.build_request(candidates, paper_state, strategy_prompt=strategy['prompt'],
-                            model=os.getenv('OPENAI_AGENT_MODEL') if agent_mode else None)
         if agent_mode:
             import trading_agent
+        request = position_analyzer.build_request(candidates, paper_state, strategy_prompt=strategy['prompt'],
+                            model=trading_agent.agent_model() if agent_mode else None)
+        if agent_mode:
             manifest['runtime'] = trading_agent.execution_metadata(request['model'])
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')

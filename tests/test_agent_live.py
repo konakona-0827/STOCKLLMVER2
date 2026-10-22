@@ -42,6 +42,12 @@ class LiveAgentIntegrationTests(unittest.TestCase):
                            minimum_balance_twd='10000',inventory_checked=True,broker_inventory_verified=True,
                            pending_buy_reserve_twd='0',ai_committed_capital_twd='3000',
                            current_buy_budget_twd='30000',checked_at=now().isoformat())
+            def broker_health(*_args, **kwargs):
+                qty = store.get_ai_qty('0050')
+                report = dict(healthy, inventory_comparison=[dict(
+                    symbol='0050', broker_cash_qty=qty, broker_sellable_qty=qty,
+                    ai_qty=qty, status='MATCH')])
+                return (report, report) if kwargs.get('return_report') else report
             def quotes(symbols,*args,**kwargs):
                 stamp = now().isoformat()
                 return {s:dict(symbol=s,source='CAPITAL_SKCOM',name='真實介面測試ETF',exchange_time=stamp,
@@ -84,7 +90,7 @@ class LiveAgentIntegrationTests(unittest.TestCase):
                     patch('analysis_service.ROOT',root), patch('agent_decision.ROOT',root), \
                     patch('strategy_catalog.live_selection',return_value=strategy_catalog.read_strategy(prompt)), \
                     patch('execution.broker_runtime.get_broker_runtime',return_value=runtime), \
-                    patch('execution.health_monitor.sync_broker_state',side_effect=lambda *a,**k:(healthy,{}) if k.get('return_report') else healthy), \
+                    patch('execution.health_monitor.sync_broker_state',side_effect=broker_health), \
                     patch('execution.health_monitor.latest_refresh_snapshot',return_value=healthy), \
                     patch('execution.health_monitor.run_health_check',return_value=healthy), \
                     patch('execution.health_monitor.persist_refresh_snapshot',return_value=healthy), \

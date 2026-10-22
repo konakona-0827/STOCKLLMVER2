@@ -1,4 +1,5 @@
 import copy
+from datetime import date
 import json
 import os
 from pathlib import Path
@@ -8,8 +9,10 @@ from unittest.mock import patch
 from decimal import Decimal
 
 from config import now,trading_mode
+from agent_decision import refreshed_market_context
 from execution.auto_advice_executor import LiveExecutionConfig
-from trading_agent import TradingTools,analyze
+from market_calendar import previous_trading_day
+from trading_agent import TradingTools,agent_model,analyze
 
 
 class AgentDecisionTests(unittest.TestCase):
@@ -61,6 +64,64 @@ class AgentDecisionTests(unittest.TestCase):
         with patch.dict(os.environ,{'TRADING_MODE':'invalid'}):
             with self.assertRaises(ValueError):
                 trading_mode()
+
+    def test_agent_model_is_independent_of_llm_model_and_can_be_overridden(self):
+        observed = []
+        async def runner(context, instructions, model, *args):
+            observed.append(model)
+            self.read(context)
+            return copy.deepcopy(self.decision), {}
+        with patch.dict(os.environ, {'OPENAI_MODEL':'gpt-5.6-luna'}, clear=True):
+            self.assertEqual(agent_model(), 'gpt-6-sol')
+            _, response = analyze(self.context, '策略', runner=runner)
+            self.assertEqual(response['validation'], 'VALID')
+            self.assertEqual(response['api']['model'], 'gpt-6-sol')
+        with patch.dict(os.environ, {'OPENAI_MODEL':'gpt-5.6-luna',
+                                     'OPENAI_AGENT_MODEL':'gpt-6.1-sol'}, clear=True):
+            self.assertEqual(agent_model(), 'gpt-6.1-sol')
+            _, response = analyze(self.context, '策略', runner=runner)
+            self.assertEqual(response['validation'], 'VALID')
+        self.assertEqual(observed, ['gpt-6-sol', 'gpt-6.1-sol'])
+
+    def test_market_tool_uses_refreshed_portfolio_and_live_order_cap(self):
+        self.candidate['max_sell_qty'] = 3
+        self.context.rules = LiveExecutionConfig(
+            max_order_twd=Decimal('200'), min_buy_fee_reserve_twd=Decimal('20'),
+            min_available_to_buy_twd=Decimal('0'))
+        self.context.quote_reader = lambda symbol, candidate: {**candidate, 'ask':120}
+        self.context.portfolio_reader = lambda: dict(
+            available_cash_cents=100000,
+            positions=[dict(symbol='0050', qty=10, cost_cents=None)])
+        self.assertIn('PORTFOLIO_MUST_BE_READ_FIRST',
+                      self.context.get_market_data('0050')['error'])
+        self.context.get_portfolio()
+        market = self.context.get_market_data('0050')
+        self.assertEqual(market['paper_position']['qty'], 10)
+        self.assertEqual(market['max_sell_qty'], 3)
+        self.assertEqual(market['max_buy_qty'], 1)
+        self.context.get_portfolio()
+        self.assertNotIn('0050', self.context.observed)
+
+    def test_fresh_quote_preserves_verified_daily_strategy_evidence(self):
+        today = date(2026, 10, 21)
+        cursor = today
+        bars = []
+        for _ in range(5):
+            cursor = previous_trading_day(cursor)
+            bars.append(dict(date=cursor.isoformat(), open=99, high=101, low=98,
+                             close=100, volume=1000, complete=True, source='TWSE_DAILY'))
+        previous = dict(asset_type='ETF', market_history=[], daily_bars=bars,
+                        daily_trend={'ma5': 100}, daily_history_status={'coverage': 'PARTIAL'})
+        current = dict(symbol='0050', quote_timestamp='2026-10-21T10:00:00+08:00',
+                       quote_status='LIVE', is_trial=False, last_price=100,
+                       open=99, high=101, low=98, bid=99.9, ask=100, volume=1000)
+        with patch('agent_decision.scan_quote', return_value={'metrics': {}, 'components': {}}):
+            refreshed = refreshed_market_context(current, previous, {})
+        self.assertEqual(refreshed['daily_bars'], bars)
+        self.assertEqual(refreshed['daily_trend'], previous['daily_trend'])
+        self.assertIn('multi_day_trend', refreshed['eligible_strategies'])
+        self.assertEqual(refreshed['strategy_evidence']['history_kind'],
+                         'TWSE_DAILY_AND_INTRADAY_SAMPLES')
 
     def scripted_model(self,endless=False,delay=0):
         try:

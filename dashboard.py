@@ -16,7 +16,7 @@ import traceback
 import webbrowser
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
-from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS, trading_mode
+from config import ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS, load_env, trading_mode
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
 )
@@ -299,6 +299,9 @@ def settlement_snapshot_current(checked_at, at):
 class Dashboard:
     def __init__(self, root, directory=ROOT/'data'/'analysis', interval=AUTO_INTERVAL_SECONDS,
                  lifecycle=None):
+        # Populate TRADING_MODE before the selector is initialized. The worker
+        # also loads .env, but that happens after the user starts a scan.
+        load_env(ROOT / '.env')
         self.root = root
         self.lifecycle = lifecycle
         self.last_lifecycle_heartbeat = time.monotonic()
@@ -582,11 +585,12 @@ class Dashboard:
         content.configure(state='disabled')
 
     def update_live_strategy_label(self):
+        mode = trading_mode().upper()
         try:
             strategy = strategy_catalog.live_selection()
-            self.live_strategy_text.set(trading_mode().upper() + '｜' + Path(strategy['path']).name)
+            self.live_strategy_text.set(mode + '｜' + Path(strategy['path']).name)
         except Exception as exc:
-            self.live_strategy_text.set('策略檔案無法讀取：' + redact(exc))
+            self.live_strategy_text.set(mode + '｜策略檔案無法讀取：' + redact(exc))
 
     def select_decision_mode(self, _event=None):
         os.environ['TRADING_MODE'] = self.decision_mode.get()
@@ -1263,8 +1267,9 @@ class Dashboard:
                 gross_text = '待確認'
             pnl = pnl_by_order.get(attempt.get('decision_id'))
             rounded_pnl = pnl[0].quantize(Decimal('1'), rounding=ROUND_HALF_UP) if pnl else None
-            pnl_text = (f'{"約 " if pnl[1] else ""}{rounded_pnl:+,}'
-                        if rounded_pnl else '0' if pnl else '--')
+            pnl_text = (("約 " if pnl[1] else "") +
+                        (f'{rounded_pnl:+,}' if rounded_pnl else '0')
+                        if pnl else '--')
             pnl_tag = ('pnl_gain',) if rounded_pnl and rounded_pnl > 0 else (
                 ('pnl_loss',) if rounded_pnl and rounded_pnl < 0 else ())
             ledger_status = attempt.get('status')
