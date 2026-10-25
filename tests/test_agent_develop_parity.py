@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from agent_decision import analyze_existing
+from agent_decision import analyze_existing, execution_history
 from analysis_service import AnalysisService, apply_live_cost_basis
 from config import ROOT, now
 from execution.auto_advice_executor import LiveExecutionConfig
@@ -21,6 +21,34 @@ from universe import load_rules
 
 
 class AgentDevelopParityTests(unittest.TestCase):
+    def test_trade_history_returns_saved_entry_plan_without_inventing_missing_plans(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            store = ExecutionStore(root/'execution.sqlite3')
+            analysis = root/'analysis.sqlite3'
+            import json
+            with closing(sqlite3.connect(store.path)) as db:
+                for number, run in enumerate(('with-plan', 'missing-plan')):
+                    db.execute('INSERT INTO execution_attempts VALUES(?,?,?,?,?,?,?,?)',
+                        (str(number),run,'2603','BUY',now().isoformat(),None,'FILLED',
+                         json.dumps(dict(quantity=20,filled_quantity=20,limit_price='266.5'))))
+                db.commit()
+            original = dict(symbol='2603',decision='BUY',reason='Saved entry thesis',
+                strategy_id='multi_day_trend',target_price=292.5,invalidation_price=254.5,holding_days=10)
+            with closing(sqlite3.connect(analysis)) as db:
+                db.execute('CREATE TABLE selection_analyses(run_id TEXT,decision_json TEXT)')
+                db.execute('CREATE TABLE scan_runs(run_id TEXT,manifest_json TEXT)')
+                db.execute('INSERT INTO selection_analyses VALUES(?,?)',
+                    ('with-plan', json.dumps(dict(decisions=[original]))))
+                db.execute('INSERT INTO scan_runs VALUES(?,?)',
+                    ('with-plan', json.dumps(dict(strategy=dict(name='saved',version='v1')))))
+                db.commit()
+            rows = {row['run_id']:row for row in execution_history(store.path,analysis_path=analysis)}
+            self.assertEqual(rows['with-plan']['original_decision']['invalidation_price'],254.5)
+            self.assertEqual(rows['with-plan']['original_decision']['reason'],'Saved entry thesis')
+            self.assertEqual(rows['with-plan']['original_decision']['source'],'SAVED_ANALYSIS_DECISION')
+            self.assertIsNone(rows['missing-plan']['original_decision'])
+
     def test_latest_quote_preserves_daily_evidence_and_latest_account_context(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

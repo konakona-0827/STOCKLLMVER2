@@ -41,4 +41,6 @@ def save_live_selection(path):
     temporary = LIVE_SELECTION.with_suffix('.tmp')
     temporary.write_text(json.dumps({'path': strategy['path']}, ensure_ascii=False), encoding='utf-8')
     temporary.replace(LIVE_SELECTION)
+    # An explicit GUI/user selection supersedes a startup-only override.
+    os.environ.pop('TRADING_STRATEGY_PATH', None)
     return strategy

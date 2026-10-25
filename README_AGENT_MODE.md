@@ -21,7 +21,7 @@ python -m pip check
 
 未設定 `TRADING_STATE_ROOT` 時，程式使用所在目錄的 `config/`、`data/` 和 `.env`。若要從另一個 checkout 承接**同一**正式帳本，請在啟動 Python 前將 `TRADING_STATE_ROOT` 設為該 checkout 的絕對路徑；此變數不能只寫在 `.env`，因為程式匯入時就會決定資料根目錄。同一時間只能由一個 Dashboard／排程入口操作該資料根目錄。
 
-`data/analysis/live_strategy.json` 預設選用 `strategies/strategy_A_v2_adaptive_opportunity.md`，內容與 `develop` 當時選用的策略檔相同；相對路徑由**程式目錄**解析，避免舊電腦的絕對路徑令啟動失敗。需要臨時選擇另一份策略時可設定 `TRADING_STRATEGY_PATH`，路徑不存在會停止分析，不會自行換策略。Dashboard 也可透過原有策略選擇功能更改。
+`data/analysis/live_strategy.json` 選用 `strategies/strategy_A_v2_1_evidence_cost_discipline.md`，根據本地歷史檢討修訂，原 v2 完整保留；逐筆證據與限制見 [交易檢討](reports/trade_review_20261025/README.md)。相對路徑由**程式目錄**解析，避免舊電腦的絕對路徑令啟動失敗。需要臨時選擇另一份策略時可設定 `TRADING_STRATEGY_PATH`，路徑不存在會停止分析，不會自行換策略。Dashboard 也可透過原有策略選擇功能更改。使用另一個 `TRADING_STATE_ROOT` 時，會讀取該資料根目錄既有的策略選擇；要指定本版 v2.1，須明確設定 `TRADING_STRATEGY_PATH` 或在 Dashboard 選取該檔。
 
 ## 模式與測試
 
@@ -42,6 +42,13 @@ python -c "import strategy_catalog; print(strategy_catalog.live_selection()['pat
 python trading_router.py --mode agent --read-only
 ```
 
+從隔離程式目錄承接既有正式帳戶，可用 `RunAgent.ps1` 明確指定資料根目錄。啟動器核對兩個帳本及執行設定存在，選擇本版 v2.1，並從該資料根目錄載入既有 `.env`；沒有複製或重置帳戶。`-StateRoot` 請填目前正式帳戶所在的專案資料夾：
+
+```powershell
+pwsh -File .\RunAgent.ps1 -StateRoot '正式帳戶專案的絕對路徑' -ReadOnly
+# 進入 Agent Dashboard：移除 -ReadOnly；分析仍依既有實盤設定執行。
+```
+
 `--read-only` 會查詢行情、帳戶及模型，寫入分析與健康紀錄，advice 標為 `READ_ONLY`；它不進入正式下單函式。**不帶 `--read-only` 的手動或自動正式分析，會依 `config/execution_live.json` 的啟用設定進入實盤流程。**
 
 離線回歸測試：
@@ -54,6 +61,8 @@ python -m pip check
 
 離線測試以替身模擬模型與券商 API，涵蓋 Agent 工具迴圈、預算、BUY／HOLD／SELL、可賣限制、帳本承接、委託去重、行情標的切換及成交對帳。盤中真實 SKCOM／OpenAI 連線和真實委託仍須在使用環境驗證。
 
-2026-10-25 驗證：209 項回歸測試、另 3 項 advice interface 測試及 `pip check` 通過。實際 `gpt-6-sol` SDK 合成只讀測試完成 4 個模型回合、3 個本機唯讀工具，回覆 WAIT 並通過原驗證器；此測試未連接券商或送單，不能代替盤中 SKCOM 驗證。
+2026-10-25 驗證：211 項回歸測試、另 3 項 advice interface 測試及 `pip check` 通過。實際 `gpt-6-sol` SDK 合成只讀測試完成 4 個模型回合、3 個本機唯讀工具，回覆 WAIT 並通過原驗證器；此測試未連接券商或送單，不能代替盤中 SKCOM 驗證。
 
 每輪的 `run.json`、`advice_interface.json`、`execution_report.json` 記錄模式與策略版本；Agent 另寫入 `agent_tools.json`、`agent_sdk_tools.json`、`agent_response.json`。API 使用 `store=False`、停用遠端 tracing，並沿用現有密鑰遮罩。
+
+正式歷史工具會依 run_id／symbol 唯讀查詢已保存的原分析，另提供 `original_decision`（理由、目標、失效價、期限與策略版本）；找不到則為 null，不以委託限價或模型推測補造原計畫。

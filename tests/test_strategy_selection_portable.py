@@ -37,6 +37,17 @@ class LiveStrategySelectionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     strategy_catalog.live_selection()
 
+    def test_saved_selection_supersedes_startup_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first, second = root/'first.md', root/'second.md'
+            first.write_text('Startup strategy', encoding='utf-8')
+            second.write_text('User selected strategy', encoding='utf-8')
+            with patch.object(strategy_catalog, 'LIVE_SELECTION', root/'selection.json'), \
+                    patch.dict(os.environ, {'TRADING_STRATEGY_PATH': str(first)}):
+                strategy_catalog.save_live_selection(second)
+                self.assertEqual(strategy_catalog.live_selection()['path'], str(second))
+
 
 if __name__ == '__main__':
     unittest.main()

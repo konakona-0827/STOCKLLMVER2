@@ -12,18 +12,34 @@ import strategy_evidence
 import trading_agent
 
 
-def execution_history(path, limit=30):
+def execution_history(path, limit=30, analysis_path=None):
     """Read existing formal attempts without creating or resetting any account."""
     with closing(sqlite3.connect('file:' + str(path.resolve()) + '?mode=ro', uri=True)) as db:
         rows = db.execute('''SELECT run_id,symbol,side,started_at,status,detail_json
                              FROM execution_attempts ORDER BY started_at DESC LIMIT ?''', (limit,)).fetchall()
+    originals = {}
+    if analysis_path is not None and analysis_path.is_file() and rows:
+        run_ids = list(dict.fromkeys(row[0] for row in rows))
+        placeholders = ','.join('?' for _ in run_ids)
+        with closing(sqlite3.connect(analysis_path.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+            for run_id, raw, manifest_raw in db.execute(
+                    'SELECT run_id,decision_json,manifest_json FROM selection_analyses '
+                    f'LEFT JOIN scan_runs USING(run_id) WHERE run_id IN ({placeholders})', run_ids):
+                strategy = (json.loads(manifest_raw or '{}').get('strategy') or {})
+                for decision in json.loads(raw or '{}').get('decisions', []):
+                    originals[(run_id, decision['symbol'])] = dict(
+                        source='SAVED_ANALYSIS_DECISION', strategy_name=strategy.get('name'),
+                        strategy_version=strategy.get('version'),
+                        **{key: decision.get(key) for key in ('decision','reason','strategy_id',
+                            'suggested_price','suggested_qty','target_price','invalidation_price','holding_days')})
     results = []
     for run_id, symbol, side, at, status, raw in rows:
         detail = json.loads(raw or '{}')
         results.append(dict(run_id=run_id, symbol=symbol, side=side, at=at, status=status,
                             trading_mode=detail.get('trading_mode','llm'),
                             requested_qty=detail.get('quantity'), filled_qty=detail.get('filled_quantity'),
-                            limit_price=detail.get('limit_price'), reason=detail.get('reason')))
+                            limit_price=detail.get('limit_price'), reason=detail.get('reason'),
+                            original_decision=originals.get((run_id, symbol))))
     return results
 
 
@@ -89,7 +105,7 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
 
     context = trading_agent.TradingTools(candidates, rules, manifest['run_id'], directory/'agent_tools.json',
                 quote, portfolio,
-                (lambda:execution_history(execution_db)) if live_enabled else
+                (lambda:execution_history(execution_db, analysis_path=service.db_path)) if live_enabled else
                 (lambda:paper_portfolio.trades(service.db_path, limit=30)),
                 service.stop.is_set, bool(manifest.get('read_only')), json.loads(request['input']),
                 live_enabled=live_enabled, search_request=request)
