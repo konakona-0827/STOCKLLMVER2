@@ -1,5 +1,6 @@
 """The live dashboard keeps broker, P&L, and reason values in their columns."""
 from decimal import Decimal
+import gc
 import os
 from pathlib import Path
 import tempfile
@@ -16,13 +17,18 @@ class DashboardTradeDisplayTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = tk.Tk()
         self.root.withdraw()
-        self.addCleanup(self.root.destroy)
+        self.addCleanup(self.close_gui)
         self.addCleanup(patch.stopall)
         patch('dashboard.ROOT', Path(self.temp.name)).start()
         patch.object(Dashboard, 'launch_health').start()
         with patch.object(Dashboard, 'refresh'):
             self.app = Dashboard(self.root, Path(self.temp.name), 120)
         patch.object(self.root, 'after').start()
+
+    def close_gui(self):
+        self.root.destroy()
+        self.app = self.root = None
+        gc.collect()
 
     @staticmethod
     def row(tree):
@@ -87,6 +93,8 @@ class DashboardTradeDisplayTests(unittest.TestCase):
                 self.assertIn('AGENT｜策略檔案無法讀取', second.live_strategy_text.get())
             finally:
                 second_root.destroy()
+                second = second_root = None
+                gc.collect()
 
 
 if __name__ == '__main__':

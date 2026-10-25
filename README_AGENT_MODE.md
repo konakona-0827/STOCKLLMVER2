@@ -8,7 +8,7 @@
                                → 相同驗證、券商風控、送單及對帳
 ```
 
-Agent 使用 OpenAI Agents SDK，僅有 `get_market_data(symbol)`、`get_portfolio()`、`get_trade_history()` 三個唯讀工具。模型不持有下單工具；交易仍由現有 Python 執行器負責。Agent 的預設模型為 [GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)（`gpt-6-sol`），可用 `OPENAI_AGENT_MODEL` 明確覆寫。LLM 模式繼續使用 `OPENAI_MODEL`。Agent API 失敗、逾時或格式未通過驗證時，本輪不送單。
+Agent 使用 OpenAI Agents SDK，提供 `get_market_data(symbol)`、`get_portfolio()`、`get_trade_history()` 三個本機唯讀工具，並依共同的 `config/web_search.json` 提供有每輪累計上限的網路查證。模型不持有下單工具；交易仍由現有 Python 執行器負責。Agent 的預設模型為 [GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)（`gpt-6-sol`），可用 `OPENAI_AGENT_MODEL` 明確覆寫。LLM 模式繼續使用 `OPENAI_MODEL`。Agent API 失敗、逾時或格式未通過驗證時，本輪不送單。
 
 ## 安裝及資料來源
 
@@ -53,5 +53,7 @@ python -m pip check
 ```
 
 離線測試以替身模擬模型與券商 API，涵蓋 Agent 工具迴圈、預算、BUY／HOLD／SELL、可賣限制、帳本承接、委託去重、行情標的切換及成交對帳。盤中真實 SKCOM／OpenAI 連線和真實委託仍須在使用環境驗證。
+
+2026-10-25 驗證：209 項回歸測試、另 3 項 advice interface 測試及 `pip check` 通過。實際 `gpt-6-sol` SDK 合成只讀測試完成 4 個模型回合、3 個本機唯讀工具，回覆 WAIT 並通過原驗證器；此測試未連接券商或送單，不能代替盤中 SKCOM 驗證。
 
 每輪的 `run.json`、`advice_interface.json`、`execution_report.json` 記錄模式與策略版本；Agent 另寫入 `agent_tools.json`、`agent_sdk_tools.json`、`agent_response.json`。API 使用 `store=False`、停用遠端 tracing，並沿用現有密鑰遮罩。
