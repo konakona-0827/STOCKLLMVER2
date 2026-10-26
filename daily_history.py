@@ -176,6 +176,7 @@ def load_many(symbols, as_of=None, cache_dir=DEFAULT_CACHE):
 def enrich_candidates(candidates, quote_lookup, as_of=None, cache_dir=DEFAULT_CACHE):
     """Attach daily evidence without changing snapshot score or broker prices."""
     from strategy_evidence import assess
+    from pretrade_policy import price_levels
 
     history = load_many((c['symbol'] for c in candidates), as_of, cache_dir)
     for candidate in candidates:
@@ -183,6 +184,7 @@ def enrich_candidates(candidates, quote_lookup, as_of=None, cache_dir=DEFAULT_CA
         candidate['daily_bars'] = item['bars']
         candidate['daily_trend'] = item['trend']
         candidate['daily_history_status'] = item['status']
+        candidate['price_levels'] = price_levels(candidate)
         quote = dict(quote_lookup[candidate['symbol']], daily_bars=item['bars'])
         evidence = assess(quote, candidate.get('market_history'))
         candidate['strategy_evidence'] = evidence

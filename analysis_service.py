@@ -136,13 +136,24 @@ def live_ai_positions(path):
 
 def apply_live_sell_limits(candidates, broker_health):
     """Bound AI SELL advice by the broker's verified cash sellable quantity."""
+    from execution.account_guard import ai_sellable_qty
+
     rows = {row['symbol']: row for row in (broker_health or {}).get('inventory_comparison') or []}
     inventory_checked = (broker_health or {}).get('inventory_checked') is True
     for candidate in candidates:
         held = max(0, int((candidate.get('paper_position') or {}).get('qty') or 0))
         row = rows.get(candidate['symbol']) if inventory_checked else None
-        sellable = max(0, int(row.get('broker_sellable_qty') or 0)) if row else 0
-        candidate['max_sell_qty'] = min(held, sellable)
+        broker_cash = row.get('broker_cash_qty') if row else None
+        broker_sellable = row.get('broker_sellable_qty') if row else None
+        candidate['max_sell_qty'] = (ai_sellable_qty(broker_cash, broker_sellable, held)
+                                     if broker_cash is not None and broker_sellable is not None
+                                     else 0)
+        candidate['sellable_context'] = dict(
+            inventory_checked=inventory_checked and row is not None,
+            broker_cash_qty=broker_cash, broker_sellable_qty=broker_sellable,
+            ai_managed_qty=held,
+            non_ai_cash_qty=max(0, int(broker_cash)-held) if broker_cash is not None else None,
+            ai_sellable_limit=candidate['max_sell_qty'])
 
 
 def apply_live_cost_basis(candidates, costs):
@@ -179,6 +190,12 @@ def apply_live_position_context(candidates, broker_health, execution_db, audit):
     dates = dated_ai_trades(execution_db, (c['symbol'] for c in candidates))
     for candidate in candidates:
         candidate['ai_trade_dates'] = dates[candidate['symbol']]
+    from trade_plan_context import live_plans
+    plans = live_plans(execution_db, {
+        c['symbol']: int((c.get('paper_position') or {}).get('qty') or 0)
+        for c in candidates})
+    for candidate in candidates:
+        candidate['buy_plans'] = plans.get(candidate['symbol'], {'available': False, 'lots': []})
     try:
         costs = remaining_acquisition_costs(
             execution_db, (broker_health or {}).get('broker_order_reconciliation'))
@@ -359,6 +376,17 @@ class AnalysisService:
         if live_enabled:
             apply_live_position_context(candidates, broker_health,
                                        ROOT/'data'/'execution'/'live_execution.sqlite3', audit)
+        else:
+            paper_context = paper_portfolio.trade_context(
+                self.db_path,
+                {c['symbol']: int((c.get('paper_position') or {}).get('qty') or 0)
+                 for c in candidates})
+            for candidate in candidates:
+                context = paper_context.get(candidate['symbol'], {})
+                candidate['ai_trade_dates'] = context.get('ai_trade_dates',
+                    {'timezone': 'Asia/Taipei', 'records': []})
+                candidate['buy_plans'] = context.get('buy_plans',
+                    {'available': False, 'lots': []})
         apply_buy_limits(candidates, paper_state, live_config if live_enabled else None)
         save_json(directory/'analysis_set.json', candidates)
         agent_mode = manifest.get('trading_mode') == 'agent'
@@ -446,6 +474,7 @@ class AnalysisService:
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
+                      pretrade_review=response.get('pretrade_review'),
                       web_search=response.get('api', {}).get('web_search'),
                       paper_trade_history=paper_portfolio.trades(self.db_path))
         if live_enabled:

@@ -18,6 +18,7 @@ class AgentDecisionTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.rules = LiveExecutionConfig(min_available_to_buy_twd=Decimal('0'))
         self.candidate = dict(symbol='0050',last_price=100,bid=99.9,ask=100,quote_status='LIVE',
+            open=100, high=130, low=95,
             quote_timestamp=now().isoformat(),is_trial=False,asset_type='ETF',max_buy_qty=9,
             eligible_strategies=['intraday_recovery'],paper_position=dict(qty=0),position=dict(ai_managed_qty=0))
         self.context = TradingTools([self.candidate],self.rules,'test',Path(self.tmp.name)/'agent_tools.json',
@@ -25,6 +26,13 @@ class AgentDecisionTests(unittest.TestCase):
         self.decision = dict(market_view='測試',decisions=[dict(symbol='0050',decision='BUY',confidence=0.8,
             action_ratio=0,suggested_qty=5,reference_price=100,suggested_price=100,strategy_id='intraday_recovery',
             target_price=130,invalidation_price=95,holding_days=10,reason='測試買進',data_quality='LIVE',warnings=[])])
+        def approve(request):
+            trades = json.loads(request['input'])['proposed_trades']
+            return json.dumps(dict(reviews=[dict(symbol=d['symbol'], approved=True, reason='測試核准')
+                                           for d in trades])), {}
+        reviewer = patch('trading_agent.sdk_review', side_effect=approve)
+        reviewer.start()
+        self.addCleanup(reviewer.stop)
 
     def read(self,context):
         context.get_portfolio()
@@ -37,6 +45,18 @@ class AgentDecisionTests(unittest.TestCase):
             self.assertEqual(agent_model(), 'gpt-6-sol')
             os.environ['OPENAI_AGENT_MODEL'] = 'explicit-agent-model'
             self.assertEqual(agent_model(), 'explicit-agent-model')
+
+    def test_review_veto_prevents_an_otherwise_valid_agent_trade(self):
+        async def runner(context, *args):
+            self.read(context)
+            return copy.deepcopy(self.decision), {}
+        def veto(request):
+            self.assertEqual(request['model'], 'gpt-6-sol')
+            return json.dumps(dict(reviews=[dict(symbol='0050', approved=False, reason='證據不足')])), {}
+        decision, response = analyze(self.context, '策略', model='gpt-6-sol', runner=runner, reviewer=veto)
+        self.assertEqual(response['pretrade_review']['status'], 'VALID')
+        self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
+        self.assertIn('PRETRADE_REVIEW_VETO', decision['decisions'][0]['warnings'])
 
     def test_account_refresh_requires_a_new_market_observation(self):
         self.assertIn('error', self.context.get_market_data('0050'))

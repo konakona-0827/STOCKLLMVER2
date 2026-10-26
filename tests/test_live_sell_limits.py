@@ -2,6 +2,8 @@ import json
 import unittest
 
 from analysis_service import apply_live_cost_basis, apply_live_sell_limits
+from dashboard import decision_text
+from execution.account_guard import ai_sellable_qty
 from position_analyzer import build_request, validate
 
 
@@ -45,6 +47,32 @@ class LiveSellLimitTests(unittest.TestCase):
         result = validate({'market_view': '測試', 'decisions': [self.sell_decision(20)]},
                           [candidate])
         self.assertEqual('SELL', result['decisions'][0]['decision'])
+
+    def test_user_shares_are_reserved_before_ai_sellability(self):
+        candidate = self.candidate()
+        candidate['symbol'] = '2891'
+        candidate['paper_position']['qty'] = 25
+        comparison = {'symbol': '2891', 'broker_cash_qty': 32,
+                      'broker_sellable_qty': 7}
+        apply_live_sell_limits([candidate], {
+            'inventory_checked': True, 'inventory_comparison': [comparison]})
+        self.assertEqual(0, candidate['max_sell_qty'])
+        self.assertEqual(7, candidate['sellable_context']['non_ai_cash_qty'])
+        comparison['broker_sellable_qty'] = 32
+        apply_live_sell_limits([candidate], {
+            'inventory_checked': True, 'inventory_comparison': [comparison]})
+        self.assertEqual(25, candidate['max_sell_qty'])
+        self.assertEqual(25, ai_sellable_qty(32, 32, 25))
+
+    def test_hold_order_quantity_is_distinct_from_sellable_shares(self):
+        candidate = self.candidate()
+        candidate['max_sell_qty'] = 100
+        candidate['sellable_context'] = {'broker_sellable_qty': 100}
+        text = decision_text({'market_view': '測試', 'decisions': [
+            {'symbol': '1101', 'decision': 'HOLD', 'suggested_qty': 0,
+             'action_ratio': 0, 'reason': '未達退出條件'}]}, [candidate])
+        self.assertIn('本輪建議下單股數：0', text)
+        self.assertIn('AI 本輪可賣上限：100 股', text)
 
     def test_unverified_inventory_blocks_sell_advice(self):
         candidate = self.candidate()

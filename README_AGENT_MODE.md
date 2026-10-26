@@ -19,7 +19,21 @@ python -m pip install -r requirements.txt -r requirements-agent.txt
 python -m pip check
 ```
 
-未設定 `TRADING_STATE_ROOT` 時，程式使用所在目錄的 `config/`、`data/` 和 `.env`。若要從另一個 checkout 承接**同一**正式帳本，請在啟動 Python 前將 `TRADING_STATE_ROOT` 設為該 checkout 的絕對路徑；此變數不能只寫在 `.env`，因為程式匯入時就會決定資料根目錄。同一時間只能由一個 Dashboard／排程入口操作該資料根目錄。
+資料來源優先順序：啟動前的 `TRADING_STATE_ROOT` → 本機 `.trading-state.json` 綁定 → 程式所在目錄。設定共用帳戶時，在新版程式目錄執行：
+
+```powershell
+python -m operations.bind_state_root --state-root '既有正式帳戶專案的絕對路徑'
+```
+
+綁定會核對 `.env`、執行設定及兩個資料庫存在；之後一般 `Dashboard.cmd`、Python 入口和 `RunAgent.ps1` 都讀同一份正式資料及憑證，不需反覆複製。綁定檔只保留於本機，不進 Git；指定來源失效會停止，不會偷偷改讀舊副本。`TRADING_STATE_ROOT` 不能只寫進 `.env`，因為匯入程式時已決定資料目錄。Dashboard 底部顯示實際正式資料路徑，視窗標題顯示程式資料夾。
+
+額外的 Git worktree 必須綁定或明確指定 ROOT，未設定時禁止直接使用隨 Git 帶入的舊資料庫。
+
+SQLite 是持續更新的本機帳戶資料，已移出 Git 追蹤。新電腦需先從備份還原正式資料與 `.env`，再綁定；Git push／pull 不負責帳本同步。
+
+同一正式目錄的 Dashboard 與 BrokerRuntime 各有跨程序作業系統鎖，避免兩個入口同時建立券商工作階段。關閉程式或程序結束會釋放鎖；留下的 `.lock` 檔案本身不代表仍被占用。
+
+**券商庫存更新不等於補回完整帳本。** 對帳只對正式帳本已知的 SEQ13 補核成交／取消；缺少的歷史委託及 AI／人工歸屬不能單憑整戶庫存重建。必須先承接完整帳本，再查券商；詳見 [2026-10-27 對帳修復](reports/state_reconciliation_20261027.md)。
 
 `data/analysis/live_strategy.json` 選用 `strategies/strategy_A_v2_1_evidence_cost_discipline.md`，根據本地歷史檢討修訂，原 v2 完整保留；逐筆證據與限制見 [交易檢討](reports/trade_review_20261025/README.md)。相對路徑由**程式目錄**解析，避免舊電腦的絕對路徑令啟動失敗。需要臨時選擇另一份策略時可設定 `TRADING_STRATEGY_PATH`，路徑不存在會停止分析，不會自行換策略。Dashboard 也可透過原有策略選擇功能更改。使用另一個 `TRADING_STATE_ROOT` 時，會讀取該資料根目錄既有的策略選擇；要指定本版 v2.1，須明確設定 `TRADING_STRATEGY_PATH` 或在 Dashboard 選取該檔。
 
@@ -42,10 +56,11 @@ python -c "import strategy_catalog; print(strategy_catalog.live_selection()['pat
 python trading_router.py --mode agent --read-only
 ```
 
-從隔離程式目錄承接既有正式帳戶，可用 `RunAgent.ps1` 明確指定資料根目錄。啟動器核對兩個帳本及執行設定存在，選擇本版 v2.1，並從該資料根目錄載入既有 `.env`；沒有複製或重置帳戶。`-StateRoot` 請填目前正式帳戶所在的專案資料夾：
+從隔離程式目錄承接既有正式帳戶，可用 `RunAgent.ps1` 明確指定資料根目錄。啟動器核對 `.env`、兩個帳本及執行設定存在，選擇本版 v2.1，並從該資料根目錄載入既有 `.env`。已完成本機綁定後，可省略 `-StateRoot`：
 
 ```powershell
 pwsh -File .\RunAgent.ps1 -StateRoot '正式帳戶專案的絕對路徑' -ReadOnly
+pwsh -File .\RunAgent.ps1
 # 進入 Agent Dashboard：移除 -ReadOnly；分析仍依既有實盤設定執行。
 ```
 
@@ -60,6 +75,8 @@ python -m pip check
 ```
 
 離線測試以替身模擬模型與券商 API，涵蓋 Agent 工具迴圈、預算、BUY／HOLD／SELL、可賣限制、帳本承接、委託去重、行情標的切換及成交對帳。盤中真實 SKCOM／OpenAI 連線和真實委託仍須在使用環境驗證。
+
+已合併原工作分支的交易前檢查：兩種模式共用成本、可驗證價位、冷卻期、風險股數與人工持股保留規則。Agent 的獨立交易前審查同樣經 Agents SDK 使用所選 Agent 模型；審查失敗或否決會撤銷該筆交易。
 
 2026-10-25 驗證：211 項回歸測試、另 3 項 advice interface 測試及 `pip check` 通過。實際 `gpt-6-sol` SDK 合成只讀測試完成 4 個模型回合、3 個本機唯讀工具，回覆 WAIT 並通過原驗證器；此測試未連接券商或送單，不能代替盤中 SKCOM 驗證。
 

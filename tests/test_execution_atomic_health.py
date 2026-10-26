@@ -259,9 +259,11 @@ class AtomicAndHealthTests(unittest.TestCase):
                 return_value={"status": "OK"},
             ) as health:
                 runtime = BrokerRuntime(tmp)
+                self.addCleanup(runtime.shutdown)
                 self.assertEqual({"status": "OK"}, runtime.health())
                 runtime.execute(Path(tmp) / "one.json")
                 runtime.execute(Path(tmp) / "two.json")
+                runtime.shutdown()
             fake_com.CoInitialize.assert_called_once()
             build.assert_called_once()
             fake_session.connect.assert_called_once()

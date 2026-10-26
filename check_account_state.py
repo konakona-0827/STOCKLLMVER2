@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from config import ROOT
 
 from execution.account_guard import (
     AccountCheckError,
@@ -12,7 +13,7 @@ from execution.capital_reply_session import build_live_readonly_session_from_pro
 
 
 def main() -> int:
-    root = Path(__file__).resolve().parent
+    root = ROOT
     session = build_live_readonly_session_from_project(root)
     session.connect()
 

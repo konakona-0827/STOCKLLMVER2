@@ -474,6 +474,8 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
         buy_block_reasons = current_buy_block_reasons(report)
         buy_sources_verified = not buy_block_reasons
         snapshot = {
+            "state_root": str(Path(project_root).resolve()),
+            "execution_ledger_path": str(db_path.resolve()),
             "checked_at": report.get("checked_at"),
             "status": report.get("status"),
             "last_scan_status": report.get("last_scan_status"),
@@ -583,7 +585,9 @@ def run_health_check(project_root: str | Path, *, session=None,
     output = root / "data" / "health"
     checked_at = datetime.now(TAIPEI).isoformat(timespec="seconds")
     cfg = LiveExecutionConfig.load(root / "config" / "execution_live.json")
-    report = dict(checked_at=checked_at, status="OK", broker_balance_twd=None,
+    report = dict(checked_at=checked_at, status="OK", state_root=str(root.resolve()),
+                  execution_ledger_path=str((root/'data'/'execution'/'live_execution.sqlite3').resolve()),
+                  broker_balance_twd=None,
                   broker_one_account_balance_twd=None,
                   broker_withdrawable_twd=None,
                   broker_settlement_dues=[], settlement_query_error=None,

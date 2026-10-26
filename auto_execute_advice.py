@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from config import ROOT
 
 from execution.pipeline_hook import execute_after_advice_written
 
@@ -22,7 +23,7 @@ def main() -> int:
     parser.add_argument("--env")
     args = parser.parse_args()
 
-    root = Path(__file__).resolve().parent
+    root = ROOT
     advice = Path(args.advice)
     if not advice.is_absolute():
         advice = root / advice

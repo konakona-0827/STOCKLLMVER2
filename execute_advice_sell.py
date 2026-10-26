@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from config import ROOT
 
 from execution.advice_sell_runner import (
     execute_one_planned_sell,
@@ -30,7 +31,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    root = Path(__file__).resolve().parent
+    root = ROOT
     advice_path = root / args.advice if not Path(args.advice).is_absolute() else Path(args.advice)
 
     try:

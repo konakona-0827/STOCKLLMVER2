@@ -12,6 +12,7 @@ from typing import Any
 
 from .account_guard import (
     AccountCheckError,
+    ai_sellable_qty,
     cash_sellable_qty,
     query_buying_power,
     realtime_cash_qty,
@@ -33,6 +34,35 @@ from .risk_guard import (
     build_order_plan,
     quote_map_from_advice_payload,
 )
+
+
+def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
+                        minimum_commission_twd):
+    """Re-evaluate an approved BUY at the executable quote immediately before send."""
+    from pretrade_policy import MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
+    from trade_economics import evaluate_buy
+
+    buy_plan = recommendation.get('buy_plan')
+    if not isinstance(buy_plan, dict):
+        raise RiskRejected(f'{order_plan.symbol}: reviewed BUY plan missing')
+    try:
+        economics = evaluate_buy(
+            dict(ask=float(quote.ask), bid=float(quote.bid),
+                 asset_type=recommendation.get('asset_type')),
+            qty=order_plan.quantity, limit_price=order_plan.limit_price,
+            target_price=buy_plan['target_price'],
+            invalidation_price=buy_plan['invalidation_price'],
+            minimum_commission_twd=minimum_commission_twd)
+        net_return = (Decimal(str(economics['estimated_net_upside_twd'])) /
+                      Decimal(str(economics['estimated_buy_cost_twd'])))
+        reward_risk = Decimal(str(economics['reward_risk_ratio']))
+        capital = Decimal(str(capital_twd))
+    except (KeyError, ValueError, TypeError, ArithmeticError) as exc:
+        raise RiskRejected(f'{order_plan.symbol}: cannot recheck BUY economics: {exc}') from exc
+    if (net_return < MIN_NET_RETURN or reward_risk < MIN_REWARD_RISK or
+            Decimal(str(economics['estimated_net_downside_twd'])) > capital * MAX_POSITION_RISK):
+        raise RiskRejected(f'{order_plan.symbol}: refreshed BUY price fails net return, reward/risk or risk budget')
+    return economics
 
 
 @dataclass(frozen=True)
@@ -163,6 +193,8 @@ def execute_advice_file(
     payload, intents = load_advice_file(advice_path)
     agent_mode = payload.get('trading_mode') == 'agent'
     report['trading_mode'] = payload.get('trading_mode', 'llm')
+    if intents and payload.get('pretrade_review_status') not in (None, 'VALID'):
+        raise ValueError('pretrade review did not approve all trade intents')
     report["trade_intent_count"] = len(intents)
 
     if not intents:
@@ -360,6 +392,7 @@ def execute_advice_file(
 
     reserved_buy_twd = Decimal("0")
     reserved_sell_qty: dict[str, int] = {}
+    recommendation_map = {row['symbol']: row for row in payload.get('recommendations', [])}
 
     for intent in intents:
         item: dict[str, Any] = {
@@ -371,6 +404,8 @@ def execute_advice_file(
             "broker_order_sent": False,
             "crosscheck_performed": False,
         }
+        if intent.side == Side.BUY:
+            item['buy_plan'] = recommendation_map.get(intent.symbol, {}).get('buy_plan')
 
         if not store.claim(
             intent.decision_id,
@@ -455,6 +490,11 @@ def execute_advice_file(
                 config=risk_cfg,
             )
 
+            if intent.side == Side.BUY and payload.get('pretrade_review_status') == 'VALID':
+                check_refreshed_buy(quote, plan, recommendation_map[intent.symbol],
+                                    budget_payload.get('strategy_cap_twd'),
+                                    config.min_buy_fee_reserve_twd)
+
             reserved_this_order_twd = Decimal("0")
 
             if intent.side == Side.BUY:
@@ -537,12 +577,16 @@ def execute_advice_file(
                     )
 
                 broker_initial = initial_sellable.get(intent.symbol, 0)
+                broker_cash = realtime_cash_qty(account_snapshot.inventory, intent.symbol)
+                ai_initial = ai_sellable_qty(broker_cash, broker_initial, ai_qty)
                 already_reserved = reserved_sell_qty.get(intent.symbol, 0)
-                effective_sellable = max(0, broker_initial - already_reserved)
+                effective_sellable = max(0, ai_initial - already_reserved)
 
                 item["broker_sellable_qty_snapshot"] = broker_initial
+                item["broker_cash_qty_snapshot"] = broker_cash
+                item["ai_sellable_qty_snapshot"] = ai_initial
                 item["batch_reserved_sell_qty_before"] = already_reserved
-                item["effective_broker_sellable_qty"] = effective_sellable
+                item["effective_ai_sellable_qty"] = effective_sellable
                 item["ai_managed_qty"] = ai_qty
 
                 if effective_sellable <= 0:
@@ -552,7 +596,7 @@ def execute_advice_file(
                     )
                 if effective_sellable < plan.quantity:
                     raise AccountCheckError(
-                        f"{intent.symbol}: effective broker sellable qty "
+                        f"{intent.symbol}: effective AI sellable qty "
                         f"{effective_sellable} < requested {plan.quantity}"
                     )
 
@@ -573,6 +617,7 @@ def execute_advice_file(
                         "time_in_force": "ROD",
                         "market_session": "INTRADAY_ODD_LOT",
                         "submitted_at": item["submitted_at"],
+                        "buy_plan": item.get("buy_plan"),
                     },
                 )
 
@@ -584,6 +629,7 @@ def execute_advice_file(
                 "required_twd_with_buffer": str(reserved_this_order_twd),
                 "time_in_force": "ROD", "market_session": "INTRADAY_ODD_LOT",
                 "submitted_at": item["submitted_at"],
+                "buy_plan": item.get("buy_plan"),
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
                                 if intent.side == Side.BUY else None))
             item["send_attempted"] = True

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from config import ROOT
 
 from execution.capital_reply_session import (
     build_live_readonly_session_from_project,
@@ -14,7 +15,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--project-root",
-        default=str(Path(__file__).resolve().parent),
+        default=str(ROOT),
     )
     parser.add_argument("--env")
     parser.add_argument("--seq", help="optional exact 13-digit broker sequence")

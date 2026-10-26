@@ -1,0 +1,197 @@
+{
+  "market_view": "2026-10-22 10:35（Asia/Taipei）即時行情有效；10 檔均有 22 個完整交易日日 K，且 trading_calendar.previous_trading_date=2026-10-21、skipped_closed_dates=[]，可進行 20 日比較。現有持倉 1101 與 2891 缺少可重建的原始買進計畫，因此不捏造目標或失效觸發條件。依目前 10000 TWD 資金上限、單筆模型失效損失上限 0.5%、最低雙邊手續費及股票賣出交易稅檢查，本輪新 BUY 均無法同時滿足成本後淨報酬至少 2% 與風險限制；持倉則維持 HOLD。外部搜尋未取得可直接驗證本輪標的近期重大公告的完整對應資料，不將未查到視為沒有利空。",
+  "decisions": [
+    {
+      "symbol": "1101",
+      "decision": "HOLD",
+      "confidence": 0.76,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 28.05,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台泥（1101）：持有 100 股，ai_cost_basis 為每股 26.5 TWD（estimated=true），目前 28.05 高於成本。2026-09-17 至 2026-10-21 有 22 筆完整 TWSE 日 K；20 日報酬約 +10.06%，現價高於 MA20 25.9375 及 20 日高點 27.7，尚未出現足以支持退出的明確可驗證風險。buy_plans.available=false，原始買進計畫未知，因此不捏造目標價或失效價，也不在缺少退出觸發條件下主動賣出。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status=SUFFICIENT_FOR_20D_COMPARISON；歷史日價未除權息調整。",
+        "buy_plans.available=false；不得將人工登錄日 2026-10-13 視為逐筆成交時間。",
+        "本輪外部搜尋未取得可直接對應近期重大公告的完整資料，不代表不存在未查到的事件。"
+      ]
+    },
+    {
+      "symbol": "2891",
+      "decision": "HOLD",
+      "confidence": 0.72,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 74.9,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "中信金（2891）：持有 25 股，ai_cost_basis 為每股 74.7 TWD，目前 74.9 僅略高於成本；考慮雙邊手續費與股票賣出交易稅後，退出報酬不具吸引力。2026-09-17 至 2026-10-21 有 22 筆完整 TWSE 日 K，5 日報酬約 +4.76%，現價接近 5 日高點 75.3，尚無明確的原計畫失效證據。buy_plans.available=false，原始買進計畫未知；不捏造目標或失效價，且不加碼。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "max_sell_qty=25，券商可核實可賣數量足夠，但本輪沒有成本後具優勢的退出條件。",
+        "daily_history_status=SUFFICIENT_FOR_20D_COMPARISON；歷史日價未除權息調整。",
+        "本輪外部搜尋未取得可直接對應近期重大公告的完整資料，不代表不存在未查到的事件。"
+      ]
+    },
+    {
+      "symbol": "2881",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 159.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "富邦金（2881）：雖有完整日 K，現價 159.0、可驗證目標可取 5 日高點 164.5、失效可取當日低點 157.5，但在最低買賣手續費各 20 TWD、股票賣出稅 0.3%及單筆模型損失上限 50 TWD 下，至少一股的成本後目標淨報酬不足 2%，無法通過 BUY 硬規則。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "max_buy_qty=33 僅為預算上限；實際仍受成本後報酬與 0.5% 模型損失上限約束。",
+        "未提出 BUY，因此 strategy_id、target_price、invalidation_price、holding_days 均不適用。"
+      ]
+    },
+    {
+      "symbol": "2882",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 114.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "國泰金（2882）：現價 114.0 接近前收 114.0，雖可用 5 日高點 118.0 作目標、當日低點 113.0 作失效，但在雙邊最低手續費及股票交易稅後，符合單筆失效損失不超過 50 TWD 的股數無法產生至少 2% 成本後淨報酬；WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_history_status=SUFFICIENT_FOR_20D_COMPARISON；歷史日價未除權息調整。",
+        "不得把盤中快照成交量宣稱為跨日放量。"
+      ]
+    },
+    {
+      "symbol": "2317",
+      "decision": "WAIT",
+      "confidence": 0.88,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 248.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "鴻海（2317）：現價 248.5，完整日 K 顯示 5 日報酬約 +2.88%，但仍低於 MA20 248.475 附近且缺乏足夠的成本後上行空間。可驗證目標如 10 日高點 254.5，配合可驗證失效價 247.5 或 237.0 時，在最低雙邊手續費、股票交易稅及 50 TWD 失效損失上限下，無法同時通過至少 2% 淨報酬及 1.5 報酬風險比。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "完整日 K 可用，但未使用盤中快照取代日 K。",
+        "本輪不建立新的買進計畫。"
+      ]
+    },
+    {
+      "symbol": "2356",
+      "decision": "WAIT",
+      "confidence": 0.91,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 61.1,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "英業達（2356）：現價 61.1，短期趨勢偏強，但可驗證目標 5 日高點 62.8 距離有限。即使以 62.8 為目標，在股票賣出稅及雙邊最低手續費後，預算允許股數的成本後淨報酬仍不足 2%；縮小股數又會被最低手續費進一步侵蝕，因此 WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_trend 的成交量比較來自完整日 K；盤中成交量未被當作跨日量比。",
+        "max_buy_qty=88 為預算上限，不代表硬規則允許買入。"
+      ]
+    },
+    {
+      "symbol": "2303",
+      "decision": "WAIT",
+      "confidence": 0.94,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 129.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "聯電（2303）：2026-09-17 至 2026-10-21 的 20 日報酬約 -17.95%，現價 129.0 低於 MA20 147.0，日線仍屬明顯弱勢。即使以 10 日高點 150.0 或 5 日高點 137.0 作目標，對應失效價 127.0 或 126.0 時，考慮最低雙邊手續費、股票賣出稅及 50 TWD 失效損失上限後，無法形成合格 BUY；WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "弱勢趨勢與交易成本共同否決 BUY，不是因缺少日 K。",
+        "不得以盤中抽樣價格宣稱已完成反轉。"
+      ]
+    },
+    {
+      "symbol": "2603",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 260.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "長榮（2603）：現價 260.0，仍高於 MA20 247.3，但 5 日報酬約 -2.09%，且 5 日成交量低於前 5 日。即使可用 5 日高點 270.5 作目標、當日低點 259.0 作失效，最低雙邊手續費與股票交易稅使符合 50 TWD 失效損失上限的股數不足以達到 2% 成本後淨報酬；WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "max_buy_qty=20 為預算上限，並未通過風險及成本後報酬硬規則。",
+        "同檔曾於 2026-10-21 記錄 SELL 20 股；本輪無 BUY，故不涉及重新買入冷卻判定。"
+      ]
+    },
+    {
+      "symbol": "2382",
+      "decision": "WAIT",
+      "confidence": 0.92,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 325.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "廣達（2382）：完整日 K 顯示 5 日報酬約 +1.70%，但 20 日報酬約 -4.23%，現價 325.0 低於 MA20 329.875；可驗證目標 10 日高點 337.5 的距離不足以在最低雙邊手續費、股票賣出稅及 50 TWD 失效損失上限下形成合格 BUY。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "日線趨勢尚未同時確認中期轉強與成本後報酬條件。",
+        "max_buy_qty=16 不代表可直接下單。"
+      ]
+    },
+    {
+      "symbol": "2330",
+      "decision": "WAIT",
+      "confidence": 0.95,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 2410.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台積電（2330）：現價 2410.0，低於 MA20 2490.0，20 日報酬約 -1.63%，且盤中跌幅約 -0.82%。雖可驗證目標 5 日高點 2450.0、失效價當日低點 2405.0，但 max_buy_qty=2 且最低雙邊手續費會使成本後目標淨報酬遠低於 2%；WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "max_buy_qty=2；最低手續費使至少一股也不符合成本後淨報酬門檻。",
+        "本輪無持倉，max_sell_qty=0 不影響 WAIT 判定。"
+      ]
+    }
+  ]
+}

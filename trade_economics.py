@@ -39,6 +39,34 @@ def evaluate_buy(candidate, *, qty, limit_price, target_price, invalidation_pric
     return dict(entry_twd=float(entry), target_exit_after_spread_twd=float(exit_target),
                 stop_exit_after_spread_twd=float(exit_stop), estimated_net_upside_twd=float(net_upside),
                 estimated_net_downside_twd=float(net_downside),
+                estimated_buy_cost_twd=float(gross_buy + buy_fee),
                 reward_risk_ratio=float(net_upside / net_downside) if net_downside > 0 else None,
                 tax_rate=float(tax_rate), commission_rate=float(rate),
                 minimum_commission_twd=float(minimum), exit_spread_reserve_twd=float(spread))
+
+
+def estimate_sell(candidate, qty, *, minimum_commission_twd=1,
+                  commission_rate='0.001425'):
+    """Estimate immediate net proceeds and cost-basis P/L; unknown basis stays unknown."""
+    bid = Decimal(str(candidate.get('bid')))
+    if not bid.is_finite() or bid <= 0 or type(qty) is not int or qty <= 0:
+        raise ValueError('INVALID_SELL_ESTIMATE')
+    gross = bid * qty
+    fee = max(Decimal(str(minimum_commission_twd)),
+              (gross * Decimal(str(commission_rate))).to_integral_value(rounding=ROUND_FLOOR))
+    tax_rate = Decimal('0.001') if candidate.get('asset_type') == 'ETF' else Decimal('0.003')
+    tax = (gross * tax_rate).to_integral_value(rounding=ROUND_CEILING)
+    proceeds = gross - fee - tax
+    held = int((candidate.get('paper_position') or {}).get('qty') or 0)
+    basis = candidate.get('ai_cost_basis') or {}
+    if basis.get('available'):
+        cost = Decimal(str(basis['average_unit_cost_twd'])) * qty
+        cost_basis_source = 'RECONSTRUCTED_EXCLUDES_BUY_FEES'
+    else:
+        cents = (candidate.get('paper_position') or {}).get('cost_cents')
+        cost = Decimal(str(cents)) * qty / (100 * held) if cents and held else None
+        cost_basis_source = 'PAPER_INCLUDES_BUY_FEES' if cost is not None else 'UNKNOWN'
+    return dict(estimated_net_proceeds_twd=float(proceeds),
+                estimated_realized_pnl_twd=float(proceeds-cost) if cost is not None else None,
+                cost_basis_source=cost_basis_source,
+                excludes_future_execution_slippage=True)

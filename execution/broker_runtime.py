@@ -5,6 +5,7 @@ from concurrent.futures import Future
 from pathlib import Path
 from queue import Queue
 from threading import Lock, Thread
+from state_lock import StateLease
 
 from .capital_reply_session import build_live_readonly_session_from_project
 
@@ -12,9 +13,14 @@ from .capital_reply_session import build_live_readonly_session_from_project
 class BrokerRuntime:
     def __init__(self, project_root: str | Path):
         self.project_root = Path(project_root).resolve()
+        self._lease = StateLease(self.project_root, 'broker-runtime').acquire()
         self._queue: Queue = Queue()
         self._thread = Thread(target=self._run, name="broker-runtime", daemon=True)
-        self._thread.start()
+        try:
+            self._thread.start()
+        except BaseException:
+            self._lease.close()
+            raise
 
     def _submit(self, kind: str, *args):
         future = Future()
@@ -33,7 +39,9 @@ class BrokerRuntime:
     def shutdown(self):
         if not self._thread.is_alive():
             return {"status": "ALREADY_STOPPED"}
-        return self._submit("shutdown")
+        result = self._submit("shutdown")
+        self._thread.join()
+        return result
 
     def _run(self):
         session = None
@@ -167,10 +175,13 @@ class BrokerRuntime:
                 if stop_worker:
                     break
         finally:
-            if quote_market is not None:
-                quote_market.close()
-            if com_initialized:
-                comtypes.CoUninitialize()
+            try:
+                if quote_market is not None:
+                    quote_market.close()
+                if com_initialized:
+                    comtypes.CoUninitialize()
+            finally:
+                self._lease.close()
 
 
 _runtimes: dict[Path, BrokerRuntime] = {}

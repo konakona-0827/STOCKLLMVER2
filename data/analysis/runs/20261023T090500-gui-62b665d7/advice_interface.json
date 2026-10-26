@@ -1,0 +1,527 @@
+{
+  "interface_version": "1.0",
+  "generated_at": "2026-10-23T09:05:20+08:00",
+  "run_id": "20261023T090500-gui-62b665d7",
+  "run_status": "ERROR",
+  "run_error": null,
+  "llm_validation": "NOT_CALLED",
+  "pretrade_review_status": null,
+  "llm_model": "gpt-5.6-luna",
+  "strategy": {
+    "name": "PRETRADE_POLICY",
+    "path": "C:\\Users\\user\\OneDrive\\ドキュメント\\STOCKLLMVER2\\STOCKLLMVER2\\strategies\\PRETRADE_POLICY.md",
+    "version": "1e617c6e688c",
+    "sha256": "1e617c6e688ce83b75cb0be426ba6beb03c1099e50ed2c32e147292d2695a6b5"
+  },
+  "request_timing": {
+    "market_started_at": "2026-10-23T09:05:01.811470+08:00",
+    "market_completed_at": "2026-10-23T09:05:19.116794+08:00",
+    "llm_started_at": null,
+    "llm_response_received_at": null,
+    "run_finished_at": "2026-10-23T09:05:20.114465+08:00"
+  },
+  "market": {
+    "source": "CAPITAL_SKCOM",
+    "quote_basis": "capital_intraday_odd_lot",
+    "request_started_at": "2026-10-23T09:05:01.811470+08:00",
+    "request_completed_at": "2026-10-23T09:05:19.116794+08:00",
+    "symbols_requested": 21,
+    "symbols_received": 21,
+    "quality_counts": {
+      "LAST_KNOWN": 21
+    },
+    "quotes": [
+      {
+        "symbol": "0050",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 107.15,
+        "bid": 107.1,
+        "ask": 107.15,
+        "volume": 15488988,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713553+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605247+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2330",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 2400.0,
+        "bid": 2395.0,
+        "ask": 2400.0,
+        "volume": 4709474,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713367+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605236+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2454",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 4035.0,
+        "bid": 4030.0,
+        "ask": 4035.0,
+        "volume": 1063793,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713747+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605404+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2317",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 245.0,
+        "bid": 245.0,
+        "ask": 245.5,
+        "volume": 646280,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713869+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605226+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2382",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 322.5,
+        "bid": 322.5,
+        "ask": 323.0,
+        "volume": 132935,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713954+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605327+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "3231",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 190.5,
+        "bid": 190.0,
+        "ask": 190.5,
+        "volume": 566667,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713716+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605377+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "3017",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 3170.0,
+        "bid": 3165.0,
+        "ask": 3170.0,
+        "volume": 132829,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713475+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605307+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2891",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 74.8,
+        "bid": 74.7,
+        "ask": 74.8,
+        "volume": 304562,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713985+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605081+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2881",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 158.5,
+        "bid": 158.0,
+        "ask": 158.5,
+        "volume": 117469,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713775+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605347+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2882",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 113.5,
+        "bid": 113.0,
+        "ask": 113.5,
+        "volume": 82448,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.714036+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605367+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2303",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 125.5,
+        "bid": 125.0,
+        "ask": 125.5,
+        "volume": 1914899,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713587+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605133+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2308",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 1575.0,
+        "bid": 1570.0,
+        "ask": 1575.0,
+        "volume": 1846638,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.714011+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605175+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2345",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 1780.0,
+        "bid": 1780.0,
+        "ask": 1785.0,
+        "volume": 282356,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713926+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605216+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2357",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 952.0,
+        "bid": 952.0,
+        "ask": 953.0,
+        "volume": 101025,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713817+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605154+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2376",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 351.5,
+        "bid": 351.0,
+        "ask": 351.5,
+        "volume": 68778,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713685+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605257+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2356",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 60.2,
+        "bid": 60.2,
+        "ask": 60.5,
+        "volume": 137351,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713622+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605297+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2377",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 162.0,
+        "bid": 162.0,
+        "ask": 162.5,
+        "volume": 92536,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713896+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605277+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2603",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 259.0,
+        "bid": 258.5,
+        "ask": 259.0,
+        "volume": 129668,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713843+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.604943+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2609",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 61.8,
+        "bid": 61.8,
+        "ask": 61.9,
+        "volume": 86639,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713653+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605061+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "1101",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 28.0,
+        "bid": 27.9,
+        "ask": 28.0,
+        "volume": 471732,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:09.713516+08:00",
+        "callback_received_at": "2026-10-23T09:05:09.605113+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      },
+      {
+        "symbol": "2449",
+        "source": "CAPITAL_SKCOM",
+        "quote_status": "LAST_KNOWN",
+        "price": 264.5,
+        "bid": 264.0,
+        "ask": 264.5,
+        "volume": 1456998,
+        "volume_unit": "shares",
+        "is_trial": false,
+        "exchange_time": "2026-10-22T13:30:00+08:00",
+        "received_at": "2026-10-23T09:05:15.405946+08:00",
+        "callback_received_at": "2026-10-23T09:05:15.279327+08:00",
+        "age_seconds": 70520.468,
+        "retrieval_method": "BATCH_CALLBACK",
+        "warnings": [
+          "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+        ]
+      }
+    ]
+  },
+  "market_view": "沒有可驗證的即時行情；可買股數為 0。本輪不呼叫 AI，也不送出委託。",
+  "recommendations": [
+    {
+      "symbol": "1101",
+      "strategy_name": "PRETRADE_POLICY",
+      "strategy_version": "1e617c6e688c",
+      "asset_type": "STOCK",
+      "decision": "WAIT",
+      "buy_plan": null,
+      "confidence": 0,
+      "reference_price": null,
+      "suggested_price": null,
+      "suggested_qty": null,
+      "action_ratio": 0,
+      "reason": "本輪沒有有效的 LLM 建議。",
+      "warnings": [
+        "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+      ],
+      "analysis_source": "POSITION",
+      "ai_managed_qty": 100,
+      "ai_sellable_qty": 100,
+      "broker_sellable_qty": 100,
+      "quote_status": "LAST_KNOWN",
+      "quote_timestamp": "2026-10-22T13:30:00+08:00",
+      "quote_age_seconds": 70520.468
+    },
+    {
+      "symbol": "2891",
+      "strategy_name": "PRETRADE_POLICY",
+      "strategy_version": "1e617c6e688c",
+      "asset_type": "STOCK",
+      "decision": "WAIT",
+      "buy_plan": null,
+      "confidence": 0,
+      "reference_price": null,
+      "suggested_price": null,
+      "suggested_qty": null,
+      "action_ratio": 0,
+      "reason": "本輪沒有有效的 LLM 建議。",
+      "warnings": [
+        "這不是即時行情；交易時間為 2026-10-22T13:30:00+08:00"
+      ],
+      "analysis_source": "POSITION",
+      "ai_managed_qty": 25,
+      "ai_sellable_qty": 25,
+      "broker_sellable_qty": 32,
+      "quote_status": "LAST_KNOWN",
+      "quote_timestamp": "2026-10-22T13:30:00+08:00",
+      "quote_age_seconds": 70520.468
+    }
+  ],
+  "paper_simulation": {
+    "account": {
+      "account_id": 1,
+      "capital_limit_cents": 1000000,
+      "cash_cents": 1000000,
+      "updated_at": "2026-10-08T10:48:30.985364+08:00"
+    },
+    "available_cash_twd": 5433.5,
+    "capital_limit_twd": 10000.0,
+    "positions": [
+      {
+        "symbol": "2891",
+        "qty": 25,
+        "cost_cents": null,
+        "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+      },
+      {
+        "symbol": "1101",
+        "qty": 100,
+        "cost_cents": null,
+        "source": "LIVE_AI_LEDGER_COMPATIBILITY_FIELD"
+      }
+    ],
+    "trades": [],
+    "execution_mode": "LIVE_NO_PAPER_FILL"
+  },
+  "execution_budget": {
+    "available_cash_twd": 5433.5,
+    "minimum_balance_reserve_twd": 10000.0,
+    "strategy_cap_twd": 10000.0,
+    "strategy_remaining_twd": 5433.5,
+    "ai_committed_capital_twd": 4566.5,
+    "pending_buy_reserve_twd": 0.0,
+    "daily_buy_limit_twd": 30000.0,
+    "daily_buy_reserved_twd": 0.0,
+    "daily_buy_remaining_twd": 30000.0,
+    "budget_status": "READY",
+    "min_buy_fee_reserve_twd": 20.0,
+    "buy_cash_buffer_rate": 0.01
+  },
+  "real_order_sent": false
+}

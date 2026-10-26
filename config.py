@@ -3,11 +3,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import os
 import re
+from runtime_paths import resolve_state_root
 
 CODE_ROOT = Path(__file__).resolve().parent
 # Select the existing runtime/config/database tree before importing the app.
 # This lets an isolated code branch take over the current state without cloning it.
-ROOT = Path(os.getenv('TRADING_STATE_ROOT', str(CODE_ROOT))).expanduser().resolve()
+ROOT = resolve_state_root(CODE_ROOT)
 TAIPEI = timezone(timedelta(hours=8))
 MAX_QUOTE_AGE_SECONDS = 120
 

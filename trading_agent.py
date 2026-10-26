@@ -227,7 +227,41 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
                                                      requests=usage.requests)
 
 
-def analyze(context,strategy_prompt,model=None,runner=None):
+async def _sdk_review(request):
+    from agents import Agent, ModelSettings, Runner, RunConfig, OpenAIResponsesModel
+    from openai import AsyncOpenAI
+    from pydantic import BaseModel, ConfigDict
+
+    class ReviewItem(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        symbol: str
+        approved: bool
+        reason: str
+
+    class ReviewReport(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        reviews: list[ReviewItem]
+
+    timeout = float(os.getenv('AGENT_TIMEOUT_SECONDS', '180'))
+    async with AsyncOpenAI(timeout=min(timeout, 60), max_retries=0) as client:
+        agent = Agent(name='Trading Pretrade Review Agent', instructions=request['instructions'],
+                      model=OpenAIResponsesModel(model=request['model'], openai_client=client),
+                      output_type=ReviewReport,
+                      model_settings=ModelSettings(store=False, max_tokens=request['max_output_tokens']))
+        result = await asyncio.wait_for(Runner.run(agent, request['input'], max_turns=1,
+            run_config=RunConfig(tracing_disabled=True)), timeout)
+        usage = result.context_wrapper.usage
+        return json.dumps(result.final_output.model_dump(), ensure_ascii=False), dict(
+            model=request['model'], runtime='openai-agents-sdk', usage=dict(
+                input_tokens=usage.input_tokens, output_tokens=usage.output_tokens,
+                total_tokens=usage.total_tokens))
+
+
+def sdk_review(request):
+    return asyncio.run(_sdk_review(request))
+
+
+def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
     model = model or agent_model()
     response = dict(request_started_at=now().isoformat(),api=execution_metadata(model),raw_response='')
     try:
@@ -245,7 +279,15 @@ def analyze(context,strategy_prompt,model=None,runner=None):
                 if context.read_only or item.get('symbol') not in context.observed:
                     raise ValueError('TRADE_REQUIRES_MARKET_TOOL_AND_NON_READ_ONLY_MODE')
         position_analyzer.validate(decision,list(context.candidates.values()),context.account['available_cash_cents'],
-                                   context.rules.min_buy_fee_reserve_twd,context.rules.buy_cash_buffer_rate)
+                                   context.rules.min_buy_fee_reserve_twd,context.rules.buy_cash_buffer_rate,
+                                   capital_twd=context.account.get('capital_limit_twd'))
+        review_input = dict(context.initial_input or {})
+        review_input.update(analysis_set=list(context.candidates.values()), paper_account=context.account)
+        review_input.setdefault('paper_simulation_rules', dict(
+            minimum_commission_twd=float(context.rules.min_buy_fee_reserve_twd),
+            buy_cash_buffer_rate=float(context.rules.buy_cash_buffer_rate)))
+        response['pretrade_review'] = position_analyzer.review_trades(decision,
+            dict(model=model, input=json.dumps(review_input, ensure_ascii=False)), reviewer or sdk_review)
         response['validation'] = 'VALID'
     except Exception as exc:
         response.update(validation='ERROR')
