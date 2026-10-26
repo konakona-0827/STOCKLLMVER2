@@ -1,0 +1,204 @@
+{
+  "market_view": "2026-10-22 12:35（Asia/Taipei）盤中：僅1101、2891有持倉，其餘為空倉。10檔均有22個完整TWSE交易日日K，且daily_history_status均為SUFFICIENT_FOR_20D_COMPARISON；未將盤中快照誤作完整日K。依保守買入價、雙邊最低手續費、股票0.3%交易稅／ETF 0.1%交易稅、資金上限0.5%失效損失及成本後至少2%報酬要求，本輪沒有通過全部硬規則的BUY。1101與2891持倉計畫未知，沒有可驗證的原始目標或失效觸發，因此不主動賣出。本輪TWSE外部查證未找到足以覆寫輸入行情的今日重大事件；僅作背景補充，未視為無利空。查證來源：TWSE公告／資訊揭露頁，查詢日期2026-10-22，https://www.twse.com.tw/zh/announcement/notice.html；https://wwwc.twse.com.tw/IIH2/zh/company/information.html",
+  "decisions": [
+    {
+      "symbol": "1101",
+      "decision": "HOLD",
+      "confidence": 0.72,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 28.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台泥（1101）：已有100股，ai_cost_basis為每股26.5元但含估算且買進計畫未知。現價28.0高於成本，未觸發虧損加碼禁止；但目前買入價28.05附近至可驗證目標價27.7或當日高點28.2的成本後報酬不足以通過至少2%淨報酬要求，故不加碼。現有持股亦沒有可驗證的原始目標、失效價或新增重大風險觸發，不提出SELL。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K；daily_trend最新日為2026-10-21。",
+        "持倉買進日期為2026-10-13 MANUAL_PURCHASE_ENTRY_DATE，不能視為逐筆成交時間；buy_plans.available=false。",
+        "本輪外部事件查證未取得可直接驗證的今日重大事件；TWSE查詢頁：https://www.twse.com.tw/zh/announcement/notice.html"
+      ]
+    },
+    {
+      "symbol": "2881",
+      "decision": "WAIT",
+      "confidence": 0.84,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 159.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "富邦金（2881）：空倉。雖然完整日K顯示現價159.0高於MA5 158.3與MA20 155.05，且可評估多日趨勢，但以保守買入價159.0計，最近可驗證目標164.5、失效價157.5在考慮股票交易稅及雙邊最低手續費後，符合失效損失預算的股數不足以同時達成至少2%成本後淨報酬；因此WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K；coverage=SUFFICIENT_FOR_20D_COMPARISON。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE資訊揭露頁：https://wwwc.twse.com.tw/IIH2/zh/company/information.html?code=2881"
+      ]
+    },
+    {
+      "symbol": "2891",
+      "decision": "HOLD",
+      "confidence": 0.7,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 74.8,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "中信金（2891）：已有AI管理25股，正式重建成本每股74.7元；現價74.8未低於成本，因此沒有虧損加碼禁止以外的強制退出理由。買進計畫未知，且現價74.8至可驗證目標75.3或當日高點75.5的成本後報酬不足2%，不加碼。持倉沒有可驗證原始目標、失效價或新增重大風險觸發，故HOLD。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K；daily_trend顯示5日及20日報酬均為正。",
+        "2026-10-12買30股、2026-10-14賣30股、2026-10-16買25股；賣出後已超過3個交易日冷卻期，但buy_plans.available=false。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE資訊揭露頁：https://wwwc.twse.com.tw/IIH2/zh/company/information.html?code=2891"
+      ]
+    },
+    {
+      "symbol": "2882",
+      "decision": "WAIT",
+      "confidence": 0.83,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 114.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "國泰金（2882）：空倉。完整日K顯示現價略高於MA5與MA20，但以114.0附近進場，使用可驗證目標118.0與保守失效價113.0時，最低雙邊手續費及股票交易稅使符合0.5%資金失效損失上限的股數不足，無法同時達成至少2%成本後淨報酬，故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "max_buy_qty=47，但實際可承擔的風險股數受雙邊最低手續費限制，並非可直接使用的建議股數。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE資訊揭露頁：https://wwwc.twse.com.tw/IIH2/zh/company/information.html?code=2882"
+      ]
+    },
+    {
+      "symbol": "2603",
+      "decision": "WAIT",
+      "confidence": 0.86,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 259.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "長榮（2603）：空倉。多日趨勢仍為20日正報酬，但現價259低於MA5 260.3，且以259.0進場、270.5目標及258.0失效價計算，最低雙邊手續費使可接受失效損失股數過少；可通過失效風險的股數又無法達成至少2%成本後淨報酬，故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "2026-10-21為最近一次賣出20股；依3個交易日冷卻規則，本輪不可BUY，即使其他條件通過亦應WAIT。",
+        "外部查證僅取得2026-10-05法人說明會相關資訊，非2026-10-22事件；來源：https://wwwc.twse.com.tw/IIH2/zh/company/information.html?code=2603"
+      ]
+    },
+    {
+      "symbol": "2317",
+      "decision": "WAIT",
+      "confidence": 0.87,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 246.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "鴻海（2317）：空倉。現價246.0低於當日開盤248.5，雖完整日K最新收盤250.0且MA5為242.9，但以保守買入價246.5與可驗證目標254.5計算，受資金上限、最低手續費及失效風險約束後，預期成本後淨報酬不足2%，故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "盤中跌至當日低點246.0，尚無輸入證據證明止跌；未把盤中成交量宣稱為跨日放量。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE公告頁：https://www.twse.com.tw/zh/announcement/notice.html"
+      ]
+    },
+    {
+      "symbol": "2609",
+      "decision": "WAIT",
+      "confidence": 0.88,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 62.1,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "陽明（2609）：空倉。現價62.1接近當日低點且低於開盤，完整日K的5日報酬為負。雖然可驗證目標65.8與失效價62.0看似有空間，但最低雙邊手續費要求的最小交易規模無法同時符合0.5%資金失效損失上限與至少2%成本後淨報酬，故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "liquidity_proxy為盤中零股累計量的代理值，不是實際成交金額。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE公告頁：https://www.twse.com.tw/zh/announcement/notice.html"
+      ]
+    },
+    {
+      "symbol": "2356",
+      "decision": "WAIT",
+      "confidence": 0.85,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 60.5,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "英業達（2356）：空倉。完整日K近期趨勢改善，但現價60.5低於今日開盤61.1且接近當日低點。以60.5進場、62.8目標及60.4失效價估算，風險預算允許的股數過少，最低雙邊手續費後無法達成至少2%淨報酬，故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "未將2026-10-22盤中量103850股宣稱為跨日放量；跨日量能仍以daily_trend為準。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE公告頁：https://www.twse.com.tw/zh/announcement/notice.html"
+      ]
+    },
+    {
+      "symbol": "2330",
+      "decision": "WAIT",
+      "confidence": 0.91,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 2395.0,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "台積電（2330）：空倉。現價2395低於開盤2430並位於當日低點，完整日K的20日報酬為負且現價跌破MA20。即使以2450目標及2395或2390附近失效價計算，max_buy_qty僅2股，最低雙邊手續費與股票交易稅後仍不足至少2%淨報酬，故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "本輪不因高流動性而放寬成本、風險或目標價硬規則。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE公告頁：https://www.twse.com.tw/zh/announcement/notice.html"
+      ]
+    },
+    {
+      "symbol": "0050",
+      "decision": "WAIT",
+      "confidence": 0.9,
+      "action_ratio": 0,
+      "suggested_qty": 0,
+      "reference_price": 107.15,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "元大台灣50（0050）：空倉。ETF流動性高且買賣價差小，但現價107.15接近當日低點，低於MA5 108.29及MA20 112.11。以最多50股、保守買入價107.15及可驗證目標110.15計算，扣除ETF雙邊最低手續費與0.1%交易稅後，成本後淨報酬約低於2%門檻；故WAIT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "daily_bars為2026-09-17至2026-10-21共22筆完整TWSE日K。",
+        "0050為ETF，已使用0.1%賣出交易稅；不得以股票0.3%稅率替代。",
+        "外部查證未找到足以覆寫輸入行情的今日重大事件；TWSE公告頁：https://www.twse.com.tw/zh/announcement/notice.html"
+      ]
+    }
+  ]
+}
