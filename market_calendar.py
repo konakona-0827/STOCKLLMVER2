@@ -19,8 +19,15 @@ _CLOSED_2026 = {
     date(2026, 9, 25): '中秋節',
     date(2026, 9, 28): '教師節',
     date(2026, 10, 9): '國慶日補假',
+    # Emergency closure announced on Oct 22, absent from the annual schedule.
+    # https://www.twfhcsec.com.tw/News/NewsContent?ID=1502&List=%E6%9C%80%E6%96%B0%E6%B6%88%E6%81%AF
+    date(2026, 10, 23): '薔琵颱風臨時休市',
     date(2026, 10, 26): '光復節補假',
     date(2026, 12, 25): '行憲紀念日',
+}
+
+_EXCEPTION_SOURCES = {
+    date(2026, 10, 23): 'https://www.twfhcsec.com.tw/News/NewsContent?ID=1502&List=%E6%9C%80%E6%96%B0%E6%B6%88%E6%81%AF',
 }
 
 
@@ -43,8 +50,10 @@ def trading_day_context(day: date) -> dict:
     skipped = []
     candidate = previous + timedelta(days=1)
     while candidate < day:
-        skipped.append({'date': candidate.isoformat(),
-                        'reason': twse_closed_reason(candidate)})
+        row = {'date': candidate.isoformat(), 'reason': twse_closed_reason(candidate)}
+        if candidate in _EXCEPTION_SOURCES:
+            row['source_url'] = _EXCEPTION_SOURCES[candidate]
+        skipped.append(row)
         candidate += timedelta(days=1)
     return {'as_of_date': day.isoformat(),
             'previous_trading_date': previous.isoformat(),

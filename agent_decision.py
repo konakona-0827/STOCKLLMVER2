@@ -94,6 +94,7 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
         return dict(account)
 
     def quote(symbol, previous):
+        from pretrade_policy import price_levels
         started = now().isoformat()
         raw, errors = get_broker_runtime(ROOT).fetch_quotes([symbol], Audit(directory), service.stop.is_set, timeout=12)
         current = multi_snapshot([symbol], raw, errors, started, now().isoformat())['quotes'][0]
@@ -102,6 +103,7 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
             previous.get('market_history', []))
         metrics = scan_quote(current, scan_rules, now())
         return {**current, 'asset_type':previous.get('asset_type', 'UNKNOWN'),
+                'price_levels':price_levels({**previous, **current}),
                 'strategy_evidence':evidence, 'eligible_strategies':evidence['eligible_strategies'],
                 'metrics':metrics.get('metrics', {}), 'components':metrics.get('components', {})}
 

@@ -75,6 +75,7 @@ class AgentDevelopParityTests(unittest.TestCase):
                 max_sell_qty=100, daily_bars=days,
                 daily_history_status=dict(prior_complete_sessions=5), daily_trend=dict(ma5=100),
                 market_history=[], eligible_strategies=['intraday_recovery', 'multi_day_trend'])
+            candidate['price_levels'] = [dict(id='today_high', price=100.5, basis=now().date().isoformat())]
             health = dict(status='OK', errors=[], inventory_checked=True,
                 broker_balance_twd='100000', broker_one_account_balance_twd='100000',
                 minimum_balance_twd='0', pending_buy_reserve_twd='0', ai_committed_capital_twd='8000',
@@ -101,6 +102,9 @@ class AgentDevelopParityTests(unittest.TestCase):
                 self.assertEqual(quote['daily_history_status']['prior_complete_sessions'], 5)
                 self.assertEqual(quote['daily_trend']['ma5'], 100)
                 self.assertEqual(quote['max_buy_qty'], 19)
+                self.assertEqual(next(row['price'] for row in quote['price_levels']
+                                      if row['id'] == 'today_high'), 101)
+                self.assertIn('high_5d', {row['id'] for row in quote['price_levels']})
                 return dict(market_view='檢查可賣上限', decisions=[dict(
                     symbol='0050', decision='SELL', confidence=.8, action_ratio=1,
                     suggested_qty=100, reference_price=100, suggested_price=99.9,

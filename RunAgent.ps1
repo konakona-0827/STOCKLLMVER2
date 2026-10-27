@@ -18,7 +18,7 @@ if ($StateRoot) {
     $env:TRADING_STATE_ROOT = $agentStatePath
 }
 $env:TRADING_MODE = 'agent'
-$env:TRADING_STRATEGY_PATH = Join-Path $PSScriptRoot 'strategies/strategy_A_v2_1_evidence_cost_discipline.md'
+$env:TRADING_STRATEGY_PATH = Join-Path $PSScriptRoot 'strategies/strategy_A_v2_2_calendar_aware_decisions.md'
 if ($ReadOnly) {
     & python (Join-Path $PSScriptRoot 'trading_router.py') --mode agent --read-only
 } else {

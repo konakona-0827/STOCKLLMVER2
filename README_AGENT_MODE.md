@@ -35,7 +35,7 @@ SQLite 是持續更新的本機帳戶資料，已移出 Git 追蹤。新電腦�
 
 **券商庫存更新不等於補回完整帳本。** 對帳只對正式帳本已知的 SEQ13 補核成交／取消；缺少的歷史委託及 AI／人工歸屬不能單憑整戶庫存重建。必須先承接完整帳本，再查券商；詳見 [2026-10-27 對帳修復](reports/state_reconciliation_20261027.md)。
 
-`data/analysis/live_strategy.json` 選用 `strategies/strategy_A_v2_1_evidence_cost_discipline.md`，根據本地歷史檢討修訂，原 v2 完整保留；逐筆證據與限制見 [交易檢討](reports/trade_review_20261025/README.md)。相對路徑由**程式目錄**解析，避免舊電腦的絕對路徑令啟動失敗。需要臨時選擇另一份策略時可設定 `TRADING_STRATEGY_PATH`，路徑不存在會停止分析，不會自行換策略。Dashboard 也可透過原有策略選擇功能更改。使用另一個 `TRADING_STATE_ROOT` 時，會讀取該資料根目錄既有的策略選擇；要指定本版 v2.1，須明確設定 `TRADING_STRATEGY_PATH` 或在 Dashboard 選取該檔。
+`data/analysis/live_strategy.json` 選用 `strategies/strategy_A_v2_2_calendar_aware_decisions.md`，沿用本地交易檢討的成本與風險規則，修正休市資料判讀並逐一評估可用策略；原 v2、v2.1 完整保留。逐筆證據與限制見 [交易檢討](reports/trade_review_20261025/README.md)。相對路徑由**程式目錄**解析，避免舊電腦的絕對路徑令啟動失敗。需要臨時選擇另一份策略時可設定 `TRADING_STRATEGY_PATH`，路徑不存在會停止分析，不會自行換策略。Dashboard 也可透過原有策略選擇功能更改。使用另一個 `TRADING_STATE_ROOT` 時，會讀取該資料根目錄既有的策略選擇；RunAgent.ps1 明確選用 v2.2。
 
 ## 模式與測試
 
@@ -56,7 +56,7 @@ python -c "import strategy_catalog; print(strategy_catalog.live_selection()['pat
 python trading_router.py --mode agent --read-only
 ```
 
-從隔離程式目錄承接既有正式帳戶，可用 `RunAgent.ps1` 明確指定資料根目錄。啟動器核對 `.env`、兩個帳本及執行設定存在，選擇本版 v2.1，並從該資料根目錄載入既有 `.env`。已完成本機綁定後，可省略 `-StateRoot`：
+從隔離程式目錄承接既有正式帳戶，可用 `RunAgent.ps1` 明確指定資料根目錄。啟動器核對 `.env`、兩個帳本及執行設定存在，選擇本版 v2.2，並從該資料根目錄載入既有 `.env`。已完成本機綁定後，可省略 `-StateRoot`：
 
 ```powershell
 pwsh -File .\RunAgent.ps1 -StateRoot '正式帳戶專案的絕對路徑' -ReadOnly
