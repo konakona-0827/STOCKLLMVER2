@@ -5,3 +5,34 @@ __pycache__/
 output/
 local_data/
 *.egg-info/
+
+# Shared live runtime and account state.
+.env
+.trading-state.json
+.trading-state.json.tmp
+/data/health/*.lock
+/data/**/*.sqlite3
+/data/**/*.sqlite3-wal
+/data/**/*.sqlite3-shm
+/data/**/*.sqlite3-journal
+__pycache__/
+*.pyc
+.venv/
+/data/analysis/agent/
+/data/agent_smoke/
+
+# Keep all logs local to avoid merge conflicts.
+*.log
+*.log.*
+*.jsonl
+logs/
+log/
+
+# CSV and JSON files used as runtime / operations logs.
+/data/health/*.csv
+/data/analysis/daily_history/
+/data/**/connection.json
+/operations/issue_log.csv
+
+/data/
+/local_settings.json

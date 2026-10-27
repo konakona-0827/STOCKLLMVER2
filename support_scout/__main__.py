@@ -21,6 +21,9 @@ def main(argv=None) -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="台股支撐候選研究：完整日線 → 固定規則 → agent 任務包／審查")
     sub = parser.add_subparsers(dest="command", required=True)
+    live = sub.add_parser('live', help='使用正式帳戶、主 Agent 與研究子 Agent；可能實際送單')
+    live.add_argument('--read-only', action='store_true', help='驗證行情及 Agent；禁止送單')
+    sub.add_parser('doctor', help='核對本地帳本、憑證與 SDK；不連券商或模型')
     demo = sub.add_parser("demo", help="合成資料離線示範；不呼叫模型或行情 API")
     scan = sub.add_parser("scan", help="掃描符合合約的 JSON 日線快照")
     scan.add_argument("input", type=Path)
@@ -30,6 +33,15 @@ def main(argv=None) -> int:
     for command in (demo, scan):
         command.add_argument("--out", type=Path, default=Path("output/latest"))
     args = parser.parse_args(argv)
+    if args.command == 'doctor':
+        from .doctor import main as doctor
+        return doctor()
+    if args.command == 'live':
+        import os
+        from config import CODE_ROOT
+        os.environ.setdefault('TRADING_STRATEGY_PATH', str(CODE_ROOT/'strategies/strategy_support_scout_v1.md'))
+        from trading_router import main as trade
+        return trade(['--mode', 'agent'] + (['--read-only'] if args.read_only else []))
     try:
         bundle = demo_bundle() if args.command == "demo" else read_json(args.input)
         rules = Rules(**read_json(args.rules)) if args.command == "scan" and args.rules else Rules()

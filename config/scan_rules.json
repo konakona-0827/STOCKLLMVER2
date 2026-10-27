@@ -1,0 +1,12 @@
+{
+  "version": "snapshot-score-v1",
+  "candidate_top_n": 10,
+  "min_volume_shares": 1000,
+  "min_turnover_proxy_twd": 100000,
+  "max_spread_pct": 0.03,
+  "momentum_return_scale": 0.03,
+  "volume_reference_shares": 1000000,
+  "liquidity_reference_twd": 100000000,
+  "weights": {"momentum": 3, "volume": 2, "breakout": 2, "liquidity": 2, "spread_penalty": 2, "stale_penalty": 2},
+  "notes": "return及spread_pct是比值不是百分數；breakout第一版僅代表當日區間位置，不代表突破20日高。所有門檻只供研究，可在此調整。"
+}

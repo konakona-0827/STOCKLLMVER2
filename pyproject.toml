@@ -4,10 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "support-scout"
-version = "0.1.0"
+version = "0.2.0"
 description = "可重播、證據優先的台股支撐候選研究骨架"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["openai>=1.0.0", "certifi>=2024.0.0", "comtypes==1.4.17; sys_platform == 'win32'"]
+
+[project.optional-dependencies]
+agent = ["openai-agents==0.23.1"]
 
 [project.scripts]
 support-scout = "support_scout.__main__:main"

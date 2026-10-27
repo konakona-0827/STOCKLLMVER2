@@ -1,0 +1,276 @@
+from __future__ import annotations
+
+import csv
+import json
+import sqlite3
+import sys
+import tempfile
+import unittest
+from contextlib import closing
+from decimal import Decimal
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
+
+from execution.account_guard import BuyingPower, InventoryRow
+from execution.execution_store import ExecutionStore
+from execution.health_monitor import (current_buy_block_reasons,
+                                      persist_refresh_snapshot, run_health_check)
+from execution.broker_runtime import BrokerRuntime
+from execution.models import Side
+
+
+class AtomicAndHealthTests(unittest.TestCase):
+    def test_previous_exact_broker_fill_remains_verified_after_replay_ages_out(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            (root / "config" / "execution_live.json").write_text(
+                json.dumps({"enabled": True, "min_available_to_buy_twd": 10000}),
+                encoding="utf-8")
+            analysis_db = root / "data" / "analysis" / "market_history.sqlite3"
+            analysis_db.parent.mkdir(parents=True)
+            with closing(sqlite3.connect(analysis_db)) as con:
+                con.execute("CREATE TABLE paper_account (account_id INTEGER, capital_limit_cents INTEGER)")
+                con.execute("INSERT INTO paper_account VALUES (1, 1000000)")
+                con.execute("CREATE TABLE positions (symbol TEXT, user_qty INTEGER, ai_managed_qty INTEGER)")
+                con.commit()
+            db_path = root / "data" / "execution" / "live_execution.sqlite3"
+            store = ExecutionStore(db_path)
+            store.claim("D1", "R1", "2603", "BUY")
+            detail = dict(seq13="1234567890123", quantity=10, limit_price="261",
+                          send_return_code=0, filled_quantity=10,
+                          required_twd_with_buffer="2611")
+            store.mark_send_pending("D1", detail)
+            store.mark_submitted("D1", detail)
+            store.finish_with_fill("D1", "FILLED", detail, "2603", Side.BUY, 10)
+            valid_check = dict(decision_id="D1", symbol="2603", side="BUY",
+                               seq13="1234567890123", ordered_qty=10,
+                               ledger_filled_qty=10, broker_replay_filled_qty=10,
+                               broker_replay_complete=True, status="FILL_MATCH",
+                               broker_replay_fill_details=[dict(quantity=10, price_twd="261")])
+            with closing(sqlite3.connect(db_path)) as con:
+                con.execute("""CREATE TABLE broker_refresh_snapshots (
+                    id INTEGER PRIMARY KEY, checked_at TEXT NOT NULL,
+                    status TEXT NOT NULL, payload_json TEXT NOT NULL)""")
+                for check in (dict(valid_check, seq13="9999999999999"), valid_check):
+                    con.execute("""INSERT INTO broker_refresh_snapshots
+                        (checked_at,status,payload_json) VALUES (?,?,?)""",
+                        ("2026-10-13T12:10:00+08:00", "OK", json.dumps(dict(
+                            checked_at="2026-10-13T12:10:00+08:00",
+                            broker_order_reconciliation=[check]))))
+                con.commit()
+            power = BuyingPower(True, True, Decimal("30000"), Decimal("30000"),
+                                Decimal("30000"), "raw")
+            empty_replay = SimpleNamespace(filled_quantity=0, accepted_rows=[],
+                                           fill_rows=[], cancel_rows=[],
+                                           replay_complete=True,
+                                           report9_contains_seq=False)
+            session = SimpleNamespace(
+                ensure_ready=lambda: SimpleNamespace(action="REUSE"),
+                crosscheck_seq13=lambda *_args, **_kwargs: empty_replay)
+            inventory = [InventoryRow("2603", "T", 10, 0, 0, 0, 0, 10, 10, "raw")]
+            with patch("execution.health_monitor.query_buying_power", return_value=power), patch(
+                "execution.health_monitor.query_inventory", return_value=inventory), patch(
+                "execution.health_monitor.query_settlement_dues", return_value=[]):
+                report = run_health_check(root, session=session)
+            check = report["broker_order_reconciliation"][0]
+            self.assertEqual("ARCHIVED_BROKER_FILL_VERIFIED", check["status"])
+            self.assertEqual(10, check["broker_verified_filled_qty"])
+            self.assertEqual("2610", check["broker_replay_fill_gross_twd"])
+            self.assertNotIn("BROKER_FILL_UNVERIFIED", current_buy_block_reasons(report))
+            self.assertEqual(10, store.get_ai_qty("2603"))
+            with closing(sqlite3.connect(db_path)) as con:
+                con.execute("DELETE FROM broker_refresh_snapshots WHERE id=2")
+                con.commit()
+            with patch("execution.health_monitor.query_buying_power", return_value=power), patch(
+                "execution.health_monitor.query_inventory", return_value=inventory), patch(
+                "execution.health_monitor.query_settlement_dues", return_value=[]):
+                unmatched = run_health_check(root, session=session)
+            self.assertEqual("FILL_UNVERIFIED",
+                             unmatched["broker_order_reconciliation"][0]["status"])
+            self.assertIn("BROKER_FILL_UNVERIFIED", current_buy_block_reasons(unmatched))
+
+    def test_missing_live_database_is_not_silently_recreated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "live_execution.sqlite3"
+            with self.assertRaisesRegex(RuntimeError, "missing"):
+                ExecutionStore(path, must_exist=True)
+            self.assertFalse(path.exists())
+
+    def test_confirmed_fill_and_final_status_commit_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = ExecutionStore(Path(tmp) / "execution.sqlite3")
+            self.assertTrue(store.claim("D1", "R1", "0050", "BUY"))
+            store.mark_send_pending("D1", {"qty": 2})
+            store.mark_submitted("D1", {"seq13": "1234567890123"})
+            self.assertEqual(2, store.finish_with_fill(
+                "D1", "FILLED", {"filled_quantity": 2}, "0050", Side.BUY, 2,
+            ))
+            self.assertEqual(2, store.get_ai_qty("0050"))
+            with self.assertRaises(RuntimeError):
+                store.finish_with_fill(
+                    "D1", "FILLED", {"filled_quantity": 2}, "0050", Side.BUY, 2,
+                )
+            self.assertEqual(2, store.get_ai_qty("0050"))
+            self.assertEqual(
+                ["STARTED", "SEND_PENDING", "SUBMITTED", "FILLED"],
+                [event["status"] for event in store.events_for("D1")],
+            )
+
+    def test_failed_event_insert_rolls_back_fill_and_status(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "execution.sqlite3"
+            store = ExecutionStore(path)
+            store.claim("D1", "R1", "0050", "BUY")
+            store.mark_send_pending("D1", {})
+            store.mark_submitted("D1", {})
+            with closing(sqlite3.connect(path)) as con:
+                con.execute("""CREATE TRIGGER fail_final BEFORE INSERT ON execution_events
+                               WHEN NEW.status='FILLED' BEGIN SELECT RAISE(ABORT,'fail'); END""")
+                con.commit()
+            with self.assertRaises(sqlite3.IntegrityError):
+                store.finish_with_fill(
+                    "D1", "FILLED", {"filled_quantity": 1}, "0050", Side.BUY, 1,
+                )
+            self.assertIsNone(store.get_ai_qty("0050"))
+            with closing(sqlite3.connect(path)) as con:
+                self.assertEqual("SUBMITTED", con.execute(
+                    "SELECT status FROM execution_attempts WHERE decision_id='D1'"
+                ).fetchone()[0])
+
+    def test_daily_cap_reserves_before_send_and_survives_next_batch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = ExecutionStore(Path(tmp) / "execution.sqlite3")
+            store.claim("D1", "R1", "0050", "BUY")
+            store.mark_send_pending("D1", {"required_twd_with_buffer": "12000"},
+                                    daily_limit_twd=Decimal("20000"))
+            self.assertEqual(Decimal("12000"), store.daily_reserved_buy_twd())
+            store.claim("D2", "R2", "0051", "BUY")
+            with self.assertRaises(RuntimeError):
+                store.mark_send_pending("D2", {"required_twd_with_buffer": "9000"},
+                                        daily_limit_twd=Decimal("20000"))
+            with closing(sqlite3.connect(store.path)) as con:
+                self.assertEqual("STARTED", con.execute(
+                    "SELECT status FROM execution_attempts WHERE decision_id='D2'"
+                ).fetchone()[0])
+
+    def test_pending_order_blocks_same_symbol_but_excludes_current_claim(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = ExecutionStore(Path(tmp) / "execution.sqlite3")
+            store.claim("D1", "R1", "0050", "BUY")
+            store.mark_send_pending("D1", {"required_twd_with_buffer": "100"})
+            store.mark_submitted("D1", {"required_twd_with_buffer": "100"})
+            store.finish("D1", "ACKNOWLEDGED", {"required_twd_with_buffer": "100"})
+            store.claim("D2", "R2", "0051", "SELL")
+            self.assertEqual({"0050"}, store.pending_reconciliation_symbols(
+                exclude_decision_id="D2"
+            ))
+
+    def test_hourly_report_flags_ai_exceeding_broker_without_editing_position(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            (root / "config" / "execution_live.json").write_text(
+                json.dumps({"enabled": True, "min_available_to_buy_twd": 10000}),
+                encoding="utf-8",
+            )
+            store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
+            store.bootstrap_ai_qty("0050", 3)
+            analysis_db = root / "data" / "analysis" / "market_history.sqlite3"
+            analysis_db.parent.mkdir(parents=True)
+            with closing(sqlite3.connect(analysis_db)) as con:
+                con.execute("CREATE TABLE paper_account (account_id INTEGER, capital_limit_cents INTEGER)")
+                con.execute("INSERT INTO paper_account VALUES (1, 1000000)")
+                con.execute("CREATE TABLE positions (symbol TEXT, user_qty INTEGER, ai_managed_qty INTEGER)")
+                con.commit()
+            row = InventoryRow("0050", "T", 2, 0, 0, 0, 0, 0, 2, "raw")
+            power = BuyingPower(True, True, Decimal("9000"), Decimal("9000"),
+                                Decimal("9000"), "raw")
+            session = SimpleNamespace(ensure_ready=lambda: SimpleNamespace(action="REUSE"))
+            with patch("execution.health_monitor.query_buying_power", return_value=power), patch(
+                "execution.health_monitor.query_inventory", return_value=[row]
+            ):
+                report = run_health_check(root, session=session)
+            self.assertEqual("ALERT", report["status"])
+            self.assertTrue(report["balance_below_floor"])
+            self.assertEqual("AI_EXCEEDS_BROKER",
+                             report["inventory_comparison"][0]["status"])
+            self.assertEqual(2, report["inventory_comparison"][0]["broker_cash_qty"])
+            self.assertEqual(0, report["inventory_comparison"][0]["broker_sellable_qty"])
+            self.assertEqual(3, store.get_ai_qty("0050"))
+            with (root / "data" / "health" / "health_checks.csv").open(
+                encoding="utf-8-sig", newline=""
+            ) as handle:
+                self.assertEqual("ALERT", list(csv.DictReader(handle))[0]["status"])
+
+    def test_verified_unfilled_order_has_pending_status_and_reserved_budget(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            (root / "config" / "execution_live.json").write_text(
+                json.dumps({"enabled": True, "min_available_to_buy_twd": 10000,
+                            "max_daily_buy_twd": 20000}), encoding="utf-8")
+            analysis_db = root / "data" / "analysis" / "market_history.sqlite3"
+            analysis_db.parent.mkdir(parents=True)
+            with closing(sqlite3.connect(analysis_db)) as con:
+                con.execute("CREATE TABLE paper_account (account_id INTEGER, capital_limit_cents INTEGER)")
+                con.execute("INSERT INTO paper_account VALUES (1, 1000000)")
+                con.execute("CREATE TABLE positions (symbol TEXT, user_qty INTEGER, ai_managed_qty INTEGER)")
+                con.commit()
+            store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3")
+            store.claim("D1", "R1", "0050", "BUY")
+            detail = dict(seq13="1234567890123", quantity=2, limit_price="1000",
+                          send_return_code=0, filled_quantity=0,
+                          required_twd_with_buffer="2020")
+            store.mark_send_pending("D1", detail)
+            store.mark_submitted("D1", detail)
+            store.finish("D1", "ACKNOWLEDGED", detail)
+            power = BuyingPower(True, True, Decimal("30541"), Decimal("30541"),
+                                Decimal("30541"), "raw")
+            cross = SimpleNamespace(filled_quantity=0, accepted_rows=["ack"], fill_rows=[],
+                                    cancel_rows=[], replay_complete=True,
+                                    report9_contains_seq=True)
+            session = SimpleNamespace(
+                ensure_ready=lambda: SimpleNamespace(action="REUSE"),
+                crosscheck_seq13=lambda *_args, **_kwargs: cross)
+            with patch("execution.health_monitor.query_buying_power", return_value=power), patch(
+                "execution.health_monitor.query_inventory", return_value=[]), patch(
+                "execution.health_monitor.query_settlement_dues", return_value=[]):
+                report = run_health_check(root, session=session)
+            self.assertEqual("PENDING_ORDER", report["status"])
+            self.assertEqual("2020", report["pending_buy_reserve_twd"])
+            snapshot = persist_refresh_snapshot(root, report)
+            self.assertEqual("READY", snapshot["budget_status"])
+            self.assertEqual("7980", snapshot["current_buy_budget_twd"])
+
+    def test_broker_runtime_reuses_one_session_for_health_and_two_executions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_com = SimpleNamespace(CoInitialize=Mock(), CoUninitialize=Mock())
+            fake_session = SimpleNamespace(connect=Mock())
+            with patch.dict(sys.modules, {"comtypes": fake_com}), patch(
+                "execution.broker_runtime.build_live_readonly_session_from_project",
+                return_value=fake_session,
+            ) as build, patch(
+                "execution.pipeline_hook.execute_after_advice_written",
+                return_value={"status": "COMPLETE"},
+            ) as execute, patch(
+                "execution.health_monitor.run_health_check",
+                return_value={"status": "OK"},
+            ) as health:
+                runtime = BrokerRuntime(tmp)
+                self.addCleanup(runtime.shutdown)
+                self.assertEqual({"status": "OK"}, runtime.health())
+                runtime.execute(Path(tmp) / "one.json")
+                runtime.execute(Path(tmp) / "two.json")
+                runtime.shutdown()
+            fake_com.CoInitialize.assert_called_once()
+            build.assert_called_once()
+            fake_session.connect.assert_called_once()
+            self.assertEqual(2, execute.call_count)
+            health.assert_called_once()
+            self.assertIs(fake_session, execute.call_args.kwargs["session"])
+
+
+if __name__ == "__main__":
+    unittest.main()
