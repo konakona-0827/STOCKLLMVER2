@@ -78,6 +78,8 @@ python -m pip check
 
 已合併原工作分支的交易前檢查：兩種模式共用成本、可驗證價位、冷卻期、風險股數與人工持股保留規則。Agent 的獨立交易前審查同樣經 Agents SDK 使用所選 Agent 模型；審查失敗或否決會撤銷該筆交易。
 
+2026-10-27 修正 Agent 帳戶工具誤把保存快照當原始對帳報告，導致預算與可賣上限歸零的問題。231 項回歸通過，真實 Sol 唯讀分析已核實預算與持股上限；見 [預算修復紀錄](reports/agent_budget_fix_20261027.md)。
+
 2026-10-25 驗證：211 項回歸測試、另 3 項 advice interface 測試及 `pip check` 通過。實際 `gpt-6-sol` SDK 合成只讀測試完成 4 個模型回合、3 個本機唯讀工具，回覆 WAIT 並通過原驗證器；此測試未連接券商或送單，不能代替盤中 SKCOM 驗證。
 
 每輪的 `run.json`、`advice_interface.json`、`execution_report.json` 記錄模式與策略版本；Agent 另寫入 `agent_tools.json`、`agent_sdk_tools.json`、`agent_response.json`。API 使用 `store=False`、停用遠端 tracing，並沿用現有密鑰遮罩。
