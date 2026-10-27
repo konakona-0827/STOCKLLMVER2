@@ -111,7 +111,7 @@ class AgentDevelopParityTests(unittest.TestCase):
             with patch('agent_decision.ROOT', root), \
                     patch('main.is_twse_oddlot_market_window', return_value=True), \
                     patch('execution.broker_runtime.get_broker_runtime', return_value=runtime), \
-                    patch('execution.health_monitor.sync_broker_state', return_value=health), \
+                    patch('execution.health_monitor.sync_broker_state', return_value=(health, {})), \
                     patch('trading_agent.sdk_run', side_effect=runner):
                 decision, response = analyze_existing(
                     service, root/'run', dict(run_id='parity'), request, [candidate], account,

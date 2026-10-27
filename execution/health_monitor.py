@@ -488,6 +488,7 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "settlement_query_error": report.get("settlement_query_error"),
             "minimum_balance_twd": report.get("minimum_balance_twd"),
             "balance_below_floor": report.get("balance_below_floor", False),
+            "inventory_checked": report.get("inventory_checked") is True,
             "inventory_comparison": report.get("inventory_comparison", []),
             "position_quotes": report.get("position_quotes", previous.get("position_quotes", [])),
             "position_quote_errors": report.get("position_quote_errors", previous.get("position_quote_errors", {})),

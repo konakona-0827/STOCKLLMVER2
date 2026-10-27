@@ -56,7 +56,9 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
             return dict(account)
         from execution.health_monitor import sync_broker_state
         from execution.execution_store import ExecutionStore
-        health = sync_broker_state(ROOT)
+        # Match the LLM path: budget and sell guards consume the raw report.
+        # A UI/archive snapshot is a separate contract, not broker evidence.
+        health, _ = sync_broker_state(ROOT, return_report=True)
         daily = ExecutionStore(execution_db, must_exist=True).daily_reserved_buy_twd()
         from decimal import Decimal
         cap = Decimal(paper_portfolio.account(service.db_path)['capital_limit_cents'])/100
