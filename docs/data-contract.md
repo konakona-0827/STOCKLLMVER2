@@ -1,5 +1,9 @@
 # 台股日線與資料合約
 
+已新增官方 TWSE 收集器 `observe`，第一個資料池只含上市普通股。它輸出 `raw_unverified`、`observation_only=true`，並明示公司行動／交易狀態／歷史 PIT 未核實；這種資料只有在 bundle 與個股都宣告 observation_only 時才允許技術觀察，固定禁止 RESEARCH。以下嚴格資料合約仍適用於未來要解除觀察限制的輸入。
+
+官方來源：[個股日成交資訊](https://www.twse.com.tw/zh/trading/historical/stock-day.html)、[市場成交資訊](https://www.twse.com.tw/zh/trading/historical/fmtqik.html)、[年度開休市表](https://www.twse.com.tw/holidaySchedule/holidaySchedule?response=html)、[TWSE OpenAPI](https://openapi.twse.com.tw/)。保留每份原始 JSON、網址、取得時間與 checksum；可用時間為本輪組合快照完成時間，不回填成歷史收盤時間。
+
 ## 快照 JSON
 
 執行 `python -m support_scout demo`，可在 `output/latest/input.json` 取得完整可執行格式；其中所有資料皆為合成。正式資料應使用相同欄位並將 `synthetic` 設為 `false`。

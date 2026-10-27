@@ -75,6 +75,7 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
     eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT"]
     eligible.sort(key=lambda p: (not (p["core"]["technical"]["technical_candidate"] and not p["core"]["context_blockers"]),
         not p["core"]["technical"]["technical_candidate"],
+        p["core"]["technical"].get("position") == "EXTENDED",
         -(p["core"]["technical"]["priority_score"] or 0), p["core"]["symbol"]))
     limit = min(config.max_packets, config.max_calls // 2)
     selected, deferred = eligible[:limit], eligible[limit:]

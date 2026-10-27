@@ -138,7 +138,7 @@ def calendar_at(bundle: dict, as_of: datetime) -> list[str]:
     return [s for s in raw if datetime.combine(date.fromisoformat(s), time(13, 30), TAIPEI) <= as_of]
 
 
-def load_series(item: dict, as_of: datetime, calendar: list[str]) -> Series:
+def load_series(item: dict, as_of: datetime, calendar: list[str], *, allow_observation: bool = False) -> Series:
     if not isinstance(item, dict):
         raise DataError("INVALID_SERIES")
     symbol = item.get("symbol", "")
@@ -148,13 +148,15 @@ def load_series(item: dict, as_of: datetime, calendar: list[str]) -> Series:
         raise DataError("TAIWAN_COMMON_STOCK_ONLY")
     if item.get("interval") != "1d" or not item.get("source") or item.get("volume_unit") != "shares":
         raise DataError("DAILY_SOURCE_AND_SHARE_UNITS_REQUIRED")
-    if item.get("price_basis") not in {"adjusted_ohlc", "raw_no_actions_in_window"} or item.get("actions_reviewed") is not True:
+    observation = allow_observation and item.get("observation_only") is True
+    bases = {"adjusted_ohlc", "raw_no_actions_in_window"} | ({"raw_unverified"} if observation else set())
+    if item.get("price_basis") not in bases or (not observation and item.get("actions_reviewed") is not True):
         raise DataError("CORPORATE_ACTION_BASIS_UNVERIFIED")
     if not item.get("adjustment_as_of") or timestamp(item["adjustment_as_of"]) > as_of:
         raise DataError("ADJUSTMENT_NOT_AVAILABLE_AT_CUTOFF")
-    if item.get("volume_comparable") is not True:
+    if item.get("volume_comparable") is not True and not observation:
         raise DataError("VOLUME_NOT_COMPARABLE")
-    if item.get("tradability_reviewed") is not True:
+    if item.get("tradability_reviewed") is not True and not observation:
         raise DataError("TRADABILITY_UNKNOWN")
     raw_bars = item.get("bars")
     if not isinstance(raw_bars, list):
@@ -200,7 +202,8 @@ def load_series(item: dict, as_of: datetime, calendar: list[str]) -> Series:
     if any(b.halted or b.volume == 0 or b.turnover_twd == 0 for b in selected):
         raise DataError("HALT_OR_ZERO_VOLUME_REQUIRES_NEW_SEGMENT")
     metadata = {key: item.get(key) for key in ("currency", "instrument_type", "interval", "volume_unit",
-                "actions_reviewed", "adjustment_as_of", "volume_comparable", "tradability_reviewed", "point_in_time")}
+                "actions_reviewed", "adjustment_as_of", "volume_comparable", "tradability_reviewed", "point_in_time",
+                "observation_only", "observation_blockers", "collection_status", "collection_errors")}
     return Series(symbol, str(item.get("name", symbol)), item["exchange"], item["source"],
                   item["price_basis"], tuple(selected), metadata)
 

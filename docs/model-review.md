@@ -2,6 +2,16 @@
 
 日期：2026-10-27（Asia/Tokyo）。範圍：台股支撐研究第一階段，不含策略績效驗證。
 
+## 實用觀察版本補充（0.3.0）
+
+已擴充到 102 項離線測試，另以官方資料完成 19 檔、每檔 162 根日線的整批觀察；真實 OpenAI 有合成契約 smoke 2 次、真實行情第一輪 10 次及最終整合覆核 2 次，均無 provider error。最終覆核 collection COMPLETE、exit code 0、資料最新日 2026-10-27、帳本 report_digest 與保存 report.json 相符。
+
+獨立 operational_review 檢查出並驗證修正：盤前缺昨日資料假完整、月初空月份、發布失敗留下孤立帳本、倒退資料覆寫 latest、callback 後稽核 digest、HTML attribute escaping，以及 doctor 的 SQLite 失敗。已加入故障注入與回歸測試。
+
+新鮮度以台北 16:00 與官方年度假日獨立倒推，不用資料自己的尾日冒充預期日。報告發布先於 SQLite COMMIT，失敗回滾；完成 marker 及有鎖的 latest 指標在提交後才更新。
+
+原始價通道永久保留 OBSERVATION ONLY blocker；這次驗證觀察流程可用，不證明支撐可靠或投資績效。以下保留第一階段審查紀錄。
+
 開發由主代理整合；另有兩個 subagent：`support_method_review` 唯讀檢查支撐定義與因果順序，`architecture_reviewer` 獨立檢查資料、代理契約與執行器，並在修正後再次審查。兩者均未呼叫券商或讀取憑證。
 
 ## 已處理問題

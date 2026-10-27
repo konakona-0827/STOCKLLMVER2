@@ -1,5 +1,9 @@
 # 第一階段架構與權限
 
+2026-10-27 更新：已加入 `twse.py` 官方上市普通股資料、`observation.py` 每日入口、`ledger.py` 固定支撐跨日追蹤、`reporting.py` HTML 與 `settings.py` 本機健康檢查。詳見 [觀察操作](observation-runbook.md)。
+
+公開原始價只走雙重 `observation_only=True` 通道；正式研究通道仍拒絕未核對公司行動的資料。觀察通道可計算暫定技術型態，但固定 context blockers 禁止任何模型或人工評語升為 RESEARCH。當前觀察不是歷史回測。
+
 ## 角色
 
 | 角色 | 實作 | 可做的事 | 輸出 |
@@ -20,11 +24,11 @@ Head 無模型自由裁決、不下單。第一階段沒有 SNIPER／APPROVE、E
 
 `make_packet()` 深拷貝 core。SHA256 涵蓋 protocol、core、角色任務與指令；core 包含規則、synthetic 宣告、日曆來源與當時可見 sessions、原始可見日線及證據。未來日線不進入快照。每次 provider 前後都重建 canonical packet 檢查完整性；hash 不是外部來源簽章。
 
-資料／任務變動就換 packet ID，舊評語不能沿用。JSON 輸出可往返重播；日期、數值、來源與快照都留存。
+資料／任務變動就換 packet ID，舊評語不能沿用。JSON 輸出可往返重播；manifest 保存有效截止、全套規則及來源程式 hash。每日 episode 另依 symbol／規則 hash／價格口徑／anchor 日識別，不能用每天改變的 packet ID 取代。
 
 ## 呼叫與裁決
 
-1. 先跑數值掃描，完整的技術候選優先，缺背景資料的候選及形成中狀態排後面；明確失效／公司論點破壞不耗模型額度。
+1. 先跑數值掃描，完整且接近支撐的技術候選優先，再看其他接近支撐的觀察；已遠離支撐的狀態排後面。明確失效／公司論點破壞不耗模型額度。
 2. 每個標的預留兩次呼叫；單數剩餘額度不啟動半對。每輪上限由 `DeskConfig` 固定，模型無修改介面。
 3. 研究員與審查員各取快照深拷貝、不同 instructions、無對方評語。每個標的最多兩個並行請求，無自動重試或多輪工具。
 4. OpenAI Responses 使用 strict JSON Schema、`store=False`，未提供模型工具、shell、網路搜尋、帳戶或訂單。身分、packet ID、角色與產生時間由 runtime 填入，模型只回傳研究欄位。
@@ -39,8 +43,8 @@ API 每次 I/O timeout 為 1–60 秒，輸入 JSON 上限 512 KB、回應上限
 
 模型拒答、不完整回應、超時、HTTP 錯誤、無效 JSON、假引用或快照被改，該方不算完成。Head 保留其他標的結果、錯誤及待處理名單；CLI code 3 表示代理降級。例外訊息不保存任意 provider 文字；API 回應錯誤本體、密鑰與 headers 不寫入報告。
 
-稽核保留每次角色、runtime agent ID、模型 ID、時間、回應 ID、可得 token 用量與評語 digest。未回傳用量時保持未知。run 預設使用唯一輸出目錄；模型不會寫檔，CLI 負責保存報告。
+稽核保留每次角色、runtime agent ID、模型 ID、時間、回應 ID、可得 token 用量與評語 digest。未回傳用量時保持未知。SQLite transaction 內先完整發布 run，成功才提交帳本；提交後寫 committed marker，再以程序鎖及截止比較更新 latest。失敗不把舊報告標成新結果。
 
 ## 官方 API 參考
 
-Responses structured output 的格式與拒答／不完整回應依 [OpenAI 官方 Structured Outputs 文件](https://developers.openai.com/api/docs/guides/structured-outputs)。本次以假 HTTP 傳輸及 Responses payload 驗證，未做真 API 連線驗證。
+Responses structured output 的格式與拒答／不完整回應依 [OpenAI 官方 Structured Outputs 文件](https://developers.openai.com/api/docs/guides/structured-outputs)。已完成假 HTTP 測試與真實雙模型研究呼叫。

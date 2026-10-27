@@ -117,6 +117,12 @@ class DeskTests(unittest.TestCase):
         self.assertIn("8999", result["desk"]["deferred_symbols"])
         self.assertEqual(result["reviewed_shortlist"], ["9001"])
 
+    def test_near_support_watch_has_priority_over_extended_watch(self):
+        self.bundle["securities"] = [self.bundle["securities"][1], self.bundle["securities"][3]]
+        self.bundle["securities"][0]["bars"][-1].update(open=107, high=108, low=106, close=107)
+        result = run_desk(self.bundle, researcher=FakeProvider(), reviewer=FakeProvider(), config=DeskConfig(1, 2))
+        self.assertEqual(result["desk"]["selected_symbols"], ["9002"])
+
     def test_invalid_config_and_future_cutoff(self):
         for kwargs in ({"max_packets": 0}, {"max_packets": True}, {"max_calls": 1}, {"max_calls": 101}):
             with self.assertRaises(DataError):

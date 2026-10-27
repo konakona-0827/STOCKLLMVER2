@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict
 from datetime import timedelta
+from copy import deepcopy
 
 from .agents import decide, make_packet, validate_reviews
 from .contracts import DataError, Rules, TAIPEI, calendar_at, digest, load_series, timestamp, visible_series
@@ -55,6 +56,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         raise DataError("BUNDLE_MUST_BE_OBJECT")
     if bundle.get("schema_version") != 1:
         raise DataError("UNSUPPORTED_SCHEMA_VERSION")
+    if not isinstance(bundle.get("collection", {}), dict):
+        raise DataError("INVALID_COLLECTION_METADATA")
     cutoff = timestamp(as_of or bundle.get("as_of"))
     rules = rules or Rules()
     calendar = calendar_at(bundle, cutoff)
@@ -72,15 +75,20 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         try:
             if not isinstance(symbol, str) or counts.get(symbol, 0) != 1:
                 raise DataError("DUPLICATE_OR_INVALID_SYMBOL")
-            series = load_series(item, cutoff, calendar)
+            observation = bundle.get("observation_only") is True and item.get("observation_only") is True
+            series = load_series(item, cutoff, calendar, allow_observation=observation)
             technical = detect_support(series, rules)
             context_evidence, context_blockers, context_reject = context_at(bundle, item, cutoff, rules)
             if series.metadata.get("point_in_time") is not True:
                 context_blockers.append("POINT_IN_TIME_NOT_VERIFIED")
+            if observation:
+                context_blockers.extend(["OBSERVATION_ONLY", "CORPORATE_ACTIONS_UNVERIFIED", "TRADABILITY_UNVERIFIED"])
+            if bundle.get("collection", {}).get("status") not in (None, "OK", "COMPLETE"):
+                context_blockers.append("DATA_COLLECTION_DEGRADED")
             evidence = technical["evidence"] + context_evidence
             required = [e["id"] for e in evidence if e["kind"] in {"ANCHOR", "BOUNCE", "RETEST", "CONFIRMATION", "LATEST", "DOSSIER", "MARKET"}]
             core = {"schema_version": 1, "as_of": cutoff.isoformat(), "symbol": symbol,
-                    "synthetic": bundle.get("synthetic") is True,
+                    "synthetic": bundle.get("synthetic") is True, "observation_only": observation,
                     "calendar": {k: v for k, v in bundle["calendar"].items() if k != "sessions"},
                     "calendar_visible_sessions": calendar,
                     "universe_version": bundle.get("universe_version", "unversioned"),
@@ -93,7 +101,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             accepted, errors = validate_reviews(packet, own_reviews)
             decision = decide(technical, context_blockers, context_reject, accepted, errors)
             outputs.append({"symbol": symbol, "name": series.name, "exchange": series.exchange,
-                            "packet_id": packet["packet_id"], "data_status": "VALID",
+                            "packet_id": packet["packet_id"], "data_status": "OBSERVATION" if observation else "VALID",
+                            "price_basis": series.price_basis, "observation_only": observation,
                             "technical": technical, "context_blockers": context_blockers,
                             "agent_reviews": accepted, "agent_errors": errors, **decision})
             if technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}:
@@ -111,10 +120,12 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             "snapshot_id": digest([o.get("packet_id", o) for o in outputs]),
             "universe_version": bundle.get("universe_version", "unversioned"),
             "synthetic": bundle.get("synthetic") is True,
+            "observation_only": bundle.get("observation_only") is True,
+            "collection": deepcopy(bundle.get("collection", {})),
             "securities": outputs, "technical_queue": [o["symbol"] for o in queue],
             "reviewed_shortlist": shortlist, "agent_packets": packets, "unmatched_review_packets": unmatched,
             "limitations": ["RULES_AND_RANKING_NOT_BACKTEST_VALIDATED", "NO_ESTIMATED_WIN_PROBABILITY",
-                            "SNAPSHOT_INPUT_REQUIRED_NO_LIVE_MARKET_FETCHER",
+                            "RAW_OBSERVATION_REQUIRES_CORPORATE_ACTION_AND_EVENT_REVIEW",
                             "MANUAL_REVIEW_IDENTITIES_ARE_SELF_REPORTED"]}
 
 
@@ -131,7 +142,7 @@ def render_markdown(report: dict) -> str:
         lines.append(f"| {item['symbol']} | {item['data_status']} | {t.get('state', '—')} | {t.get('position', '—')} | {t.get('priority_score', '—')} | {item['verdict']} | {reason} |")
     lines.extend(["", "技術研究佇列：" + (", ".join(report["technical_queue"]) or "無"),
                   "", "兩方審查完成的名單：" + (", ".join(report["reviewed_shortlist"]) or "無"),
-                  "", "資料由 JSON 快照匯入；desk 指令可啟動兩個獨立模型回合。", ""])
+                  "", "observe 取得官方日線並執行雙方研究；原始價未核實時維持 OBSERVATION ONLY。", ""])
     if "desk" in report:
         d = report["desk"]
         lines.extend([f"Desk：{d['status']}；模式：{d['mode']}；呼叫：{d['call_count']}；run：{d['run_id']}", ""])
