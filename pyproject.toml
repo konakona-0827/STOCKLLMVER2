@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "support-desk"
+version = "0.2.0"
+description = "台股確認支撐研究：確定性掃描、獨立雙代理與可稽核 Head of Desk"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+support-desk = "support_scout.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["support_scout*"]
