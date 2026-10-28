@@ -44,11 +44,12 @@ class MultiCapitalMarket(CapitalMarket):
             )
             quotes.update(batch_quotes)
             errors.update(batch_errors)
-        if len(groups) > 1:
-            # A clean final leave avoids retaining a live quote monitor between
-            # scan cycles; COM objects and the authenticated reply session stay
-            # on the broker thread for the next scan.
-            self.leave_monitor()
+        # Leave after every scan, including a single-symbol-group scan. Keeping
+        # the monitor subscribed overnight precedes a first-morning symbol-set
+        # switch. That switch crashed in the COM message pump immediately after
+        # re-entering the monitor (2026-10-28 09:05).
+        # Retain the logged-in COM objects and event sink for the next scan.
+        self.leave_monitor()
         return quotes, errors
 
     def _fetch_one_batch(self, ordered_symbols, *, timeout, batch_index, batch_count):

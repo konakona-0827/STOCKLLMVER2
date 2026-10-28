@@ -945,7 +945,11 @@ class Dashboard:
                         self.result, self.positions, broker_snapshot = payload
                         if broker_snapshot is not None:
                             self.last_health = broker_snapshot
-                            self.next_health_at = time.time() + self.health_delay()
+                            # A local-only refresh can load yesterday's broker
+                            # snapshot. It must not postpone the startup live
+                            # health check by another five minutes.
+                            if self.refresh_sync_broker:
+                                self.next_health_at = time.time() + self.health_delay()
                             self.balance_hold = bool(broker_snapshot.get('balance_below_floor'))
                             if self.balance_hold:self.scheduler.stop_auto()
                         self.paper_account_configured = paper_portfolio.account(self.service.db_path) is not None
