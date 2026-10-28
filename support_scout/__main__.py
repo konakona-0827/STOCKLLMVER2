@@ -27,13 +27,18 @@ def main(argv=None) -> int:
     health.add_argument("--require-agents", action="store_true")
     daily = sub.add_parser("observe", help="Yahoo 日股收盤資料 → 每日決策報告 → 固定支撐跨日追蹤")
     daily.add_argument("--market", choices=("JP", "TW"), default="JP", help="預設日本；TW 保留原版回歸入口")
-    daily.add_argument("--symbols", help="逗號分隔，例如 6857,8035,4063；省略用固定日股觀察池")
+    daily.add_argument("--symbols", help="手動名單，例如 6857,8035,4063；省略時預設從 JPX 動態母池尋標")
+    sourcing = daily.add_mutually_exclusive_group()
+    sourcing.add_argument("--discover", action="store_true", dest="discover", help="動態母池 → SEARCH → 研究／反證")
+    sourcing.add_argument("--fixed-universe", action="store_false", dest="discover", help="明確使用舊固定觀察名單")
+    daily.set_defaults(discover=None)
+    daily.add_argument("--scan-limit", type=int, default=100, help="每輪輪替掃描的日股數，1–100")
     daily.add_argument("--months", type=int, default=8)
     daily.add_argument("--timeout", type=float, default=15)
     daily.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
     daily.add_argument("--model")
     daily.add_argument("--max-packets", type=int, default=5)
-    daily.add_argument("--max-calls", type=int, default=10)
+    daily.add_argument("--max-calls", type=int, default=10, help="整輪模型呼叫上限，包含 SEARCH 與雙方研究")
     daily.add_argument("--out", type=Path, help="觀察報告根目錄，每輪使用唯一子目錄")
     daily.add_argument("--data-root", type=Path, help="本地快取與SQLite觀察帳本資料夾")
     choices = daily.add_mutually_exclusive_group()
@@ -77,7 +82,9 @@ def main(argv=None) -> int:
                 cache_dir=args.data_root / ("yahoo-cache" if args.market == "JP" else "twse-cache") if args.data_root else None,
                 db_path=args.data_root / "observations.sqlite3" if args.data_root else None,
                 settings_path=args.settings, agents=args.agents, model=args.model,
-                max_packets=args.max_packets, max_calls=args.max_calls, progress=progress, market=args.market)
+                max_packets=args.max_packets, max_calls=args.max_calls, progress=progress, market=args.market,
+                discover=args.discover, scan_limit=args.scan_limit,
+                cursor_path=args.data_root / "discovery_cursor.json" if args.data_root else None)
             print(render_markdown(report, include_decisions=False))
             if "decision_summary" in report:
                 print("決策統計：" + json.dumps(report["decision_summary"]["counts"], ensure_ascii=False))

@@ -81,5 +81,5 @@ def doctor(settings_path: Path = DEFAULT_SETTINGS) -> dict:
         "openai_ready": config["ready"], "key_configured": config["key_configured"],
         "model": config["model"], "reviewer_model": config["reviewer_model"],
         "errors": errors, "execution_enabled": False,
-        "scope": "TSE_YAHOO_FIXED_UNIVERSE_END_OF_DAY_DECISION",
+        "scope": "JPX_DYNAMIC_UNIVERSE_SEARCH_TO_DECISION",
         "note": "公開資料觀察與雙模型就緒狀態分開；doctor 不呼叫模型或券商。"}

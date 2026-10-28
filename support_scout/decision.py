@@ -14,7 +14,7 @@ from .contracts import DataError, digest, timestamp
 
 @dataclass(frozen=True)
 class DecisionPolicy:
-    version: str = "jp-support-decision-v1"
+    version: str = "jp-support-decision-v2-search-gate"
     minimum_net_rr: float = 2.0
     roundtrip_cost_bps: float = 20.0
     gap_buffer_atr: float = 0.25
@@ -60,6 +60,9 @@ MESSAGES = {
     "LEDGER_INVALIDATED": "跨日帳本記錄原固定支撐已失效。",
     "LEDGER_STALE": "本輪資料落後於跨日帳本，不能用舊結論交易。",
     "LEDGER_ERROR": "跨日追蹤未完整完成，等待修復。",
+    "SEARCH_NOT_COMPLETED": "尚未完成本輪有效的尋標 agent 提交。",
+    "NOT_SELECTED_BY_SEARCH": "本檔未被本輪尋標 agent 提交給決策審查。",
+    "SEARCH_INTEGRITY_FAILED": "尋標提交與本輪快照不符，需重新搜尋。",
 }
 
 
@@ -81,6 +84,8 @@ def _packet_for(report, item):
                 or type(core.get("context_reject")) is not bool
                 or core.get("synthetic") is not report.get("synthetic")
                 or core.get("observation_only") is not item.get("observation_only")
+                or bool(core.get("discovery_required")) != bool(report.get("discovery_required"))
+                or core.get("source_universe_hash") != report.get("source_universe_hash")
                 or core["technical"] != technical
                 or core["visible_series"]["price_basis"] != item.get("price_basis")
                 or core["context_blockers"] != item.get("context_blockers", [])):
@@ -167,6 +172,20 @@ def attach_decisions(report: dict, bundle: dict, *, policy: DecisionPolicy | Non
     integrity = integrity and (report.get("synthetic") is True) == (bundle.get("synthetic") is True)
     integrity = integrity and (report.get("observation_only") is True) == (bundle.get("observation_only") is True)
     sources = {item.get("symbol"): item for item in bundle.get("securities", []) if isinstance(item, dict)}
+    requires_search = (report.get("discovery_required") is True or bundle.get("discovery_required") is True
+        or any(p.get("core", {}).get("discovery_required") is True for p in report.get("agent_packets", [])))
+    search_error, search_symbols = None, set()
+    if requires_search:
+        discovery = report.get("discovery", {})
+        result = discovery.get("search")
+        if discovery.get("mode") != "AGENT_SEARCH" or not isinstance(result, dict) or result.get("status") != "COMPLETED":
+            search_error = "SEARCH_NOT_COMPLETED"
+        else:
+            try:
+                from .discovery import validate_search_result
+                search_symbols = {s["symbol"] for s in validate_search_result(result, report)}
+            except (DataError, KeyError, TypeError, ValueError):
+                search_error = "SEARCH_INTEGRITY_FAILED"
     totals = {key: 0 for key in LABELS}
     for item in securities:
         reasons = []
@@ -175,6 +194,11 @@ def attach_decisions(report: dict, bundle: dict, *, policy: DecisionPolicy | Non
         researchable = state in {"BASE_FORMING", "BOUNCE_SEEN", "RETEST_HELD", "RULE_CONFIRMED"}
         if not integrity:
             reasons.append("SNAPSHOT_INTEGRITY_FAILED")
+        if requires_search:
+            if search_error:
+                reasons.append(search_error)
+            elif item["symbol"] not in search_symbols:
+                reasons.append("NOT_SELECTED_BY_SEARCH")
         if report.get("synthetic") is not False or bundle.get("synthetic") is not False:
             reasons.append("SYNTHETIC_DATA")
         if report.get("observation_only") or item.get("observation_only"):
@@ -280,6 +304,8 @@ def _next_steps(reasons):
         steps.append("修復或核對來源與跨日記錄，以新快照重新掃描，不沿用舊評語。")
     if "DUAL_REVIEW_REQUIRED" in reasons or "AGENT_VALIDATION_FAILED" in reasons:
         steps.append("請研究員與反證員針對同一份完整快照各自重新審查。")
+    if any(r in reasons for r in ("SEARCH_NOT_COMPLETED", "NOT_SELECTED_BY_SEARCH", "SEARCH_INTEGRITY_FAILED")):
+        steps.append("以本輪行情快照完成尋標 agent 提交，再由獨立研究／反證 agent 審查；不可跳過尋標。")
     if "SUPPORT_NOT_CONFIRMED" in reasons:
         steps.append("等待另日回測守住固定支撐，且後續完整日線收盤突破回測日高點。")
     if any(r in reasons for r in ("NO_HISTORICAL_RESISTANCE", "TARGET_NOT_ABOVE_REFERENCE", "NET_RR_BELOW_MINIMUM", "NOT_NEAR_SUPPORT")):

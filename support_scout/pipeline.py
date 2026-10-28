@@ -95,6 +95,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             required = [e["id"] for e in evidence if e["kind"] in {"ANCHOR", "BOUNCE", "RETEST", "CONFIRMATION", "LATEST", "DOSSIER", "MARKET"}]
             core = {"schema_version": 1, "as_of": cutoff.isoformat(), "symbol": symbol,
                     "market": market,
+                    "discovery_required": bundle.get("discovery_required") is True,
+                    "source_universe_hash": digest(bundle["source_universe"]) if bundle.get("discovery_required") else None,
                     "synthetic": bundle.get("synthetic") is True, "observation_only": observation,
                     "calendar": {k: v for k, v in bundle["calendar"].items() if k != "sessions"},
                     "calendar_visible_sessions": calendar,
@@ -134,11 +136,15 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             "synthetic": bundle.get("synthetic") is True,
             "observation_only": bundle.get("observation_only") is True,
             "collection": deepcopy(bundle.get("collection", {})),
+            "discovery_required": bundle.get("discovery_required") is True,
+            "source_universe_hash": digest(bundle["source_universe"]) if bundle.get("discovery_required") else None,
             "securities": outputs, "technical_queue": [o["symbol"] for o in queue],
             "reviewed_shortlist": shortlist, "agent_packets": packets, "unmatched_review_packets": unmatched,
             "limitations": ["RULES_AND_RANKING_NOT_BACKTEST_VALIDATED", "NO_ESTIMATED_WIN_PROBABILITY",
                             "RAW_OBSERVATION_REQUIRES_CORPORATE_ACTION_AND_EVENT_REVIEW",
                             "MANUAL_REVIEW_IDENTITIES_ARE_SELF_REPORTED"]}
+    if "discovery" in bundle:
+        report["discovery"] = deepcopy(bundle["discovery"])
     if market == "JP":
         from .decision import attach_decisions
         attach_decisions(report, bundle)
@@ -161,6 +167,14 @@ def render_markdown(report: dict, *, include_decisions: bool = True) -> str:
     lines.extend(["", "技術研究佇列：" + (", ".join(report["technical_queue"]) or "無"),
                   "", "兩方審查完成的名單：" + (", ".join(report["reviewed_shortlist"]) or "無"),
                   "", "Yahoo Finance 為暫時觀察來源；缺口未解除前不形成可交易結論。" if japan else "observe 取得官方日線並執行雙方研究；原始價未核實時維持 OBSERVATION ONLY。", ""])
+    if "discovery" in report:
+        discovery = report["discovery"]
+        coverage = discovery.get("coverage", {})
+        search = discovery.get("search") or {}
+        lines.extend([f"尋標：{discovery['mode']} / {search.get('status', 'NOT_RUN')}；"
+            f"本輪 {coverage.get('scanned_count', '?')} / 母池 {coverage.get('universe_count', '?')} 檔。",
+            "SEARCH 提交：" + (", ".join(s["symbol"] for s in search.get("selection", [])) or "無"),
+            f"總模型呼叫：{discovery.get('total_call_count', 0)} / {discovery.get('max_total_calls', 0)}", ""])
     if japan and include_decisions:
         from .decision import render_decisions_markdown
         lines.append(render_decisions_markdown(report))

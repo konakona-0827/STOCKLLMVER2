@@ -57,7 +57,7 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
 
 
 def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig | None = None,
-             rules: Rules | None = None, as_of: str | None = None) -> dict:
+             rules: Rules | None = None, as_of: str | None = None, selected_symbols: list[str] | None = None) -> dict:
     config = config or DeskConfig()
     researcher = researcher or OfflineProvider()
     reviewer = reviewer or OfflineProvider()
@@ -67,16 +67,37 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
     snapshot = deepcopy(bundle)
     rules = rules or Rules()
     initial = run(snapshot, as_of=as_of, rules=rules)
+    discovery_skipped = False
+    if snapshot.get("discovery_required") is True:
+        from .discovery import validate_search_result
+        discovery = initial.get("discovery", {})
+        result = discovery.get("search")
+        approved = (validate_search_result(result, initial) if discovery.get("mode") == "AGENT_SEARCH"
+            and isinstance(result, dict) else [])
+        approved_symbols = [s["symbol"] for s in approved]
+        if selected_symbols is not None and (not isinstance(selected_symbols, list)
+                or any(not isinstance(s, str) or s not in approved_symbols for s in selected_symbols)):
+            raise DataError("DESK_SELECTION_NOT_APPROVED_BY_SEARCH")
+        selected_symbols = approved_symbols if selected_symbols is None else selected_symbols
+        discovery_skipped = not selected_symbols
     if timestamp(initial["as_of"]) > datetime.now(timezone.utc):
         raise DataError("DESK_CUTOFF_IN_FUTURE")
     run_id = uuid4().hex
     outputs = {s["packet_id"]: s for s in initial["securities"] if "packet_id" in s}
     # Confirmed near-support candidates first; earlier stages form an observation queue.
     eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT"]
+    if selected_symbols is not None:
+        available = {p["core"]["symbol"]: p for p in eligible}
+        if (not isinstance(selected_symbols, list) or any(not isinstance(s, str) for s in selected_symbols)
+                or len(selected_symbols) != len(set(selected_symbols)) or not set(selected_symbols) <= set(available)):
+            raise DataError("INVALID_DISCOVERY_SELECTION")
+        eligible = [available[s] for s in selected_symbols]
     eligible.sort(key=lambda p: (not (p["core"]["technical"]["technical_candidate"] and not p["core"]["context_blockers"]),
         not p["core"]["technical"]["technical_candidate"],
         p["core"]["technical"].get("position") == "EXTENDED",
         -(p["core"]["technical"]["priority_score"] or 0), p["core"]["symbol"]))
+    if selected_symbols is not None:
+        eligible.sort(key=lambda p: selected_symbols.index(p["core"]["symbol"]))
     limit = min(config.max_packets, config.max_calls // 2)
     selected, deferred = eligible[:limit], eligible[limit:]
     reviews, events = [], []
@@ -93,7 +114,7 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
     final = run(snapshot, as_of=as_of, rules=rules, reviews=reviews)
     errors = sum(e["status"] == "ERROR" for e in events)
     final["desk"] = {"run_id": run_id, "protocol": TASK_PROTOCOL, "mode": researcher.mode,
-        "status": "DEGRADED" if errors else "PARTIAL_BUDGET" if deferred else "COMPLETE",
+        "status": "SKIPPED_DISCOVERY" if discovery_skipped else "DEGRADED" if errors else "PARTIAL_BUDGET" if deferred else "COMPLETE",
         "config": asdict(config), "call_count": len(events), "error_count": errors,
         "selected_symbols": [p["core"]["symbol"] for p in selected],
         "deferred_symbols": [p["core"]["symbol"] for p in deferred], "events": events,
