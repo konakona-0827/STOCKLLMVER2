@@ -24,7 +24,7 @@ class LiveStrategySelectionTests(unittest.TestCase):
                     patch.dict(os.environ, {}, clear=False):
                 os.environ.pop('TRADING_STRATEGY_PATH', None)
                 strategy = strategy_catalog.live_selection()
-            self.assertEqual(Path(strategy['path']), selected)
+            self.assertEqual(Path(strategy['path']), selected.resolve())
             self.assertEqual(strategy['prompt'], '可攜策略')
 
     def test_explicit_override_uses_requested_file_and_fails_closed(self):
@@ -46,7 +46,7 @@ class LiveStrategySelectionTests(unittest.TestCase):
             with patch.object(strategy_catalog, 'LIVE_SELECTION', root/'selection.json'), \
                     patch.dict(os.environ, {'TRADING_STRATEGY_PATH': str(first)}):
                 strategy_catalog.save_live_selection(second)
-                self.assertEqual(strategy_catalog.live_selection()['path'], str(second))
+                self.assertEqual(strategy_catalog.live_selection()['path'], str(second.resolve()))
 
 
 if __name__ == '__main__':

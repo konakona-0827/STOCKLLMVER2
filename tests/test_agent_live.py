@@ -1,5 +1,5 @@
 """Full Agent -> original advice -> real executor -> existing ledger, with only APIs mocked."""
-from contextlib import closing
+from contextlib import closing, ExitStack
 from decimal import Decimal
 import json
 import os
@@ -93,22 +93,27 @@ class LiveAgentIntegrationTests(unittest.TestCase):
                     target_price=130 if action=='BUY' else None,invalidation_price=95 if action=='BUY' else None,
                     holding_days=10 if action=='BUY' else None,reason='Agent '+action,data_quality='LIVE',warnings=[])
                 return dict(market_view='承接既有持倉',decisions=[decision]),dict(input_tokens=10,output_tokens=5)
-            with patch.dict(os.environ,{'TRADING_MODE':'agent'}), patch('analysis_service.load_env'), \
-                    patch('analysis_service.load_universe',return_value=dict(symbols=['0050'],etf_symbols=['0050'])), \
-                    patch('analysis_service.ROOT',root), patch('agent_decision.ROOT',root), \
-                    patch('strategy_catalog.live_selection',return_value=strategy_catalog.read_strategy(prompt)), \
-                    patch('daily_history._fetch_month',return_value=([], 'OFFLINE_TEST')), \
-                    patch('execution.broker_runtime.get_broker_runtime',return_value=runtime), \
-                    patch('execution.health_monitor.sync_broker_state',side_effect=health_snapshot), \
-                    patch('execution.health_monitor.latest_refresh_snapshot',return_value=healthy), \
-                    patch('execution.health_monitor.run_health_check',return_value=healthy), \
-                    patch('execution.health_monitor.persist_refresh_snapshot',return_value=healthy), \
-                    patch('main.is_twse_oddlot_market_window',return_value=True), \
-                    patch('analysis_service.twse_closed_reason',return_value=None), \
-                    patch('trading_agent.sdk_run',side_effect=runner), \
-                    patch('trading_agent.sdk_review',side_effect=approve), \
-                    patch('execution.auto_advice_executor.query_buying_power',return_value=power) as query, \
-                    patch('execution.auto_advice_executor.CapitalOddLotExecutor.send_limit_order',side_effect=send) as sender:
+            # Keep Python 3.12's static block limit independent of mock count.
+            with ExitStack() as stack:
+                for context in (
+                    patch.dict(os.environ,{'TRADING_MODE':'agent'}), patch('analysis_service.load_env'),
+                    patch('analysis_service.load_universe',return_value=dict(symbols=['0050'],etf_symbols=['0050'])),
+                    patch('analysis_service.ROOT',root), patch('agent_decision.ROOT',root),
+                    patch('strategy_catalog.live_selection',return_value=strategy_catalog.read_strategy(prompt)),
+                    patch('daily_history._fetch_month',return_value=([], 'OFFLINE_TEST')),
+                    patch('execution.broker_runtime.get_broker_runtime',return_value=runtime),
+                    patch('execution.health_monitor.sync_broker_state',side_effect=health_snapshot),
+                    patch('execution.health_monitor.latest_refresh_snapshot',return_value=healthy),
+                    patch('execution.health_monitor.run_health_check',return_value=healthy),
+                    patch('execution.health_monitor.persist_refresh_snapshot',return_value=healthy),
+                    patch('main.is_twse_oddlot_market_window',return_value=True),
+                    patch('analysis_service.twse_closed_reason',return_value=None),
+                    patch('trading_agent.sdk_run',side_effect=runner),
+                    patch('trading_agent.sdk_review',side_effect=approve),
+                ):
+                    stack.enter_context(context)
+                query = stack.enter_context(patch('execution.auto_advice_executor.query_buying_power',return_value=power))
+                sender = stack.enter_context(patch('execution.auto_advice_executor.CapitalOddLotExecutor.send_limit_order',side_effect=send))
                 for action, expected in (('BUY',35),('HOLD',35),('SELL',30)):
                     result = service.run('MANUAL')
                     if action=='BUY':

@@ -74,6 +74,8 @@ python -m unittest test_advice_interface
 python -m pip check
 ```
 
+2026-10-28：`codex/agent-develop-parity` 已整合至 `develop`。Python 3.12 下 235 項 tests 回歸及另 3 項 advice interface 測試全部通過，包含已安裝 Agents SDK 的工具迴圈測試。原本 `Dashboard.cmd` 即可選擇 `llm`／`agent`；沿用本機 `.env` 的預設模式。資料保留及驗證見 [develop 整合紀錄](reports/develop_agent_merge_20261028.md)。
+
 離線測試以替身模擬模型與券商 API，涵蓋 Agent 工具迴圈、預算、BUY／HOLD／SELL、可賣限制、帳本承接、委託去重、行情標的切換及成交對帳。盤中真實 SKCOM／OpenAI 連線和真實委託仍須在使用環境驗證。
 
 已合併原工作分支的交易前檢查：兩種模式共用成本、可驗證價位、冷卻期、風險股數與人工持股保留規則。Agent 的獨立交易前審查同樣經 Agents SDK 使用所選 Agent 模型；審查失敗或否決會撤銷該筆交易。
