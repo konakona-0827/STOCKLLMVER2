@@ -2,6 +2,20 @@
 
 日期：2026-10-27（Asia/Tokyo）。範圍：台股支撐研究第一階段，不含策略績效驗證。
 
+## 2026-10-28 分支覆核
+
+覆核版本 `6d75af3`，Python 3.12.3。102 項 unittest 全數通過；另執行兩檔／四次呼叫的離線 `desk-demo`，以及 doctor。doctor 回報本機觀察與 OpenAI 設定就緒，執行權限為 false；這次覆核沒有新增真實模型或券商呼叫。
+
+目前的「Subagent」能力是 Python Head 固定分派 Researcher、Reviewer 的獨立單次請求：各自使用相同快照的深拷貝、不同角色指令、不共享對方答案，身分由 runtime 綁定。可分別指定模型，但本機兩方目前設定為同一模型；它不是模型動態遞迴分派或帶工具的多輪子代理。
+
+已核對角色隔離、快照完整性、整對額度、Reviewer 否決、模型失敗保留 WATCH，以及雙方同意仍無法解除硬性資料阻擋。靜態檢查及現有故障注入測試未發現阻擋目前日線觀察用途的新問題。每次 I/O timeout 仍不等同整輪硬截止，模型同源錯誤與研究文字正確性也未因此獲得保證。
+
+重播本機保存的兩輪真實資料報告（`20261027T190626-3a77b1a039`、`20261027T191021-8ae5ac477c`）：輸入 digest、snapshot ID、逐檔裁決及 shortlist 均一致；原模型呼叫分別為 10／2 次，error count 均為 0，資料最新日為 2026-10-27。觀察 SQLite 的 `PRAGMA quick_check` 為 `ok`。
+
+保留一項歷史稽核差異：19:06 那輪的資料庫 report_digest 對應加入 ledger 欄位前的報告，與最終 report.json 不同；移除 ledger 後可精確重現其舊 digest。19:10 那輪的 digest 與最終保存報告完全相同，現行 callback 後重算 digest 的程式及回歸測試也已存在。未改寫舊報告或帳本，不能將早期紀錄描述為完整的最終報告雜湊驗證。
+
+分支與交易系統 develop 沒有共同歷史，應繼續以獨立專案使用。現有原始價、公司行動與事件資料缺口仍固定阻擋 RESEARCH，只適合既定的 OBSERVATION ONLY 用途。
+
 ## 實用觀察版本補充（0.3.0）
 
 已擴充到 102 項離線測試，另以官方資料完成 19 檔、每檔 162 根日線的整批觀察；真實 OpenAI 有合成契約 smoke 2 次、真實行情第一輪 10 次及最終整合覆核 2 次，均無 provider error。最終覆核 collection COMPLETE、exit code 0、資料最新日 2026-10-27、帳本 report_digest 與保存 report.json 相符。
