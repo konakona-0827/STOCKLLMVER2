@@ -7,9 +7,21 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from execution.broker_runtime import BrokerRuntime
+from capital_multi_quote import MultiCapitalMarket
 
 
 class BrokerQuoteSwitchTests(unittest.TestCase):
+    def test_even_single_batch_leaves_quote_monitor_after_scan(self):
+        market = MultiCapitalMarket.__new__(MultiCapitalMarket)
+        market.connect = Mock()
+        market.leave_monitor = Mock(return_value=0)
+        market._fetch_one_batch = Mock(return_value=({'1101': {'price': 27}}, {}))
+        quotes, errors = market.fetch_batch(['1101'])
+        self.assertEqual({'1101': {'price': 27}}, quotes)
+        self.assertEqual({}, errors)
+        market.connect.assert_called_once_with()
+        market.leave_monitor.assert_called_once_with()
+
     def test_symbol_change_keeps_monitor_and_event_connection(self):
         calls = []
         markets = []
