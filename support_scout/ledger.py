@@ -13,7 +13,7 @@ from pathlib import Path
 import sqlite3
 from uuid import uuid4
 
-from .contracts import DataError, TAIPEI, digest, number, timestamp
+from .contracts import DataError, market_clock, digest, number, timestamp
 
 VALID_DATA_STATUSES = {"VALID", "OBSERVATION", "OBSERVATION_ONLY"}
 
@@ -115,11 +115,6 @@ def _record_item(conn, item, *, run_id, snapshot_id, rules_hash, as_of, cutoff_e
     existing = conn.execute("""SELECT * FROM observations WHERE snapshot_id=? AND symbol=?
         AND session=? AND rules_hash=? AND price_basis=?""",
         (snapshot_id, symbol, session, rules_hash, basis)).fetchone()
-    if existing:
-        if existing["payload_digest"] != payload_digest:
-            raise DataError("LEDGER_SNAPSHOT_CONTENT_CONFLICT")
-        # Runs still record each invocation; observation rows do not duplicate.
-        return [{**row, "change": "DUPLICATE"} for row in json.loads(existing["rows_json"])]
     current = conn.execute("""SELECT * FROM current_view WHERE symbol=? AND rules_hash=?
         AND price_basis=?""", (symbol, rules_hash, basis)).fetchone()
     if current is None and not valid:
@@ -127,6 +122,23 @@ def _record_item(conn, item, *, run_id, snapshot_id, rules_hash, as_of, cutoff_e
             ORDER BY last_as_of_epoch DESC LIMIT 1""", (symbol, rules_hash)).fetchone()
     previous_episode = conn.execute("SELECT * FROM episodes WHERE episode_id=?", (current["episode_id"],)).fetchone() if current and current["episode_id"] else None
     previous_state = current["current_state"] if current else None
+    if existing:
+        if existing["payload_digest"] != payload_digest:
+            raise DataError("LEDGER_SNAPSHOT_CONTENT_CONFLICT")
+        # Deduplication cannot return a historic approval after newer observations
+        # invalidated or revised it. Preserve the append-only observation row,
+        # but bind this invocation's decision to the current ledger state.
+        if current and (session < current["last_session"] or cutoff_epoch < current["last_as_of_epoch"]):
+            return [_event(symbol, previous_episode, previous_state, previous_state,
+                "STALE_IGNORED", session, None,
+                revision_review=bool(previous_episode and previous_episode["needs_revision_review"]))]
+        rows = []
+        for row in json.loads(existing["rows_json"]):
+            episode = conn.execute("SELECT * FROM episodes WHERE episode_id=?", (row.get("episode_id"),)).fetchone()
+            rows.append({**row, "change": "DUPLICATE",
+                "current_state": episode["current_state"] if episode else row["current_state"],
+                "revision_review": bool(episode and episode["needs_revision_review"])})
+        return rows
     if not valid:
         rows = [_event(symbol, previous_episode, previous_state, previous_state,
                        "DATA_REJECTED", session, None)]
@@ -230,7 +242,7 @@ def record_observation(report: dict, db_path: Path, *, before_commit=None) -> di
         raise DataError("LEDGER_BEFORE_COMMIT_MUST_BE_CALLABLE")
     cutoff = timestamp(report.get("as_of"))
     cutoff_epoch = cutoff.timestamp()
-    cutoff_day = cutoff.astimezone(TAIPEI).date().isoformat()
+    cutoff_day = cutoff.astimezone(market_clock(report.get("market", "TW"))[0]).date().isoformat()
     rules_hash = digest(report["rules"])
     report_digest = digest(report)
     run_id = uuid4().hex

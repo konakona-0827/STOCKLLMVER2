@@ -1,4 +1,4 @@
-"""Collect official daily data, run bounded research, track frozen support, publish a run."""
+"""Collect end-of-day snapshots, run bounded research and publish decision evidence."""
 from __future__ import annotations
 
 from dataclasses import asdict
@@ -16,28 +16,39 @@ from .providers import OpenAIProvider
 from .reporting import render_html
 from .settings import ROOT, DEFAULT_SETTINGS, load_settings, openai_config
 from .storage import atomic_json, publish_run, publish_latest
-from .twse import build_snapshot
+from .twse import build_snapshot as build_tw_snapshot
 
 JST = timezone(timedelta(hours=9))
 
 
 def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path=None,
             settings_path=DEFAULT_SETTINGS, agents=None, model=None, max_packets=5, max_calls=10,
-            timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None):
+            timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None,
+            market="JP"):
     settings = load_settings(Path(settings_path))
     agents = settings.get("run_agents", False) if agents is None else agents
     rules = rules or Rules()
     config = DeskConfig(max_packets, max_calls)
     output_root = Path(output_root or ROOT / "output" / "observations")
     db_path = Path(db_path or ROOT / "local_data" / "observations.sqlite3")
+    market = bundle.get("market", "TW") if bundle is not None else market
+    if market not in {"JP", "TW"}:
+        raise DataError("UNSUPPORTED_MARKET")
     if symbols is None:
-        symbols = strict_json_loads((ROOT / "config" / "universe_tw.json").read_text(encoding="utf-8"))["symbols"]
+        symbols = strict_json_loads((ROOT / "config" / ("universe_jp.json" if market == "JP" else "universe_tw.json")).read_text(encoding="utf-8"))["symbols"]
     run_id = datetime.now(JST).strftime("%Y%m%dT%H%M%S") + "-" + uuid4().hex[:10]
     target = output_root / run_id
     try:
         if bundle is None:
-            bundle = (builder or build_snapshot)(symbols, cache_dir or ROOT / "local_data" / "twse-cache",
+            if market == "JP":
+                from .japan import build_snapshot as build_jp_snapshot
+                selected_builder = build_jp_snapshot
+            else:
+                selected_builder = build_tw_snapshot
+            bundle = (builder or selected_builder)(symbols, cache_dir or ROOT / "local_data" / ("yahoo-cache" if market == "JP" else "twse-cache"),
                 months=months, timeout=timeout, progress=progress)
+            if bundle.get("market", "TW") != market:
+                raise DataError("PROVIDER_MARKET_MISMATCH")
         if bundle.get("synthetic") is not False or bundle.get("observation_only") is not True:
             raise DataError("OBSERVE_REQUIRES_REAL_OBSERVATION_SNAPSHOT")
         agent_status = "NOT_REQUESTED"
@@ -66,6 +77,9 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
         def publish_before_commit(summary):
             nonlocal code
             report["ledger"] = summary
+            if market == "JP":
+                from .decision import attach_decisions
+                attach_decisions(report, bundle)
             degraded = not data_ready or (agents and agent_status in {"FAILED", "CONFIGURATION_REQUIRED"}) or bool(summary.get("errors"))
             report["observation"]["status"] = "DEGRADED" if degraded else "OBSERVATION_READY"
             code = 2 if rejected == len(report["securities"]) else 3 if degraded else 0
@@ -74,6 +88,7 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 "input_digest": digest(bundle), "snapshot_id": report["snapshot_id"],
                 "source_code_hashes": source_hashes, "exit_code": code, "ledger_path": str(db_path.resolve()),
                 "agents_requested": agents, "agent_status": agent_status, "execution_enabled": False}
+            manifest["market"] = market
             values = {"input.json": bundle, "report.json": report, "manifest.json": manifest,
                 "rules.json": asdict(rules), "agent_tasks.json": report["agent_packets"],
                 "reviews.json": {"reviews": report.get("reviews", [])}, "desk_audit.json": report.get("desk", {})}

@@ -1,4 +1,4 @@
-name: support-desk-tests
+name: japan-support-desk-tests
 on: [push, pull_request]
 jobs:
   unit:
@@ -14,3 +14,4 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
       - run: python -m support_scout desk-demo --out output/ci-demo
+      - run: python -m support_scout japan-demo --out output/ci-japan-demo

@@ -20,13 +20,14 @@ def read_json(path: Path):
 def main(argv=None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    parser = argparse.ArgumentParser(description="Support Desk：台股日線 → 支撐掃描 → 獨立雙 agent → 研究名單")
+    parser = argparse.ArgumentParser(description="Japan Support Desk：Yahoo 日線 → 固定支撐 → 獨立雙 agent → 交易決策（無下單）")
     sub = parser.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="檢查本地儲存與OpenAI設定，不呼叫模型")
     health.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
     health.add_argument("--require-agents", action="store_true")
-    daily = sub.add_parser("observe", help="官方台股收盤資料 → 每日觀察報告 → 固定支撐跨日追蹤")
-    daily.add_argument("--symbols", help="逗號分隔的上市普通股，省略用固定19檔觀察池")
+    daily = sub.add_parser("observe", help="Yahoo 日股收盤資料 → 每日決策報告 → 固定支撐跨日追蹤")
+    daily.add_argument("--market", choices=("JP", "TW"), default="JP", help="預設日本；TW 保留原版回歸入口")
+    daily.add_argument("--symbols", help="逗號分隔，例如 6857,8035,4063；省略用固定日股觀察池")
     daily.add_argument("--months", type=int, default=8)
     daily.add_argument("--timeout", type=float, default=15)
     daily.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
@@ -55,10 +56,11 @@ def main(argv=None) -> int:
     desk.add_argument("--timeout", type=float, default=45, help="每次 API 的 I/O timeout 秒數，1–60")
     desk.add_argument("--max-output-tokens", type=int, default=2000)
     desk_demo = sub.add_parser("desk-demo", help="合成資料＋離線代理，驗證分派；永遠不升為 RESEARCH")
-    for command in (desk, desk_demo):
+    japan_demo = sub.add_parser("japan-demo", help="日股合成情境＋雙離線代理＋決策報告，不呼叫外部 API")
+    for command in (desk, desk_demo, japan_demo):
         command.add_argument("--max-packets", type=int, default=5)
         command.add_argument("--max-calls", type=int, default=10)
-    for command in (demo, scan, desk, desk_demo):
+    for command in (demo, scan, desk, desk_demo, japan_demo):
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
@@ -72,18 +74,24 @@ def main(argv=None) -> int:
                 print("讀取公開資料：" + url, flush=True)
             report, target, code = observe(symbols=args.symbols.split(",") if args.symbols else None,
                 months=args.months, timeout=args.timeout, output_root=args.out,
-                cache_dir=args.data_root / "twse-cache" if args.data_root else None,
+                cache_dir=args.data_root / ("yahoo-cache" if args.market == "JP" else "twse-cache") if args.data_root else None,
                 db_path=args.data_root / "observations.sqlite3" if args.data_root else None,
                 settings_path=args.settings, agents=args.agents, model=args.model,
-                max_packets=args.max_packets, max_calls=args.max_calls, progress=progress)
-            print(render_markdown(report))
+                max_packets=args.max_packets, max_calls=args.max_calls, progress=progress, market=args.market)
+            print(render_markdown(report, include_decisions=False))
+            if "decision_summary" in report:
+                print("決策統計：" + json.dumps(report["decision_summary"]["counts"], ensure_ascii=False))
             print("觀察狀態：" + report["observation"]["status"] + "；模型：" + report["observation"]["agent_status"])
             print("報告：" + str((target / "report.html").resolve()))
             return code
-        bundle = demo_bundle() if args.command in {"demo", "desk-demo"} else read_json(args.input)
+        if args.command == "japan-demo":
+            from .japan_demo import demo_bundle as japan_demo_bundle
+            bundle = japan_demo_bundle()
+        else:
+            bundle = demo_bundle() if args.command in {"demo", "desk-demo"} else read_json(args.input)
         rules = Rules(**read_json(args.rules)) if getattr(args, "rules", None) else Rules()
         reviews = read_json(args.reviews)["reviews"] if args.command == "scan" and args.reviews else None
-        if args.command in {"desk", "desk-demo"}:
+        if args.command in {"desk", "desk-demo", "japan-demo"}:
             researcher = reviewer = OfflineProvider()
             if getattr(args, "provider", None) == "openai":
                 researcher = OpenAIProvider(args.model, timeout=args.timeout, max_output_tokens=args.max_output_tokens)
@@ -99,6 +107,9 @@ def main(argv=None) -> int:
         for filename, value in (("report.json", report), ("agent_tasks.json", report["agent_packets"])):
             (args.out / filename).write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         (args.out / "report.md").write_text(render_markdown(report), encoding="utf-8")
+        if report.get("market") == "JP":
+            from .reporting import render_html
+            (args.out / "report.html").write_text(render_html(report, bundle), encoding="utf-8")
         if "desk" in report:
             for filename, value in (("reviews.json", {"reviews": report["reviews"]}), ("desk_audit.json", report["desk"])):
                 (args.out / filename).write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")

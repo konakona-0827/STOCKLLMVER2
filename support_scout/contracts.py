@@ -11,6 +11,15 @@ from datetime import date, datetime, time
 from datetime import timedelta, timezone
 
 TAIPEI = timezone(timedelta(hours=8), "Asia/Taipei")
+TOKYO = timezone(timedelta(hours=9), "Asia/Tokyo")
+
+
+def market_clock(market: str):
+    if market == "JP":
+        return TOKYO, time(15, 30)
+    if market == "TW":
+        return TAIPEI, time(13, 30)
+    raise DataError("UNSUPPORTED_MARKET")
 
 
 class DataError(ValueError):
@@ -77,6 +86,7 @@ class Rules:
     reset_after_break: int = 10
     max_distance_atr: float = 2.5
     min_turnover_twd: float = 20_000_000
+    min_turnover_jpy: float = 500_000_000
     event_buffer_days: int = 3
 
     def __post_init__(self):
@@ -86,7 +96,7 @@ class Rules:
         for name in integer_fields:
             if type(getattr(self, name)) is not int or getattr(self, name) < 1:
                 raise ValueError("INVALID_RULE:" + name)
-        for name in ("min_drawdown", "zone_atr", "zone_price", "bounce_atr", "max_distance_atr", "min_turnover_twd"):
+        for name in ("min_drawdown", "zone_atr", "zone_price", "bounce_atr", "max_distance_atr", "min_turnover_twd", "min_turnover_jpy"):
             number(getattr(self, name), name)
         if self.min_drawdown >= 1 or self.zone_price >= 1 or self.min_bars < max(self.atr_window + 1, self.high_window + self.pivot_right + 1):
             raise ValueError("INCONSISTENT_RULES")
@@ -102,9 +112,10 @@ class Bar:
     low: float
     close: float
     volume: float
-    turnover_twd: float
+    turnover_twd: float = 0.0
     halted: bool = False
     limit_locked: bool = False
+    turnover_jpy: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -119,6 +130,9 @@ class Series:
 
 
 def calendar_at(bundle: dict, as_of: datetime) -> list[str]:
+    zone, closing = market_clock(bundle.get("market", "TW"))
+    if bundle.get("market") == "JP":
+        closing = time(16, 0)  # Conservative end-of-day publication buffer, not exchange close.
     calendar = bundle.get("calendar", {})
     if not isinstance(calendar, dict):
         raise DataError("INVALID_CALENDAR")
@@ -130,22 +144,25 @@ def calendar_at(bundle: dict, as_of: datetime) -> list[str]:
         if not isinstance(raw, list) or not raw or any(not isinstance(s, str) for s in raw):
             raise ValueError()
         parsed = [date.fromisoformat(s) for s in raw]
-        if parsed != sorted(set(parsed)) or coverage < as_of.astimezone(TAIPEI).date():
+        if parsed != sorted(set(parsed)) or coverage < as_of.astimezone(zone).date():
             raise ValueError()
     except (KeyError, TypeError, ValueError) as exc:
         raise DataError("INVALID_OR_INCOMPLETE_CALENDAR") from exc
     # Data must explicitly mark a session complete. A calendar date alone cannot certify a bar.
-    return [s for s in raw if datetime.combine(date.fromisoformat(s), time(13, 30), TAIPEI) <= as_of]
+    return [s for s in raw if datetime.combine(date.fromisoformat(s), closing, zone) <= as_of]
 
 
-def load_series(item: dict, as_of: datetime, calendar: list[str], *, allow_observation: bool = False) -> Series:
+def load_series(item: dict, as_of: datetime, calendar: list[str], *, allow_observation: bool = False, market: str = "TW") -> Series:
     if not isinstance(item, dict):
         raise DataError("INVALID_SERIES")
     symbol = item.get("symbol", "")
-    if not isinstance(symbol, str) or not re.fullmatch(r"[0-9]{4,6}[A-Z]?", symbol):
-        raise DataError("TAIWAN_SYMBOL_REQUIRED")
-    if item.get("exchange") not in {"TWSE", "TPEX"} or item.get("currency") != "TWD" or item.get("instrument_type") != "COMMON_STOCK":
-        raise DataError("TAIWAN_COMMON_STOCK_ONLY")
+    zone, closing = market_clock(market)
+    pattern, exchanges, currency = ((r"[0-9][0-9A-Z]{3}\.T", {"TSE"}, "JPY") if market == "JP"
+        else (r"[0-9]{4,6}[A-Z]?", {"TWSE", "TPEX"}, "TWD"))
+    if not isinstance(symbol, str) or not re.fullmatch(pattern, symbol):
+        raise DataError("JAPAN_SYMBOL_REQUIRED" if market == "JP" else "TAIWAN_SYMBOL_REQUIRED")
+    if item.get("exchange") not in exchanges or item.get("currency") != currency or item.get("instrument_type") != "COMMON_STOCK":
+        raise DataError("JAPAN_COMMON_STOCK_ONLY" if market == "JP" else "TAIWAN_COMMON_STOCK_ONLY")
     if item.get("interval") != "1d" or not item.get("source") or item.get("volume_unit") != "shares":
         raise DataError("DAILY_SOURCE_AND_SHARE_UNITS_REQUIRED")
     observation = allow_observation and item.get("observation_only") is True
@@ -175,7 +192,7 @@ def load_series(item: dict, as_of: datetime, calendar: list[str], *, allow_obser
             session = date.fromisoformat(row["session"])
         except (KeyError, TypeError, ValueError) as exc:
             raise DataError("INVALID_SESSION") from exc
-        if (closed.astimezone(TAIPEI).date() != session or closed.astimezone(TAIPEI).time() < time(13, 30)
+        if (closed.astimezone(zone).date() != session or closed.astimezone(zone).time() < closing
                 or closed > available):
             raise DataError("INVALID_BAR_AVAILABILITY")
         prices = {key: number(row.get(key), key) for key in ("open", "high", "low", "close")}
@@ -186,7 +203,8 @@ def load_series(item: dict, as_of: datetime, calendar: list[str], *, allow_obser
                 raise DataError("TRADABILITY_FLAGS_REQUIRED")
         selected.append(Bar(session.isoformat(), row["closed_at"], row["available_at"], **prices,
                             volume=number(row.get("volume"), "volume", zero=True),
-                            turnover_twd=number(row.get("turnover_twd"), "turnover_twd", zero=True),
+                            **{("turnover_jpy" if market == "JP" else "turnover_twd"):
+                                number(row.get("turnover_jpy" if market == "JP" else "turnover_twd"), "turnover_" + currency, zero=True)},
                             halted=row["halted"], limit_locked=row["limit_locked"]))
     dates = [b.session for b in selected]
     if dates != sorted(set(dates)):
@@ -199,11 +217,11 @@ def load_series(item: dict, as_of: datetime, calendar: list[str], *, allow_obser
     expected = [s for s in calendar if s >= dates[0]]
     if dates != expected:
         raise DataError("MISSING_OR_STALE_SESSIONS")
-    if any(b.halted or b.volume == 0 or b.turnover_twd == 0 for b in selected):
+    if any(b.halted or b.volume == 0 or (b.turnover_jpy if market == "JP" else b.turnover_twd) == 0 for b in selected):
         raise DataError("HALT_OR_ZERO_VOLUME_REQUIRES_NEW_SEGMENT")
     metadata = {key: item.get(key) for key in ("currency", "instrument_type", "interval", "volume_unit",
                 "actions_reviewed", "adjustment_as_of", "volume_comparable", "tradability_reviewed", "point_in_time",
-                "observation_only", "observation_blockers", "collection_status", "collection_errors")}
+                "observation_only", "observation_blockers", "collection_status", "collection_errors", "turnover_basis")}
     return Series(symbol, str(item.get("name", symbol)), item["exchange"], item["source"],
                   item["price_basis"], tuple(selected), metadata)
 

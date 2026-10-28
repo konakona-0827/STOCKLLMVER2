@@ -91,7 +91,8 @@ def detect_support(series: Series, rules: Rules) -> dict:
         episodes.append(active)
 
     latest = bars[-1]
-    turnover20 = fmean(b.turnover_twd for b in bars[-20:])
+    japan = series.metadata.get("currency") == "JPY"
+    turnover20 = fmean((b.turnover_jpy if japan else b.turnover_twd) for b in bars[-20:])
     current_id = record("LATEST", len(bars) - 1, asdict(latest))
     blockers = []
     state = active["state"] if active else "NO_SETUP"
@@ -101,7 +102,7 @@ def detect_support(series: Series, rules: Rules) -> dict:
         blockers.append("SUPPORT_NOT_RULE_CONFIRMED")
     if extended:
         blockers.append("EXTENDED_FROM_SUPPORT")
-    if turnover20 < rules.min_turnover_twd:
+    if turnover20 < (rules.min_turnover_jpy if japan else rules.min_turnover_twd):
         blockers.append("LOW_20_SESSION_TURNOVER")
     if latest.limit_locked:
         blockers.append("LIMIT_LOCKED")
@@ -129,7 +130,9 @@ def detect_support(series: Series, rules: Rules) -> dict:
     return {"state": state, "position": "EXTENDED" if extended else "NEAR_SUPPORT" if active else "NO_ZONE",
             "bar_count": len(bars), "latest_session": latest.session, "latest_close": latest.close,
             "support": {key: value for key, value in active.items() if not key.endswith("_index")} if active else None,
-            "distance_above_zone_atr": distance, "average_turnover_20_twd": turnover20,
+            "distance_above_zone_atr": distance,
+            ("average_turnover_20_jpy" if japan else "average_turnover_20_twd"): turnover20,
+            "turnover_currency": "JPY" if japan else "TWD",
             "retest_vs_bounce_volume": ratio, "priority_components": components,
             "priority_score": round(sum(components.values()), 4) if base_score else None,
             "score_meaning": "UNVALIDATED_RESEARCH_PRIORITY_NOT_PROBABILITY",

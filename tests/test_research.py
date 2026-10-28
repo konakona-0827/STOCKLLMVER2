@@ -42,7 +42,7 @@ class DataContractTests(unittest.TestCase):
         self.bundle["securities"][0]["interval"] = "1m_snapshot"
         self.assertRejected("DAILY_SOURCE")
 
-    def test_japan_is_out_of_scope(self):
+    def test_japan_requires_explicit_market_profile(self):
         self.bundle["securities"][0]["symbol"] = "6857.T"
         self.assertRejected("TAIWAN_SYMBOL")
 

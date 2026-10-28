@@ -64,6 +64,24 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(current["last_session"], "2026-10-28")
         self.assertEqual(current["last_close"], 106)
 
+    def test_duplicate_replay_reports_newer_invalidation_instead_of_old_approval(self):
+        original = report(state="RULE_CONFIRMED", close=106)
+        record_observation(original, self.db)
+        record_observation(report("2026-10-28", snapshot="broken", close=98), self.db)
+        replay = record_observation(original, self.db)
+        self.assertEqual(replay["stale"], 1)
+        self.assertEqual(replay["rows"][0]["current_state"], "INVALIDATED")
+        self.assertEqual(len(self.query("SELECT * FROM observations")), 2)
+
+    def test_duplicate_replay_reports_persistent_revision_review(self):
+        original = report(state="RULE_CONFIRMED", close=106)
+        record_observation(original, self.db)
+        record_observation(report("2026-10-28", snapshot="revision", lower=98, upper=102), self.db)
+        replay = record_observation(original, self.db)
+        self.assertEqual(replay["stale"], 1)
+        self.assertEqual(replay["rows"][0]["current_state"], "REVISION_REVIEW")
+        self.assertTrue(replay["rows"][0]["revision_review"])
+
     def test_revised_support_is_reviewed_and_never_redrawn(self):
         record_observation(report(), self.db)
         revised = record_observation(report("2026-10-28", snapshot="revision", lower=98, upper=102, state="RULE_CONFIRMED"), self.db)
