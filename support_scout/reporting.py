@@ -83,10 +83,30 @@ def render_html(report: dict, bundle: dict) -> str:
         reviews = []
         for role, review in item.get("agent_reviews", {}).items():
             reviews.append(f'<p><b>{escape(role)} · {escape(review["verdict"])}</b> {escape(review["summary"])}</p>')
+            info = review.get("public_information")
+            if info:
+                reviews.append('<details open><summary>主動查找的財報與公開資訊（模型抽取，仍待獨立核實）</summary>')
+                for finding in info["findings"]:
+                    reviews.append(f'<p><b>{escape(finding["category"])} · {escape(finding["implication"])}</b> '
+                        f'<a href="{escape(finding["url"], quote=True)}" target="_blank" rel="noreferrer">{escape(finding["title"])}</a>'
+                        f'<br>發布：{escape(str(finding["published_at"]))}（{escape(finding["time_precision"])}）'
+                        f'<br>{escape(finding["fact"])}<br>比較基準：{escape(finding["expectation_basis"] or "未取得可核實的市場預期")}</p>')
+                reviews.append(f'<p>取得：{escape(info["retrieved_at"])}；搜尋工具完成 {info["completed_tool_call_count"]} 次'
+                    f'（嘗試 {info["tool_attempt_count"]} 次）；'
+                    f'缺口：{escape("；".join(info["gaps"]) or "本次格式與時點檢查未發現缺口；內容仍待核實")}</p></details>')
         for event in report.get("desk", {}).get("events", []):
             if event.get("symbol") == symbol and event.get("status") == "ERROR":
                 reviews.append(f'<p class="warn">{escape(event["role"])}：{escape(event.get("error", "ERROR"))}</p>')
         source = data.get(symbol, {})
+        pattern_html = ""
+        for pattern in item.get("patterns", []):
+            metrics = pattern["metrics"]
+            pattern_html += (f'<div class="decision"><h4>{escape(pattern["pattern_id"])} · {escape(pattern["stage_label"])}</h4>'
+                f'<p>版本 {escape(pattern["version"])}；無新低 {metrics.get("no_new_low_sessions", "—")} 個交易日；'
+                f'支撐測試 {metrics.get("support_test_count", "—")} 次；縮量比 {fmt(metrics.get("volume_contraction_ratio"))}；'
+                f'距支撐 {fmt((metrics.get("distance_from_support_fraction") or 0)*100)}%。</p>'
+                '<p>機會階段不等於交易批准；H1／H2尚未經回測驗證。</p>'
+                f'<p class="notes">{escape("；".join(pattern["reason_codes"]))}</p></div>')
         source_rows = source.get("source_documents", [])
         links = " ".join(f'<a href="{escape(s["url"], quote=True)}" target="_blank" rel="noreferrer">來源{i+1}</a>'
             for i, s in enumerate(source_rows) if s.get("url", "").startswith("https://"))
@@ -103,7 +123,7 @@ def render_html(report: dict, bundle: dict) -> str:
             f'反彈：{escape(str(support.get("bounce_at", "—")))}；回測：{escape(str(support.get("retest_at", "—")))}；'
             f'確認：{escape(str(support.get("confirmed_at", "—")))}</p>'
             f'<p>價格口徑：{escape(item.get("price_basis", "未知"))}。固定失效下緣：{fmt(support.get("lower"))}；最新日線：{escape(str(t.get("latest_session", "—")))}</p>'
-            f'{decision_html}<p class="notes">{reason_text}</p>{"".join(reviews) or "<p>本檔尚無模型評語。</p>"}'
+            f'{pattern_html}{decision_html}<p class="notes">{reason_text}</p>{"".join(reviews) or "<p>本檔尚無模型評語。</p>"}'
             f'<p>{links}</p></article>')
     jst = timestamp(report["as_of"]).astimezone(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
     queue = ", ".join(report["technical_queue"]) or "本輪沒有，繼續等待"

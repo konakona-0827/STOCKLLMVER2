@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "definitions": [
+    {
+      "id": "H-001",
+      "version": "h001-v2-20261029",
+      "handler": "support_catalyst_reversal",
+      "enabled": true,
+      "name": "支撐穩定後的催化反轉",
+      "hypotheses": [
+        "H1：下跌後支撐穩定者與一般連跌者的後續表現是否不同，尚待驗證。",
+        "H2：支撐穩定且出現可核對的正面超預期催化，是否優於無催化組，尚待驗證。"
+      ],
+      "evaluation_horizons_sessions": [1, 3, 5, 10],
+      "agent_guidance": "區分初期觀察、支撐證據增強、催化已知但價格待確認、公布後價格確認。收盤後公告不能解釋當天已完成日線，必須有事件後可分辨的新價格資料才升催化確認；仍不證明因果。H-001百分比支撐與technical的ATR模型是獨立研究通道，不混用其價位或間隔。利多或年增不等於超預期，未公布事件不能提前使用。不得估計未經回測的勝率；機會階段不等於交易批准。",
+      "parameters": {
+        "decline_lookback_sessions": 20,
+        "min_decline_fraction": 0.08,
+        "stabilization_min_sessions": 3,
+        "stabilization_window_sessions": 5,
+        "max_stabilization_range_fraction": 0.08,
+        "historical_lookback_sessions": 60,
+        "min_support_tests": 2,
+        "test_separation_sessions": 2,
+        "support_band_fraction": 0.01,
+        "volume_reference_sessions": 10,
+        "volume_contraction_ratio": 0.8,
+        "max_distance_fraction": 0.05,
+        "breakout_lookback_sessions": 5,
+        "breakout_volume_multiple": 1.3,
+        "catalyst_max_age_days": 7,
+        "min_surprise_fraction": 0.05,
+        "max_episode_sessions": 30
+      }
+    }
+  ]
+}

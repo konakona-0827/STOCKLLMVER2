@@ -11,3 +11,5 @@
 - 改規則或任務指令時保留版本、日期截止、固定支撐與重播測試。機器可驗證的事由 Python 處理。
 - 有界 provider 失敗、資料不足或審查不完整時保留 WATCH；不得用模型敘述覆寫硬性檢查。
 - 程式驗證：`python -m unittest discover -s tests -v`。離線示範：`python -m support_scout desk-demo`。
+- H-001為獨立機會假說，不覆寫原ATR交易資格；百分比/ATR支撐不得混用。合成案例明示事後參數實驗，所有價格與財報人造，不推論真實Advantest勝率。
+- 日股實際觀察可讓研究/反證員使用有界公開搜尋。保存工具來源、發布時間及抽取，不把模型抽取自動標成verified或解除PIT/事件blocker；合成與歷史回放不即時搜尋。規則與工具政策在SEARCH前凍結。

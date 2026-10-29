@@ -13,10 +13,13 @@ from .agents import verify_packet
 from .contracts import DataError, digest, strict_json_loads, timestamp
 from .providers import ProviderError, post_json
 
-SEARCH_PROTOCOL = "japan-support-search-v1"
+SEARCH_PROTOCOL = "japan-support-search-v2-patterns"
 SEARCH_TASK = (
     "你是日本股票支撐觀察團隊的 SEARCH 研究員。請用繁體中文，只在本候選池尋找值得後續獨立研究的標的。"
     "優先考慮先反彈、另日回測固定支撐、後續確認且仍接近支撐的情境；也可選尚待確認但值得追蹤者。"
+    "亦可依patterns尋找H-001初期低點穩定、支撐縮量強化與超預期催化反轉；說明屬哪個機會階段及尚缺證據。"
+    "公告後尚無新價格資料時屬CATALYST_AWAITING_PRICE，不可拿公告前的日線作事件後確認。"
+    "機會階段不等於交易批准；下跌中繼、未核實預期、未公布事件及追高必須分開處理。"
     "數值排序僅為研究提示，不能當勝率；可調整研究先後，不需要選滿，沒有適合者就回空 selections。"
     "這不是是否交易的結論，不能建議買賣、部位、價格或自行解除資料缺口。"
     "只可回傳 candidate_id、屬於該候選的有效 evidence_ids、rationale；不得回傳代號、價格、分數或新增候選。"
@@ -64,15 +67,24 @@ def _compact_candidate(source_packet, cutoff):
     latest_id = technical.get("latest_evidence_id")
     support_refs = set((technical.get("support") or {}).get("evidence_ids", []))
     anchor_ids = [e["id"] for e in evidence if e["kind"] == "ANCHOR" and e["id"] in support_refs]
+    pattern_refs = [identifier for p in source.get("patterns", []) if p["research_candidate"] for identifier in p["required_evidence_ids"]]
+    if not anchor_ids and pattern_refs:
+        anchor_ids = [pattern_refs[0]]
     if latest_id not in ids or len(anchor_ids) != 1 or any(timestamp(e["available_at"]) > cutoff for e in evidence):
         raise DataError("SEARCH_REQUIRED_EVIDENCE_UNAVAILABLE")
     series = source["visible_series"]
-    return {"candidate_id": source_packet["packet_id"], "packet_id": source_packet["packet_id"],
+    candidate = {"candidate_id": source_packet["packet_id"], "packet_id": source_packet["packet_id"],
         "symbol": source["symbol"], "name": series["name"], "exchange": series["exchange"],
         "currency": series["metadata"]["currency"], "price_basis": series["price_basis"],
         "observation_only": source["observation_only"], "technical": deepcopy(technical),
         "context_blockers": deepcopy(source["context_blockers"]), "evidence": evidence,
-        "required_evidence_ids": [latest_id, anchor_ids[0]]}
+        "required_evidence_ids": list(dict.fromkeys([latest_id, anchor_ids[0], *pattern_refs]))}
+    if "patterns" in source:
+        candidate["patterns"] = deepcopy(source["patterns"])
+        candidate["support_model_boundaries"] = deepcopy(source.get("support_model_boundaries", {}))
+        if "analysis_context" in source:
+            candidate["analysis_context"] = deepcopy(source["analysis_context"])
+    return candidate
 
 
 def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=40, max_selected=4) -> dict:
@@ -116,12 +128,16 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
         technical = source["technical"]
         if item.get("verdict") == "REJECT" or source.get("context_reject") is True or technical.get("position") == "EXTENDED":
             continue
-        if technical.get("state") not in {"BASE_FORMING", "BOUNCE_SEEN", "RETEST_HELD", "RULE_CONFIRMED"}:
+        pattern_candidate = any(p["research_candidate"] for p in source.get("patterns", []))
+        if technical.get("state") not in {"BASE_FORMING", "BOUNCE_SEEN", "RETEST_HELD", "RULE_CONFIRMED"} and not pattern_candidate:
             raise DataError("SEARCH_UNEXPECTED_SOURCE_STATE")
         # The pool deliberately excludes reviews, trade_decision, and raw bars.
         candidates.append(_compact_candidate(source_packet, cutoff))
     candidates.sort(key=lambda c: (not (c["technical"]["technical_candidate"] and not c["context_blockers"]),
-        not c["technical"]["technical_candidate"], -(c["technical"].get("priority_score") or 0), c["symbol"]))
+        not c["technical"]["technical_candidate"],
+        -max(({"CATALYST_CONFIRMED": 4, "CATALYST_AWAITING_PRICE": 3, "SUPPORT_STRENGTHENED": 2, "EARLY_WATCH": 1}.get(p["stage"], 0)
+              for p in c.get("patterns", [])), default=0),
+        -(c["technical"].get("priority_score") or 0), c["symbol"]))
     body = {"protocol": SEARCH_PROTOCOL, "task": SEARCH_TASK, "response_schema": deepcopy(SEARCH_SCHEMA),
         "core": {"snapshot_id": initial_report["snapshot_id"], "as_of": initial_report["as_of"],
             "market": "JP", "synthetic": initial_report.get("synthetic") is True,

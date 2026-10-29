@@ -61,6 +61,16 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
     cutoff = timestamp(as_of or bundle.get("as_of"))
     market = bundle.get("market", "TW")
     rules = rules or Rules()
+    registry = None
+    public_policy = None
+    if market == "JP":
+        from .patterns import load_registry
+        registry = load_registry(bundle.get("pattern_registry"))
+        if "public_information_policy" in bundle:
+            from .public_information import load_policy
+            public_policy = load_policy(bundle["public_information_policy"])
+            if public_policy["enabled"] and bundle.get("synthetic") is not False:
+                raise DataError("PUBLIC_WEB_FORBIDDEN_IN_SYNTHETIC_CASE")
     calendar = calendar_at(bundle, cutoff)
     raw_items = bundle.get("securities")
     if not isinstance(raw_items, list) or not raw_items:
@@ -79,6 +89,10 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             observation = bundle.get("observation_only") is True and item.get("observation_only") is True
             series = load_series(item, cutoff, calendar, allow_observation=observation, market=market)
             technical = detect_support(series, rules)
+            patterns = []
+            if registry is not None:
+                from .patterns import evaluate_patterns
+                patterns = evaluate_patterns(series, cutoff, registry, item.get("pattern_context"))
             context_evidence, context_blockers, context_reject = context_at(bundle, item, cutoff, rules)
             if series.metadata.get("point_in_time") is not True:
                 context_blockers.append("POINT_IN_TIME_NOT_VERIFIED")
@@ -92,7 +106,9 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             if bundle.get("collection", {}).get("status") not in (None, "OK", "COMPLETE"):
                 context_blockers.append("DATA_COLLECTION_DEGRADED")
             evidence = technical["evidence"] + context_evidence
+            evidence.extend(e for pattern in patterns for e in pattern["evidence"])
             required = [e["id"] for e in evidence if e["kind"] in {"ANCHOR", "BOUNCE", "RETEST", "CONFIRMATION", "LATEST", "DOSSIER", "MARKET"}]
+            required.extend(e for pattern in patterns if pattern["research_candidate"] for e in pattern["required_evidence_ids"])
             core = {"schema_version": 1, "as_of": cutoff.isoformat(), "symbol": symbol,
                     "market": market,
                     "discovery_required": bundle.get("discovery_required") is True,
@@ -105,6 +121,15 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                     "technical": {k: v for k, v in technical.items() if k != "evidence"},
                     "context_blockers": context_blockers, "context_reject": context_reject, "evidence": evidence,
                     "required_confirmation_evidence": required}
+            if registry is not None:
+                core["patterns"] = patterns
+                core["pattern_registry_digest"] = digest(registry)
+                core["support_model_boundaries"] = {"technical": "LEGACY_STRICT_ATR_RETEST_TRADING_GATE",
+                    "patterns": "INDEPENDENT_OPPORTUNITY_HYPOTHESES_DO_NOT_OVERRIDE_TRADING_GATE"}
+                if "analysis_context" in bundle:
+                    core["analysis_context"] = deepcopy(bundle["analysis_context"])
+            if public_policy is not None:
+                core["public_information_policy"] = deepcopy(public_policy)
             packet = make_packet(core)
             own_reviews = [r for r in review_rows if isinstance(r, dict) and r.get("packet_id") == packet["packet_id"]]
             accepted, errors = validate_reviews(packet, own_reviews)
@@ -115,7 +140,11 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                             "price_basis": series.price_basis, "observation_only": observation,
                             "technical": technical, "context_blockers": context_blockers,
                             "agent_reviews": accepted, "agent_errors": errors, **decision})
-            if technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}:
+            if registry is not None:
+                outputs[-1]["patterns"] = patterns
+            pattern_candidate = any(p["research_candidate"] for p in patterns)
+            if (technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}
+                    or (pattern_candidate and technical["state"] not in {"INVALIDATED", "INSUFFICIENT_DATA"})):
                 packets.append(packet)
         except (DataError, KeyError, TypeError, ValueError) as exc:
             source_errors = item.get("collection_errors", []) if isinstance(item, dict) else []
@@ -145,6 +174,13 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                             "MANUAL_REVIEW_IDENTITIES_ARE_SELF_REPORTED"]}
     if "discovery" in bundle:
         report["discovery"] = deepcopy(bundle["discovery"])
+    if registry is not None:
+        report["pattern_registry"] = registry
+        report["pattern_registry_digest"] = digest(registry)
+        report["pattern_opportunity_queue"] = [o["symbol"] for o in outputs
+            if o.get("verdict") != "REJECT" and any(p["research_candidate"] for p in o.get("patterns", []))]
+    if public_policy is not None:
+        report["public_information_policy"] = deepcopy(public_policy)
     if market == "JP":
         from .decision import attach_decisions
         attach_decisions(report, bundle)
@@ -181,4 +217,22 @@ def render_markdown(report: dict, *, include_decisions: bool = True) -> str:
     if "desk" in report:
         d = report["desk"]
         lines.extend([f"Desk：{d['status']}；模式：{d['mode']}；呼叫：{d['call_count']}；run：{d['run_id']}", ""])
+        if report.get("public_information_policy", {}).get("enabled"):
+            lines.extend([f"已記錄的公開搜尋工具完成：{d.get('web_tool_call_count', 0)} 次；"
+                f"用量紀錄{'完整' if d.get('web_usage_complete', False) else '有缺口，失敗請求用量未知'}；"
+                "來源與發布時間保存於各角色的public_information。", ""])
+            for item in report["securities"]:
+                for role, review in item.get("agent_reviews", {}).items():
+                    for f in review.get("public_information", {}).get("findings", []):
+                        lines.append(f"- {item['symbol']} / {role} / {f['category']}：{f['fact']}（{f['published_at']}） {f['url']}")
+            lines.append("")
+    if report.get("pattern_registry"):
+        lines.extend(["## Pattern 機會層", "", "階段是研究線索，不等於交易資格或勝率。", "",
+            "| 標的 | Pattern／版本 | 機會階段 | 無新低交易日 | 支撐測試 | 量比 |", "|---|---|---|---:|---:|---:|"])
+        for item in report["securities"]:
+            for pattern in item.get("patterns", []):
+                m = pattern["metrics"]
+                ratio = m.get("volume_contraction_ratio")
+                lines.append(f"| {item['symbol']} | {pattern['pattern_id']} / {pattern['version']} | {pattern['stage_label']} | {m.get('no_new_low_sessions','—')} | {m.get('support_test_count','—')} | {round(ratio,3) if ratio is not None else '—'} |")
+        lines.append("")
     return "\n".join(lines)

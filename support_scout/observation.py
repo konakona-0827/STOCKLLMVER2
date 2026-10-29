@@ -64,7 +64,7 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             settings_path=DEFAULT_SETTINGS, agents=None, model=None, max_packets=5, max_calls=10,
             timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None,
             market="JP", discover=None, scan_limit=100, search_provider=None, universe=None,
-            universe_loader=None, cursor_path=None):
+            universe_loader=None, cursor_path=None, public_information=None):
     settings = load_settings(Path(settings_path))
     agents = settings.get("run_agents", False) if agents is None else agents
     rules = rules or Rules()
@@ -129,6 +129,16 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             bundle["discovery_required"] = True
             bundle["source_universe"] = deepcopy(universe)
             bundle["universe_version"] = universe["universe_id"] + ":" + digest([s["symbol"] for s in bundle["securities"]])[:12]
+        if market == "JP":
+            from .patterns import load_registry
+            bundle["pattern_registry"] = load_registry(bundle.get("pattern_registry"))
+            # Existing programmatic fixtures/saved inputs remain opt-in; the live
+            # CLI explicitly enables this by default. Freeze before SEARCH IDs.
+            if public_information is not None:
+                from .public_information import load_policy
+                policy = load_policy()
+                policy["enabled"] = bool(public_information)
+                bundle["public_information_policy"] = policy
         if bundle.get("synthetic") is not False or bundle.get("observation_only") is not True:
             raise DataError("OBSERVE_REQUIRES_REAL_OBSERVATION_SNAPSHOT")
         agent_status = "NOT_REQUESTED"
@@ -137,8 +147,8 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
         if agents and (researcher is None or reviewer is None or (dynamic and search_provider is None)):
             ai = openai_config(settings, model=model)
             if ai["ready"]:
-                researcher = researcher or OpenAIProvider(ai["model"])
-                reviewer = reviewer or OpenAIProvider(ai["reviewer_model"])
+                researcher = researcher or OpenAIProvider(ai["model"], max_output_tokens=4000)
+                reviewer = reviewer or OpenAIProvider(ai["reviewer_model"], max_output_tokens=4000)
                 if dynamic:
                     from .discovery import OpenAISearchProvider
                     search_provider = search_provider or OpenAISearchProvider(ai["model"])
@@ -177,8 +187,8 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             else:
                 ai = openai_config(settings, model=model)
                 if ai["ready"]:
-                    report = run_desk(bundle, researcher=OpenAIProvider(ai["model"]),
-                        reviewer=OpenAIProvider(ai["reviewer_model"]), rules=rules, config=config)
+                    report = run_desk(bundle, researcher=OpenAIProvider(ai["model"], max_output_tokens=4000),
+                        reviewer=OpenAIProvider(ai["reviewer_model"], max_output_tokens=4000), rules=rules, config=config)
                 else:
                     agent_status = "CONFIGURATION_REQUIRED"
             if "desk" in report:
@@ -209,6 +219,12 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             values = {"input.json": bundle, "report.json": report, "manifest.json": manifest,
                 "rules.json": asdict(rules), "agent_tasks.json": report["agent_packets"],
                 "reviews.json": {"reviews": report.get("reviews", [])}, "desk_audit.json": report.get("desk", {})}
+            if market == "JP":
+                values["patterns.json"] = bundle["pattern_registry"]
+                manifest["pattern_registry_digest"] = digest(bundle["pattern_registry"])
+                if "public_information_policy" in bundle:
+                    values["public_information_policy.json"] = bundle["public_information_policy"]
+                    manifest["public_information_policy_digest"] = digest(bundle["public_information_policy"])
             if dynamic:
                 values["universe.json"] = universe
                 values["search_audit.json"] = report["discovery"]

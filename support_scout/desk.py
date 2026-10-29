@@ -30,6 +30,9 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
     audit = {"packet_id": packet["packet_id"], "symbol": packet["core"]["symbol"],
         "role": role, "agent_id": agent_id, "model": provider.model,
         "started_at": datetime.now(timezone.utc).isoformat()}
+    if packet["core"].get("public_information_policy", {}).get("enabled"):
+        audit.update(web_tool_call_count=None, web_tool_attempt_count=None,
+            web_usage_status="UNKNOWN_UNTIL_RESPONSE_VALIDATED")
     try:
         isolated = deepcopy(packet)
         verify_packet(isolated)
@@ -39,6 +42,8 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
             raise ProviderError("INVALID_PROVIDER_COMPLETION")
         review = {**deepcopy(completion.answer), "packet_id": packet["packet_id"], "role": role,
             "agent_id": agent_id, "produced_at": datetime.now(timezone.utc).isoformat()}
+        if completion.public_information is not None:
+            review["public_information"] = deepcopy(completion.public_information)
         accepted, errors = validate_reviews(packet, [review])
         if errors or role not in accepted:
             raise ProviderError("REVIEW_CONTRACT_REJECTED:" + ",".join(errors))
@@ -46,6 +51,11 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
             raise ProviderError("OFFLINE_PROMOTION_REFUSED")
         audit.update(status="ACCEPTED", response_id=completion.response_id, usage=completion.usage,
                      review_digest=digest(review))
+        if completion.public_information is not None:
+            info = completion.public_information
+            audit.update(web_tool_call_count=info["completed_tool_call_count"],
+                web_tool_attempt_count=info["tool_attempt_count"], public_information_digest=info["digest"],
+                public_finding_count=len(info["findings"]), public_gaps=info["gaps"], web_usage_status="RECORDED")
         return review, audit
     except Exception as exc:
         # Controlled errors only; never persist arbitrary exception text.
@@ -65,6 +75,9 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
     if len(modes) != 1:
         raise DataError("MIXED_OFFLINE_AND_LIVE_PROVIDERS_FORBIDDEN")
     snapshot = deepcopy(bundle)
+    if snapshot.get("market") == "JP":
+        from .patterns import load_registry
+        snapshot["pattern_registry"] = load_registry(snapshot.get("pattern_registry"))
     rules = rules or Rules()
     initial = run(snapshot, as_of=as_of, rules=rules)
     discovery_skipped = False
@@ -117,6 +130,9 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
         "status": "SKIPPED_DISCOVERY" if discovery_skipped else "DEGRADED" if errors else "PARTIAL_BUDGET" if deferred else "COMPLETE",
         "config": asdict(config), "call_count": len(events), "error_count": errors,
         "selected_symbols": [p["core"]["symbol"] for p in selected],
+        "web_tool_call_count": sum(e.get("web_tool_call_count") or 0 for e in events),
+        "web_tool_attempt_count": sum(e.get("web_tool_attempt_count") or 0 for e in events),
+        "web_usage_complete": all(e.get("web_usage_status") != "UNKNOWN_UNTIL_RESPONSE_VALIDATED" for e in events),
         "deferred_symbols": [p["core"]["symbol"] for p in deferred], "events": events,
         "identity_binding": "RUNTIME_ASSIGNED_SEPARATE_CONTEXTS_NOT_INDEPENDENT_MODELS",
         "capabilities": ["READ_SNAPSHOT", "RESEARCH", "REVIEW", "REPORT"],

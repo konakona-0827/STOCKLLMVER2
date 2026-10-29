@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "case_id": "ADVANTEST-H001-SYNTHETIC-v1",
+  "synthetic": true,
+  "symbol": "6857.T",
+  "name": "Advantest 合成參數案例（非真實行情）",
+  "provenance": "依使用者20261029GPTCONVERSATION.md的形態假說製作；30,000日圓只作模擬支撐基準。所有OHLC、量能、財報與市場預期均為人造數值，不是對Advantest真實歷史的查證。",
+  "baseline": {
+    "start_session": "2026-06-01",
+    "end_session": "2026-10-29",
+    "open": 38000,
+    "high": 38500,
+    "low": 37500,
+    "close": 38000,
+    "volume": 2000000
+  },
+  "daily_overrides": [
+    {"session":"2026-10-09","open":38000,"high":39000,"low":37000,"close":37500,"volume":5000000},
+    {"session":"2026-10-13","open":37000,"high":37500,"low":35000,"close":35500,"volume":4500000},
+    {"session":"2026-10-14","open":35000,"high":35600,"low":33000,"close":33500,"volume":4000000},
+    {"session":"2026-10-15","open":33400,"high":34000,"low":31800,"close":32000,"volume":3500000},
+    {"session":"2026-10-16","open":32000,"high":32600,"low":30700,"close":31000,"volume":3000000},
+    {"session":"2026-10-19","open":31000,"high":31500,"low":30000,"close":30400,"volume":4000000},
+    {"session":"2026-10-20","open":30400,"high":30900,"low":30100,"close":30600,"volume":3500000},
+    {"session":"2026-10-21","open":30600,"high":31000,"low":30040,"close":30700,"volume":3000000},
+    {"session":"2026-10-22","open":30700,"high":31050,"low":30060,"close":30800,"volume":2500000},
+    {"session":"2026-10-23","open":30800,"high":31000,"low":30000,"close":30700,"volume":1600000},
+    {"session":"2026-10-26","open":30700,"high":31000,"low":30020,"close":30850,"volume":700000},
+    {"session":"2026-10-27","open":30850,"high":31200,"low":30600,"close":31050,"volume":4800000},
+    {"session":"2026-10-28","open":31100,"high":31400,"low":31000,"close":31350,"volume":6000000},
+    {"session":"2026-10-29","open":31350,"high":31600,"low":31100,"close":31450,"volume":7000000}
+  ],
+  "pattern_context": {
+    "decline_driver": {
+      "classification": "SENTIMENT_OR_LIQUIDITY",
+      "verified": true,
+      "available_at": "2026-10-19T16:00:00+09:00",
+      "source": "SYNTHETIC_ASSUMPTION_NOT_REAL_FUNDAMENTAL_REVIEW"
+    },
+    "catalysts": [
+      {
+        "id": "synthetic-sector-strength",
+        "kind": "SECTOR_STRENGTH",
+        "announced_at": "2026-10-27T15:30:00+09:00",
+        "available_at": "2026-10-27T16:00:00+09:00",
+        "source": "SYNTHETIC_SECTOR_CONTEXT",
+        "verified": true
+      },
+      {
+        "id": "synthetic-earnings-surprise",
+        "kind": "EARNINGS",
+        "announced_at": "2026-10-28T15:40:00+09:00",
+        "available_at": "2026-10-28T16:15:00+09:00",
+        "source": "SYNTHETIC_EARNINGS_NOT_REAL_ADVANTEST_RESULTS",
+        "verified": true,
+        "comparison": {
+          "metric": "hypothetical_eps",
+          "actual": 120,
+          "consensus": 100,
+          "actual_unit": "JPY/share",
+          "consensus_unit": "JPY/share",
+          "expectation_available_at": "2026-10-27T12:00:00+09:00",
+          "actual_source": "SYNTHETIC_RESULT",
+          "consensus_source": "SYNTHETIC_PRE_EVENT_CONSENSUS",
+          "direction": "HIGHER_IS_BETTER"
+        }
+      }
+    ]
+  },
+  "checkpoints": [
+    {"id":"early","as_of":"2026-10-23T17:00:00+09:00","expected_stage":"EARLY_WATCH"},
+    {"id":"support","as_of":"2026-10-26T17:00:00+09:00","expected_stage":"SUPPORT_STRENGTHENED"},
+    {"id":"catalyst_announced","as_of":"2026-10-28T17:00:00+09:00","expected_stage":"CATALYST_AWAITING_PRICE"},
+    {"id":"catalyst","as_of":"2026-10-29T16:00:00+09:00","expected_stage":"CATALYST_CONFIRMED"},
+    {"id":"chase_control","as_of":"2026-10-28T17:00:00+09:00","expected_stage":"EXTENDED",
+     "bar_override":{"session":"2026-10-28","open":33500,"high":35500,"low":33200,"close":35000,"volume":6000000}},
+    {"id":"broken_control","as_of":"2026-10-26T17:00:00+09:00","expected_stage":"INVALIDATED",
+     "bar_override":{"session":"2026-10-26","open":30500,"high":30800,"low":28800,"close":29000,"volume":5000000}}
+  ]
+}

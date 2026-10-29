@@ -1,6 +1,6 @@
 # Japan Support Desk：日股支撐觀察與決策
 
-由 `codex/support-desk-phase1` 延伸的獨立日股版本。分支 `codex/japan-support-desk-phase1`，工作目錄 `personalmono/japan-support-desk`；原台股 checkout 保持原分支。先做尋找標的、反證與可追溯決策，未包含券商、帳戶或訂單流程。
+由 `codex/japan-support-desk-phase1` 延伸的日股版本，改修分支 `codex/japan-h001-pattern`，工作目錄 `personalmono/japan-support-desk`。加入可版本化的H-001機會層、Advantest合成參數驗證與主動公開資訊搜尋，未包含券商、帳戶或訂單流程。
 
 標準決策流程固定三個模型 agent：**尋標（SEARCH）提出候選，研究（Researcher）形成及檢查交易假說，反證（Reviewer）獨立找漏洞並可否決**。三者共同產出單一「可考慮／等待／不交易」結論；Head和固定閘門是派工與驗證程式，不另算agent，不新增第四個決策agent。手動名單及離線demo是診斷入口，不冒稱完整三角色尋標流程。
 
@@ -14,6 +14,8 @@ flowchart LR
     Q --> H[Head 分派有界任務]
     H --> A[Researcher 研究證據]
     H --> B[Reviewer 獨立反證]
+    A --> W[有界公開搜尋：IR / 決算 / 業績修正 / 新聞]
+    B --> W
     A --> G[Python 決策閘門]
     B --> G
     G --> L[SQLite 跨日固定支撐覆核]
@@ -43,9 +45,19 @@ python -m support_scout observe --no-agents --symbols 6857,8035,4063
 
 ## 使用雙 Agent API
 
-SEARCH、決策研究員和反證員使用不同上下文；決策研究／反證員收到同一份原始行情 packet，不看到 SEARCH 看多理由或對方答案。可分別指定研究與反證模型，這不是帶工具遞迴行動的 agent。模型無 shell 或券商工具。
+SEARCH、決策研究員和反證員使用不同上下文；決策研究／反證員收到同一份原始行情 packet，不看到 SEARCH 看多理由或對方答案。可分別指定研究與反證模型。日股實際觀察預設讓研究／反證員主動使用有界web_search查財報與新聞，模型無shell或券商工具。
 
 整輪預設最多10次呼叫，**包含SEARCH**，剩餘額度只整對分派；例如上限7為1搜尋＋最多3對研究，上限10最多使用1＋8次，不為用滿額度湊數。每個角色無自動重試。直接 `desk` 入口也重驗SEARCH，不能藉其他CLI跳過。
+
+搜尋工具額度與模型呼叫分開：`config/public_information.json` 預設每角色每檔最多3次工具呼叫；來源、發布時間、抽取事實與排除原因保存於報告。`--no-public-information` 可關閉。合成與歷史回放不開啟即時搜尋；未知或時間不符的來源不能解除硬性缺口。完整規格與限制見[H-001與公開資訊說明](docs/japan-h001-pattern.md)。
+
+```powershell
+python -m support_scout pattern-case
+python -m support_scout pattern-case --agents --max-total-calls 12
+python -m support_scout pattern-case-replay output/pattern-cases/<run_id>
+```
+
+合成參數位於 `cases/advantest_h001.synthetic.json`，全部人造，不代表Advantest真實歷史或勝率；機會規則位於 `config/patterns.json`，可調參、停用及擴充，保留原本ATR決策通道。
 
 ```powershell
 $env:OPENAI_API_KEY = '你的金鑰'

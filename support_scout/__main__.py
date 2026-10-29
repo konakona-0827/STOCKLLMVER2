@@ -25,6 +25,15 @@ def main(argv=None) -> int:
     health = sub.add_parser("doctor", help="檢查本地儲存與OpenAI設定，不呼叫模型")
     health.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
     health.add_argument("--require-agents", action="store_true")
+    case = sub.add_parser("pattern-case", help="H-001 Advantest合成參數截點驗證；與真實行情和帳本隔離")
+    case.add_argument("--case", type=Path, help="合成參數紀錄JSON；省略用Advantest H-001案例")
+    case.add_argument("--agents", action="store_true", help="實際呼叫尋標、研究與反證模型")
+    case.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
+    case.add_argument("--checkpoints", help="逗號分隔截點ID，例如early,support,catalyst")
+    case.add_argument("--max-total-calls", type=int, default=12)
+    case.add_argument("--out", type=Path)
+    case_replay = sub.add_parser("pattern-case-replay", help="完全離線重播合成參數與已保存的AI裁決")
+    case_replay.add_argument("directory", type=Path)
     daily = sub.add_parser("observe", help="Yahoo 日股收盤資料 → 每日決策報告 → 固定支撐跨日追蹤")
     daily.add_argument("--market", choices=("JP", "TW"), default="JP", help="預設日本；TW 保留原版回歸入口")
     daily.add_argument("--symbols", help="手動名單，例如 6857,8035,4063；省略時預設從 JPX 動態母池尋標")
@@ -39,6 +48,8 @@ def main(argv=None) -> int:
     daily.add_argument("--model")
     daily.add_argument("--max-packets", type=int, default=5)
     daily.add_argument("--max-calls", type=int, default=10, help="整輪模型呼叫上限，包含 SEARCH 與雙方研究")
+    daily.add_argument("--public-information", action=argparse.BooleanOptionalAction, default=True,
+        help="日股實際觀察預設由研究/反證Agent主動搜尋財報與新聞；工具額度另見config/public_information.json")
     daily.add_argument("--out", type=Path, help="觀察報告根目錄，每輪使用唯一子目錄")
     daily.add_argument("--data-root", type=Path, help="本地快取與SQLite觀察帳本資料夾")
     choices = daily.add_mutually_exclusive_group()
@@ -69,6 +80,22 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command == "pattern-case-replay":
+            from .pattern_case import replay_case
+            print(json.dumps(replay_case(args.directory), ensure_ascii=False, indent=2))
+            return 0
+        if args.command == "pattern-case":
+            from .pattern_case import DEFAULT_CASE, run_case
+            comparison, target = run_case(case_path=args.case or DEFAULT_CASE, agents=args.agents,
+                settings_path=args.settings, output_root=args.out,
+                checkpoint_ids=args.checkpoints.split(",") if args.checkpoints else None,
+                max_total_calls=args.max_total_calls)
+            for result in comparison["results"]:
+                print(result["checkpoint"] + "：" + ", ".join(s["label"] for s in result["stages"]) +
+                      "；" + result["status"] + "；交易研究=" + result["trade_conclusion"])
+            print("模型呼叫：" + str(comparison["model_call_count"]))
+            print("合成案例比較：" + str((target / "comparison.html").resolve()))
+            return 3 if any(r["status"] in {"DEGRADED", "SEARCH_FAILED", "BUDGET_DEFERRED"} for r in comparison["results"]) else 0
         if args.command == "doctor":
             result = doctor(args.settings)
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -84,6 +111,7 @@ def main(argv=None) -> int:
                 settings_path=args.settings, agents=args.agents, model=args.model,
                 max_packets=args.max_packets, max_calls=args.max_calls, progress=progress, market=args.market,
                 discover=args.discover, scan_limit=args.scan_limit,
+                public_information=args.public_information if args.market == "JP" else None,
                 cursor_path=args.data_root / "discovery_cursor.json" if args.data_root else None)
             print(render_markdown(report, include_decisions=False))
             if "decision_summary" in report:

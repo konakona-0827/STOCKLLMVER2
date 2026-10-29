@@ -87,6 +87,8 @@ def _packet_for(report, item):
                 or bool(core.get("discovery_required")) != bool(report.get("discovery_required"))
                 or core.get("source_universe_hash") != report.get("source_universe_hash")
                 or core["technical"] != technical
+                or core.get("patterns", []) != item.get("patterns", [])
+                or core.get("public_information_policy") != report.get("public_information_policy")
                 or core["visible_series"]["price_basis"] != item.get("price_basis")
                 or core["context_blockers"] != item.get("context_blockers", [])):
             return None
