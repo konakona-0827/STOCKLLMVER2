@@ -83,12 +83,27 @@ def render_html(report: dict, bundle: dict) -> str:
     queue = ", ".join(report["technical_queue"]) or "本輪沒有，繼續等待"
     status = observation.get("status", "UNKNOWN")
     model = observation.get("agent_status", "NOT_RUN")
+    discovery = report.get("discovery")
+    discovery_html = ""
+    pool_label = f"{len(report['securities'])} 檔手動指定股票"
+    if discovery:
+        coverage = discovery["coverage"]
+        pool_label = f"{len(report['securities'])} 檔由尋標 Agent 提名"
+        lead_text = "".join('<li>' + escape(lead["symbol"]) + '：' +
+            '；'.join(escape(n["rationale"]) for n in lead["nominations"]) + '</li>' for lead in discovery["leads"])
+        discovery_html = (f'<section class="banner"><b>主動尋標：{escape(discovery["status"])}</b>'
+            f'<p>市場名錄 {coverage["catalog_symbols"]} 檔；實際看過 {coverage["viewed_symbols"]} 檔；'
+            f'讀日線 {coverage["inspected_histories"]} 檔；提名 {coverage["nominated_symbols"]} 檔；'
+            f'已交雙方研究 {len(discovery["reviewed_symbols"])} 檔。</p>'
+            '<p>有限探索，不代表全市場掃描完成。未研究的線索保留待處理。</p>'
+            f'<ul>{lead_text}</ul>'
+            '<a href="discovery.json">尋標稽核與工具紀錄</a></section>')
     return f'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Support Desk 台股觀察 {escape(latest)}</title><style>
 body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margin:0}}main{{max-width:1500px;margin:auto;padding:30px}}h1{{margin-bottom:6px}}.sub,small{{color:#607185}}.banner{{background:#fff4d7;border-left:4px solid #b58222;padding:16px;margin:22px 0}}.metrics{{display:flex;gap:12px;flex-wrap:wrap}}.metrics div,article{{background:white;padding:18px;border:1px solid #dde4eb;border-radius:8px}}.metrics b{{display:block;font-size:20px}}.scroll{{overflow:auto;background:white;margin:24px 0}}table{{border-collapse:collapse;min-width:1000px;width:100%}}th,td{{text-align:left;padding:12px;vertical-align:top;border-bottom:1px solid #e4e9ed}}th{{background:#eaf0f5}}.notes{{font-size:13px;max-width:360px;color:#536579}}article{{margin:14px 0}}article svg{{max-width:440px;width:100%;height:130px}}a{{color:#246b9b}}input{{padding:10px;width:260px;border:1px solid #c7d1db;border-radius:4px}}.warn{{color:#9d3c29}}footer{{margin:30px 0;color:#607185}}
 </style><main><h1>Support Desk · 台股支撐觀察</h1><div class="sub">產生時間 JST {escape(jst)} · 日線日期依台北市場 · 本地收盤觀察，非即時報價</div>
 <div class="banner"><b>OBSERVATION ONLY</b>　原始價格尚未核對公司行動、公司公告與完整交易狀態。型態與價位皆為暫定觀察；雙 Agent 同意也不會解除這些限制。分數不是勝率。</div>
-<div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(collection.get('status','UNKNOWN'))}</b>{len(report['securities'])} 檔固定上市普通股，非全市場</div><div>觀察執行<b>{escape(status)}</b>模型 {escape(model)}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div></div>
+{discovery_html}<div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(collection.get('status','UNKNOWN'))}</b>{pool_label}，非全市場</div><div>觀察執行<b>{escape(status)}</b>模型 {escape(model)}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div></div>
 <h2>觀察名單與失效條件</h2><input id="filter" placeholder="搜尋代號、名稱或狀態" aria-label="篩選觀察表">
 <div class="scroll"><table><thead><tr><th>標的</th><th>型態</th><th>收盤</th><th>暫定支撐區</th><th>距離上緣</th><th>結論</th><th>跨日變化</th><th>待確認</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>
 <h2>個股證據與兩方評語</h2>{''.join(cards)}<footer>Run {escape(observation.get('run_id','—'))} · 規則 {escape(report['rules']['version'])} · 快照 {escape(report['snapshot_id'])}<br>本報告保存於本機；沒有訂單或帳戶執行能力。</footer>

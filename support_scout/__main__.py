@@ -20,13 +20,13 @@ def read_json(path: Path):
 def main(argv=None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    parser = argparse.ArgumentParser(description="Support Desk：台股日線 → 支撐掃描 → 獨立雙 agent → 研究名單")
+    parser = argparse.ArgumentParser(description="Support Desk：Agent 主動尋標 → 獨立研究 → 反證審查")
     sub = parser.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="檢查本地儲存與OpenAI設定，不呼叫模型")
     health.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
     health.add_argument("--require-agents", action="store_true")
     daily = sub.add_parser("observe", help="官方台股收盤資料 → 每日觀察報告 → 固定支撐跨日追蹤")
-    daily.add_argument("--symbols", help="逗號分隔的上市普通股，省略用固定19檔觀察池")
+    daily.add_argument("--symbols", required=True, help="手動指定上市普通股；主動尋標請用 discover")
     daily.add_argument("--months", type=int, default=8)
     daily.add_argument("--timeout", type=float, default=15)
     daily.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
@@ -39,6 +39,22 @@ def main(argv=None) -> int:
     choices.add_argument("--agents", action="store_true", dest="agents")
     choices.add_argument("--no-agents", action="store_false", dest="agents")
     daily.set_defaults(agents=None)
+    from .discovery_workflow import DEFAULT_PLAN
+    discovery = sub.add_parser("discover", help="尋標Agent自行查市場與日線，再交研究員與反證員")
+    discovery_demo = sub.add_parser("discovery-demo", help="合成資料工具契約示範，不呼叫模型或市場")
+    for command in (discovery, discovery_demo):
+        command.add_argument("--plan", type=Path, default=DEFAULT_PLAN, help="可擴充的尋標任務與額度設定")
+        command.add_argument("--out", type=Path)
+        command.add_argument("--max-packets", type=int, default=5)
+        command.add_argument("--max-calls", type=int, default=10, help="另保留的研究/反證呼叫額度")
+        command.add_argument("--max-leads", type=int, help="本輪每位尋標者最多提名幾檔；省略沿用plan")
+        command.add_argument("--max-history-symbols", type=int, help="本輪每位尋標者最多深入幾檔日線")
+        command.add_argument("--no-review", action="store_true", help="僅交付未複核線索，不冒充研究完成")
+    discovery.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
+    discovery.add_argument("--model")
+    discovery.add_argument("--data-root", type=Path)
+    replay = sub.add_parser("discovery-replay", help="重播保存的工具選擇及研究裁決；完全離線")
+    replay.add_argument("directory", type=Path)
     demo = sub.add_parser("demo", help="合成資料離線示範；不呼叫模型或行情 API")
     scan = sub.add_parser("scan", help="掃描符合合約的 JSON 日線快照")
     scan.add_argument("input", type=Path)
@@ -62,6 +78,24 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command == "discovery-replay":
+            from .discovery_workflow import replay_discovery
+            print(json.dumps(replay_discovery(args.directory), ensure_ascii=False, indent=2))
+            return 0
+        if args.command in {"discover", "discovery-demo"}:
+            from .discovery_workflow import discover, render_discovery
+            record, report, target, code = discover(plan_path=args.plan,
+                settings_path=getattr(args, "settings", DEFAULT_SETTINGS),
+                output_root=args.out, data_root=getattr(args, "data_root", None),
+                model=getattr(args, "model", None), demo=args.command == "discovery-demo",
+                review=not args.no_review, max_packets=args.max_packets, max_calls=args.max_calls,
+                max_leads=args.max_leads, max_history_symbols=args.max_history_symbols,
+                progress=lambda url: print("讀取公開資料：" + url, flush=True))
+            print(render_discovery(record))
+            if report is not None:
+                print(render_markdown(report))
+            print("報告：" + str((target / "report.html").resolve()))
+            return code
         if args.command == "doctor":
             result = doctor(args.settings)
             print(json.dumps(result, ensure_ascii=False, indent=2))

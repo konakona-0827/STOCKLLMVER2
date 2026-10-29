@@ -1,4 +1,70 @@
-# Support Desk：台股支撐觀察
+# Support Desk 0.4：尋標 → 研究 → 反證
+
+分支：`codex/support-desk-discovery`。2026-10-28 建立、10-29 完成首輪驗證，沿用 `codex/support-desk-phase1` 的固定支撐與獨立複核，將入口改為真正可使用工具的尋標子代理。原分支及交易系統 develop 維持獨立。
+
+目前預設共三個 Agent：
+
+1. **尋標 Agent**：自行查動態市場名錄、選擇產業／分頁／排序，再指定股票讀取日線，提出附證據的線索。
+2. **研究員**：依提名股票的同一份日線快照研究支撐、反彈、回測與失效條件。
+3. **反證員**：獨立檢查同一股票，可以否決；不先看到研究員的答案。
+
+Python Head 負責分派、額度、來源核對與數值檢查，不預設股票池、不下單。尋標角色的數量與任務由 [config/discovery.json](config/discovery.json) 載入，未來新增不同方向的尋標者不需改 runtime。
+
+```mermaid
+flowchart LR
+    H[Head：任務及額度] --> F[尋標 Agent]
+    F --> T[動態市場查詢／日線工具]
+    T --> F
+    F --> L[附來源與固定編號的線索]
+    L --> R[研究員]
+    L --> V[反證員]
+    R --> G[Python 證據及硬性檢查]
+    V --> G
+    G --> O[觀察報告與固定支撐追蹤]
+```
+
+## 先驗證架構
+
+Python 3.11 以上，執行期沒有第三方套件相依。以下不讀 key、不呼叫網路或模型：
+
+```powershell
+python -m unittest discover -s tests -v
+python -m support_scout discovery-demo --out output/demo
+python -m support_scout discovery-replay output/demo/產生的RUN_ID
+```
+
+`discovery-demo` 是明示的腳本與合成資料，用來檢驗工具迴圈、提名交接與兩方複核，不能當作模型已找到真實機會的證明。
+
+## 使用動態尋標
+
+本機 `local_settings.json` 沿用已授權的 OpenAI key／模型來源；值不進 Git 或報告。設定不完整會停止，不會退回舊 19 檔池。
+
+```powershell
+.\Doctor.cmd
+.\Discover.cmd
+# 初期可再縮小本輪探索／提名數量
+.\Discover.cmd --max-leads 2 --max-history-symbols 3 --max-packets 2 --max-calls 4
+# Observe.cmd 在此分支也改走 discover
+.\OpenReport.cmd
+```
+
+也可 `python -m support_scout discover --no-review` 只收集未複核線索。手動觀察仍保留 `python -m support_scout observe --symbols 2330,2454 --no-agents`，必須明確指定股票；不再自動讀固定名單。
+
+預設尋標最多 8 個模型回合、12 次工具呼叫、深入 4 檔日線、提名 3 檔；後續研究／反證另保留配對額度，預設最多 5 檔／10 次。所有模型回合均列入稽核，工具有各自上限，沒有偷偷自動重試。這些是每輪限額，尚非每日美元硬上限。
+
+市場來源為 TWSE 官方動態上市公司名錄與全市場收盤行情，不含上櫃、日本或 ETF。市場名錄可以有上千檔，實際探索仍受額度限制；報告會列出看過、讀過日線、提名、交付複核的數量，不能將空名單解讀成整個台股市場沒有機會。
+
+報告在 `output/discovery/<RUN_ID>/`，包含市場快照、工具選擇與回應、日線、角色任務、模型用量、提名與研究結果。`discovery-replay` 只重播保存資料，不重新連線或問模型。原始價／公司行動與事件缺口仍固定保留 OBSERVATION ONLY，不能因三個 Agent 都同意就解鎖。
+
+[三 Agent 架構與驗收](docs/discovery-architecture.md) · [後續路線](docs/roadmap.md)
+
+已通過 154 項離線測試，並完成一輪真實尋標 → 日線工具 → 雙方研究及完全離線重播。這一階段確認架構能運作，下一步才逐步驗收尋標品質與擴大探索。
+
+## 0.3 舊分支操作紀錄
+
+以下保留 `codex/support-desk-phase1` 的固定池操作與歷史驗收；本分支的新入口與範圍以以上內容為準。
+
+### Support Desk：台股支撐觀察
 
 將 Advantest 的「先反彈、回測原支撐、後續確認且仍接近支撐」概念用於台股。已有官方日線擷取、獨立雙 Agent、跨日固定支撐追蹤與本地 HTML 報告，可用於收盤資料觀察。
 

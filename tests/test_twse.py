@@ -242,6 +242,22 @@ class SnapshotTests(unittest.TestCase):
 
 
 class HttpCacheTests(unittest.TestCase):
+    def test_refresh_preserves_content_addressed_original_responses(self):
+        payloads = [b'{"value":1}', b'{"value":2}']
+        def opener(*args, **kwargs):
+            return BytesIO(payloads.pop(0))
+        with tempfile.TemporaryDirectory() as directory:
+            client = TwseClient(directory, min_interval=0, opener=opener)
+            first = client.get("https://www.twse.com.tw/test")
+            second = client.get("https://www.twse.com.tw/test", refresh=True)
+            self.assertNotEqual(first.raw_archive_file, second.raw_archive_file)
+            self.assertEqual(Path(first.raw_archive_file).read_bytes(), b'{"value":1}')
+            self.assertEqual(Path(second.raw_archive_file).read_bytes(), b'{"value":2}')
+            self.assertEqual(first.provenance()["raw_archive_file"], first.raw_archive_file)
+            cached = client.get("https://www.twse.com.tw/test")
+            self.assertTrue(cached.from_cache)
+            self.assertEqual(cached.raw_archive_file, second.raw_archive_file)
+
     def test_http_payload_archived_checksum_checked_and_refetched_after_tamper(self):
         calls = []
         payload = {"stat": "OK", "message": "測試來源"}

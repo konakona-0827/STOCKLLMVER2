@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 import hashlib
 import json
 
-from .contracts import DataError, Rules, digest, strict_json_loads
+from .contracts import DataError, Rules, digest
 from .desk import DeskConfig, run_desk
 from .ledger import record_observation
 from .pipeline import render_markdown, run
@@ -23,15 +24,16 @@ JST = timezone(timedelta(hours=9))
 
 def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path=None,
             settings_path=DEFAULT_SETTINGS, agents=None, model=None, max_packets=5, max_calls=10,
-            timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None):
+            timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None,
+            discovery_context=None):
     settings = load_settings(Path(settings_path))
     agents = settings.get("run_agents", False) if agents is None else agents
     rules = rules or Rules()
     config = DeskConfig(max_packets, max_calls)
     output_root = Path(output_root or ROOT / "output" / "observations")
     db_path = Path(db_path or ROOT / "local_data" / "observations.sqlite3")
-    if symbols is None:
-        symbols = strict_json_loads((ROOT / "config" / "universe_tw.json").read_text(encoding="utf-8"))["symbols"]
+    if symbols is None and bundle is None:
+        raise DataError("EXPLICIT_SYMBOLS_OR_DISCOVERY_REQUIRED")
     run_id = datetime.now(JST).strftime("%Y%m%dT%H%M%S") + "-" + uuid4().hex[:10]
     target = output_root / run_id
     try:
@@ -55,6 +57,15 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             if "desk" in report:
                 agent_status = ("FAILED" if report["desk"]["error_count"] else "NO_ELIGIBLE_PACKETS" if not report["desk"]["call_count"]
                     else "PARTIAL_BUDGET" if report["desk"]["deferred_symbols"] else "COMPLETED")
+        if discovery_context is not None:
+            audit = discovery_context["audit"]
+            report["discovery"] = {"protocol": audit["protocol"], "catalog_id": audit["catalog_id"],
+                "status": audit["status"], "scout_roles": [s["role"] for s in audit["scouts"]],
+                "coverage": deepcopy(audit["coverage"]), "usage": deepcopy(audit["usage"]),
+                "leads": deepcopy(audit["leads"]),
+                "reviewed_symbols": report.get("desk", {}).get("selected_symbols", []),
+                "deferred_symbols": report.get("desk", {}).get("deferred_symbols", []),
+                "research_requested": bool(agents)}
         # Each successful ledger transaction references this immutable run directory.
         report["observation"] = {"run_id": run_id, "agent_status": agent_status,
             "report_directory": str(target.resolve()), "status": "OBSERVATION_READY"}
@@ -66,17 +77,25 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
         def publish_before_commit(summary):
             nonlocal code
             report["ledger"] = summary
-            degraded = not data_ready or (agents and agent_status in {"FAILED", "CONFIGURATION_REQUIRED"}) or bool(summary.get("errors"))
+            degraded = (not data_ready or (agents and agent_status in {"FAILED", "CONFIGURATION_REQUIRED"})
+                or bool(summary.get("errors")) or bool(discovery_context and discovery_context["audit"]["status"] == "DEGRADED"))
             report["observation"]["status"] = "DEGRADED" if degraded else "OBSERVATION_READY"
             code = 2 if rejected == len(report["securities"]) else 3 if degraded else 0
             manifest = {"run_id": run_id, "effective_as_of": report["as_of"], "rules": asdict(rules),
                 "rules_hash": digest(asdict(rules)), "universe_version": report["universe_version"],
                 "input_digest": digest(bundle), "snapshot_id": report["snapshot_id"],
+                "report_digest": digest(report),
                 "source_code_hashes": source_hashes, "exit_code": code, "ledger_path": str(db_path.resolve()),
                 "agents_requested": agents, "agent_status": agent_status, "execution_enabled": False}
             values = {"input.json": bundle, "report.json": report, "manifest.json": manifest,
                 "rules.json": asdict(rules), "agent_tasks.json": report["agent_packets"],
                 "reviews.json": {"reviews": report.get("reviews", [])}, "desk_audit.json": report.get("desk", {})}
+            if discovery_context is not None:
+                artifacts = discovery_context["artifacts"]
+                if set(artifacts) & set(values) or any("/" in k or "\\" in k for k in artifacts):
+                    raise DataError("INVALID_DISCOVERY_ARTIFACT_NAMES")
+                manifest["discovery_artifact_digests"] = {name: digest(value) for name, value in artifacts.items()}
+                values.update(artifacts)
             files = {name: json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n" for name, value in values.items()}
             files.update({"report.md": render_markdown(report), "report.html": render_html(report, bundle)})
             publish_run(target, files)

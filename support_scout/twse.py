@@ -31,10 +31,14 @@ class Document:
     sha256: str
     cache_file: str
     from_cache: bool = False
+    raw_archive_file: str | None = None
 
     def provenance(self):
-        return {"url": self.url, "fetched_at": self.fetched_at, "sha256": self.sha256,
-                "cache_file": self.cache_file, "from_cache": self.from_cache}
+        result = {"url": self.url, "fetched_at": self.fetched_at, "sha256": self.sha256,
+                  "cache_file": self.cache_file, "from_cache": self.from_cache}
+        if self.raw_archive_file is not None:
+            result["raw_archive_file"] = self.raw_archive_file
+        return result
 
 
 class TwseClient:
@@ -52,6 +56,18 @@ class TwseClient:
         self.now = now or (lambda: datetime.now(TAIPEI))
         self.last_request = 0.0
 
+    def _archive_raw(self, raw, checksum):
+        archive = self.cache_dir / "raw" / (checksum + ".json")
+        if archive.is_file():
+            if hashlib.sha256(archive.read_bytes()).hexdigest() != checksum:
+                raise DataError("TWSE_RAW_ARCHIVE_INTEGRITY_FAILED")
+        else:
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            temporary = archive.with_name(archive.name + "." + uuid4().hex + ".tmp")
+            temporary.write_bytes(raw)
+            temporary.replace(archive)
+        return str(archive.resolve())
+
     def get(self, url, *, refresh=False):
         cache = self.cache_dir / (hashlib.sha256(url.encode()).hexdigest() + ".json")
         if cache.is_file() and not refresh:
@@ -62,14 +78,15 @@ class TwseClient:
                 if (envelope["url"] == url and hashlib.sha256(raw).hexdigest() == envelope["sha256"]
                         and timedelta(0) <= age <= self.max_cache_age):
                     return Document(url, strict_json_loads(raw), envelope["fetched_at"],
-                                    envelope["sha256"], str(cache.resolve()), True)
+                                    envelope["sha256"], str(cache.resolve()), True,
+                                    self._archive_raw(raw, envelope["sha256"]))
             except (OSError, DataError, KeyError, TypeError, ValueError):
                 pass
         pause = self.min_interval - (clock.monotonic() - self.last_request)
         if pause > 0:
             clock.sleep(pause)
         self.last_request = clock.monotonic()
-        request = Request(url, headers={"User-Agent": "SupportDesk/0.3 (read-only market research)",
+        request = Request(url, headers={"User-Agent": "SupportDesk/0.4 (read-only market research)",
                                         "Accept": "application/json"})
         try:
             with self.opener(request, timeout=self.timeout) as response:
@@ -91,7 +108,8 @@ class TwseClient:
         temporary = cache.with_name(cache.name + "." + uuid4().hex + ".tmp")
         temporary.write_text(json.dumps(envelope, ensure_ascii=False, allow_nan=False), encoding="utf-8")
         temporary.replace(cache)
-        return Document(url, payload, fetched_at, checksum, str(cache.resolve()))
+        return Document(url, payload, fetched_at, checksum, str(cache.resolve()),
+                        raw_archive_file=self._archive_raw(raw, checksum))
 
 
 def roc_date(value):
