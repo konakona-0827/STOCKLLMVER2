@@ -31,6 +31,8 @@ Dashboard 開啟時立即與券商對帳；有未結委託時每 1 分鐘再查�
 
 2026-10-28 台北時間 09:05 首次 AUTO 掃描再次於同一路徑崩潰。Windows Application Error 指出 `python.exe` / `ntdll.dll` 存取違規 `0xc0000005`；`dashboard_faults.log` 顯示 broker 工作執行緒停在 `CapitalMarket._enter_monitor` 的訊息處理，`capital_com_events.csv` 顯示舊監控於 09:05:01 離開、09:05:02 重入，之後沒有正常結束紀錄。09:05 分析未完成，也未送單。現在每一輪報價掃描結束都呼叫 `LeaveMonitor`，包括單批掃描，避免夜間保留舊訂閱到隔天首次換標的；登入 session、Quote 物件及事件回呼繼續保留。啟動時若只讀入舊的本機健康快照，也會立即重新查詢券商，不再延後五分鐘。原生 DLL 的故障原因仍需後續實盤掃描觀察；Windows 事件紀錄可與本機啟停、COM 事件及分析 run ID 對照。
 
+2026-10-29 台北時間 11:50:27 後，Dashboard 進程沒有 `CLOSE_REQUESTED`／`EXIT`、Python 致命錯誤或 Windows APPCRASH，卻在 12:01 的外部監測前消失。日本時間 12:51，Windows System 紀錄顯示 Codex 應用更新安裝；這和先前由 Codex 工具啟動的 Dashboard 消失時間相符，但系統未啟用該 PID 的進程終止稽核，不能證實更新是直接原因。為避免啟動工具結束時連帶停止交易視窗，`operations/InstallDashboardSupervisor.ps1` 將 `operations/dashboard_supervisor.py` 註冊成目前登入使用者的獨立、可隨選啟動的 Windows 排程工作。監督程式記錄子進程 PID、退出碼、最後啟停事件，異常退出時三秒後重啟，同一十分鐘內超過三次則停止；使用者正常關閉視窗時不重啟。紀錄在 `data/health/dashboard_supervisor.jsonl` 與 `dashboard_child_output.log`。排程工作沒有登入觸發器，不會在使用者正常關閉後自動於下次登入重新啟動；需要時再次執行安裝腳本即可啟動。程序已以盤後強制結束子進程驗證自動重啟。
+
 「正式委託與成交紀錄」靠前顯示賣出已實現損益，為券商成交價金減平均買入成本，未含手續費與交易稅。畫面不另佔一行解釋；損益四捨五入為整數，不加「元」，正負損益分別以綠色、紅色標示整列。買入價只能由委託限價或人工轉入成本取得時標示「約」；缺少賣出成交價或成本時顯示 `--`。「AI 理由」位於損益後方，預設欄寬維持 360 像素；擴大主視窗時欄寬會隨之增加，也可直接拖曳欄位邊界。雙擊該筆紀錄可在可調整大小的視窗閱讀完整理由。帳本狀態 `SKIPPED_CHECK_FAILED` 在畫面顯示為「未送單：交易前檢查未通過」；若當批次券商可賣股數為零，則顯示「未送單：當時可賣股數 0」。持倉畫面分別顯示券商即時現股與券商可賣股數，兩者來自 GetRealBalanceReport 的不同欄位。
 
 正式分析開始前將券商可賣股數與 AI 管理股數取較小值，寫入每檔候選的 `max_sell_qty`。AI 不應提出超過此上限的 SELL；即使 AI 仍提出，驗證階段也會把該檔改為 HOLD，不產生正式委託紀錄。庫存未核實時上限為 0。送單前仍重新查詢券商可賣股數，不使用較早的分析快照直接送單。此處採券商可賣欄位，而非僅依買入日期推斷：同一股票可能同時有舊持股與當日新買股。臺灣證交所說明盤中零股不適用當日沖銷交易：<https://www.twse.com.tw/market_insights/zh/detail/ff8080818bf08529018bf6c8a5690016>。
