@@ -27,6 +27,9 @@ def make_packet(core: dict) -> dict:
             "analysis_context若為RETROSPECTIVE_SYNTHETIC_PARAMETER_EXPERIMENT，規則建立日晚於行情截點是明示的事後參數實驗，"
             "不是聲稱當時已存在此策略；這限制其歷史績效推論，但不阻止檢查參數邏輯。公告和行情仍嚴格依available_at截止，"
             "收盤後公告不能解釋當日已完成行情；同日日線不足以辨識事件後反應。")
+    if core.get("opportunity_policy", {}).get("enabled"):
+        common = common.replace("不得編造數值、勝率、公司消息或交易建議。", "不得編造數值、勝率或公司消息。")
+        common += ("opportunity_view獨立評估條件式人工試單，不等於formal verdict或執行資格。" + core["opportunity_policy"]["agent_guidance"])
     tasks = [
                 {"role": "researcher", "task_version": "researcher-v1", "instruction": common +
                  "逐項解釋固定支撐、反彈、獨立回測及站回證據；列失效條件、原投資邏輯與缺資料。"},
@@ -44,6 +47,8 @@ def make_packet(core: dict) -> dict:
         protocol += "-wire-v1"
     if core.get("portfolio_position"):
         protocol += "-manual-position-v1"
+    if core.get("opportunity_policy", {}).get("enabled"):
+        protocol += "-active-manual-v1"
     packet_id = digest({"protocol": protocol, "core": core, "tasks": tasks})
     return {"packet_id": packet_id, "core": core, "protocol": protocol, "tasks": tasks,
             "response_contract": {
@@ -74,6 +79,9 @@ def validate_reviews(packet: dict, raw: list[dict]) -> tuple[dict, list[str]]:
             public = packet["core"].get("public_information_policy", {}).get("enabled") is True
             fields = expected_fields | ({"public_information"} if public else set())
             holding = packet["core"].get("portfolio_position", {}).get("quantity", 0) > 0
+            active = packet["core"].get("opportunity_policy", {}).get("enabled") is True
+            if active:
+                fields |= {"opportunity_view"}
             if holding:
                 fields |= {"position_view"}
             if not isinstance(row, dict) or set(row) != fields:
@@ -108,6 +116,9 @@ def validate_reviews(packet: dict, raw: list[dict]) -> tuple[dict, list[str]]:
             refs = set(row["evidence_ids"])
             if not refs or not refs <= evidence_ids:
                 raise DataError("INVENTED_OR_MISSING_EVIDENCE_REFERENCE")
+            if active:
+                from .opportunity import validate_view
+                validate_view(row["opportunity_view"], packet["core"], refs)
             if row["verdict"] == "RESEARCH" and (not required <= refs or row["missing_data"]):
                 raise DataError("UNSUPPORTED_RESEARCH_VERDICT")
             if timestamp(row["produced_at"]) < timestamp(packet["core"]["as_of"]):

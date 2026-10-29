@@ -17,8 +17,11 @@ STAGE_LABELS = {"NO_MATCH": "尚無此型態", "DECLINE": "下跌中，尚未穩
     "CATALYST_AWAITING_PRICE": "催化已知，等待公布後價格確認",
     "CATALYST_CONFIRMED": "催化：超預期與放量突破", "INVALIDATED": "固定支撐失效",
     "EXTENDED": "價格已延伸，避免追高", "UNDERCUT_REVIEW": "低點下探，重新核對",
-    "CONTRADICTED": "基本面下跌反證", "EXPIRED": "觀察情境過期"}
-RESEARCH_STAGES = {"EARLY_WATCH", "SUPPORT_STRENGTHENED", "CATALYST_AWAITING_PRICE", "CATALYST_CONFIRMED"}
+    "CONTRADICTED": "基本面下跌反證", "EXPIRED": "觀察情境過期",
+    "SUPPORT_HELD": "積極觀察：近期支撐守住", "SUPPORT_RECLAIMED": "積極觀察：近期支撐收復",
+    "VOLUME_REVIEW": "支撐待量能核對"}
+RESEARCH_STAGES = {"EARLY_WATCH", "SUPPORT_STRENGTHENED", "CATALYST_AWAITING_PRICE", "CATALYST_CONFIRMED",
+                   "SUPPORT_HELD", "SUPPORT_RECLAIMED"}
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,36 @@ class H001Parameters:
             raise DataError("INCONSISTENT_PATTERN_PARAMETERS")
 
 
+@dataclass(frozen=True)
+class H002Parameters:
+    """Exploratory recent-support hypothesis, independent of old ATR episodes."""
+    decline_lookback_sessions: int = 10
+    min_decline_fraction: float = 0.06
+    local_low_lookback_sessions: int = 5
+    holding_min_sessions: int = 1
+    max_episode_sessions: int = 12
+    retest_distance_fraction: float = 0.04
+    invalidation_buffer_fraction: float = 0.01
+    max_distance_fraction: float = 0.06
+    volume_reference_sessions: int = 5
+    volume_contraction_ratio: float = 0.85
+    min_reclaim_fraction: float = 0.005
+    min_guidance_raise_fraction: float = 0.05
+    catalyst_max_age_days: int = 7
+
+    def __post_init__(self):
+        for key, value in asdict(self).items():
+            if key.endswith("sessions") or key.endswith("days"):
+                if type(value) is not int or not 1 <= value <= 250:
+                    raise DataError("INVALID_PATTERN_PARAMETER:" + key)
+            elif type(value) not in (float, int) or not math.isfinite(value) or not 0 < value < 1:
+                raise DataError("INVALID_PATTERN_PARAMETER:" + key)
+        if (self.holding_min_sessions >= self.max_episode_sessions
+                or self.retest_distance_fraction > self.max_distance_fraction
+                or self.local_low_lookback_sessions > self.decline_lookback_sessions):
+            raise DataError("INCONSISTENT_PATTERN_PARAMETERS")
+
+
 def load_registry(value=None):
     value = strict_json_loads(DEFAULT_REGISTRY.read_text(encoding="utf-8")) if value is None else deepcopy(value)
     if not isinstance(value, dict) or set(value) != {"schema_version", "definitions"} or value["schema_version"] != 1:
@@ -83,7 +116,7 @@ def load_registry(value=None):
         if any(type(x) is not int or not 1 <= x <= 250 for x in definition["evaluation_horizons_sessions"]):
             raise DataError("INVALID_PATTERN_HORIZONS")
         try:
-            definition["parameters"] = asdict(H001Parameters(**definition["parameters"]))
+            definition["parameters"] = asdict(PARAMETERS[definition["handler"]](**definition["parameters"]))
         except TypeError:
             raise DataError("INVALID_PATTERN_PARAMETER_FIELDS") from None
     return value
@@ -294,7 +327,195 @@ def detect_h001(series, cutoff, definition, context):
     return result
 
 
-HANDLERS = {"support_catalyst_reversal": detect_h001}
+def _guidance_revisions(context, cutoff, params, symbol):
+    """Preserve company-vs-company comparisons without calling them surprise."""
+    evidence, positive = [], []
+    rows = context.get("guidance_revisions", [])
+    if not isinstance(rows, list):
+        return [], [], ["GUIDANCE_INPUT_INVALID"]
+    ids = [r.get("id") for r in rows if _known(r, cutoff) and isinstance(r.get("id"), str)]
+    duplicates = {identifier for identifier in ids if ids.count(identifier) > 1}
+    reasons, seen = [], set()
+    for row in rows:
+        if not _known(row, cutoff):
+            continue
+        try:
+            announced = timestamp(row.get("announced_at"))
+            if announced > cutoff:
+                continue
+            if (announced > timestamp(row["available_at"])
+                    or cutoff - announced > timedelta(days=params.catalyst_max_age_days)):
+                reasons.append("GUIDANCE_TIMING_INVALID_OR_STALE")
+                continue
+            identifier = row.get("id")
+            previous, revised = row.get("previous_company_guidance"), row.get("revised_company_guidance")
+            if (not isinstance(identifier, str) or not identifier.strip() or identifier in seen or identifier in duplicates
+                    or not all(type(v) in (float, int) and math.isfinite(v) and v > 0 for v in (previous, revised))
+                    or not isinstance(row.get("metric"), str) or not row["metric"].strip()
+                    or not isinstance(row.get("unit"), str) or not row["unit"].strip()):
+                raise DataError("GUIDANCE_INPUT_INVALID")
+            seen.add(identifier)
+            change = revised / previous - 1
+            ev = {"id": f"{symbol}:H002_GUIDANCE:{identifier}", "kind": "H002_GUIDANCE",
+                "available_at": row["available_at"], "values": {"announced_at": row["announced_at"],
+                    "source": row["source"], "metric": row["metric"], "unit": row["unit"],
+                    "previous_company_guidance": previous, "revised_company_guidance": revised,
+                    "revision_fraction": change, "verified_input_claim": row.get("verified") is True,
+                    "comparison_basis": "PREVIOUS_COMPANY_GUIDANCE_NOT_MARKET_CONSENSUS",
+                    "market_consensus": None, "positive_surprise": False}}
+            evidence.append(ev)
+            if change >= params.min_guidance_raise_fraction:
+                positive.append(ev["id"])
+            if row.get("verified") is not True:
+                reasons.append("COMPANY_GUIDANCE_EXTRACTION_UNVERIFIED")
+        except (DataError, TypeError, ValueError):
+            reasons.append("GUIDANCE_INPUT_INVALID")
+    return evidence, positive, reasons
+
+
+def detect_h002(series, cutoff, definition, context):
+    """Causal local-low episode with a short, explicitly exploratory hold rule.
+
+    A newly formed local low may establish a separate hypothesis after an old
+    episode fails. Frozen anchors never move downward or resurrect the old one.
+    """
+    params = H002Parameters(**definition["parameters"])
+    # Prefix filtering matters for direct handler users as well as the pipeline.
+    bars = tuple(b for b in series.bars if timestamp(b.closed_at) <= cutoff and timestamp(b.available_at) <= cutoff)
+    result = {"pattern_id": definition["id"], "version": definition["version"],
+        "definition_digest": digest(definition), "definition": deepcopy(definition),
+        "stage": "NO_MATCH", "stage_label": STAGE_LABELS["NO_MATCH"], "research_candidate": False,
+        "support": None, "metrics": {}, "evidence": [], "required_evidence_ids": [], "reason_codes": [],
+        "empirical_status": "EXPLORATORY_PARAMETERS_AUTHORED_AFTER_REFERENCE_CASE_NOT_VALIDATED",
+        "execution_enabled": False}
+    if not bars:
+        return result
+    active, episodes, pending = None, [], None
+    for i, bar in enumerate(bars):
+        if i < params.decline_lookback_sessions:
+            continue
+        previous = bars[max(0, i - params.decline_lookback_sessions):i]
+        drawdown = 1 - bar.low / max(b.high for b in previous)
+        recent = bars[max(0, i - params.local_low_lookback_sessions):i]
+        if active and active["terminal"]:
+            active, pending = pending, None
+            if active:
+                episodes.append(active)
+        if active and i - active["anchor_index"] > params.max_episode_sessions:
+            active.update(state="EXPIRED", terminal=True)
+            continue
+        if active is None:
+            if drawdown >= params.min_decline_fraction and bar.low <= min(b.low for b in recent):
+                active = {"anchor_index": i, "anchor_session": bar.session, "anchor": bar.low,
+                    "anchor_close": bar.close, "decline_fraction": drawdown,
+                    "lower": bar.low * (1 - params.invalidation_buffer_fraction),
+                    "upper": bar.low * (1 + params.retest_distance_fraction),
+                    "frozen_at": None, "holding_sessions": 0, "terminal": False, "state": "DECLINE"}
+                episodes.append(active)
+            continue
+        if active["frozen_at"] and bar.low < active["lower"]:
+            active.update(state="INVALIDATED", terminal=True, invalidated_at=bar.session)
+            # Keep today's old episode failed. A new local low can only become
+            # a separate hypothesis on a later complete session; it does not
+            # redraw or revive the failed episode's stop or identity.
+            if drawdown >= params.min_decline_fraction and bar.low <= min(b.low for b in recent):
+                pending = {"anchor_index": i, "anchor_session": bar.session, "anchor": bar.low,
+                    "anchor_close": bar.close, "decline_fraction": drawdown,
+                    "lower": bar.low * (1 - params.invalidation_buffer_fraction),
+                    "upper": bar.low * (1 + params.retest_distance_fraction),
+                    "frozen_at": None, "holding_sessions": 0, "terminal": False, "state": "DECLINE",
+                    "new_episode_after_failed_anchor": active["anchor_session"]}
+            continue
+        if bar.low < active["anchor"]:
+            active["holding_sessions"] = 0
+            if active["frozen_at"]:
+                active["state"] = "UNDERCUT_REVIEW"
+            else:
+                active.update(anchor_index=i, anchor_session=bar.session, anchor=bar.low, anchor_close=bar.close,
+                    decline_fraction=drawdown, lower=bar.low * (1 - params.invalidation_buffer_fraction),
+                    upper=bar.low * (1 + params.retest_distance_fraction), state="DECLINE")
+        else:
+            active["holding_sessions"] += 1
+            if active["holding_sessions"] >= params.holding_min_sessions and not active["frozen_at"]:
+                active["frozen_at"] = bar.session
+    if active is None and episodes:
+        active = episodes[-1]
+    if active is None:
+        return result
+    latest = bars[-1]
+    prior = bars[-params.volume_reference_sessions - 1:-1]
+    reference = fmean(b.volume for b in prior) if len(prior) == params.volume_reference_sessions else None
+    ratio = latest.volume / reference if reference else None
+    comparable = series.metadata.get("volume_comparable") is True
+    raw_contraction = ratio is not None and ratio <= params.volume_contraction_ratio
+    distance = latest.close / active["anchor"] - 1
+    test_sessions = [b.session for b in bars[active["anchor_index"] + 1:]
+        if active["anchor"] <= b.low <= active["upper"]]
+    held = active["holding_sessions"] >= params.holding_min_sessions and latest.low >= active["anchor"]
+    near_test = latest.low <= active["upper"]
+    reclaimed = latest.close >= active["anchor_close"] * (1 + params.min_reclaim_fraction)
+    state = active["state"]
+    if not active["terminal"]:
+        state = ("SUPPORT_RECLAIMED" if held and near_test and raw_contraction and reclaimed
+            else "SUPPORT_HELD" if held and near_test and raw_contraction
+            else "VOLUME_REVIEW" if held and near_test else "UNDERCUT_REVIEW" if active["frozen_at"] else "DECLINE")
+        if distance > params.max_distance_fraction:
+            state = "EXTENDED"
+    driver = context.get("decline_driver", {})
+    classification = driver.get("classification", "UNKNOWN") if _known(driver, cutoff) and driver.get("verified") is True else "UNKNOWN"
+    if classification == "FUNDAMENTAL_DETERIORATION":
+        state = "CONTRADICTED"
+    guidance, raised, reasons = _guidance_revisions(context, cutoff, params, series.symbol)
+    reasons += ["EXPLORATORY_SHORT_HOLD_NOT_ESTABLISHED_SUPPORT", "NO_VERIFIED_MARKET_CONSENSUS"]
+    if active.get("new_episode_after_failed_anchor"):
+        reasons.append("NEW_HYPOTHESIS_DOES_NOT_REPAIR_PREVIOUS_FAILED_EPISODE")
+    if not comparable:
+        reasons.append("PATTERN_VOLUME_BASIS_UNVERIFIED")
+    if classification == "UNKNOWN":
+        reasons.append("DECLINE_DRIVER_UNVERIFIED")
+    if not held:
+        reasons.append("RECENT_SUPPORT_HOLD_NOT_CONFIRMED")
+    if not raw_contraction:
+        reasons.append("RECENT_VOLUME_CONTRACTION_NOT_OBSERVED")
+    if not near_test:
+        reasons.append("LATEST_LOW_OUTSIDE_RETEST_BAND")
+    support = {k: active[k] for k in ("anchor_session", "anchor", "lower", "upper", "frozen_at")}
+    support["episode_id"] = f"{definition['id']}:{active['anchor_session']}"
+    support["invalidation_basis"] = "ANY_LATER_DAILY_LOW_BELOW_FIXED_LOWER_REQUIRES_REJECTION"
+    metrics = {"decline_fraction": active["decline_fraction"], "no_new_low_sessions": active["holding_sessions"],
+        "support_test_count": len(test_sessions), "support_test_sessions": test_sessions,
+        "volume_contraction_ratio": ratio, "volume_basis_comparable": comparable,
+        "volume_reference_sessions": [b.session for b in prior], "raw_volume_contraction_observed": raw_contraction,
+        "distance_from_support_fraction": distance, "latest_low_distance_fraction": latest.low / active["anchor"] - 1,
+        "anchor_close": active["anchor_close"], "reclaimed_anchor_close": reclaimed,
+        "company_guidance_raise_evidence_ids": raised, "market_consensus_available": False,
+        "decline_driver": classification}
+    failed = [e for e in episodes if e is not active and e.get("state") == "INVALIDATED"]
+    metrics["prior_failed_episode_count"] = len(failed)
+    ev = {"id": f"{series.symbol}:H002_METRICS:{latest.session}", "kind": "H002_METRICS", "session": latest.session,
+        "available_at": latest.available_at, "values": {"stage": state, "support": support, **metrics}}
+    evidence = [ev, *guidance]
+    if failed:
+        previous_failed = failed[-1]
+        failed_bar = next(b for b in bars if b.session == previous_failed["invalidated_at"])
+        evidence.append({"id": f"{series.symbol}:H002_INVALIDATED:{previous_failed['anchor_session']}",
+            "kind": "INVALIDATED", "session": failed_bar.session, "available_at": failed_bar.available_at,
+            "values": {"pattern_id": definition["id"], "anchor_session": previous_failed["anchor_session"],
+                "anchor": previous_failed["anchor"], "lower": previous_failed["lower"],
+                "invalidated_at": failed_bar.session, "failed_daily_low": failed_bar.low,
+                "scope": "LATEST_PREVIOUS_EPISODE_NOT_CURRENT_NEW_SUPPORT", "prior_failed_episode_count": len(failed)}})
+    result.update(stage=state, stage_label=STAGE_LABELS[state], research_candidate=state in {"SUPPORT_HELD", "SUPPORT_RECLAIMED"},
+        support=support, metrics=metrics, evidence=evidence, reason_codes=sorted(set(reasons)),
+        required_evidence_ids=[e["id"] for e in evidence],
+        episodes=[{k: deepcopy(v) for k, v in e.items() if k != "anchor_index"} for e in episodes],
+        limitations=["POST_REFERENCE_CASE_EXPLORATORY_DEFINITION", "NOT_OUT_OF_SAMPLE_VALIDATED",
+            "ONE_DAILY_HOLD_IS_WEAKER_THAN_MULTI_TEST_SUPPORT", "RAW_VOLUME_MAY_BE_UNVERIFIED",
+            "COMPANY_GUIDANCE_RAISE_IS_NOT_CONSENSUS_SURPRISE", "INDEPENDENT_OF_ATR_PERMISSION"])
+    return result
+
+
+HANDLERS = {"support_catalyst_reversal": detect_h001, "recent_support_reclaim": detect_h002}
+PARAMETERS = {"support_catalyst_reversal": H001Parameters, "recent_support_reclaim": H002Parameters}
 
 
 def evaluate_patterns(series, cutoff, registry, context=None):

@@ -90,6 +90,7 @@ def _packet_for(report, item):
                 or core.get("patterns", []) != item.get("patterns", [])
                 or core.get("public_information_policy") != report.get("public_information_policy")
                 or core.get("communication_policy") != report.get("communication_policy")
+                or core.get("opportunity_policy") != report.get("opportunity_policy")
                 or core.get("portfolio_snapshot_digest") != report.get("portfolio_snapshot", {}).get("digest")
                 or core.get("portfolio_position") != report.get("portfolio_snapshot", {}).get("positions", {}).get(item["symbol"])
                 or core["visible_series"]["price_basis"] != item.get("price_basis")
@@ -172,7 +173,7 @@ def attach_decisions(report: dict, bundle: dict, *, policy: DecisionPolicy | Non
     """
     policy = policy or DecisionPolicy()
     securities = report.get("securities", [])
-    projection = [{k: v for k, v in item.items() if k not in {"trade_decision", "manual_action"}} for item in securities]
+    projection = [{k: v for k, v in item.items() if k not in {"trade_decision", "manual_action", "opportunity_decision"}} for item in securities]
     integrity = digest([o.get("packet_id", o) for o in projection]) == report.get("snapshot_id")
     integrity = integrity and (report.get("synthetic") is True) == (bundle.get("synthetic") is True)
     integrity = integrity and (report.get("observation_only") is True) == (bundle.get("observation_only") is True)

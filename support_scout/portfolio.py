@@ -297,6 +297,11 @@ def attach_manual_actions(report):
         else:
             action = "ENTRY_REVIEW" if decision.get("conclusion") == "CONSIDER" else "AVOID" if decision.get("conclusion") == "NO_TRADE" else "WAIT"
             reasons = decision.get("reason_codes", [])
+            opportunity = item.get("opportunity_decision", {})
+            if opportunity.get("action") == "PROBE_BUY_REVIEW":
+                action, reasons = "ENTRY_REVIEW", opportunity["reason_codes"]
+            elif opportunity.get("candidate"):
+                action, reasons = ("AVOID" if opportunity.get("action") == "AVOID" else "WAIT"), opportunity["reason_codes"]
         value = {"symbol": symbol, "action": action, "label": labels[action], "reasons": reasons,
             "position": deepcopy(position), "agent_position_views": views,
             "entry_qualification": decision.get("conclusion"), "as_of": report["as_of"],

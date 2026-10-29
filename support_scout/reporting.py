@@ -119,6 +119,18 @@ def render_html(report: dict, bundle: dict) -> str:
                 '<p><small>以上為快照參考價；下個交易時段須重新驗證。支撐下緣是收盤失效條件，並非保證成交的停損單。</small></p>'
                 f'<p>後續條件：{escape("；".join(decision.get("next_steps", [])))}</p></div>')
         manual = item.get("manual_action")
+        opportunity = item.get("opportunity_decision")
+        if opportunity:
+            active_plan = opportunity.get("reference_plan") or {}
+            opinions = "；".join(f'{role}：{view["action"]} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
+            decision_html += (f'<div class="banner"><h4>{escape(opportunity["label"])}</h4>'
+                f'<p>{escape(str(opportunity.get("pattern_id") or "—"))} · {escape(opportunity["policy_version"])} · {escape(opportunity["scope"])}</p>'
+                f'<p>試單參考 {fmt(active_plan.get("entry_reference"))}；本型態固定失效價 {fmt(active_plan.get("invalidation_reference"))}；'
+                f'既有阻力 {fmt(active_plan.get("target_reference"))}；成本與跳空情境後RR {fmt(active_plan.get("net_reward_risk"))}</p>'
+                f'<p>{escape(opinions or "三角色尚未完成機會評估。")}</p>'
+                f'<p>{escape("；".join(opportunity["reason_codes"]))}</p>'
+                f'<details><summary>試單前人工核對</summary>{escape("；".join(opportunity["manual_checks"]))}</details>'
+                '<p>條件式人工評估，未核實事項仍保留；沒有下單、保證停損價或勝率。</p></div>')
         if manual:
             position = manual.get("position") or {}
             decision_html += (f'<p><b>人工持倉／成交決策：{escape(manual["label"])}</b><br>'
@@ -180,13 +192,19 @@ def render_html(report: dict, bundle: dict) -> str:
     if metrics:
         rows_wire = "".join(f'<tr><td>{escape(role)}</td><td>{m["original_bytes"]:,}</td><td>{m["wire_bytes"]:,}</td><td>{m["byte_reduction_fraction"]:.1%}</td></tr>' for role,m in metrics)
         wire_html = '<details><summary>Agent JSON 傳輸量（bytes，不是計費token）</summary><table><tr><th>角色</th><th>完整</th><th>精簡</th><th>減少</th></tr>'+rows_wire+'</table></details>'
+    active_html = ""
+    if report.get("opportunity_summary"):
+        counts = report["opportunity_summary"]["counts"]
+        active_html = (f'<div class="banner"><b>積極人工機會評估</b> · 可評估試單 {counts.get("PROBE_BUY_REVIEW",0)} · '
+            f'等待 {counts.get("WAIT",0)} · 暫不進場 {counts.get("AVOID",0)}。'
+            '三角色共同評估H-002；與原正式交易資格分開，未核實事項須人工核對。</div>')
     return f'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Support Desk {market_label}觀察 {escape(latest)}</title><style>
 body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margin:0}}main{{max-width:1500px;margin:auto;padding:30px}}h1{{margin-bottom:6px}}.sub,small{{color:#607185}}.banner{{background:#fff4d7;border-left:4px solid #b58222;padding:16px;margin:22px 0}}.metrics{{display:flex;gap:12px;flex-wrap:wrap}}.metrics div,article{{background:white;padding:18px;border:1px solid #dde4eb;border-radius:8px}}.metrics b{{display:block;font-size:20px}}.scroll{{overflow:auto;background:white;margin:24px 0}}table{{border-collapse:collapse;min-width:1000px;width:100%}}th,td{{text-align:left;padding:12px;vertical-align:top;border-bottom:1px solid #e4e9ed}}th{{background:#eaf0f5}}.notes{{font-size:13px;max-width:360px;color:#536579}}article{{margin:14px 0}}article svg{{max-width:440px;width:100%;height:130px}}a{{color:#246b9b}}input{{padding:10px;width:260px;border:1px solid #c7d1db;border-radius:4px}}.warn{{color:#9d3c29}}footer{{margin:30px 0;color:#607185}}
 </style><main><h1>Support Desk · {market_label}支撐決策</h1><div class="sub">快照截止 JST {escape(jst)} · 日線日期依{market_date_label} · 本地收盤觀察，非即時報價</div>
 <div class="banner"><b>{badge}</b>　{escape(banner)} 型態與價位皆為暫定觀察；雙 Agent 同意也不會解除缺口。分數不是勝率。</div>
 <div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(collection.get('status','UNKNOWN'))}</b>{escape(scope_label)}</div><div>觀察執行<b>{escape(status)}</b>模型 {escape(model)}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div>{decision_metrics}</div>
-{search_html}
+{active_html}{search_html}
 {wire_html}<p><a href="http://127.0.0.1:8765/">本機成交／持倉頁面</a>（先啟動 Dashboard.cmd；只有確認實際成交才更新持倉）</p>
 <h2>觀察名單與失效條件</h2><input id="filter" placeholder="搜尋代號、名稱或狀態" aria-label="篩選觀察表">
 <div class="scroll"><table><thead><tr><th>標的</th><th>型態</th><th>收盤</th><th>暫定支撐區</th><th>距離上緣</th><th>結論</th><th>候選來源</th><th>跨日變化</th><th>待確認</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>

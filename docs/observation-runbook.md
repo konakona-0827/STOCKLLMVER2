@@ -1,4 +1,4 @@
-# 日股日常操作（0.7.0）
+# 日股日常操作（0.8.0）
 
 在 `personalmono/japan-support-desk`、分支 `codex/japan-support-desk-phase1` 執行，Python 3.11以上。只讀已授權ENV的OpenAI欄位，不載入券商帳戶或下單模組。
 
@@ -19,15 +19,15 @@
 
 頁面會保留成本與開倉日，供持有／減碼／退出評估；缺原風險基準時保持REVIEW。只補取既有池外持倉供退出研究，不擴大新進場池。這是人工宣告，不是券商對帳。詳見[持倉協定](manual-portfolio.md)。
 
-## 通知目前暫緩
+## DEVICEPW與通知
 
-決策狀態變更會建立outbox事件；同狀態不重複，較舊報告不倒退覆寫。使用者要求稍後處理Gmail，目前本機enabled=false。既有驗證已寄1封，後續停用；不要因看到憑證檔存在就自行啟用。
+決策狀態變更會建立outbox事件；同狀態不重複，較舊報告不倒退覆寫。使用者最新已重新授權寄信，正式設定啟用並引用指定ENV的DEVICEPW；欄位尚未讀到時保留PENDING，不自動回退舊憑證。另一次明示的既有憑證連線測試已獲SMTP接受，不能當成DEVICEPW已驗證。
 
 ```powershell
 python -m support_scout notify-status
 ```
 
-以後明確要啟用時，`notify-configure 地址` 設定同一寄收地址；`EmailSetup.cmd` 使用隱藏輸入存Google的16字元應用程式密碼，不是帳戶登入密碼。Google通常要求先開兩步驟驗證，某些帳戶政策不提供此功能：見[Google官方說明](https://support.google.com/accounts/answer/185833?hl=zh-Hant)及[應用程式密碼頁](https://myaccount.google.com/apppasswords)。不要在聊天中提供密碼。
+使用 `notify-configure 地址 --env-file ENV完整路徑` 設定同一寄收地址並只讀DEVICEPW；`EmailSetup.cmd` 使用隱藏輸入存Google的16字元應用程式密碼，不是帳戶登入密碼。Google通常要求先開兩步驟驗證，某些帳戶政策不提供此功能：見[Google官方說明](https://support.google.com/accounts/answer/185833?hl=zh-Hant)及[應用程式密碼頁](https://myaccount.google.com/apppasswords)。不要在聊天中提供密碼。
 
 憑證只在忽略的local_data；EmailSetup只儲存，不寄信。明確啟用且具憑證後，正式觀察發布會寄出待寄事件；也可 `notify-flush` 或按頁面寄送按鈕。SMTP認證失敗保留PENDING；傳輸結果不明為UNKNOWN，不自動重寄，需人工檢查。合成及歷史案例不排信，也不沖刷真實佇列。
 
@@ -49,6 +49,6 @@ python -m support_scout advantest-case-replay output/advantest-real-cases/RUN_ID
 python -m unittest discover -s tests -q
 ```
 
-ADVANTEST真實案例目前沒有抓到描述的機會，見[詳細差異](advantest-real-validation.md)。歷史重算保留今日來源版本與真正取得時間，不能當歷史當時的決策準確率。
+原H-001未抓到；0.8.0 H-002在10/26能形成條件式試單評估，仍屬事後探索，見[詳細差異](advantest-real-validation.md)。歷史重算保留今日來源版本與真正取得時間，不能當歷史當時的決策準確率。
 
 備份 `local_data` 與 `output` 可保留原始資料、成交、通知、帳本及報告，兩者不進Git。沒有建立自動排程、券商連線或自動下單；5%帳戶停工仍待可信帳戶資料。

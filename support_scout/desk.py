@@ -41,12 +41,16 @@ def _call(provider, packet: dict, role: str, run_id: str, shared_public_informat
         verify_packet(isolated)
         if not isinstance(completion, Completion) or not isinstance(completion.answer, dict) or set(completion.answer) != ANSWER_FIELDS:
             raise ProviderError("INVALID_PROVIDER_COMPLETION")
+        # A locally rejected answer still consumed API usage; preserve that fact.
+        audit.update(response_id=completion.response_id, usage=completion.usage)
         review = {**deepcopy(completion.answer), "packet_id": packet["packet_id"], "role": role,
             "agent_id": agent_id, "produced_at": datetime.now(timezone.utc).isoformat()}
         if completion.public_information is not None:
             review["public_information"] = deepcopy(completion.public_information)
         if completion.position_view is not None:
             review["position_view"] = deepcopy(completion.position_view)
+        if completion.opportunity_view is not None:
+            review["opportunity_view"] = deepcopy(completion.opportunity_view)
         accepted, errors = validate_reviews(packet, [review])
         if errors or role not in accepted:
             raise ProviderError("REVIEW_CONTRACT_REJECTED:" + ",".join(errors))
@@ -106,7 +110,9 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
     run_id = uuid4().hex
     outputs = {s["packet_id"]: s for s in initial["securities"] if "packet_id" in s}
     # Confirmed near-support candidates first; earlier stages form an observation queue.
-    eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT" or p["core"]["symbol"] in held_symbols]
+    from .opportunity import active_candidate
+    eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT"
+        or p["core"]["symbol"] in held_symbols or active_candidate(p["core"])]
     if selected_symbols is not None:
         available = {p["core"]["symbol"]: p for p in eligible}
         if (not isinstance(selected_symbols, list) or any(not isinstance(s, str) for s in selected_symbols)

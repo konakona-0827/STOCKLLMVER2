@@ -11,7 +11,12 @@
         "H1：下跌後支撐穩定者與一般連跌者的後續表現是否不同，尚待驗證。",
         "H2：支撐穩定且出現可核對的正面超預期催化，是否優於無催化組，尚待驗證。"
       ],
-      "evaluation_horizons_sessions": [1, 3, 5, 10],
+      "evaluation_horizons_sessions": [
+        1,
+        3,
+        5,
+        10
+      ],
       "agent_guidance": "區分初期觀察、支撐證據增強、催化已知但價格待確認、公布後價格確認。收盤後公告不能解釋當天已完成日線，必須有事件後可分辨的新價格資料才升催化確認；仍不證明因果。H-001百分比支撐與technical的ATR模型是獨立研究通道，不混用其價位或間隔。利多或年增不等於超預期，未公布事件不能提前使用。不得估計未經回測的勝率；機會階段不等於交易批准。",
       "parameters": {
         "decline_lookback_sessions": 20,
@@ -31,6 +36,38 @@
         "catalyst_max_age_days": 7,
         "min_surprise_fraction": 0.05,
         "max_episode_sessions": 30
+      }
+    },
+    {
+      "id": "H-002",
+      "version": "h002-v1-20261029-exploratory",
+      "handler": "recent_support_reclaim",
+      "enabled": true,
+      "name": "近期支撐守住與收復（積極探索）",
+      "hypotheses": [
+        "H3：近期局部低點後一個完整交易日守住且相對近5期縮量，是否值得提早人工試單評估，尚待樣本外驗證。"
+      ],
+      "evaluation_horizons_sessions": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "agent_guidance": "這是較積極的近期支撐假說，與舊ATR或H-001的固定錨分開。短期守住、接近原低點與相對前5期縮量可支持小額試單研究，不必等待三次確認；但一天守住不是確定支撐，資料缺口、財報風險、固定下緣失效與追高仍需明示並可否決。公司上修只與公司前次預測比較，不冒稱超市場預期。已知參考案例後才建立參數，不得以單例命中聲稱準確率；不得只因任務要求積極就預設買進。",
+      "parameters": {
+        "decline_lookback_sessions": 10,
+        "min_decline_fraction": 0.06,
+        "local_low_lookback_sessions": 5,
+        "holding_min_sessions": 1,
+        "max_episode_sessions": 12,
+        "retest_distance_fraction": 0.04,
+        "invalidation_buffer_fraction": 0.01,
+        "max_distance_fraction": 0.06,
+        "volume_reference_sessions": 5,
+        "volume_contraction_ratio": 0.85,
+        "min_reclaim_fraction": 0.005,
+        "min_guidance_raise_fraction": 0.05,
+        "catalyst_max_age_days": 7
       }
     }
   ]

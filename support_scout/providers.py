@@ -39,6 +39,7 @@ class Completion:
     public_information: dict | None = None
     wire_metrics: dict | None = None
     position_view: dict | None = None
+    opportunity_view: dict | None = None
 
 
 class OfflineProvider:
@@ -48,10 +49,12 @@ class OfflineProvider:
 
     def complete(self, packet: dict, role: str, *, shared_public_information=None) -> Completion:
         verify_packet(packet)
+        opportunity = ({"action": "WAIT", "pattern_id": "H-002", "reason": "離線示範，未完成真實模型評估。"}
+            if packet["core"].get("opportunity_policy", {}).get("enabled") else None)
         return Completion({"verdict": "WATCH",
             "evidence_ids": packet["core"]["required_confirmation_evidence"],
             "summary": "離線流程示範；未呼叫模型，尚未完成實際研究。支撐跌破固定下緣即失效。",
-            "risks": ["規則未經樣本外驗證"], "missing_data": ["真實 agent 審查"]})
+            "risks": ["規則未經樣本外驗證"], "missing_data": ["真實 agent 審查"]}, opportunity_view=opportunity)
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -148,6 +151,22 @@ class OpenAIProvider:
                 tool_choice="required", max_tool_calls=policy["max_tool_calls_per_review"],
                 include=["web_search_call.action.sources"])
         holding = packet["core"].get("portfolio_position", {}).get("quantity", 0) > 0
+        active = packet["core"].get("opportunity_policy", {}).get("enabled") is True
+        if active:
+            schema = deepcopy(payload["text"]["format"]["schema"])
+            schema["properties"]["opportunity_view"] = {"type": "object", "additionalProperties": False,
+                "properties": {"action": {"type": "string", "enum": ["PROBE_BUY_REVIEW", "WAIT", "AVOID"]},
+                    "pattern_id": {"type": "string", "enum": packet["core"]["opportunity_policy"]["pattern_ids"]},
+                    "reason": {"type": "string", "maxLength": 240}}, "required": ["action", "pattern_id", "reason"]}
+            schema["required"].append("opportunity_view")
+            payload["text"]["format"]["schema"] = schema
+            payload["instructions"] = payload["instructions"].replace("你的回應不可下單，不含部位或買賣指令。", "你的回應可提出條件式人工試單評估，不可下單或產生部位數量。")
+            payload["instructions"] += ("opportunity_view為獨立的積極人工機會評估，與verdict嚴格資格分開；verdict可WATCH/REJECT而另一個H-002情境仍可條件式試單。"
+                + packet["core"]["opportunity_policy"]["agent_guidance"] +
+                "PROBE_BUY_REVIEW需在evidence_ids引用H-002全部required證據，reason說清楚支撐、失效與待人工核對。未知consensus不構成純價量H-002的必要催化，不能捏造超預期。" )
+            payload["instructions"] += ("formal verdict若missing_data非空必須WATCH，若RESEARCH則引用required全部且missing_data空。"
+                "可回verdict=WATCH同時opportunity_view.action=PROBE_BUY_REVIEW；不要把積極機會誤填成已完成全部資料核實的RESEARCH。"
+                "opportunity_reference_plan是Python以可見近期阻力計算的試單情境，請檢查其風報參數與反例。")
         if holding:
             schema = deepcopy(payload["text"]["format"]["schema"])
             schema["properties"]["position_view"] = {"type": "object", "additionalProperties": False,
@@ -177,10 +196,11 @@ class OpenAIProvider:
             answer = strict_json_loads(texts[0])
         except (TypeError, ValueError):
             raise ProviderError("API_INVALID_ANSWER_JSON") from None
-        expected_fields = ANSWER_FIELDS | ({"public_findings"} if web and not shared else set()) | ({"position_view"} if holding else set())
+        expected_fields = ANSWER_FIELDS | ({"public_findings"} if web and not shared else set()) | ({"position_view"} if holding else set()) | ({"opportunity_view"} if active else set())
         if not isinstance(answer, dict) or set(answer) != expected_fields:
             raise ProviderError("API_INVALID_ANSWER_FIELDS")
         position_view = answer.pop("position_view") if holding else None
+        opportunity_view = answer.pop("opportunity_view") if active else None
         if aliases is not None:
             validate_wire_answer(answer, packet["core"]["communication_policy"])
             answer = expand_refs(answer, aliases, packet_id=packet["packet_id"], symbol=packet["core"]["symbol"])
@@ -195,9 +215,12 @@ class OpenAIProvider:
                 if answer["verdict"] == "RESEARCH":
                     answer["verdict"] = "WATCH"
                 answer["missing_data"] = list(dict.fromkeys([*answer["missing_data"], *public_information["gaps"]]))
+                if opportunity_view and opportunity_view["action"] == "PROBE_BUY_REVIEW":
+                    opportunity_view = {"action": "WAIT", "pattern_id": opportunity_view["pattern_id"],
+                        "reason": "公開來源有被排除或未完成部分，須人工核對後才能積極評估。"}
         # Full semantic/evidence validation is deterministic in validate_reviews().
         usage = response.get("usage")
         usage = {k: v for k, v in usage.items() if k in {"input_tokens", "output_tokens", "total_tokens"}
                  and type(v) is int and v >= 0} if isinstance(usage, dict) else None
         response_id = response.get("id")
-        return Completion(answer, response_id if isinstance(response_id, str) else None, usage, public_information, metrics, position_view)
+        return Completion(answer, response_id if isinstance(response_id, str) else None, usage, public_information, metrics, position_view, opportunity_view)

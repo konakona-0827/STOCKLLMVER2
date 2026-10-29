@@ -101,7 +101,7 @@ def _visible_documents(documents, historical_cutoff):
 
 
 def build_real_bundle(source_bundle, case, checkpoint, *, documents=None, registry=None,
-                      communication_policy=None, evaluated_at=None):
+                      communication_policy=None, evaluated_at=None, opportunity_policy=None):
     if (source_bundle.get("synthetic") is not False or source_bundle.get("market") != "JP"
             or source_bundle.get("observation_only") is not True
             or len(source_bundle.get("securities", [])) != 1
@@ -140,6 +140,10 @@ def build_real_bundle(source_bundle, case, checkpoint, *, documents=None, regist
     bundle.pop("portfolio_snapshot", None)
     from .communication import load_policy
     bundle["communication_policy"] = load_policy(communication_policy)
+    bundle.pop("opportunity_policy", None)
+    if opportunity_policy is not None:
+        from .opportunity import load_policy as load_opportunity
+        bundle["opportunity_policy"] = load_opportunity(opportunity_policy)
     visible = _visible_documents(documents, cutoff)
     bundle["analysis_context"] = {"mode": "RETROSPECTIVE_REAL_PRICE_CASE_RECONSTRUCTION",
         "case_id": case["case_id"], "checkpoint": checkpoint["id"],
@@ -177,6 +181,8 @@ def _summary_item(report, checkpoint, status, search, diagnostic_reviews, diagno
         "technical_state": item.get("technical", {}).get("state"),
         "pattern_stage": pattern.get("stage"), "pattern_research_candidate": pattern.get("research_candidate", False),
         "pattern_metrics": deepcopy(pattern.get("metrics", {})), "pattern_reasons": pattern.get("reason_codes", []),
+        "all_pattern_stages": {p["pattern_id"]: p["stage"] for p in item.get("patterns", [])},
+        "opportunity_decision": deepcopy(item.get("opportunity_decision")),
         "search_pool_count": len(((search or {}).get("search_packet") or {}).get("core", {}).get("candidates", [])),
         "search_selected": [s["symbol"] for s in (search or {}).get("selection", [])],
         "standard_reviews": deepcopy(item.get("agent_reviews", {})),
@@ -189,7 +195,7 @@ def _summary_item(report, checkpoint, status, search, diagnostic_reviews, diagno
 def run_real_case(*, case_path=DEFAULT_REAL_CASE, output_root=None, source_bundle=None,
                   documents=None, agents=False, checkpoint_ids=None, max_total_calls=9,
                   diagnostic_review=False, settings_path=DEFAULT_SETTINGS,
-                  search_provider=None, researcher=None, reviewer=None):
+                  search_provider=None, researcher=None, reviewer=None, opportunity_policy=None):
     case = load_real_case(case_path)
     if type(max_total_calls) is not int or not 0 <= max_total_calls <= 30:
         raise DataError("REAL_CASE_INVALID_CALL_BUDGET")
@@ -222,7 +228,7 @@ def run_real_case(*, case_path=DEFAULT_REAL_CASE, output_root=None, source_bundl
         if checkpoint["id"] not in ids:
             continue
         bundle = build_real_bundle(source_bundle, case, checkpoint, documents=documents,
-            registry=registry, communication_policy=communication)
+            registry=registry, communication_policy=communication, opportunity_policy=opportunity_policy)
         report = run(bundle)
         search, diagnostic_reviews, diagnostic_audit = None, {}, []
         status = "NUMERIC_ONLY"
@@ -287,13 +293,14 @@ def run_real_case(*, case_path=DEFAULT_REAL_CASE, output_root=None, source_bundl
     lines = ["# Advantest 真實行情案例檢查", "", comparison["meaning"], "",
         "原始資料保留實際取得時間；歷史截點只截斷行情前綴，不改成歷史當時可得。日線不能辨識盤中先後。",
         "官方公司預測上修不等於超市場預期；缺事前一致預期則不宣稱正面驚喜。", "",
-        "|行情截止|H-001|支撐穩定期數|距支撐|SEARCH提交|交易研究|流程|",
-        "|---|---|---:|---:|---|---|---|"]
+        "|行情截止|型態|支撐穩定期數|距支撐|SEARCH提交|正式資格|積極人工評估|流程|",
+        "|---|---|---:|---:|---|---|---|---|"]
     for result in results:
         m = result["pattern_metrics"]
         distance = m.get("distance_from_support_fraction")
-        lines.append(f'|{result["market_data_cutoff"]}|{result["pattern_stage"]}|{m.get("no_new_low_sessions","—")}|'
-            f'{distance if distance is not None else "—"}|{",".join(result["search_selected"]) or "無"}|{result["trade_conclusion"]}|{result["status"]}|')
+        active = result.get("opportunity_decision") or {}
+        lines.append(f'|{result["market_data_cutoff"]}|{result["all_pattern_stages"]}|{m.get("no_new_low_sessions","—")}|'
+            f'{distance if distance is not None else "—"}|{",".join(result["search_selected"]) or "無"}|{result["trade_conclusion"]}|{active.get("action","未啟用")}|{result["status"]}|')
         report = artifacts[result["checkpoint"] + "_report.json"]
         bundle = artifacts[result["checkpoint"] + "_input.json"]
         files[result["checkpoint"] + "_report.html"] = render_html(report, bundle)
@@ -324,7 +331,8 @@ def replay_real_case(folder):
         prefix = result["checkpoint"]
         bundle, original = read(prefix+"_input.json"), read(prefix+"_report.json")
         expected = build_real_bundle(source, case, checkpoints[prefix], documents=documents,
-            registry=bundle["pattern_registry"], communication_policy=bundle["communication_policy"], evaluated_at=bundle["as_of"])
+            registry=bundle["pattern_registry"], communication_policy=bundle["communication_policy"], evaluated_at=bundle["as_of"],
+            opportunity_policy=bundle.get("opportunity_policy"))
         if {k: v for k, v in bundle.items() if k != "discovery"} != expected:
             raise DataError("REAL_CASE_REPLAY_INPUT_MISMATCH")
         replayed = run(bundle, rules=Rules(**original["rules"]), reviews=original.get("reviews", []))

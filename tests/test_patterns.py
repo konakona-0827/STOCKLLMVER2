@@ -136,7 +136,7 @@ class PatternTests(unittest.TestCase):
         self.assertNotEqual(changed["snapshot_id"], original["snapshot_id"])
         self.assertNotEqual(changed["pattern_registry_digest"], original["pattern_registry_digest"])
         bundle["pattern_registry"]["definitions"][0]["enabled"] = False
-        self.assertEqual(run(bundle)["securities"][0]["patterns"], [])
+        self.assertNotIn("H-001", [p["pattern_id"] for p in run(bundle)["securities"][0]["patterns"]])
 
     def test_invalid_parameters_and_unknown_registry_handlers_fail_explicitly(self):
         for kwargs in ({"stabilization_min_sessions": True}, {"min_decline_fraction": 1},

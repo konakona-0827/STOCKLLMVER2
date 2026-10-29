@@ -29,11 +29,14 @@ def main(argv=None) -> int:
     local.add_argument("--port", type=int, default=8765)
     mail = sub.add_parser("notify-configure", help="設定同一Gmail寄件／收件地址；不接受命令列密碼")
     mail.add_argument("email")
+    mail.add_argument("--env-file", type=Path, help="只讀明確指定ENV中的DEVICEPW，不複製整份ENV")
     sub.add_parser("notify-status", help="通知佇列與寄信設定狀態，不輸出憑證")
     sub.add_parser("notify-flush", help="寄送待寄決策事件，未設定Gmail憑證則保留佇列")
     real_case = sub.add_parser("advantest-case", help="真實Advantest近兩週前綴重算，含歷史時點限制")
     real_case.add_argument("--agents", action="store_true")
     real_case.add_argument("--diagnostic-review", action="store_true", help="門檻未通過時仍做雙方診斷，不冒稱尋標命中")
+    real_case.add_argument("--active-manual", action=argparse.BooleanOptionalAction, default=True,
+        help="啟用獨立H-002積極人工機會評估，保留原正式交易資格")
     real_case.add_argument("--checkpoints", help="例如d20261026,d20261028_after_ir,d20261029")
     real_case.add_argument("--max-total-calls", type=int, default=6)
     real_case.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
@@ -104,7 +107,7 @@ def main(argv=None) -> int:
         if args.command in {"notify-configure", "notify-status", "notify-flush"}:
             from .notifications import configure, email_status, flush
             if args.command == "notify-configure":
-                configure(args.email)
+                configure(args.email, secret_env_file=args.env_file)
             result = flush() if args.command == "notify-flush" else email_status()
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
@@ -114,13 +117,16 @@ def main(argv=None) -> int:
             return 0
         if args.command == "advantest-case":
             from .advantest_case import run_real_case
+            from .opportunity import load_policy as load_opportunity
             result, target = run_real_case(agents=args.agents, diagnostic_review=args.diagnostic_review,
                 checkpoint_ids=args.checkpoints.split(",") if args.checkpoints else None,
-                max_total_calls=args.max_total_calls, settings_path=args.settings, output_root=args.out)
+                max_total_calls=args.max_total_calls, settings_path=args.settings, output_root=args.out,
+                opportunity_policy=load_opportunity() if args.active_manual else None)
             print(json.dumps({"model_call_count": result["model_call_count"],
-                "results": [{k: r.get(k) for k in ("checkpoint", "pattern_stage", "search_selected", "trade_conclusion", "status")} for r in result["results"]]}, ensure_ascii=False, indent=2))
+                "results": [{**{k: r.get(k) for k in ("checkpoint", "pattern_stage", "search_selected", "trade_conclusion", "status")},
+                    "opportunity_action": (r.get("opportunity_decision") or {}).get("action")} for r in result["results"]]}, ensure_ascii=False, indent=2))
             print("真實案例報告：" + str((target / "comparison.html").resolve()))
-            return 0
+            return 3 if any("DEGRADED" in r["status"] or "DEFERRED" in r["status"] or r["status"] == "SEARCH_FAILED" for r in result["results"]) else 0
         if args.command == "pattern-case-replay":
             from .pattern_case import replay_case
             print(json.dumps(replay_case(args.directory), ensure_ascii=False, indent=2))
@@ -158,6 +164,8 @@ def main(argv=None) -> int:
             print(render_markdown(report, include_decisions=False))
             if "decision_summary" in report:
                 print("決策統計：" + json.dumps(report["decision_summary"]["counts"], ensure_ascii=False))
+            if "opportunity_summary" in report:
+                print("積極人工評估：" + json.dumps(report["opportunity_summary"]["counts"], ensure_ascii=False))
             print("觀察狀態：" + report["observation"]["status"] + "；模型：" + report["observation"]["agent_status"])
             print("報告：" + str((target / "report.html").resolve()))
             return code

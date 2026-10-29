@@ -162,6 +162,8 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             if fresh_bundle:
                 from .communication import load_policy as load_communication
                 bundle["communication_policy"] = load_communication()
+                from .opportunity import load_policy as load_opportunity
+                bundle["opportunity_policy"] = load_opportunity()
             if fill_history is not None:
                 from .portfolio import snapshot as portfolio_snapshot
                 bundle["portfolio_snapshot"] = portfolio_snapshot(fill_history, bundle["as_of"])
@@ -242,6 +244,9 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             if market == "JP":
                 from .decision import attach_decisions
                 attach_decisions(report, bundle)
+                if "opportunity_policy" in report:
+                    from .opportunity import attach_opportunities
+                    attach_opportunities(report, bundle)
                 if "portfolio_snapshot" in report:
                     from .portfolio import attach_manual_actions
                     attach_manual_actions(report)
@@ -261,6 +266,8 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 values["patterns.json"] = bundle["pattern_registry"]
                 if "communication_policy" in bundle:
                     values["communication_policy.json"] = bundle["communication_policy"]
+                if "opportunity_policy" in bundle:
+                    values["opportunity_policy.json"] = bundle["opportunity_policy"]
                 if "portfolio_snapshot" in bundle:
                     values["portfolio_snapshot.json"] = bundle["portfolio_snapshot"]
                 manifest["pattern_registry_digest"] = digest(bundle["pattern_registry"])

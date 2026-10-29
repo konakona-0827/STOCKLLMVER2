@@ -63,6 +63,10 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
     rules = rules or Rules()
     registry = None
     public_policy = None
+    opportunity_policy = None
+    if "opportunity_policy" in bundle:
+        from .opportunity import load_policy as load_opportunity
+        opportunity_policy = load_opportunity(bundle["opportunity_policy"])
     communication_policy = None
     if "communication_policy" in bundle:
         from .communication import load_policy as load_communication
@@ -140,6 +144,12 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                 core["public_information_policy"] = deepcopy(public_policy)
             if communication_policy is not None:
                 core["communication_policy"] = deepcopy(communication_policy)
+            if opportunity_policy is not None:
+                core["opportunity_policy"] = deepcopy(opportunity_policy)
+                from .opportunity import _reference_plan, STAGES
+                active_pattern = next((p for p in patterns if p["pattern_id"] in opportunity_policy["pattern_ids"]
+                    and p.get("stage") in STAGES and p.get("research_candidate")), None)
+                core["opportunity_reference_plan"] = _reference_plan(core, active_pattern, opportunity_policy) if active_pattern else None
             position = (portfolio or {}).get("positions", {}).get(symbol)
             if portfolio is not None:
                 core["portfolio_snapshot_digest"] = portfolio["digest"]
@@ -159,8 +169,10 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             if registry is not None:
                 outputs[-1]["patterns"] = patterns
             pattern_candidate = any(p["research_candidate"] for p in patterns)
+            from .opportunity import active_candidate
             if (technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}
                     or (pattern_candidate and technical["state"] not in {"INVALIDATED", "INSUFFICIENT_DATA"})
+                    or active_candidate(core)
                     or (position and technical["state"] != "INSUFFICIENT_DATA")):
                 packets.append(packet)
         except (DataError, KeyError, TypeError, ValueError) as exc:
@@ -194,17 +206,25 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
     if registry is not None:
         report["pattern_registry"] = registry
         report["pattern_registry_digest"] = digest(registry)
+        from .opportunity import active_candidate
+        active_symbols = {p["core"]["symbol"] for p in packets if active_candidate(p["core"])}
         report["pattern_opportunity_queue"] = [o["symbol"] for o in outputs
-            if o.get("verdict") != "REJECT" and any(p["research_candidate"] for p in o.get("patterns", []))]
+            if (o.get("verdict") != "REJECT" or o["symbol"] in active_symbols)
+            and any(p["research_candidate"] for p in o.get("patterns", []))]
     if public_policy is not None:
         report["public_information_policy"] = deepcopy(public_policy)
     if communication_policy is not None:
         report["communication_policy"] = communication_policy
+    if opportunity_policy is not None:
+        report["opportunity_policy"] = opportunity_policy
     if portfolio is not None:
         report["portfolio_snapshot"] = portfolio
     if market == "JP":
         from .decision import attach_decisions
         attach_decisions(report, bundle)
+        if opportunity_policy is not None:
+            from .opportunity import attach_opportunities
+            attach_opportunities(report, bundle)
         if portfolio is not None:
             from .portfolio import attach_manual_actions
             attach_manual_actions(report)

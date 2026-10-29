@@ -19,11 +19,13 @@ DEFAULT_CONFIG = ROOT / "local_data" / "email_settings.json"
 DEFAULT_DB = ROOT / "local_data" / "notifications.sqlite3"
 
 
-def configure(address, path=DEFAULT_CONFIG):
+def configure(address, path=DEFAULT_CONFIG, *, secret_env_file=None):
     if not isinstance(address, str) or not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", address):
         raise DataError("INVALID_NOTIFICATION_EMAIL")
     value = {"schema_version": 1, "enabled": True, "sender": address, "recipient": address,
         "password_env": "JP_DESK_GMAIL_APP_PASSWORD", "password_file": str((Path(path).parent / "gmail_app_password.txt").resolve())}
+    if secret_env_file is not None:
+        value.update(password_env="DEVICEPW", secret_env_file=str(Path(secret_env_file).expanduser().resolve()))
     atomic_json(Path(path), value)
     return value
 
@@ -33,21 +35,81 @@ def load_config(path=DEFAULT_CONFIG):
         return None
     value = strict_json_loads(Path(path).read_text(encoding="utf-8"))
     expected = {"schema_version", "enabled", "sender", "recipient", "password_env", "password_file"}
-    if not isinstance(value, dict) or set(value) != expected or value["schema_version"] != 1 or type(value["enabled"]) is not bool:
+    if (not isinstance(value, dict) or set(value) - expected - {"secret_env_file"} or not expected <= set(value)
+            or value["schema_version"] != 1 or type(value["enabled"]) is not bool):
         raise DataError("INVALID_EMAIL_CONFIGURATION")
     for field in ("sender", "recipient"):
         if not isinstance(value[field], str) or not re.fullmatch(r"[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+", value[field]):
             raise DataError("INVALID_NOTIFICATION_EMAIL")
-    if not re.fullmatch(r"JP_DESK_[A-Z_]+", value["password_env"]) or not isinstance(value["password_file"], str):
+    if (not isinstance(value["password_env"], str)
+            or not re.fullmatch(r"JP_DESK_[A-Z_]+|DEVICEPW", value["password_env"])
+            or not isinstance(value["password_file"], str)):
         raise DataError("INVALID_EMAIL_SECRET_REFERENCE")
+    if "secret_env_file" in value:
+        if not isinstance(value["secret_env_file"], str) or not value["secret_env_file"].strip():
+            raise DataError("INVALID_EMAIL_SECRET_REFERENCE")
+        selected = Path(value["secret_env_file"]).expanduser()
+        value["secret_env_file"] = str((selected if selected.is_absolute() else Path(path).parent / selected).resolve())
     return value
 
 
-def _password(config):
+def _device_password(path):
+    """Read one explicitly authorized dotenv field; never import other settings.
+
+    This parser intentionally does not perform interpolation, escapes, shell
+    evaluation, or automatic discovery of other .env files.
+    """
+    found = None
+    try:
+        with Path(path).open(encoding="utf-8-sig") as stream:
+            for line in stream:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.removeprefix("export ").split("=", 1)
+                if key.strip().casefold() != "devicepw":
+                    continue
+                if found is not None:
+                    return "", "DEVICEPW_DUPLICATE"
+                value = value.strip()
+                if value.startswith(("'", '"')):
+                    quote = value[0]
+                    closing = value.find(quote, 1)
+                    if closing < 0 or (value[closing + 1:].strip() and not value[closing + 1:].lstrip().startswith("#")):
+                        return "", "DEVICEPW_INVALID_FORMAT"
+                    value = value[1:closing]
+                else:
+                    value = value.split(" #", 1)[0].strip()
+                found = value
+    except (OSError, UnicodeError):
+        return "", "DEVICEPW_ENV_FILE_UNREADABLE"
+    return (found, None) if found is not None else ("", "DEVICEPW_NOT_CONFIGURED")
+
+
+def _password_details(config):
     value = os.environ.get(config["password_env"], "")
-    if not value and Path(config["password_file"]).is_file():
-        value = Path(config["password_file"]).read_text(encoding="utf-8-sig").strip()
-    return value.replace(" ", "").strip()
+    source, error = "PROCESS_ENV", None
+    validate_device = config["password_env"] == "DEVICEPW"
+    if not value and config.get("secret_env_file"):
+        value, error = _device_password(config["secret_env_file"])
+        source, validate_device = "DEVICEPW_ENV_FILE", True
+    elif not value:
+        source = "LEGACY_PASSWORD_FILE"
+        try:
+            value = Path(config["password_file"]).read_text(encoding="utf-8-sig") if Path(config["password_file"]).is_file() else ""
+        except (OSError, UnicodeError):
+            return "", source, "GMAIL_PASSWORD_FILE_UNREADABLE"
+    value = value.replace(" ", "").strip()
+    if not error and validate_device and not re.fullmatch(r"[A-Za-z0-9]{16}", value):
+        error = "DEVICEPW_INVALID_FORMAT" if value else "DEVICEPW_NOT_CONFIGURED"
+    return value, source if value or error else "NOT_CONFIGURED", error
+
+
+def _password(config):
+    value, _, error = _password_details(config)
+    if error:
+        raise DataError(error)
+    return value
 
 
 def _connect(path):
@@ -81,10 +143,15 @@ def enqueue_report(report, report_path, db_path=DEFAULT_DB):
                 continue
             action = item.get("manual_action", {})
             decision = item.get("trade_decision", {})
-            stable = {"symbol": item["symbol"], "action": action.get("action", decision.get("conclusion", "WAIT")),
+            opportunity = item.get("opportunity_decision") or {}
+            opportunity = {key: deepcopy(opportunity[key]) for key in
+                ("action", "label", "pattern_id", "reference_plan", "manual_checks", "policy_version") if key in opportunity}
+            stable = {"symbol": item["symbol"], "action": action.get("action", opportunity.get("action", decision.get("conclusion", "WAIT"))),
                 "conclusion": decision.get("conclusion"), "quantity": held.get(item["symbol"], {}).get("quantity", 0),
                 "patterns": [(p["pattern_id"], p["stage"]) for p in item.get("patterns", [])],
                 "reasons": sorted(decision.get("reason_codes", []))}
+            if opportunity:
+                stable["opportunity_decision"] = opportunity
             fingerprint = digest(stable)
             previous = db.execute("SELECT fingerprint,as_of FROM states WHERE symbol=?", (item["symbol"],)).fetchone()
             if previous and (epoch < previous[1] or previous[0] == fingerprint):
@@ -113,9 +180,13 @@ def email_status(config_path=DEFAULT_CONFIG, db_path=DEFAULT_DB):
         counts = dict(db.execute("SELECT status,count(*) FROM events GROUP BY status"))
     finally:
         db.close()
-    ready = bool(config and config["enabled"] and _password(config))
-    return {"status": "READY" if ready else "NEEDS_GMAIL_APP_PASSWORD" if config and config["enabled"] else "DISABLED",
-        "recipient": config["recipient"] if config else None, "counts": counts, "execution_enabled": False}
+    value, source, error = _password_details(config) if config else ("", "NOT_CONFIGURED", None)
+    ready = bool(config and config["enabled"] and value and not error)
+    status = ("DISABLED" if not config or not config["enabled"] else "READY" if ready else
+        "NEEDS_GMAIL_APP_PASSWORD" if error in {None, "DEVICEPW_NOT_CONFIGURED"} else "GMAIL_CREDENTIAL_SOURCE_ERROR")
+    return {"status": status, "recipient": config["recipient"] if config else None,
+        "credential_source": source, "credential_configured": bool(value and not error),
+        "credential_error": error, "counts": counts, "execution_enabled": False}
 
 
 def send_email(event, config):

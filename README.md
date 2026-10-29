@@ -1,6 +1,6 @@
 # Japan Support Desk：日股尋標與人工決策
 
-目前版本0.7.0，工作分支 `codex/japan-support-desk-phase1`。依2026-10-29最新需求，預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
+目前版本0.8.0，工作分支 `codex/japan-support-desk-phase1`。依2026-10-29最新需求，預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
 
 ```mermaid
 flowchart LR
@@ -54,7 +54,15 @@ python -m support_scout observe --agents --universe-source jpx --scan-limit 100
 
 每輪總呼叫額度包含SEARCH，之後只整對派研究／反證；上限7為1次尋標加最多3對研究。不需選滿，失敗不回退數值topN。工具呼叫另有上限，不是金額預算。
 
-## H-001與ADVANTEST驗證
+## 積極人工評估與ADVANTEST
+
+0.8.0新增H-002近期支撐守住／收復與 `config/opportunity.json` 的ACTIVE_MANUAL參數。三角色可共同輸出 `PROBE_BUY_REVIEW`（條件式人工試單）、WAIT或AVOID；原正式交易資格仍保留，不以舊ATR的失效價否決另一個獨立H-002。
+
+參數不只交給Agent，也由Python重算：至少一個後續交易日守住、回測接近4%、原始縮量比0.85、收盤距錨最多6%；情境風險最多6%、成本與跳空後RR至少1.5，使用最近已確認的錨前pivot並列出更近供給區。兩方均同意且SEARCH有效才提出試單；反證、追高、行情修訂與來源不一致仍可阻擋。
+
+真實10/26前綴的三角色實測已能選中ADVANTEST，兩方均支持條件式試單；10/27及10/29拒追高。這是根據已知案例新增參數後的探索，不能當成樣本外準確率。見[H-002](docs/active-pattern.md)及[積極決策與驗證](docs/active-decision.md)。
+
+## H-001既有版本驗證
 
 `config/patterns.json` 保留可版本化的機會假說：下跌後低點穩定、支撐測試／縮量、可核對的催化與公布後價格確認。H-001百分比支撐與原ATR交易資格分開，不混用失效價。
 
@@ -68,7 +76,7 @@ python -m support_scout advantest-case-replay output/advantest-real-cases/RUN_ID
 python -m support_scout pattern-case
 ```
 
-**2026-10-29真實案例沒有抓到使用者描述的買進機會。** 12個數值截點未形成正式尋標候選；3個重點截點的6次真實模型診斷均通過格式驗證，但兩方全部REJECT，最終NO_TRADE。主要差異為既有固定支撐錨、穩定區間過寬、量能參考口徑及反彈後距離；未為單例命中而調參。官方公司上修不等於超市場預期，沒有事前consensus就不聲稱超預期。
+**0.7.0僅H-001的真實案例沒有抓到使用者描述的買進機會。** 12個數值截點未形成正式尋標候選；3個重點截點的6次真實模型診斷均通過格式驗證，但兩方全部REJECT，最終NO_TRADE。主要差異為既有固定支撐錨、穩定區間過寬、量能參考口徑及反彈後距離；未為單例命中而調參。官方公司上修不等於超市場預期，沒有事前consensus就不聲稱超預期。
 
 這是今日資料版本的歷史前綴重算，**不是歷史當時可得資訊回測**。保留真實取得時間、來源hash與各截點，禁止歷史即時搜尋，不寫正式帳本、持倉或寄信。見[真實案例紀錄](docs/advantest-real-validation.md)及[H-001定義](docs/japan-h001-pattern.md)。
 
@@ -82,13 +90,13 @@ python -m support_scout pattern-case
 
 本機頁面填入代號、買賣、股數、實際價格、費用與日期，再勾「我確認已實際成交」才影響持倉。未勾選、研究建議與未回報交易均不視為成交。Python產生持倉JSON供下輪分析，保留成本與日期；可填固定失效價。持倉結論為HOLD、REDUCE_REVIEW、EXIT_REVIEW或REVIEW，缺原風險基準時不硬判續抱或賣出。見[持倉協定](docs/manual-portfolio.md)。
 
-決策有意義變更時寫入通知佇列，同狀態不重複；Gmail寄收地址相同，地址與憑證保存在忽略的local_data。**目前依使用者要求停用後續寄送，稍後再處理憑證與啟用。** 本次驗證前本機已有憑證，驗證中成功寄過1封，已保留稽核紀錄。未再啟用前，佇列持續保留。
+決策有意義變更時寫入通知佇列，同狀態不重複；Gmail寄收地址相同。本次使用者已重新授權寄送並指定ENV的DEVICEPW，設定只引用該欄，不輸出或提交密碼。應用程式憑證的連線測試已獲SMTP接受；指定ENV尚未讀到DEVICEPW時，正式決策仍保留待寄，不自動回退舊憑證。見[ENV與郵件設定](docs/email-env.md)。
 
 ```powershell
 python -m support_scout notify-status
 ```
 
-未來明確要啟用時，先用 `notify-configure 你的地址` 設定，再以 `EmailSetup.cmd` 隱藏輸入Google應用程式密碼（不是登入密碼）。`notify-flush` 寄出待寄事件；SMTP結果不明會保留UNKNOWN，不自動重寄。詳見[操作手冊](docs/observation-runbook.md)。
+使用 `notify-configure 你的地址 --env-file ENV完整路徑` 明確引用DEVICEPW；舊式本機憑證仍可用 `EmailSetup.cmd` 隱藏輸入Google應用程式密碼（不是登入密碼）。`notify-flush` 寄出待寄事件；SMTP結果不明會保留UNKNOWN，不自動重寄。詳見[操作手冊](docs/observation-runbook.md)。
 
 ## 決策與資料界線
 
@@ -98,7 +106,7 @@ python -m support_scout notify-status
 | WAIT | 型態、資訊或審查待補 |
 | NO_TRADE | 失效、反證否決、無可用型態、位置過遠或風報不足 |
 
-Yahoo目前固定 `observation_only=True`，公司行動、事件完整性、交易狀態及市場背景尚未獨立核實；現階段真實流程仍會停在WAIT或NO_TRADE。模型同意不能解除這些缺口。參考收盤與日線失效價不是下個交易時段的保證成交價。
+Yahoo目前固定 `observation_only=True`，公司行動、事件完整性、交易狀態及市場背景尚未獨立核實；原正式資格仍會停在WAIT或NO_TRADE；獨立積極人工機會通道可提出有待核對事項的條件式試單評估。模型同意不能解除這些缺口。參考收盤與日線失效價不是下個交易時段的保證成交價。
 
 原因果ATR模型、JPX日曆、未完成日K排除、來源hash、固定支撐與跨日修訂保護保留。5%帳戶日損停工仍待可信淨值及損益來源，不能用個股跌5%代替。沒有自動下單或自動排程。
 
