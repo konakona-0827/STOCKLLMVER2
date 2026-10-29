@@ -9,7 +9,7 @@ $statePath = (Resolve-Path -LiteralPath $StateRoot).Path
 $pythonwCommand = Get-Command pythonw.exe -ErrorAction Stop
 $pythonw = $pythonwCommand.Source
 $supervisor = Join-Path $codeRoot 'operations/dashboard_supervisor.py'
-$strategy = Join-Path $codeRoot 'strategies/strategy_support_scout_v1.md'
+$strategy = Join-Path $codeRoot 'strategies/strategy_A_v2_2_calendar_aware_decisions.md'
 
 foreach ($required in @($pythonw, $supervisor, $strategy,
         (Join-Path $statePath 'data/execution/live_execution.sqlite3'))) {
