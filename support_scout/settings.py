@@ -81,5 +81,5 @@ def doctor(settings_path: Path = DEFAULT_SETTINGS) -> dict:
         "openai_ready": config["ready"], "key_configured": config["key_configured"],
         "model": config["model"], "reviewer_model": config["reviewer_model"],
         "errors": errors, "execution_enabled": False,
-        "scope": "JPX_DYNAMIC_UNIVERSE_SEARCH_TO_DECISION",
-        "note": "公開資料觀察與雙模型就緒狀態分開；doctor 不呼叫模型或券商。"}
+        "scope": "CONFIGURABLE_FIXED_POOL_THREE_AGENT_DECISION",
+        "note": "預設20檔研究池與尋標／研究／反證三角色；doctor只查設定，不呼叫模型或券商。"}

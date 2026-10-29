@@ -25,7 +25,7 @@ class DeskConfig:
             raise DataError("MAX_CALLS_MUST_BE_2_TO_100")
 
 
-def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, dict]:
+def _call(provider, packet: dict, role: str, run_id: str, shared_public_information=None) -> tuple[dict | None, dict]:
     agent_id = f"{run_id}:{role}:{uuid4().hex}"
     audit = {"packet_id": packet["packet_id"], "symbol": packet["core"]["symbol"],
         "role": role, "agent_id": agent_id, "model": provider.model,
@@ -36,7 +36,8 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
     try:
         isolated = deepcopy(packet)
         verify_packet(isolated)
-        completion = provider.complete(isolated, role)
+        completion = (provider.complete(isolated, role, shared_public_information=shared_public_information)
+            if shared_public_information is not None else provider.complete(isolated, role))
         verify_packet(isolated)
         if not isinstance(completion, Completion) or not isinstance(completion.answer, dict) or set(completion.answer) != ANSWER_FIELDS:
             raise ProviderError("INVALID_PROVIDER_COMPLETION")
@@ -44,6 +45,8 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
             "agent_id": agent_id, "produced_at": datetime.now(timezone.utc).isoformat()}
         if completion.public_information is not None:
             review["public_information"] = deepcopy(completion.public_information)
+        if completion.position_view is not None:
+            review["position_view"] = deepcopy(completion.position_view)
         accepted, errors = validate_reviews(packet, [review])
         if errors or role not in accepted:
             raise ProviderError("REVIEW_CONTRACT_REJECTED:" + ",".join(errors))
@@ -51,10 +54,13 @@ def _call(provider, packet: dict, role: str, run_id: str) -> tuple[dict | None, 
             raise ProviderError("OFFLINE_PROMOTION_REFUSED")
         audit.update(status="ACCEPTED", response_id=completion.response_id, usage=completion.usage,
                      review_digest=digest(review))
+        if completion.wire_metrics is not None:
+            audit["wire_metrics"] = deepcopy(completion.wire_metrics)
         if completion.public_information is not None:
             info = completion.public_information
-            audit.update(web_tool_call_count=info["completed_tool_call_count"],
-                web_tool_attempt_count=info["tool_attempt_count"], public_information_digest=info["digest"],
+            audit.update(web_tool_call_count=0 if shared_public_information else info["completed_tool_call_count"],
+                web_tool_attempt_count=0 if shared_public_information else info["tool_attempt_count"], public_information_digest=info["digest"],
+                public_source_mode="SHARED_FACTS_NO_PEER_OPINION" if shared_public_information else "OWN_RETRIEVAL",
                 public_finding_count=len(info["findings"]), public_gaps=info["gaps"], web_usage_status="RECORDED")
         return review, audit
     except Exception as exc:
@@ -80,6 +86,7 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
         snapshot["pattern_registry"] = load_registry(snapshot.get("pattern_registry"))
     rules = rules or Rules()
     initial = run(snapshot, as_of=as_of, rules=rules)
+    held_symbols = set(snapshot.get("portfolio_snapshot", {}).get("positions", {}))
     discovery_skipped = False
     if snapshot.get("discovery_required") is True:
         from .discovery import validate_search_result
@@ -91,14 +98,15 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
         if selected_symbols is not None and (not isinstance(selected_symbols, list)
                 or any(not isinstance(s, str) or s not in approved_symbols for s in selected_symbols)):
             raise DataError("DESK_SELECTION_NOT_APPROVED_BY_SEARCH")
-        selected_symbols = approved_symbols if selected_symbols is None else selected_symbols
+        selected_symbols = list(dict.fromkeys([*(approved_symbols if selected_symbols is None else selected_symbols),
+            *(s for s in held_symbols if any(p["core"]["symbol"] == s for p in initial["agent_packets"]))]))
         discovery_skipped = not selected_symbols
     if timestamp(initial["as_of"]) > datetime.now(timezone.utc):
         raise DataError("DESK_CUTOFF_IN_FUTURE")
     run_id = uuid4().hex
     outputs = {s["packet_id"]: s for s in initial["securities"] if "packet_id" in s}
     # Confirmed near-support candidates first; earlier stages form an observation queue.
-    eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT"]
+    eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT" or p["core"]["symbol"] in held_symbols]
     if selected_symbols is not None:
         available = {p["core"]["symbol"]: p for p in eligible}
         if (not isinstance(selected_symbols, list) or any(not isinstance(s, str) for s in selected_symbols)
@@ -111,12 +119,32 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
         -(p["core"]["technical"]["priority_score"] or 0), p["core"]["symbol"]))
     if selected_symbols is not None:
         eligible.sort(key=lambda p: selected_symbols.index(p["core"]["symbol"]))
+    eligible.sort(key=lambda p: p["core"]["symbol"] not in held_symbols)
     limit = min(config.max_packets, config.max_calls // 2)
     selected, deferred = eligible[:limit], eligible[limit:]
     reviews, events = [], []
     # Fresh requests in independent contexts. Neither role sees the other's answer.
     with ThreadPoolExecutor(max_workers=2) as executor:
         for packet in selected:
+            shared_once = (packet["core"].get("communication_policy", {}).get("public_source_mode") == "shared_once"
+                and packet["core"].get("public_information_policy", {}).get("enabled")
+                and type(researcher).__name__ == "OpenAIProvider" and type(reviewer).__name__ == "OpenAIProvider")
+            if shared_once:
+                first, event = _call(researcher, packet, "researcher", run_id)
+                events.append(event)
+                if first is not None:
+                    reviews.append(first)
+                if first is None or not first.get("public_information"):
+                    events.append({"packet_id": packet["packet_id"], "symbol": packet["core"]["symbol"],
+                        "role": "reviewer", "model": reviewer.model, "status": "SKIPPED", "call_attempted": False,
+                        "error": "SHARED_PUBLIC_SOURCES_UNAVAILABLE_NO_SECOND_SEARCH"})
+                    continue
+                second, event = _call(reviewer, packet, "reviewer", run_id,
+                    first.get("public_information") if first else None)
+                events.append(event)
+                if second is not None:
+                    reviews.append(second)
+                continue
             futures = [executor.submit(_call, provider, packet, role, run_id)
                        for role, provider in (("researcher", researcher), ("reviewer", reviewer))]
             for future in futures:
@@ -125,10 +153,10 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
                 if review is not None:
                     reviews.append(review)
     final = run(snapshot, as_of=as_of, rules=rules, reviews=reviews)
-    errors = sum(e["status"] == "ERROR" for e in events)
+    errors = sum(e["status"] in {"ERROR", "SKIPPED"} for e in events)
     final["desk"] = {"run_id": run_id, "protocol": TASK_PROTOCOL, "mode": researcher.mode,
         "status": "SKIPPED_DISCOVERY" if discovery_skipped else "DEGRADED" if errors else "PARTIAL_BUDGET" if deferred else "COMPLETE",
-        "config": asdict(config), "call_count": len(events), "error_count": errors,
+        "config": asdict(config), "call_count": sum(e.get("call_attempted", True) for e in events), "error_count": errors,
         "selected_symbols": [p["core"]["symbol"] for p in selected],
         "web_tool_call_count": sum(e.get("web_tool_call_count") or 0 for e in events),
         "web_tool_attempt_count": sum(e.get("web_tool_attempt_count") or 0 for e in events),

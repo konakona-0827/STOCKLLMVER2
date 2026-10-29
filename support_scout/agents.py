@@ -40,6 +40,10 @@ def make_packet(core: dict) -> dict:
         protocol += "-public-information-v1"
         for task in tasks:
             task["task_version"] += "-public-information-v1"
+    if core.get("communication_policy", {}).get("enabled"):
+        protocol += "-wire-v1"
+    if core.get("portfolio_position"):
+        protocol += "-manual-position-v1"
     packet_id = digest({"protocol": protocol, "core": core, "tasks": tasks})
     return {"packet_id": packet_id, "core": core, "protocol": protocol, "tasks": tasks,
             "response_contract": {
@@ -69,6 +73,9 @@ def validate_reviews(packet: dict, raw: list[dict]) -> tuple[dict, list[str]]:
         try:
             public = packet["core"].get("public_information_policy", {}).get("enabled") is True
             fields = expected_fields | ({"public_information"} if public else set())
+            holding = packet["core"].get("portfolio_position", {}).get("quantity", 0) > 0
+            if holding:
+                fields |= {"position_view"}
             if not isinstance(row, dict) or set(row) != fields:
                 raise DataError("INVALID_REVIEW_FIELDS")
             if public:
@@ -78,6 +85,12 @@ def validate_reviews(packet: dict, raw: list[dict]) -> tuple[dict, list[str]]:
                     raise DataError("PUBLIC_RETRIEVAL_AFTER_REVIEW")
                 if row["verdict"] == "RESEARCH" and row["public_information"]["gaps"]:
                     raise DataError("PUBLIC_INFORMATION_GAPS_BLOCK_PROMOTION")
+            if holding:
+                view = row["position_view"]
+                if (not isinstance(view, dict) or set(view) != {"action", "reason"}
+                        or view["action"] not in {"HOLD", "REDUCE_REVIEW", "EXIT_REVIEW", "REVIEW"}
+                        or not isinstance(view["reason"], str) or not 1 <= len(view["reason"].strip()) <= 240):
+                    raise DataError("INVALID_POSITION_VIEW")
             role = row["role"]
             if not isinstance(role, str) or role not in ROLES or row["packet_id"] != packet["packet_id"]:
                 raise DataError("WRONG_ROLE_OR_SNAPSHOT")

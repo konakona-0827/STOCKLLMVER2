@@ -1,102 +1,115 @@
-# Japan Support Desk：日股支撐觀察與決策
+# Japan Support Desk：日股尋標與人工決策
 
-由 `codex/japan-support-desk-phase1` 延伸的日股版本，改修分支 `codex/japan-h001-pattern`，工作目錄 `personalmono/japan-support-desk`。加入可版本化的H-001機會層、Advantest合成參數驗證與主動公開資訊搜尋，未包含券商、帳戶或訂單流程。
-
-標準決策流程固定三個模型 agent：**尋標（SEARCH）提出候選，研究（Researcher）形成及檢查交易假說，反證（Reviewer）獨立找漏洞並可否決**。三者共同產出單一「可考慮／等待／不交易」結論；Head和固定閘門是派工與驗證程式，不另算agent，不新增第四個決策agent。手動名單及離線demo是診斷入口，不冒稱完整三角色尋標流程。
+目前版本0.7.0，工作分支 `codex/japan-support-desk-phase1`。依2026-10-29最新需求，預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
 
 ```mermaid
 flowchart LR
-    U[JPX 官方月末上市母池] --> C[有界輪替行情掃描]
-    C --> Y[Yahoo Finance 日線 API]
-    Y --> D[JPX 日曆與資料閘門]
-    D --> S[固定支撐掃描]
-    S --> Q[SEARCH agent 提交候選]
-    Q --> H[Head 分派有界任務]
-    H --> A[Researcher 研究證據]
-    H --> B[Reviewer 獨立反證]
-    A --> W[有界公開搜尋：IR / 決算 / 業績修正 / 新聞]
-    B --> W
-    A --> G[Python 決策閘門]
+    U[可配置20檔研究池] --> Y[Yahoo Finance日線]
+    Y --> P[Python資料與型態檢查]
+    P --> S[尋標 SEARCH]
+    S --> A[研究 Researcher]
+    A --> F[共用來源事實]
+    F --> B[反證 Reviewer]
+    A --> G[Python固定決策閘門]
     B --> G
-    G --> L[SQLite 跨日固定支撐覆核]
-    L --> R[可考慮 / 等待 / 不交易]
-    R --> O[HTML 報告與重播快照]
+    G --> R[可考慮 / 等待 / 不交易]
+    H[已確認手動成交] --> A
+    H --> B
+    R --> D[本機頁面與持倉評估]
+    R --> N[決策變更通知佇列]
 ```
 
-## 執行
+三個角色使用不同上下文。反證員看相同原始證據與共用來源事實，不看尋標看多理由或研究員結論；共用事實不等於另做獨立檢索。同模型的錯誤仍可能相關。
 
-Python 3.11 以上，執行期不需要第三方套件。進入本工作目錄：
+## 開始使用
 
-```powershell
-python -m support_scout doctor
-python -m support_scout japan-demo --out output/japan-demo
-python -m support_scout observe --agents --scan-limit 100 --max-calls 7
-python -m support_scout observe --no-agents --scan-limit 100
-python -m support_scout observe --no-agents --symbols 6857,8035,4063
-```
-
-`Observe.cmd` 預設日本動態尋標，`OpenReport.cmd` 開最新完成報告。JPX 2026-09-30 母池實際納入 3,695 檔，每輪最多100檔，Core30→Large70→Mid400→其餘依序輪巡；完整一輪需37次執行，不宣稱每輪掃全市場。名單換版時接續上次標的，不每月重回前100檔。SEARCH 從本輪行情形成的最多40檔候選中選擇、重排或不選，再交獨立決策研究／反證 agent。模型不能憑記憶新增代號。
-
-`--no-agents` 僅作數值預掃，清楚標示 NUMERIC_ONLY；不會宣稱已由 agent 找到。SEARCH 失敗或設定缺失時不派決策工作、不退回數值topN、也不前進agent模式的輪巡進度。只有成功提交／合法空選、帳本與報告完成後才推進；進度有程序鎖及版本CAS避免重複寫入跳批。
-
-`--symbols` 是明確手動觀察模式，支援東京英數代碼。舊20檔名單保存在 `config/universe_jp.json`，只有指定 `--fixed-universe` 才使用。`--market TW` 保留原版台股相容入口，目前台股原分支仍為固定名單研究流程，沒有這次新增的日股SEARCH層。
-
-每輪報告位於 `output/observations/<run_id>/report.html`。`latest.json` 指向已發布報告，`latest_attempt.json` 記錄最後嘗試；讀取時應同時查看狀態、資料日期與 `committed.json`。code 0 為觀察完成、2 為資料全部不可用／全域失敗、3 為部分資料或 agent 降級；0 不代表可以交易。
-
-## 使用雙 Agent API
-
-SEARCH、決策研究員和反證員使用不同上下文；決策研究／反證員收到同一份原始行情 packet，不看到 SEARCH 看多理由或對方答案。可分別指定研究與反證模型。日股實際觀察預設讓研究／反證員主動使用有界web_search查財報與新聞，模型無shell或券商工具。
-
-整輪預設最多10次呼叫，**包含SEARCH**，剩餘額度只整對分派；例如上限7為1搜尋＋最多3對研究，上限10最多使用1＋8次，不為用滿額度湊數。每個角色無自動重試。直接 `desk` 入口也重驗SEARCH，不能藉其他CLI跳過。
-
-搜尋工具額度與模型呼叫分開：`config/public_information.json` 預設每角色每檔最多3次工具呼叫；來源、發布時間、抽取事實與排除原因保存於報告。`--no-public-information` 可關閉。合成與歷史回放不開啟即時搜尋；未知或時間不符的來源不能解除硬性缺口。完整規格與限制見[H-001與公開資訊說明](docs/japan-h001-pattern.md)。
+Python 3.11以上，不需第三方執行期套件。在本目錄執行：
 
 ```powershell
-python -m support_scout pattern-case
-python -m support_scout pattern-case --agents --max-total-calls 12
-python -m support_scout pattern-case-replay output/pattern-cases/<run_id>
-```
-
-合成參數位於 `cases/advantest_h001.synthetic.json`，全部人造，不代表Advantest真實歷史或勝率；機會規則位於 `config/patterns.json`，可調參、停用及擴充，保留原本ATR決策通道。
-
-```powershell
-$env:OPENAI_API_KEY = '你的金鑰'
-$env:SUPPORT_DESK_MODEL = '你可用的模型 ID'
 python -m support_scout doctor --require-agents
-python -m support_scout observe --agents --max-packets 5 --max-calls 10
+python -m support_scout observe --agents --max-packets 3 --max-calls 7
+python -m support_scout serve
 ```
 
-本機已依使用者2026-10-28授權，在忽略的 `local_settings.json` 指向原 `STOCKLLM/.env`，沿用 `gpt-5.6-luna`，預設啟用agent；不複製整份 ENV，只載入 OpenAI key 與模型。新checkout依 `local_settings.example.json` 指定自己的來源。金鑰不進入快照、報告或Git。未設定模型時仍可跑數值預掃；要求agent卻缺設定時明確降級。真實模型呼叫會產生API費用，呼叫上限不是美元預算上限。
+也可執行 `Observe.cmd` 產生報告、`Dashboard.cmd` 開啟本機服務，再瀏覽 <http://127.0.0.1:8765>。頁面提供最新決策、已確認持倉、成交回報，以及重新分析按鈕。服務只綁定本機；靜態 `report.html` 保存當輪結果，成交回報使用本機服務。
 
-## 決策含義
+本機已依授權用忽略的 `local_settings.json` 指向原 `STOCKLLM/.env`，只沿用OpenAI key與模型 `gpt-5.6-luna`，不複製整份ENV或讀取券商欄位。新機器參考 `local_settings.example.json`。金鑰不進入報告、快照或Git。
 
-| 結論 | 意義 |
-|---|---|
-| `CONSIDER` 可考慮交易 | 動態模式須本輪SEARCH有效提交，再通過支撐、資料／背景、雙方研究、淨情境風報與跨日檢查；交由人工評估 |
-| `WAIT` 等待確認 | 型態尚未完成、資料或公司事件未知、審查未完成或跨日資料需核對 |
-| `NO_TRADE` 目前不交易 | 支撐失效、反證否決、無可用型態、已追高或風險報酬不足 |
+## 可調整的研究池
 
-每檔保留研究資格 `RESEARCH/WATCH/REJECT`，並另外輸出交易研究結論，包含收盤參考、凍結支撐下緣、已知歷史阻力、情境成本後 RR、證據與下一步。參考收盤不是下一次可成交價格；支撐下緣是「日線收盤失效」條件，不是已設置或保證成交的停損。下個交易時段須重新驗證。
-
-目前 Yahoo provider 固定 `observation_only=True`：未獨立核實公司行動、公司公告／決算、交易狀態與普通股分類，市場壓力亦未知。**目前真實 Yahoo 流程會輸出等待或不交易，不會直接升為 CONSIDER；即使兩個模型同意也一樣。** 完整的 CONSIDER 通道已以受控測試覆蓋，仍需下一階段補齊這些資料和策略驗證。這個狀態不能靠刪除 blocker 解決。
-
-## 支撐模型與資料界線
-
-保留既有因果模型：至少 60 根日線、前 20 日高點回撤 8%、左右各兩根較高低點後凍結 `低點 ± max(0.35 ATR14, 0.8% 低點)`；另日反彈 1.5 ATR，之後另日回測守住，後續收盤突破回測日高點。距支撐上緣超過 2.5 ATR 不追，收盤跌破凍結下緣即失效，不向下移動原支撐。規則尚未經樣本外驗證，不為了符合單一 Advantest 案例調參。
-
-Yahoo OHLC 不與 adjusted close 混用；歷史調整語義仍未知。窗口內已知拆股會阻擋該檔。日圓成交值為 `close × volume` 估算，使用獨立日圓門檻。JST 15:30 收盤後保留至 16:00 發布緩衝，之前排除當日日 K；JPX 日曆已版本化至 2027 年，未知年份拒絕執行。漏日、過期、錯代碼、零量與來源失敗不以前值補齊。每次原始 JSON 保存 SHA256、取得時間與來源，今日下載的歷史資料不冒充歷史當時快照。
-
-5% 當日帳戶虧損停工尚未實作，因為本階段沒有帳戶淨值、持倉與可信損益來源；不能用個股跌 5% 代替。Head 僅分派工作與執行固定檢查，沒有調高風險或下單的權限。
-
-## 驗證與下一階段
+`config/universe_jp.json` 保存版本、`max_symbols`及`symbols`；目前上限20檔。這20檔是Agent尋找機會的範圍，並非20檔都交給研究員，也不代表推薦或PayPay已確認可交易。日後提供PayPay名單可替換JSON，不必改Agent程式。
 
 ```powershell
-python -m unittest discover -s tests -v
-python -m support_scout scan output/observations/RUN_ID/input.json --rules output/observations/RUN_ID/rules.json --out output/replay
+# 使用另一份研究池；仍由SEARCH選股
+python -m support_scout observe --agents --universe config/my_paypay_pool.json
+# 只做數值掃描，明示NUMERIC_ONLY
+python -m support_scout observe --no-agents
+# 明確指定標的的手動診斷，不稱完整三角色尋標
+python -m support_scout observe --agents --symbols 6857
+# 保留的廣域JPX輪巡入口，非預設
+python -m support_scout observe --agents --universe-source jpx --scan-limit 100
 ```
 
-重播還原當次資料與規則，不等於績效回測；重用當次 `reviews.json` 可驗證原 agent 裁決。每輪另存 `universe.json` 與 `search_audit.json`，保留母池原檔SHA256、名單日期、覆蓋範圍、搜尋packet／回應digest、數值預排與agent順序、理由、引用及三角色模型用量。未來資料不得改變既有截止的掃描。
+已確認持倉若在池外，可另外補取資料供持有／退出評估，不加入新進場尋標池。未來券商行情接點仍為 `observe(builder=...)`，母池也可由現有universe loader提供；資料身分、單位、調整口徑與時點必須重新驗證。
 
-下一步先補官方上市身分／公司行動／決算事件與市場背景，再做逐日走樣本外驗證及參數敏感度；確認券商後只替換行情 adapter，執行流程另外設計。暫不加入排程、Telegram、自動下單或帳戶風控。
+每輪總呼叫額度包含SEARCH，之後只整對派研究／反證；上限7為1次尋標加最多3對研究。不需選滿，失敗不回退數值topN。工具呼叫另有上限，不是金額預算。
 
-[日股架構](docs/japan-architecture.md) · [JPX母池](docs/japan-universe.md) · [SEARCH與交接](docs/japan-discovery.md) · [Yahoo資料介面](docs/japan-provider.md) · [決策政策](docs/japan-decision.md) · [獨立審查](docs/japan-review.md)。其他未冠 japan 的文件保留自台股基底，以本 README 與日股文件為準。
+## H-001與ADVANTEST驗證
+
+`config/patterns.json` 保留可版本化的機會假說：下跌後低點穩定、支撐測試／縮量、可核對的催化與公布後價格確認。H-001百分比支撐與原ATR交易資格分開，不混用失效價。
+
+```powershell
+# 真實行情，近兩週逐日截斷，含60根以上暖機
+python -m support_scout advantest-case
+# 數值門檻未入選時，明確做雙方診斷，最多6次模型呼叫
+python -m support_scout advantest-case --agents --diagnostic-review --checkpoints d20261026,d20261028_after_ir,d20261029 --max-total-calls 6
+python -m support_scout advantest-case-replay output/advantest-real-cases/RUN_ID
+# 人造情境與負向對照，另行隔離
+python -m support_scout pattern-case
+```
+
+**2026-10-29真實案例沒有抓到使用者描述的買進機會。** 12個數值截點未形成正式尋標候選；3個重點截點的6次真實模型診斷均通過格式驗證，但兩方全部REJECT，最終NO_TRADE。主要差異為既有固定支撐錨、穩定區間過寬、量能參考口徑及反彈後距離；未為單例命中而調參。官方公司上修不等於超市場預期，沒有事前consensus就不聲稱超預期。
+
+這是今日資料版本的歷史前綴重算，**不是歷史當時可得資訊回測**。保留真實取得時間、來源hash與各截點，禁止歷史即時搜尋，不寫正式帳本、持倉或寄信。見[真實案例紀錄](docs/advantest-real-validation.md)及[H-001定義](docs/japan-h001-pattern.md)。
+
+## 精簡交流與用量
+
+`config/communication.json` 定義JSON欄位、短證據別名、日線窗口、輸入bytes與回覆長度上限。完整證據留本地；傳輸仍保留支撐關鍵日、事件時點、缺口與已確認持倉，未知引用整份拒絕。
+
+預設 `shared_once`：研究員搜尋一次，反證員取得同份來源事實與缺口，不帶研究員結論。保存行情的同快照比較，研究輸入bytes減少約80%，但**不是計費tokens減少80%**；實際tokens採API usage。2026-10-29固定20檔驗證共3次模型請求、49,493 tokens（含工具內容），其中反證員沒有再次搜尋。見[JSON協定與量測](docs/communication-protocol.md)。
+
+## 成交回報與提醒
+
+本機頁面填入代號、買賣、股數、實際價格、費用與日期，再勾「我確認已實際成交」才影響持倉。未勾選、研究建議與未回報交易均不視為成交。Python產生持倉JSON供下輪分析，保留成本與日期；可填固定失效價。持倉結論為HOLD、REDUCE_REVIEW、EXIT_REVIEW或REVIEW，缺原風險基準時不硬判續抱或賣出。見[持倉協定](docs/manual-portfolio.md)。
+
+決策有意義變更時寫入通知佇列，同狀態不重複；Gmail寄收地址相同，地址與憑證保存在忽略的local_data。**目前依使用者要求停用後續寄送，稍後再處理憑證與啟用。** 本次驗證前本機已有憑證，驗證中成功寄過1封，已保留稽核紀錄。未再啟用前，佇列持續保留。
+
+```powershell
+python -m support_scout notify-status
+```
+
+未來明確要啟用時，先用 `notify-configure 你的地址` 設定，再以 `EmailSetup.cmd` 隱藏輸入Google應用程式密碼（不是登入密碼）。`notify-flush` 寄出待寄事件；SMTP結果不明會保留UNKNOWN，不自動重寄。詳見[操作手冊](docs/observation-runbook.md)。
+
+## 決策與資料界線
+
+| 結論 | 含義 |
+|---|---|
+| CONSIDER | SEARCH有效提交、資料／型態、雙方研究、情境風報及跨日檢查皆通過，供人工考慮 |
+| WAIT | 型態、資訊或審查待補 |
+| NO_TRADE | 失效、反證否決、無可用型態、位置過遠或風報不足 |
+
+Yahoo目前固定 `observation_only=True`，公司行動、事件完整性、交易狀態及市場背景尚未獨立核實；現階段真實流程仍會停在WAIT或NO_TRADE。模型同意不能解除這些缺口。參考收盤與日線失效價不是下個交易時段的保證成交價。
+
+原因果ATR模型、JPX日曆、未完成日K排除、來源hash、固定支撐與跨日修訂保護保留。5%帳戶日損停工仍待可信淨值及損益來源，不能用個股跌5%代替。沒有自動下單或自動排程。
+
+## 驗證與資料保存
+
+```powershell
+python -m unittest discover -s tests -q
+```
+
+報告在 `output/observations/RUN_ID`，查看 `latest_attempt.json`、`latest.json`與`committed.json`，先核對日期及狀態。exit 0表示流程完成，不表示可交易；2為全域失敗，3為部分資料／模型降級。2026-10-29固定20檔實測三角色成功；3檔公司行動待覆核，故整輪DEGRADED，沒有隱藏拒絕資料。
+
+`local_data`包含原始資料、SQLite、成交與通知；`output`包含快照、AI評語、用量及重播報告。兩者與本機設定均不提交Git，需自行備份。
+
+[架構](docs/japan-architecture.md) · [操作手冊](docs/observation-runbook.md) · [版本驗收](docs/japan-review.md) · [資料介面](docs/japan-provider.md) · [決策政策](docs/japan-decision.md)

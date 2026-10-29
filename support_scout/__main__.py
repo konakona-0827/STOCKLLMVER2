@@ -20,11 +20,26 @@ def read_json(path: Path):
 def main(argv=None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    parser = argparse.ArgumentParser(description="Japan Support Desk：Yahoo 日線 → 固定支撐 → 獨立雙 agent → 交易決策（無下單）")
+    parser = argparse.ArgumentParser(description="Japan Support Desk：Yahoo 日線 → 尋標／研究／反證三Agent → 人工決策（無下單）")
     sub = parser.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="檢查本地儲存與OpenAI設定，不呼叫模型")
     health.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
     health.add_argument("--require-agents", action="store_true")
+    local = sub.add_parser("serve", help="本機頁面：手動成交／持倉及固定名單分析，沒有下單能力")
+    local.add_argument("--port", type=int, default=8765)
+    mail = sub.add_parser("notify-configure", help="設定同一Gmail寄件／收件地址；不接受命令列密碼")
+    mail.add_argument("email")
+    sub.add_parser("notify-status", help="通知佇列與寄信設定狀態，不輸出憑證")
+    sub.add_parser("notify-flush", help="寄送待寄決策事件，未設定Gmail憑證則保留佇列")
+    real_case = sub.add_parser("advantest-case", help="真實Advantest近兩週前綴重算，含歷史時點限制")
+    real_case.add_argument("--agents", action="store_true")
+    real_case.add_argument("--diagnostic-review", action="store_true", help="門檻未通過時仍做雙方診斷，不冒稱尋標命中")
+    real_case.add_argument("--checkpoints", help="例如d20261026,d20261028_after_ir,d20261029")
+    real_case.add_argument("--max-total-calls", type=int, default=6)
+    real_case.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
+    real_case.add_argument("--out", type=Path)
+    real_replay = sub.add_parser("advantest-case-replay", help="離線核對真實案例保存結果")
+    real_replay.add_argument("directory", type=Path)
     case = sub.add_parser("pattern-case", help="H-001 Advantest合成參數截點驗證；與真實行情和帳本隔離")
     case.add_argument("--case", type=Path, help="合成參數紀錄JSON；省略用Advantest H-001案例")
     case.add_argument("--agents", action="store_true", help="實際呼叫尋標、研究與反證模型")
@@ -36,12 +51,14 @@ def main(argv=None) -> int:
     case_replay.add_argument("directory", type=Path)
     daily = sub.add_parser("observe", help="Yahoo 日股收盤資料 → 每日決策報告 → 固定支撐跨日追蹤")
     daily.add_argument("--market", choices=("JP", "TW"), default="JP", help="預設日本；TW 保留原版回歸入口")
-    daily.add_argument("--symbols", help="手動名單，例如 6857,8035,4063；省略時預設從 JPX 動態母池尋標")
+    daily.add_argument("--symbols", help="手動診斷名單，例如6857,8035；省略時由SEARCH在固定可配置研究池選股")
     sourcing = daily.add_mutually_exclusive_group()
-    sourcing.add_argument("--discover", action="store_true", dest="discover", help="動態母池 → SEARCH → 研究／反證")
-    sourcing.add_argument("--fixed-universe", action="store_false", dest="discover", help="明確使用舊固定觀察名單")
+    sourcing.add_argument("--discover", action="store_true", dest="discover", help="可配置研究池 → SEARCH → 研究／反證")
+    sourcing.add_argument("--fixed-universe", action="store_true", dest="discover", help="固定可配置母池內仍由SEARCH選股")
     daily.set_defaults(discover=None)
-    daily.add_argument("--scan-limit", type=int, default=100, help="每輪輪替掃描的日股數，1–100")
+    daily.add_argument("--scan-limit", type=int, default=20, help="預設固定20檔；未來母池可調，最多100")
+    daily.add_argument("--universe", type=Path, help="可替換的固定母池JSON，日後可放PayPay可交易名單")
+    daily.add_argument("--universe-source", choices=("fixed", "jpx"), default="fixed", help="預設固定母池，JPX廣域輪巡需明確指定")
     daily.add_argument("--months", type=int, default=8)
     daily.add_argument("--timeout", type=float, default=15)
     daily.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
@@ -49,7 +66,7 @@ def main(argv=None) -> int:
     daily.add_argument("--max-packets", type=int, default=5)
     daily.add_argument("--max-calls", type=int, default=10, help="整輪模型呼叫上限，包含 SEARCH 與雙方研究")
     daily.add_argument("--public-information", action=argparse.BooleanOptionalAction, default=True,
-        help="日股實際觀察預設由研究/反證Agent主動搜尋財報與新聞；工具額度另見config/public_information.json")
+        help="日股實際觀察預設檢索財報與新聞；shared_once共用來源事實，工具額度見config/public_information.json")
     daily.add_argument("--out", type=Path, help="觀察報告根目錄，每輪使用唯一子目錄")
     daily.add_argument("--data-root", type=Path, help="本地快取與SQLite觀察帳本資料夾")
     choices = daily.add_mutually_exclusive_group()
@@ -80,6 +97,30 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command == "serve":
+            from .dashboard import serve
+            serve(args.port)
+            return 0
+        if args.command in {"notify-configure", "notify-status", "notify-flush"}:
+            from .notifications import configure, email_status, flush
+            if args.command == "notify-configure":
+                configure(args.email)
+            result = flush() if args.command == "notify-flush" else email_status()
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+        if args.command == "advantest-case-replay":
+            from .advantest_case import replay_real_case
+            print(json.dumps(replay_real_case(args.directory), ensure_ascii=False, indent=2))
+            return 0
+        if args.command == "advantest-case":
+            from .advantest_case import run_real_case
+            result, target = run_real_case(agents=args.agents, diagnostic_review=args.diagnostic_review,
+                checkpoint_ids=args.checkpoints.split(",") if args.checkpoints else None,
+                max_total_calls=args.max_total_calls, settings_path=args.settings, output_root=args.out)
+            print(json.dumps({"model_call_count": result["model_call_count"],
+                "results": [{k: r.get(k) for k in ("checkpoint", "pattern_stage", "search_selected", "trade_conclusion", "status")} for r in result["results"]]}, ensure_ascii=False, indent=2))
+            print("真實案例報告：" + str((target / "comparison.html").resolve()))
+            return 0
         if args.command == "pattern-case-replay":
             from .pattern_case import replay_case
             print(json.dumps(replay_case(args.directory), ensure_ascii=False, indent=2))
@@ -111,6 +152,7 @@ def main(argv=None) -> int:
                 settings_path=args.settings, agents=args.agents, model=args.model,
                 max_packets=args.max_packets, max_calls=args.max_calls, progress=progress, market=args.market,
                 discover=args.discover, scan_limit=args.scan_limit,
+                universe_path=args.universe, universe_source=args.universe_source,
                 public_information=args.public_information if args.market == "JP" else None,
                 cursor_path=args.data_root / "discovery_cursor.json" if args.data_root else None)
             print(render_markdown(report, include_decisions=False))

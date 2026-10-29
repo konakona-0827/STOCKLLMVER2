@@ -63,8 +63,9 @@ def _agent_status(report):
 def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path=None,
             settings_path=DEFAULT_SETTINGS, agents=None, model=None, max_packets=5, max_calls=10,
             timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None,
-            market="JP", discover=None, scan_limit=100, search_provider=None, universe=None,
-            universe_loader=None, cursor_path=None, public_information=None):
+            market="JP", discover=None, scan_limit=20, search_provider=None, universe=None,
+            universe_loader=None, cursor_path=None, public_information=None,
+            universe_path=None, universe_source="fixed", portfolio_path=None):
     settings = load_settings(Path(settings_path))
     agents = settings.get("run_agents", False) if agents is None else agents
     rules = rules or Rules()
@@ -89,21 +90,41 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
     cursor_path = Path(cursor_path or db_path.parent / "discovery_cursor.json")
     cohort_cursor = None
     coverage = {}
+    fresh_bundle = bundle is None
+    fill_history = None
     try:
+        if market == "JP" and (fresh_bundle or portfolio_path is not None):
+            from .portfolio import load_fills, snapshot as portfolio_snapshot
+            fill_history = load_fills(portfolio_path or db_path.parent / "manual_fills.json")
+            held_now = portfolio_snapshot(fill_history, datetime.now(JST).isoformat())["positions"]
+        else:
+            held_now = {}
         if dynamic:
             from .universe import load_universe, select_cohort
             if bundle is None:
-                universe = universe or (universe_loader or load_universe)(db_path.parent / "jpx-universe", timeout=timeout)
-                with pointer_lock(cursor_path.with_suffix(".lock")):
-                    cohort_cursor = _cursor_read(cursor_path, universe["universe_id"], universe["symbols"])
-                    cursor_revision = (strict_json_loads(cursor_path.read_text(encoding="utf-8")).get("revision", 0)
-                        if cursor_path.exists() else 0)
-                symbols, next_cursor = select_cohort(universe, limit=scan_limit, cursor=cohort_cursor)
-                coverage = {"universe_count": len(universe["items"]), "scanned_count": len(symbols),
-                    "cursor": cohort_cursor, "next_cursor": next_cursor, "cohort_symbols": symbols,
-                    "cursor_revision": cursor_revision,
-                    "cursor_policy": "COMPARE_AND_SWAP_AFTER_PUBLICATION",
-                    "scope": "ROTATING_BOUNDED_COHORT_NOT_FULL_MARKET_PER_RUN"}
+                if universe is None and universe_loader is None and universe_source == "fixed":
+                    from .fixed_universe import load_fixed_universe, DEFAULT_FILE
+                    universe = load_fixed_universe(universe_path or DEFAULT_FILE)
+                elif universe is None:
+                    if universe_source not in {"fixed", "jpx"}:
+                        raise DataError("UNSUPPORTED_UNIVERSE_SOURCE")
+                    universe = (universe_loader or load_universe)(db_path.parent / "jpx-universe", timeout=timeout)
+                if universe.get("protocol") == "jp-fixed-universe-v1":
+                    symbols = universe["symbols"][:scan_limit]
+                    coverage = {"universe_count": len(universe["symbols"]), "scanned_count": len(symbols),
+                        "cohort_symbols": list(symbols), "scope": "CONFIGURABLE_FIXED_POOL_SEARCH",
+                        "source_type": "USER_FIXED_POOL", "broker_eligibility": universe["broker_eligibility"]}
+                else:
+                    with pointer_lock(cursor_path.with_suffix(".lock")):
+                        cohort_cursor = _cursor_read(cursor_path, universe["universe_id"], universe["symbols"])
+                        cursor_revision = (strict_json_loads(cursor_path.read_text(encoding="utf-8")).get("revision", 0)
+                            if cursor_path.exists() else 0)
+                    symbols, next_cursor = select_cohort(universe, limit=scan_limit, cursor=cohort_cursor)
+                    coverage = {"universe_count": len(universe["items"]), "scanned_count": len(symbols),
+                        "cursor": cohort_cursor, "next_cursor": next_cursor, "cohort_symbols": list(symbols),
+                        "cursor_revision": cursor_revision,
+                        "cursor_policy": "COMPARE_AND_SWAP_AFTER_PUBLICATION",
+                        "scope": "ROTATING_BOUNDED_COHORT_NOT_FULL_MARKET_PER_RUN"}
             else:
                 universe = universe or bundle.get("source_universe")
                 if not isinstance(universe, dict):
@@ -113,6 +134,12 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                     "cohort_symbols": [s["symbol"] for s in bundle["securities"]],
                     "scope": "SAVED_COHORT_REVIEW_NO_CURSOR_ADVANCE"}
         if bundle is None:
+            extra_holdings = [s for s in held_now if s not in symbols]
+            symbols = [*symbols, *extra_holdings]
+            if len(symbols) > 100:
+                raise DataError("UNIVERSE_AND_HOLDINGS_EXCEED_FETCH_CAP")
+            if dynamic:
+                coverage["portfolio_only_symbols"] = extra_holdings
             if market == "JP":
                 from .japan import build_snapshot as build_jp_snapshot
                 selected_builder = build_jp_snapshot
@@ -132,6 +159,12 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
         if market == "JP":
             from .patterns import load_registry
             bundle["pattern_registry"] = load_registry(bundle.get("pattern_registry"))
+            if fresh_bundle:
+                from .communication import load_policy as load_communication
+                bundle["communication_policy"] = load_communication()
+            if fill_history is not None:
+                from .portfolio import snapshot as portfolio_snapshot
+                bundle["portfolio_snapshot"] = portfolio_snapshot(fill_history, bundle["as_of"])
             # Existing programmatic fixtures/saved inputs remain opt-in; the live
             # CLI explicitly enables this by default. Freeze before SEARCH IDs.
             if public_information is not None:
@@ -167,9 +200,9 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             if agents:
                 if search is None:
                     agent_status = "CONFIGURATION_REQUIRED"
-                elif search["status"] == "FAILED":
+                elif search["status"] == "FAILED" and not bundle.get("portfolio_snapshot", {}).get("positions"):
                     agent_status = "SEARCH_FAILED"
-                elif not search["selection"]:
+                elif not search["selection"] and not bundle.get("portfolio_snapshot", {}).get("positions"):
                     agent_status = "SEARCH_" + search["status"]
                 else:
                     selected = [s["symbol"] for s in search["selection"]]
@@ -177,6 +210,8 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                     report = run_desk(bundle, researcher=researcher, reviewer=reviewer, rules=rules,
                         config=DeskConfig(max_packets, remaining), selected_symbols=selected)
                     agent_status = _agent_status(report)
+                    if search["status"] == "FAILED":
+                        agent_status = "SEARCH_FAILED"
                     bundle["discovery"]["total_call_count"] += report["desk"]["call_count"]
                     if bundle["discovery"]["total_call_count"] > max_calls:
                         raise DataError("DISCOVERY_CALL_BUDGET_EXCEEDED")
@@ -207,6 +242,9 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             if market == "JP":
                 from .decision import attach_decisions
                 attach_decisions(report, bundle)
+                if "portfolio_snapshot" in report:
+                    from .portfolio import attach_manual_actions
+                    attach_manual_actions(report)
             degraded = not data_ready or (agents and agent_status in {"FAILED", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}) or bool(summary.get("errors"))
             report["observation"]["status"] = "DEGRADED" if degraded else "OBSERVATION_READY"
             code = 2 if rejected == len(report["securities"]) else 3 if degraded else 0
@@ -221,6 +259,10 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 "reviews.json": {"reviews": report.get("reviews", [])}, "desk_audit.json": report.get("desk", {})}
             if market == "JP":
                 values["patterns.json"] = bundle["pattern_registry"]
+                if "communication_policy" in bundle:
+                    values["communication_policy.json"] = bundle["communication_policy"]
+                if "portfolio_snapshot" in bundle:
+                    values["portfolio_snapshot.json"] = bundle["portfolio_snapshot"]
                 manifest["pattern_registry_digest"] = digest(bundle["pattern_registry"])
                 if "public_information_policy" in bundle:
                     values["public_information_policy.json"] = bundle["public_information_policy"]
@@ -244,6 +286,10 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             "report": str((target / "report.html").resolve()), "exit_code": code}
         publish_latest(output_root / "latest.json", pointer)
         atomic_json(output_root / "latest_attempt.json", pointer)
+        if fresh_bundle and market == "JP":
+            from .notifications import after_report
+            after_report(report, target, config_path=db_path.parent / "email_settings.json",
+                db_path=db_path.parent / "notifications.sqlite3")
         return report, target, code
     except Exception as exc:
         error = str(exc) if isinstance(exc, DataError) else type(exc).__name__

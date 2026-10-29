@@ -6,10 +6,13 @@
 - 所有改動限本專案；既有 STOCKLLM、STOCKLLM-agent、support-scout 由各自工作流程維護。
 - 不載入帳戶或下單模組。OpenAI 僅使用明確設定的環境變數／本機設定；不得因沿用台股專案就自動複製或讀取其他專案憑證。值不得輸出、提交或抄入報告。
 - 使用者已於 2026-10-28 明確授權沿用原本 ENV 的 OpenAI 設定；以忽略的 local_settings.json 指向 STOCKLLM/.env，僅載入 OpenAI key 與模型，不複製整份 ENV 或載入券商欄位。
-- 日股預設由 JPX 動態母池經有界行情預掃、SEARCH agent 提候選，再交研究／反證 agent；固定名單僅能明示為手動模式。沒有 SEARCH 呼叫不得宣稱 agent 尋標。
+- 依使用者 2026-10-29 最新指示，本分支 codex/japan-support-desk-phase1 預設使用 config/universe_jp.json 的可配置20檔研究池；仍須由 SEARCH agent 在池內選股，再交研究／反證 agent。固定池不等於手動指定研究標的；--symbols 才是手動診斷。JPX廣域輪巡僅為明確選用入口。PayPay可交易名單待使用者提供，不推測券商資格。
 - 使用者再次確認：標準決策流程只有「尋標、研究、反證」三個模型 agent，共同產出單一決策結論。Head與固定閘門都是程式，不另算agent，不新增第四個決策agent。
 - 改規則或任務指令時保留版本、日期截止、固定支撐與重播測試。機器可驗證的事由 Python 處理。
 - 有界 provider 失敗、資料不足或審查不完整時保留 WATCH；不得用模型敘述覆寫硬性檢查。
 - 程式驗證：`python -m unittest discover -s tests -v`。離線示範：`python -m support_scout desk-demo`。
 - H-001為獨立機會假說，不覆寫原ATR交易資格；百分比/ATR支撐不得混用。合成案例明示事後參數實驗，所有價格與財報人造，不推論真實Advantest勝率。
 - 日股實際觀察可讓研究/反證員使用有界公開搜尋。保存工具來源、發布時間及抽取，不把模型抽取自動標成verified或解除PIT/事件blocker；合成與歷史回放不即時搜尋。規則與工具政策在SEARCH前凍結。
+- 預設以精簡JSON與本輪綁定別名交換資料，完整證據留本地；shared_once僅共用來源事實，不分享研究員結論，不冒稱反證員獨立檢索。bytes減少不得稱為計費token減少。
+- 持倉只由明確確認的實際成交產生；未勾選不計入，建議不當成成交。真實歷史案例不寫入正式帳本、持倉或通知。
+- 使用者要求Gmail憑證稍後處理；目前本機寄送已停用，先保留事件佇列，未收到後續指示前不重新啟用或再要求密碼。

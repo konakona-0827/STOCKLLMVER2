@@ -37,6 +37,8 @@ class Completion:
     response_id: str | None = None
     usage: dict | None = None
     public_information: dict | None = None
+    wire_metrics: dict | None = None
+    position_view: dict | None = None
 
 
 class OfflineProvider:
@@ -44,7 +46,7 @@ class OfflineProvider:
     mode = "offline_simulation"
     model = None
 
-    def complete(self, packet: dict, role: str) -> Completion:
+    def complete(self, packet: dict, role: str, *, shared_public_information=None) -> Completion:
         verify_packet(packet)
         return Completion({"verdict": "WATCH",
             "evidence_ids": packet["core"]["required_confirmation_evidence"],
@@ -93,13 +95,17 @@ class OpenAIProvider:
         self.max_output_tokens = max_output_tokens
         self.transport = transport or post_json
 
-    def complete(self, packet: dict, role: str) -> Completion:
+    def complete(self, packet: dict, role: str, *, shared_public_information=None) -> Completion:
         verify_packet(packet)
         task = next(t for t in packet["tasks"] if t["role"] == role)
         from .public_information import (PUBLIC_TASK, FINDING_SCHEMA, public_enabled,
             validate_live_cutoff, search_trace, build_public_information)
         web = public_enabled(packet["core"])
-        if web:
+        shared = shared_public_information is not None
+        if shared:
+            from .public_information import verify_public_information
+            verify_public_information(packet["core"], shared_public_information)
+        if web and not shared:
             validate_live_cutoff(packet["core"], datetime.now(timezone.utc).isoformat())
         key = os.environ.get("OPENAI_API_KEY", "").strip()
         if not key:
@@ -113,9 +119,26 @@ class OpenAIProvider:
                 "core": packet["core"]}, ensure_ascii=False, allow_nan=False)}],
             "text": {"format": {"type": "json_schema", "name": "support_review", "strict": True,
                                 "schema": ANSWER_SCHEMA}}}
-        if web:
+        from .communication import (enabled, review_wire, bounded_schema, COMPACT_TASK, encode,
+            expand_refs, load_policy, wire_metrics, validate_wire_answer)
+        aliases, metrics = None, None
+        if enabled(packet["core"]):
+            view, aliases, metrics = review_wire(packet)
+            if shared:
+                view["public_sources"] = {k: deepcopy(shared_public_information[k]) for k in ("findings", "gaps", "digest")}
+            payload["input"][0]["content"] = encode(view)
+            payload["instructions"] = COMPACT_TASK + ("獨立研究價量、催化與失效條件。" if role == "researcher" else "獨立反證，不看研究員結論；查支撐失效、追高、獲利品質與缺口。")
+            if shared:
+                payload["instructions"] += "public_sources為共用的來源抽取，不含其他Agent意見；本次不再搜尋，不能宣稱獨立檢索，必要時WATCH並要求另查。"
+            payload["text"]["format"]["schema"] = bounded_schema(ANSWER_SCHEMA, load_policy(packet["core"]["communication_policy"]))
+        elif shared:
+            view = {"packet_id": packet["packet_id"], "core": packet["core"],
+                "public_sources": {k: deepcopy(shared_public_information[k]) for k in ("findings", "gaps", "digest")}}
+            payload["input"][0]["content"] = encode(view)
+            payload["instructions"] += "public_sources為共用來源抽取，不含研究員評語；本次未獨立檢索，必要時WATCH並要求另查。"
+        if web and not shared:
             policy = packet["core"]["public_information_policy"]
-            schema = deepcopy(ANSWER_SCHEMA)
+            schema = deepcopy(payload["text"]["format"]["schema"])
             schema["properties"]["public_findings"] = {"type": "array", "items": FINDING_SCHEMA,
                 "maxItems": policy["max_findings_per_review"]}
             schema["required"].append("public_findings")
@@ -124,6 +147,18 @@ class OpenAIProvider:
             payload.update(tools=[{"type": "web_search", "search_context_size": "low"}],
                 tool_choice="required", max_tool_calls=policy["max_tool_calls_per_review"],
                 include=["web_search_call.action.sources"])
+        holding = packet["core"].get("portfolio_position", {}).get("quantity", 0) > 0
+        if holding:
+            schema = deepcopy(payload["text"]["format"]["schema"])
+            schema["properties"]["position_view"] = {"type": "object", "additionalProperties": False,
+                "properties": {"action": {"type": "string", "enum": ["HOLD", "REDUCE_REVIEW", "EXIT_REVIEW", "REVIEW"]},
+                    "reason": {"type": "string", "maxLength": 240}}, "required": ["action", "reason"]}
+            schema["required"].append("position_view")
+            payload["text"]["format"]["schema"] = schema
+            payload["instructions"] += "已有確認持倉，position_view提出續抱、減碼或退出的人工評估；資訊不足REVIEW。成本不是續抱或攤平的理由，未回報成交一律不假設。"
+        if metrics is not None:
+            metrics = wire_metrics({"packet_id": packet["packet_id"], "core": packet["core"]},
+                view, packet["core"]["communication_policy"])
         response = self.transport(payload, key, self.timeout)
         if not isinstance(response, dict) or response.get("status") != "completed":
             raise ProviderError("API_RESPONSE_NOT_COMPLETED")
@@ -142,14 +177,19 @@ class OpenAIProvider:
             answer = strict_json_loads(texts[0])
         except (TypeError, ValueError):
             raise ProviderError("API_INVALID_ANSWER_JSON") from None
-        expected_fields = ANSWER_FIELDS | ({"public_findings"} if web else set())
+        expected_fields = ANSWER_FIELDS | ({"public_findings"} if web and not shared else set()) | ({"position_view"} if holding else set())
         if not isinstance(answer, dict) or set(answer) != expected_fields:
             raise ProviderError("API_INVALID_ANSWER_FIELDS")
-        public_information = None
-        if web:
+        position_view = answer.pop("position_view") if holding else None
+        if aliases is not None:
+            validate_wire_answer(answer, packet["core"]["communication_policy"])
+            answer = expand_refs(answer, aliases, packet_id=packet["packet_id"], symbol=packet["core"]["symbol"])
+        public_information = deepcopy(shared_public_information) if shared else None
+        if web and not shared:
             tool_calls, citations = search_trace(response)
             public_information = build_public_information(packet["core"], answer.pop("public_findings"),
                 tool_calls, citations, datetime.now(timezone.utc).isoformat())
+        if public_information is not None:
             if public_information["gaps"]:
                 # A summary may already have seen an excluded fact: never promote it.
                 if answer["verdict"] == "RESEARCH":
@@ -160,4 +200,4 @@ class OpenAIProvider:
         usage = {k: v for k, v in usage.items() if k in {"input_tokens", "output_tokens", "total_tokens"}
                  and type(v) is int and v >= 0} if isinstance(usage, dict) else None
         response_id = response.get("id")
-        return Completion(answer, response_id if isinstance(response_id, str) else None, usage, public_information)
+        return Completion(answer, response_id if isinstance(response_id, str) else None, usage, public_information, metrics, position_view)

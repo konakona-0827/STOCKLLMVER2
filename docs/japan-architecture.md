@@ -1,5 +1,7 @@
 # 日股第一階段架構
 
+2026-10-29，0.7.0仍在 `codex/japan-support-desk-phase1` 擴充。依最新指示，預設改為「可配置20檔 → Yahoo行情 → Python型態 → SEARCH → 研究／反證 → 固定裁決」。這不是舊版只有固定名單與兩個角色的流程；固定池只是尋標邊界，標的仍由SEARCH提交。PayPay資格待使用者名單，JPX輪巡保留為 `--universe-source jpx` 明確選用入口。
+
 2026-10-28，分支 `codex/japan-support-desk-phase1`，由台股 `7d036a6` 分出。沿用可驗證的固定狀態機及雙代理，避免重寫已具因果測試的核心；市場契約、行情來源與決策政策分開。
 
 0.5.0補齊原要求的尋標層：`JPX官方動態母池 → 輪替有界Yahoo行情 → 固定支撐預掃 → SEARCH agent → 決策研究員／反證員 → 固定決策與跨日帳本`。0.4.0和台股原分支只有固定池掃描及兩角色研究，不能稱為agent自主發掘，這是先前未完成的範圍。
@@ -7,6 +9,7 @@
 | 層 | 實作 | 責任 |
 |---|---|---|
 | 上市母池 | `universe.py` | JPX月末名單、來源日期／SHA256、普通股篩選、分層輪巡 |
+| 預設研究池 | `fixed_universe.py` | 可替換JSON、版本與hash、20檔上限；不猜測PayPay資格 |
 | 暫時行情 API | `japan.py` | 正規化代號、來源身分與資料驗證、獨立 JPX 日曆、原始 JSON 稽核 |
 | 市場契約 | `contracts.py` | 由 market 選 TSE/JPY/JST 或舊 TWSE/TWD；兩種成交值欄位與門檻不混用 |
 | 搜尋 | `support.py` | 因果支撐狀態機、固定下緣、證據日期、流動性與距離排序 |
@@ -15,6 +18,11 @@
 | Researcher / Reviewer | `agents.py`、`providers.py` | 分別研究與反證；同快照不同上下文，反證可否決 |
 | 決策 | `decision.py` | 可考慮／等待／不交易，歷史阻力與情境風險報酬，硬閘門優先 |
 | 跨日 | `ledger.py` | 凍結區間、修訂阻擋、失效不可復活、倒退資料不覆寫 |
+| 精簡協定 | `communication.py` | columns/rows、單次綁定別名、預算及輸出驗證；保留關鍵證據 |
+| 手動持倉 | `portfolio.py` | 確認成交、時點與冪等記帳、成本及原風險基準、退出評估 |
+| 本機操作 | `dashboard.py` | loopback頁面、手動確認與分析；Host／Origin／token驗證 |
+| 決策通知 | `notifications.py` | 狀態變更outbox與去重、選配Gmail SMTP、寄送不明不自動重複 |
+| 真實案例 | `advantest_case.py` | 真實行情的歷史前綴重算、公告時點、診斷及離線重播 |
 | 發布 | `observation.py`、`storage.py`、`reporting.py` | 帳本提交前重算決策、完整發布、完成標記及 latest 指標 |
 
 日常入口預設日本；legacy CLI、TWSE adapter 與原 102 項測試保留作相容性基準。日股資料必須明確 market=JP，不能只把台股代號改成 `.T` 就繞過市場契約。
@@ -29,4 +37,10 @@ SEARCH packet另綁完整母池hash、所有eligible候選、實際提供池、�
 
 跨日 SQLite 在 transaction 內產生 summary，發布 callback 掛上帳本結果後重新套用決策政策，再寫報告及最終 digest；發布失敗回滾。歷史修訂、倒退資料與失效 episode 都不能被模型重新批准。報告成功與否、資料是否完整、技術型態及可交易性是不同檢查。
 
-目前角色相當於 Head、SEARCH、RISK 的初版；EXIT 只先保留失效條件研究，沒有持倉執行。原貼文的錢包追蹤、熱度確認與加密貨幣下單路徑不直接搬到日股。帳戶 5% 停工待未來可信帳戶資料與獨立風控服務設計後才實作。
+0.7.0持倉由手動確認成交建立，額外股票只作持有／退出研究，不擴大尋標池。快照包含可重算的confirmed_fills，時間截止同時檢查filled_at及recorded_at；兩方評語與程式輸出仍無權更改成交。缺原風險基準不把任意舊ATR失效當成這筆持倉的賣出條件。
+
+精簡wire不取代canonical packet與原證據。預設shared_once先由研究員檢索，再只把事實與缺口交反證員；彼此不共享結論。第一角色沒有可用來源時，反證受控SKIPPED而非偷偷再搜尋。bytes與API tokens分開記錄。
+
+通知在帳本與報告完成後寫sidecar，不回改被稽核report。歷史案例與合成資料不寄信、不沖刷正式待寄佇列。使用者目前要求Gmail稍後處理，故本機enabled=false，保留已寄及待寄事件。
+
+沒有持倉執行。原貼文的錢包追蹤、熱度確認與加密貨幣下單路徑不直接搬到日股。帳戶5%停工待可信帳戶淨值與損益來源，不以單檔漲跌替代。

@@ -63,6 +63,14 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
     rules = rules or Rules()
     registry = None
     public_policy = None
+    communication_policy = None
+    if "communication_policy" in bundle:
+        from .communication import load_policy as load_communication
+        communication_policy = load_communication(bundle["communication_policy"])
+    portfolio = deepcopy(bundle.get("portfolio_snapshot"))
+    if portfolio is not None:
+        from .portfolio import verify_snapshot
+        portfolio = verify_snapshot(portfolio, as_of=cutoff.isoformat())
     if market == "JP":
         from .patterns import load_registry
         registry = load_registry(bundle.get("pattern_registry"))
@@ -80,7 +88,7 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         raise DataError("REVIEWS_MUST_BE_LIST")
     symbols = [s.get("symbol") for s in raw_items if isinstance(s, dict)]
     counts = Counter(s for s in symbols if isinstance(s, str))
-    outputs, packets = [], []
+    outputs, packets, all_packets = [], [], []
     for item in raw_items:
         symbol = item.get("symbol", "UNKNOWN") if isinstance(item, dict) else "UNKNOWN"
         try:
@@ -130,7 +138,15 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                     core["analysis_context"] = deepcopy(bundle["analysis_context"])
             if public_policy is not None:
                 core["public_information_policy"] = deepcopy(public_policy)
+            if communication_policy is not None:
+                core["communication_policy"] = deepcopy(communication_policy)
+            position = (portfolio or {}).get("positions", {}).get(symbol)
+            if portfolio is not None:
+                core["portfolio_snapshot_digest"] = portfolio["digest"]
+                if position:
+                    core["portfolio_position"] = deepcopy(position)
             packet = make_packet(core)
+            all_packets.append(packet)
             own_reviews = [r for r in review_rows if isinstance(r, dict) and r.get("packet_id") == packet["packet_id"]]
             accepted, errors = validate_reviews(packet, own_reviews)
             decision = decide(technical, context_blockers, context_reject, accepted, errors)
@@ -144,7 +160,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                 outputs[-1]["patterns"] = patterns
             pattern_candidate = any(p["research_candidate"] for p in patterns)
             if (technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}
-                    or (pattern_candidate and technical["state"] not in {"INVALIDATED", "INSUFFICIENT_DATA"})):
+                    or (pattern_candidate and technical["state"] not in {"INVALIDATED", "INSUFFICIENT_DATA"})
+                    or (position and technical["state"] != "INSUFFICIENT_DATA")):
                 packets.append(packet)
         except (DataError, KeyError, TypeError, ValueError) as exc:
             source_errors = item.get("collection_errors", []) if isinstance(item, dict) else []
@@ -168,7 +185,7 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             "discovery_required": bundle.get("discovery_required") is True,
             "source_universe_hash": digest(bundle["source_universe"]) if bundle.get("discovery_required") else None,
             "securities": outputs, "technical_queue": [o["symbol"] for o in queue],
-            "reviewed_shortlist": shortlist, "agent_packets": packets, "unmatched_review_packets": unmatched,
+            "reviewed_shortlist": shortlist, "agent_packets": packets, "all_packets": all_packets, "unmatched_review_packets": unmatched,
             "limitations": ["RULES_AND_RANKING_NOT_BACKTEST_VALIDATED", "NO_ESTIMATED_WIN_PROBABILITY",
                             "RAW_OBSERVATION_REQUIRES_CORPORATE_ACTION_AND_EVENT_REVIEW",
                             "MANUAL_REVIEW_IDENTITIES_ARE_SELF_REPORTED"]}
@@ -181,9 +198,16 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             if o.get("verdict") != "REJECT" and any(p["research_candidate"] for p in o.get("patterns", []))]
     if public_policy is not None:
         report["public_information_policy"] = deepcopy(public_policy)
+    if communication_policy is not None:
+        report["communication_policy"] = communication_policy
+    if portfolio is not None:
+        report["portfolio_snapshot"] = portfolio
     if market == "JP":
         from .decision import attach_decisions
         attach_decisions(report, bundle)
+        if portfolio is not None:
+            from .portfolio import attach_manual_actions
+            attach_manual_actions(report)
     return report
 
 

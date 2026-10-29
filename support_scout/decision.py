@@ -89,6 +89,9 @@ def _packet_for(report, item):
                 or core["technical"] != technical
                 or core.get("patterns", []) != item.get("patterns", [])
                 or core.get("public_information_policy") != report.get("public_information_policy")
+                or core.get("communication_policy") != report.get("communication_policy")
+                or core.get("portfolio_snapshot_digest") != report.get("portfolio_snapshot", {}).get("digest")
+                or core.get("portfolio_position") != report.get("portfolio_snapshot", {}).get("positions", {}).get(item["symbol"])
                 or core["visible_series"]["price_basis"] != item.get("price_basis")
                 or core["context_blockers"] != item.get("context_blockers", [])):
             return None
@@ -169,7 +172,7 @@ def attach_decisions(report: dict, bundle: dict, *, policy: DecisionPolicy | Non
     """
     policy = policy or DecisionPolicy()
     securities = report.get("securities", [])
-    projection = [{k: v for k, v in item.items() if k != "trade_decision"} for item in securities]
+    projection = [{k: v for k, v in item.items() if k not in {"trade_decision", "manual_action"}} for item in securities]
     integrity = digest([o.get("packet_id", o) for o in projection]) == report.get("snapshot_id")
     integrity = integrity and (report.get("synthetic") is True) == (bundle.get("synthetic") is True)
     integrity = integrity and (report.get("observation_only") is True) == (bundle.get("observation_only") is True)
@@ -206,7 +209,9 @@ def attach_decisions(report: dict, bundle: dict, *, policy: DecisionPolicy | Non
         if report.get("observation_only") or item.get("observation_only"):
             reasons.append("OBSERVATION_ONLY")
         expected_observation = bundle.get("observation_only") is True and sources.get(item.get("symbol"), {}).get("observation_only") is True
-        if (item.get("observation_only") is True) != expected_observation:
+        # Rejected rows have no validated observation flag or packet. Their
+        # complete error projection is already covered by the snapshot hash.
+        if item.get("data_status") != "REJECTED" and (item.get("observation_only") is True) != expected_observation:
             reasons.append("SNAPSHOT_INTEGRITY_FAILED")
         if item.get("data_status") != "VALID":
             reasons.append("OBSERVATION_ONLY" if item.get("data_status") == "OBSERVATION" else "DATA_REJECTED")

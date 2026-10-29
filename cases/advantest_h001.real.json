@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "advantest-h001-real-20261029-v1",
+  "symbol": "6857.T",
+  "name": "Advantest / アドバンテスト",
+  "real_market_data": true,
+  "evaluation_start": "2026-10-15",
+  "evaluation_end": "2026-10-29",
+  "parameters_authored_on": "2026-10-29",
+  "reference_narrative_is_not_ground_truth": "待查假說：10/23及10/26守住約30000，10/27反彈，10/28決算。這段不提供給模型作答案。",
+  "additional_checkpoints": [
+    {"id": "d20261028_after_ir", "market_data_cutoff": "2026-10-28T23:59:59.999999+09:00"}
+  ],
+  "official_documents": [
+    {
+      "id": "fy2026_q2_results",
+      "url": "https://www.advantest.com/document/ja/investors/ir-library/result/J_FR_FY2026_2Q.pdf",
+      "published_date": "2026-10-28",
+      "time_precision": "DATE_ONLY",
+      "facts": [
+        {"metric": "FY2026_FULL_YEAR_REVENUE_GUIDANCE", "previous_company_guidance": 1714000, "revised_company_guidance": 1863000, "unit": "JPY_MILLION", "page": 5},
+        {"metric": "FY2026_FULL_YEAR_OPERATING_PROFIT_GUIDANCE", "previous_company_guidance": 846000, "revised_company_guidance": 967000, "unit": "JPY_MILLION", "page": 5},
+        {"metric": "FY2026_FIRST_HALF_OPERATING_PROFIT", "actual": 456809, "prior_year": 232435, "unit": "JPY_MILLION", "page": 1}
+      ],
+      "comparison_basis": "PREVIOUS_COMPANY_GUIDANCE_OR_PRIOR_YEAR_NOT_MARKET_CONSENSUS",
+      "market_consensus": null,
+      "extraction_status": "SOURCE_CHECKED_STRUCTURED_CASE_RECORD_NOT_AUTOMATIC_FACT_VERIFICATION"
+    },
+    {
+      "id": "fy2026_q2_briefing",
+      "url": "https://www.advantest.com/document/ja/investors/ir-library/result/JE_BIZ_261028_slide.pdf",
+      "published_date": "2026-10-28",
+      "time_precision": "DATE_ONLY",
+      "facts": [],
+      "comparison_basis": "OFFICIAL_BRIEFING_REQUIRES_INDEPENDENT_REVIEW",
+      "market_consensus": null,
+      "extraction_status": "DOCUMENT_ARCHIVED_NO_ADDITIONAL_EXTRACTED_FACTS"
+    }
+  ]
+}

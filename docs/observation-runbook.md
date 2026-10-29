@@ -1,58 +1,54 @@
-# 10/28、10/29 實用觀察
+# 日股日常操作（0.7.0）
 
-## 本機設定
+在 `personalmono/japan-support-desk`、分支 `codex/japan-support-desk-phase1` 執行，Python 3.11以上。只讀已授權ENV的OpenAI欄位，不載入券商帳戶或下單模組。
 
-工作目錄為 `personalmono/support-desk`，Python 3.11 以上。使用者已授權只讀 STOCKLLM 的 OpenAI key 與模型；忽略的 local_settings.json 保存來源路徑。Doctor 不顯示金鑰，也不呼叫模型或券商。
+## 觀察與頁面
 
-1. 執行 `Doctor.cmd`，確認 observation_ready 與 openai_ready 皆 true。
-2. 執行 `Observe.cmd`，等待公開資料與最多 10 次研究呼叫完成。
-3. 執行 `OpenReport.cmd`，查看最新成功發布的本地 HTML，先核對日期、資料狀態及模型狀態。
-4. 沒有技術候選時，查看形成中與失效原因；不為湊名單降低門檻。
+1. `Doctor.cmd` 檢查行情與OpenAI設定，不顯示key。
+2. `Observe.cmd --agents --max-packets 3 --max-calls 7`：固定可配置20檔、SEARCH選股、最多3對研究／反證。
+3. `Dashboard.cmd` 啟動本機服務，再開 <http://127.0.0.1:8765>。`OpenReport.cmd` 則只看靜態當輪報告。
+4. 核對資料日、資料拒絕原因、模型是否完成，再讀個股結論與支撐失效價。
 
-## 建議的兩天節奏
+目前是日線收盤研究。日本15:30收盤後仍保留到16:00的發布緩衝，之前排除當日日K；不是盤中即時掃描。日曆已版本化，未知年份及缺預期日資料拒絕，不以前值補。
 
-使用日本時間（JST），資料交易日期仍依台北：
+`config/universe_jp.json` 保存固定研究池，目前max_symbols=20。使用者之後提供PayPay名單時可直接換symbols及version，或用 `--universe PATH` 讀另一份JSON；不預先聲稱這20檔券商可交易。`--universe-source jpx --scan-limit 100` 才啟用保留的廣域輪巡。
 
-| 日期 | 日本時間 | 操作與目的 |
-|---|---|---|
-| 2026-10-28 | 09:30 | 執行觀察，使用上一完整交易日資料，檢查隔夜觀察名單；不是盤中即時掃描 |
-| 2026-10-28 | 17:00 之後 | 更新當日收盤資料，檢查是否新增回測、確認或跌破 |
-| 2026-10-29 | 09:30 | 檢視前日狀態與兩方意見；核對 latest 日期 |
-| 2026-10-29 | 17:00 之後 | 更新第二日，查看固定失效線及跨日變化 |
+## 手動成交與持倉
 
-這是手動使用方式，尚未建立自動排程或通知。台北 16:00／日本 17:00 前不採當日 K；假日跳過週末與官方年度假日。臨時休市資訊若無法核實，保守顯示 DEGRADED，不自行假設今天休市。
+本機頁面可填代號、BUY／SELL、股數、價格、費用、成交日期時間，選填固定失效價。只有勾「我確認已實際成交」才改變持倉；未確認記錄不算，建議也不算成交。按儲存後，再執行一輪分析才會使用新的結構化持倉。
 
-## 報告先看什麼
+頁面會保留成本與開倉日，供持有／減碼／退出評估；缺原風險基準時保持REVIEW。只補取既有池外持倉供退出研究，不擴大新進場池。這是人工宣告，不是券商對帳。詳見[持倉協定](manual-portfolio.md)。
 
-- 資料最新日必須符合預期日；COMPLETE 表示行情結構完整，並不表示公司行動已核實。
-- OBSERVATION_READY 表示本輪觀察流程完成。PARTIAL_BUDGET 表示只研究額度內的優先標的，其餘尚待研究；沒有冒充完成全池模型審查。
-- OBSERVATION ONLY／WATCH 表示原始價與公司／事件證據仍不足；不能解讀成買進資格。
-- 支撐下緣固定，不因再跌向下移。REVISION_REVIEW 表示來源或支撐重算有差異，保留原區間待核對。
-- 當日沒有「回測後確認且接近支撐」是有效觀察結果。
+## 通知目前暫緩
 
-## 失敗與重跑
-
-CLI code 0：本輪觀察完成（可有待確認與空名單）；code 2：全批失敗或無法執行；code 3：部分資料／代理／儲存降級。代碼不能取代報告中的資料日期與狀態。
-
-模型超時、拒答或錯誤不會重試下單，也不會產生訂單。可先 `Observe.cmd --no-agents` 取得行情觀察，再檢查設定。資料缺少則保留錯誤，修復連線後重跑。同日不重複記同一快照，但保留每輪稽核。
-
-快取、SQLite 與原始行情都在 git 忽略的 local_data；報告在 output。備份這兩個資料夾可保留觀察紀錄。若 latest_attempt.json 顯示 FAILED，latest.json 可能仍指向較早的完整報告，務必核對其 as_of。
-
-## 已驗收範圍
-
-- 官方資料真實執行：19 檔上市普通股、每檔 162 根日線，日期 2026-03-02～2026-10-27；8 個月份。
-- 真實 OpenAI：初次合成契約 smoke 的兩次呼叫及真實行情 5 檔／10 次研究均通過；沒有讀取券商帳戶或送單。
-- 102 項離線測試：資料解析、新鮮度、盤前漏日、月初／跨年、雙方裁決、跨日凍結、修訂、回滾、倒退指標、重播與HTML escaping。
-- 獨立 reviewer 做了發布失敗與時間倒退的故障注入，未見阻擋這兩天收盤觀察的程式問題。
-
-公司行動還原、公司公告與事件完整性、樣本外選股成效、成交與實盤風控仍不在已驗收範圍。
-
-## Git 取得
-
-這個分支是獨立專案根目錄，與原交易系統 develop 不同歷史：
+決策狀態變更會建立outbox事件；同狀態不重複，較舊報告不倒退覆寫。使用者要求稍後處理Gmail，目前本機enabled=false。既有驗證已寄1封，後續停用；不要因看到憑證檔存在就自行啟用。
 
 ```powershell
-git clone --branch codex/support-desk-phase1 --single-branch https://github.com/konakona-0827/STOCKLLMVER2.git support-desk
+python -m support_scout notify-status
 ```
 
-新機器不會取得任何 key 或觀察資料，須自己建立 local_settings.json。GitHub Actions 使用模擬資料，不讀取本機設定、不呼叫付費模型。
+以後明確要啟用時，`notify-configure 地址` 設定同一寄收地址；`EmailSetup.cmd` 使用隱藏輸入存Google的16字元應用程式密碼，不是帳戶登入密碼。Google通常要求先開兩步驟驗證，某些帳戶政策不提供此功能：見[Google官方說明](https://support.google.com/accounts/answer/185833?hl=zh-Hant)及[應用程式密碼頁](https://myaccount.google.com/apppasswords)。不要在聊天中提供密碼。
+
+憑證只在忽略的local_data；EmailSetup只儲存，不寄信。明確啟用且具憑證後，正式觀察發布會寄出待寄事件；也可 `notify-flush` 或按頁面寄送按鈕。SMTP認證失敗保留PENDING；傳輸結果不明為UNKNOWN，不自動重寄，需人工檢查。合成及歷史案例不排信，也不沖刷真實佇列。
+
+## 用量與結果
+
+SEARCH只從Python資料閘門及型態候選中提案，可不選；失敗不以數值topN替代。總呼叫上限包含SEARCH，剩餘只整對研究／反證，預設無自動重試。工具次數另計，無固定每日費用保證。
+
+`config/communication.json` 預設精簡JSON、單次別名及shared_once：研究員檢索，反證員用相同事實獨立推理，不共享結論，也不冒稱再次檢索。API usage才是實際tokens；bytes減少比例另外呈現。
+
+報告仍可能WAIT或NO_TRADE：Yahoo observation_only、公司行動／事件等未核實缺口不能由模型解除。現階段未開真實CONSIDER資格；程式通道有受控測試，但不代表可實盤交易。
+
+exit 0為流程完成，2為全域失敗，3為資料／模型部分降級。查看 `output/observations/latest_attempt.json`、`latest.json`、當輪 `committed.json`，舊latest不能代表最後嘗試成功。2026-10-29固定20檔實測三角色成功、3檔公司行動待核，故DEGRADED。
+
+## 案例與備份
+
+```powershell
+python -m support_scout advantest-case
+python -m support_scout advantest-case-replay output/advantest-real-cases/RUN_ID
+python -m unittest discover -s tests -q
+```
+
+ADVANTEST真實案例目前沒有抓到描述的機會，見[詳細差異](advantest-real-validation.md)。歷史重算保留今日來源版本與真正取得時間，不能當歷史當時的決策準確率。
+
+備份 `local_data` 與 `output` 可保留原始資料、成交、通知、帳本及報告，兩者不進Git。沒有建立自動排程、券商連線或自動下單；5%帳戶停工仍待可信帳戶資料。
