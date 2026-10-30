@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "study_id": "real-prefix-multi-period-v1-20261030",
+  "symbols": ["5016.T", "6027.T", "6857.T", "4063.T", "8306.T", "8058.T"],
+  "sessions": ["2026-06-15", "2026-07-01", "2026-07-15", "2026-08-03", "2026-08-17", "2026-09-01", "2026-09-15", "2026-10-01", "2026-10-14", "2026-10-26"],
+  "max_selected": 2,
+  "max_total_calls": 60,
+  "numeric_lookback_sessions": 80,
+  "profiles": [
+    {"id": "baseline", "label": "現行參數", "short_parameters": {}, "minimum_strategy_rr": null, "agent_sessions": "ALL"},
+    {"id": "tight_stop_1p", "label": "停損縮至1%", "short_parameters": {"stop_price_fraction": 0.01}, "minimum_strategy_rr": null, "agent_sessions": []},
+    {"id": "wide_stop_3p", "label": "停損3%／策略風報至少0.5", "short_parameters": {"stop_price_fraction": 0.03}, "minimum_strategy_rr": 0.5, "agent_sessions": ["2026-10-14", "2026-10-26"]},
+    {"id": "volume_045", "label": "相對量門檻0.45", "short_parameters": {"min_relative_volume": 0.45}, "minimum_strategy_rr": null, "agent_sessions": []}
+  ]
+}

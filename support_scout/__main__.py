@@ -49,6 +49,14 @@ def main(argv=None) -> int:
     short_eval.add_argument("input", type=Path)
     short_eval.add_argument("--lookback-sessions", type=int, default=80)
     short_eval.add_argument("--out", type=Path, required=True)
+    lab = sub.add_parser("decision-lab", help="真實行情跨時段三Agent試驗；與正式帳本、持倉及通知隔離")
+    lab.add_argument("input", type=Path)
+    lab.add_argument("--plan", type=Path)
+    lab.add_argument("--agents", action="store_true")
+    lab.add_argument("--settings", type=Path, default=DEFAULT_SETTINGS)
+    lab.add_argument("--out", type=Path)
+    lab_replay = sub.add_parser("decision-lab-replay", help="完全離線核對多時段試驗的決策與後續結果")
+    lab_replay.add_argument("directory", type=Path)
     case = sub.add_parser("pattern-case", help="H-001 Advantest合成參數截點驗證；與真實行情和帳本隔離")
     case.add_argument("--case", type=Path, help="合成參數紀錄JSON；省略用Advantest H-001案例")
     case.add_argument("--agents", action="store_true", help="實際呼叫尋標、研究與反證模型")
@@ -106,6 +114,18 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command == "decision-lab-replay":
+            from .decision_lab import replay_lab
+            print(json.dumps(replay_lab(args.directory), ensure_ascii=False))
+            return 0
+        if args.command == "decision-lab":
+            from .decision_lab import run_lab
+            result,target = run_lab(read_json(args.input), plan=read_json(args.plan) if args.plan else None,
+                agents=args.agents, settings_path=args.settings, output_root=args.out,
+                progress=lambda value: print(json.dumps(value, ensure_ascii=False), flush=True))
+            print(json.dumps({"model_call_count": result["model_call_count"], "summary": result["summary"],
+                "errors": result["errors"], "report": str((target / "comparison.html").resolve())}, ensure_ascii=False))
+            return 3 if result["errors"] else 0
         if args.command == "short-cycle-evaluate":
             from .short_eval import evaluate_saved, render_evaluation
             result = evaluate_saved(read_json(args.input), lookback_sessions=args.lookback_sessions)
