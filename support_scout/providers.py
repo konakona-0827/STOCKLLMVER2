@@ -131,6 +131,10 @@ class OpenAIProvider:
                 view["public_sources"] = {k: deepcopy(shared_public_information[k]) for k in ("findings", "gaps", "digest")}
             payload["input"][0]["content"] = encode(view)
             payload["instructions"] = COMPACT_TASK + ("獨立研究價量、催化與失效條件。" if role == "researcher" else "獨立反證，不看研究員結論；查支撐失效、追高、獲利品質與缺口。")
+            limits=packet["core"]["communication_policy"]
+            payload["instructions"] += (f"summary最多{limits['summary_chars']}字；risks與missing_data各最多{limits['list_items']}項，"
+                f"每項最多{limits['item_chars']}字，合併同類風險，勿超出JSON陣列上限。"
+                "pattern_parameters若有shared_parameter_ref，完整參數為該共用物件加overrides覆寫。")
             if shared:
                 payload["instructions"] += "public_sources為共用的來源抽取，不含其他Agent意見；本次不再搜尋，不能宣稱獨立檢索，必要時WATCH並要求另查。"
             payload["text"]["format"]["schema"] = bounded_schema(ANSWER_SCHEMA, load_policy(packet["core"]["communication_policy"]))
@@ -147,6 +151,8 @@ class OpenAIProvider:
             schema["required"].append("public_findings")
             payload["text"]["format"]["schema"] = schema
             payload["instructions"] += PUBLIC_TASK
+            payload["instructions"] += ("在工具額度內優先各查公司最新公告與重大反例，僅引用本次工具實際回傳／開啟的直接URL。"
+                "不要將搜尋結果未出現的推測PDF網址放入public_findings；沒有日期保留未知，不能猜日期。")
             payload.update(tools=[{"type": "web_search", "search_context_size": "low"}],
                 tool_choice="required", max_tool_calls=policy["max_tool_calls_per_review"],
                 include=["web_search_call.action.sources"])
@@ -167,6 +173,19 @@ class OpenAIProvider:
             payload["instructions"] += ("formal verdict若missing_data非空必須WATCH，若RESEARCH則引用required全部且missing_data空。"
                 "可回verdict=WATCH同時opportunity_view.action=PROBE_BUY_REVIEW；不要把積極機會誤填成已完成全部資料核實的RESEARCH。"
                 "opportunity_reference_plan是Python以可見近期阻力計算的試單情境，請檢查其風報參數與反例。")
+            if "short_horizon" in packet["core"]["opportunity_policy"]:
+                payload["instructions"] = payload["instructions"].replace(
+                    "PROBE_BUY_REVIEW需在evidence_ids引用H-002全部required證據",
+                    "PROBE_BUY_REVIEW需在evidence_ids引用所選pattern_id全部required證據").replace(
+                    "opportunity_reference_plan是Python以可見近期阻力計算的試單情境，請檢查其風報參數與反例。",
+                    "opportunity_reference_plans是Python依各型態計算的試單情境，請檢查其風報參數與反例。")
+                payload["instructions"] += ("此版有多種買入型態。先比較opportunity_reference_plans，選一個最合適的pattern_id並引用該pattern的required證據，"
+                    "不可用舊H-002失效自動否定H-003/004/005。短線+2%是價格目標且不計券商成本作資格，成本後估算另列。"
+                    "風報資格依每個plan的selection_reward_risk與minimum_reward_risk比較；exclude_broker_costs_for_selection=true時，"
+                    "net_reward_risk與policy.minimum_net_rr不是該短線型態的資格門檻，不可據此聲稱不合格。H-002仍用原成本後門檻。"
+                    "通過數值資格不代表必須支持，仍應依原始證據評估假突破、正常波動停損與事件風險。"
+                    "機率未知就明示，不能以規則成立宣稱一定達標。觸發型計畫只有價格落在entry_trigger_reference與entry_ceiling_reference之間才可人工評估，"
+                    "實際成交前依實際價格重算戰術風險線及2%目標，成交後不可下移失效價；最多5個交易日需重評或時間退出。")
         if holding:
             schema = deepcopy(payload["text"]["format"]["schema"])
             schema["properties"]["position_view"] = {"type": "object", "additionalProperties": False,
@@ -215,7 +234,9 @@ class OpenAIProvider:
                 if answer["verdict"] == "RESEARCH":
                     answer["verdict"] = "WATCH"
                 answer["missing_data"] = list(dict.fromkeys([*answer["missing_data"], *public_information["gaps"]]))
-                if opportunity_view and opportunity_view["action"] == "PROBE_BUY_REVIEW":
+                from .opportunity import blocking_public_gaps
+                if opportunity_view and opportunity_view["action"] == "PROBE_BUY_REVIEW" and blocking_public_gaps(public_information,
+                        packet["core"].get("opportunity_policy",{}),opportunity_view["pattern_id"]):
                     opportunity_view = {"action": "WAIT", "pattern_id": opportunity_view["pattern_id"],
                         "reason": "公開來源有被排除或未完成部分，須人工核對後才能積極評估。"}
         # Full semantic/evidence validation is deterministic in validate_reviews().

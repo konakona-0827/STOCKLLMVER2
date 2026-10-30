@@ -154,6 +154,9 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                 active_pattern = next((p for p in patterns if p["pattern_id"] in opportunity_policy["pattern_ids"]
                     and p.get("stage") in STAGES and p.get("research_candidate")), None)
                 core["opportunity_reference_plan"] = _reference_plan(core, active_pattern, opportunity_policy) if active_pattern else None
+                if "short_horizon" in opportunity_policy:
+                    core["opportunity_reference_plans"]={p["pattern_id"]:_reference_plan(core,p,opportunity_policy) for p in patterns
+                        if p["pattern_id"] in opportunity_policy["pattern_ids"] and p.get("stage") in STAGES and p.get("research_candidate")}
             position = (portfolio or {}).get("positions", {}).get(symbol)
             if portfolio is not None:
                 core["portfolio_snapshot_digest"] = portfolio["digest"]
@@ -173,10 +176,11 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
             if registry is not None:
                 outputs[-1]["patterns"] = patterns
             pattern_candidate = any(p["research_candidate"] for p in patterns)
-            from .opportunity import active_candidate
+            from .opportunity import active_candidate,watch_candidate
             if (technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}
                     or (pattern_candidate and technical["state"] not in {"INVALIDATED", "INSUFFICIENT_DATA"})
                     or active_candidate(core)
+                    or watch_candidate(core)
                     or (position and technical["state"] != "INSUFFICIENT_DATA")):
                 packets.append(packet)
         except (DataError, KeyError, TypeError, ValueError) as exc:

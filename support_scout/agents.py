@@ -30,6 +30,10 @@ def make_packet(core: dict) -> dict:
     if core.get("opportunity_policy", {}).get("enabled"):
         common = common.replace("不得編造數值、勝率、公司消息或交易建議。", "不得編造數值、勝率或公司消息。")
         common += ("opportunity_view獨立評估條件式人工試單，不等於formal verdict或執行資格。" + core["opportunity_policy"]["agent_guidance"])
+        if "short_horizon" in core["opportunity_policy"]:
+            common += ("逐一檢查opportunity_reference_plans，選出最符合短期目標的pattern_id。支撐試單、趨勢回檔、站回突破、動能延續不同；"
+                "不可只因距舊H-002低點遠就否決另一個動能型態。短線2%為不計券商成本的價格目標，不是淨賺或保證。"
+                "突破待觸發只能條件式提案；下一時段跳空超過entry_ceiling不可當已成交。戰術止損不是已確認支撐，注意正常噪音與假突破。")
     tasks = [
                 {"role": "researcher", "task_version": "researcher-v1", "instruction": common +
                  "逐項解釋固定支撐、反彈、獨立回測及站回證據；列失效條件、原投資邏輯與缺資料。"},

@@ -77,7 +77,7 @@ class DeskServer(ThreadingHTTPServer):
         try:
             from .observation import observe
             _, target, code = (self.observer or observe)(agents=True, universe_source="fixed", universe_path=self.universe_path,
-                scan_limit=20, max_packets=3, max_calls=7, public_information=True,
+                scan_limit=20, max_packets=4, max_calls=9, public_information=True,
                 db_path=self.data_root / "observations.sqlite3", portfolio_path=self.data_root / "manual_fills.json",
                 output_root=self.output_root)
             self.analysis = {"status": "COMPLETE" if code == 0 else "DEGRADED", "report": str(target / "report.html"), "exit_code": code}

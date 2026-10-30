@@ -69,6 +69,105 @@
         "min_guidance_raise_fraction": 0.05,
         "catalyst_max_age_days": 7
       }
+    },
+    {
+      "id": "H-003",
+      "version": "short-cycle-v1-20261030",
+      "handler": "short_cycle",
+      "enabled": true,
+      "name": "短線趨勢回檔",
+      "hypotheses": [
+        "近期價量型態是否提供3至5個交易日內價格上漲2%的可研究機會，尚未經樣本外驗證。"
+      ],
+      "evaluation_horizons_sessions": [
+        3,
+        5
+      ],
+      "agent_guidance": "依買入類型判斷短線機會，不只等待舊支撐。2%是不計券商成本的價格目標，不是保證或淨利；條件式突破未觸發前不能說已買進。戰術風險線不是結構支撐，可能在正常波動中觸發。不得使用截點之後的行情、公告或虛構命中率。",
+      "parameters": {
+        "setup_kind": "TREND_PULLBACK",
+        "trend_window_sessions": 20,
+        "short_window_sessions": 5,
+        "signal_window_sessions": 3,
+        "volume_window_sessions": 5,
+        "min_relative_volume": 0.65,
+        "min_momentum_fraction": 0.008,
+        "max_momentum_fraction": 0.25,
+        "max_daily_gain_fraction": 0.12,
+        "min_close_location": 0.35,
+        "max_pullback_fraction": 0.1,
+        "reclaim_buffer_fraction": 0.001,
+        "max_trigger_gap_fraction": 0.015,
+        "stop_price_fraction": 0.015,
+        "minimum_turnover_jpy": 500000000,
+        "min_horizon_range_fraction": 0.02
+      }
+    },
+    {
+      "id": "H-004",
+      "version": "short-cycle-v1-20261030",
+      "handler": "short_cycle",
+      "enabled": true,
+      "name": "短線站回／突破承接",
+      "hypotheses": [
+        "近期價量型態是否提供3至5個交易日內價格上漲2%的可研究機會，尚未經樣本外驗證。"
+      ],
+      "evaluation_horizons_sessions": [
+        3,
+        5
+      ],
+      "agent_guidance": "依買入類型判斷短線機會，不只等待舊支撐。2%是不計券商成本的價格目標，不是保證或淨利；條件式突破未觸發前不能說已買進。戰術風險線不是結構支撐，可能在正常波動中觸發。不得使用截點之後的行情、公告或虛構命中率。",
+      "parameters": {
+        "setup_kind": "RECLAIM_BREAKOUT",
+        "trend_window_sessions": 20,
+        "short_window_sessions": 5,
+        "signal_window_sessions": 3,
+        "volume_window_sessions": 5,
+        "min_relative_volume": 0.65,
+        "min_momentum_fraction": 0.008,
+        "max_momentum_fraction": 0.25,
+        "max_daily_gain_fraction": 0.12,
+        "min_close_location": 0.35,
+        "max_pullback_fraction": 0.18,
+        "reclaim_buffer_fraction": 0.001,
+        "max_trigger_gap_fraction": 0.1,
+        "stop_price_fraction": 0.015,
+        "minimum_turnover_jpy": 500000000,
+        "min_horizon_range_fraction": 0.02
+      }
+    },
+    {
+      "id": "H-005",
+      "version": "short-cycle-v1-20261030",
+      "handler": "short_cycle",
+      "enabled": true,
+      "name": "短線動能延續",
+      "hypotheses": [
+        "近期價量型態是否提供3至5個交易日內價格上漲2%的可研究機會，尚未經樣本外驗證。"
+      ],
+      "evaluation_horizons_sessions": [
+        3,
+        5
+      ],
+      "agent_guidance": "依買入類型判斷短線機會，不只等待舊支撐。2%是不計券商成本的價格目標，不是保證或淨利；條件式突破未觸發前不能說已買進。戰術風險線不是結構支撐，可能在正常波動中觸發。不得使用截點之後的行情、公告或虛構命中率。",
+      "parameters": {
+        "setup_kind": "MOMENTUM_CONTINUATION",
+        "trend_window_sessions": 20,
+        "short_window_sessions": 5,
+        "signal_window_sessions": 3,
+        "volume_window_sessions": 5,
+        "min_relative_volume": 0.65,
+        "min_momentum_fraction": 0.008,
+        "max_momentum_fraction": 0.25,
+        "max_daily_gain_fraction": 0.12,
+        "min_close_location": 0.35,
+        "max_pullback_fraction": 0.1,
+        "reclaim_buffer_fraction": 0.001,
+        "max_trigger_gap_fraction": 0.015,
+        "stop_price_fraction": 0.015,
+        "minimum_turnover_jpy": 500000000,
+        "min_horizon_range_fraction": 0.02
+      }
     }
   ]
 }

@@ -21,7 +21,7 @@ class PublicInformationTests(unittest.TestCase):
         self.now = datetime.now(timezone.utc)
         self.core = {"as_of": self.now.isoformat(), "market": "JP", "synthetic": False,
             "symbol": "6857.T", "evidence": [{"id": "fixture", "kind": "FIXTURE"}],
-            "required_confirmation_evidence": ["fixture"], "public_information_policy": load_policy(),
+            "required_confirmation_evidence": ["fixture"], "public_information_policy": {**load_policy(), "max_tool_calls_per_review": 3},
             "visible_series": {"name": "Advantest"}}
         self.packet = make_packet(self.core)
         self.finding = {"category": "EARNINGS", "source_type": "COMPANY_IR", "title": "測試用決算資料",

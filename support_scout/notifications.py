@@ -218,12 +218,16 @@ def decision_email_text(value):
         "買進條件：" + brief.get("entry_condition", "沒有完整進場計畫，不依此通知買進。"), "",
         "參考進場：" + number(brief.get("entry_reference")),
         "固定失效價：" + number(brief.get("invalidation_reference")),
-        "主要阻力參考：" + number(brief.get("target_reference")),
+        "目標參考：" + number(brief.get("target_reference")),
         "本筆情境虧損：" + number(brief.get("estimated_loss_jpy")) + " 日圓",
         "單筆虧損上限：" + number(budget.get("per_trade_risk_budget_jpy", brief.get("risk_budget_jpy"))) + " 日圓",
         "資金設定：" + number(budget.get("capital_jpy")) + " 日圓（非券商餘額）",
         "試算狀態：" + brief.get("sizing_status", "尚未建立"), "",
         "判斷說明：" + value.get("summary", "詳見報告。")]
+    if brief.get("buy_type_label"):
+        lines.extend(["買入類型："+brief["buy_type_label"],"持有交易日："+str(brief.get("holding_sessions") or "依情境重評"),
+            "價格目標（不計券商成本）："+ (f'{brief["target_return_fraction"]:.1%}' if brief.get("target_return_fraction") is not None else "主要阻力"),
+            "目標成交時成本後估算："+(f'{brief["estimated_net_return_fraction"]:.2%}' if brief.get("estimated_net_return_fraction") is not None else "待確認")])
     if value.get("desk_counts"):
         c = value["desk_counts"]
         lines.extend(["", f"本輪：可評估試單 {c.get('PROBE_BUY_REVIEW',0)} 檔、等待 {c.get('WAIT',0)} 檔、暫不進場 {c.get('AVOID',0)} 檔。"])

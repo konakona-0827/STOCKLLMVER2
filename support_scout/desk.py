@@ -110,9 +110,9 @@ def run_desk(bundle: dict, *, researcher=None, reviewer=None, config: DeskConfig
     run_id = uuid4().hex
     outputs = {s["packet_id"]: s for s in initial["securities"] if "packet_id" in s}
     # Confirmed near-support candidates first; earlier stages form an observation queue.
-    from .opportunity import active_candidate
+    from .opportunity import active_candidate,watch_candidate
     eligible = [p for p in initial["agent_packets"] if outputs[p["packet_id"]]["verdict"] != "REJECT"
-        or p["core"]["symbol"] in held_symbols or active_candidate(p["core"])]
+        or p["core"]["symbol"] in held_symbols or active_candidate(p["core"]) or watch_candidate(p["core"])]
     if selected_symbols is not None:
         available = {p["core"]["symbol"]: p for p in eligible}
         if (not isinstance(selected_symbols, list) or any(not isinstance(s, str) for s in selected_symbols)

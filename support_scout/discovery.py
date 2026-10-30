@@ -68,6 +68,8 @@ def _compact_candidate(source_packet, cutoff):
     support_refs = set((technical.get("support") or {}).get("evidence_ids", []))
     anchor_ids = [e["id"] for e in evidence if e["kind"] == "ANCHOR" and e["id"] in support_refs]
     pattern_refs = [identifier for p in source.get("patterns", []) if p["research_candidate"] for identifier in p["required_evidence_ids"]]
+    if source.get("opportunity_policy",{}).get("short_horizon"):
+        pattern_refs.extend(identifier for p in source.get("patterns",[]) if p.get("stage")=="VOLATILE_WATCH" for identifier in p["required_evidence_ids"])
     if not anchor_ids and pattern_refs:
         anchor_ids = [pattern_refs[0]]
     if latest_id not in ids or len(anchor_ids) != 1 or any(timestamp(e["available_at"]) > cutoff for e in evidence):
@@ -87,6 +89,8 @@ def _compact_candidate(source_packet, cutoff):
     if "opportunity_policy" in source:
         candidate["opportunity_policy"] = deepcopy(source["opportunity_policy"])
         candidate["opportunity_reference_plan"] = deepcopy(source.get("opportunity_reference_plan"))
+        if "opportunity_reference_plans" in source:
+            candidate["opportunity_reference_plans"]=deepcopy(source["opportunity_reference_plans"])
     return candidate
 
 
@@ -131,19 +135,20 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
         seen_ids.add(candidate_id)
         seen_symbols.add(symbol)
         technical = source["technical"]
-        from .opportunity import active_candidate
-        active = active_candidate(source)
+        from .opportunity import active_candidate,watch_candidate
+        active = active_candidate(source) or watch_candidate(source)
         if source.get("context_reject") is True or (not active and (item.get("verdict") == "REJECT" or technical.get("position") == "EXTENDED")):
             continue
         pattern_candidate = any(p["research_candidate"] for p in source.get("patterns", []))
-        if technical.get("state") not in {"BASE_FORMING", "BOUNCE_SEEN", "RETEST_HELD", "RULE_CONFIRMED"} and not pattern_candidate:
+        if technical.get("state") not in {"BASE_FORMING", "BOUNCE_SEEN", "RETEST_HELD", "RULE_CONFIRMED"} and not pattern_candidate and not watch_candidate(source):
             raise DataError("SEARCH_UNEXPECTED_SOURCE_STATE")
         # The pool deliberately excludes reviews, trade_decision, and raw bars.
         candidates.append(_compact_candidate(source_packet, cutoff))
     candidates.sort(key=lambda c: (not (c["technical"]["technical_candidate"] and not c["context_blockers"]),
         not c["technical"]["technical_candidate"],
         -max(({"CATALYST_CONFIRMED": 4, "CATALYST_AWAITING_PRICE": 3, "SUPPORT_STRENGTHENED": 2, "EARLY_WATCH": 1,
-            "SUPPORT_RECLAIMED": 3, "SUPPORT_HELD": 2}.get(p["stage"], 0)
+            "SUPPORT_RECLAIMED": 3, "SUPPORT_HELD": 2,"SHORT_RECLAIM_READY":4,"SHORT_RECLAIM_TRIGGER":2,
+            "SHORT_PULLBACK_READY":3,"SHORT_MOMENTUM_READY":3}.get(p["stage"], 0)
               for p in c.get("patterns", [])), default=0),
         -(c["technical"].get("priority_score") or 0), c["symbol"]))
     body = {"protocol": SEARCH_PROTOCOL, "task": SEARCH_TASK, "response_schema": deepcopy(SEARCH_SCHEMA),
@@ -163,7 +168,7 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
         packet = {**body, "packet_id": digest(body)}
     # Canonical local evidence may repeat definitions; the separate compact
     # wire budget and HTTP payload cap remain enforced before an API request.
-    if len(json.dumps(packet, ensure_ascii=False, allow_nan=False).encode("utf-8")) > 1_000_000:
+    if len(json.dumps(packet, ensure_ascii=False, allow_nan=False).encode("utf-8")) > 2_000_000:
         raise DataError("SEARCH_PACKET_TOO_LARGE")
     verify_search_packet(packet)
     return packet
@@ -253,6 +258,12 @@ class OpenAISearchProvider:
                 payload["instructions"] += ("ACTIVE_MANUAL另允許尋找H-002近期支撐守住的早期試單研究；"
                     "H-002自己的情境有效時，舊ATR失效不是自動剔除的理由，兩者固定錨與風險分開。"
                     "SEARCH仍只提交值得研究者，不替研究與反證作買進結論。")
+                if "short_horizon" in packet["core"]["opportunity_policy"]:
+                    payload["instructions"] += ("本輪擴充趨勢回檔、站回突破與動能延續；優先找3至5交易日價格+2%情境，"
+                        "不計券商成本作尋標門檻，不能稱淨利2%。比較各opportunity_reference_plans；不要只因舊支撐太遠否定動能。"
+                        "短線風報用selection_reward_risk對minimum_reward_risk比較，不可套用H-002的minimum_net_rr。"
+                        "以擴大研究覆蓋為目標，若有多個不同型態且可檢查的候選，優先用足max_selected；選中只是交付研究，不是買入推薦，仍可不足或空選。"
+                        "可提交不同買入類型；待觸發的突破要明示，不能說已觸發或保證目標。")
         response = self.transport(payload, key, self.timeout)
         if not isinstance(response, dict) or response.get("status") != "completed":
             raise ProviderError("SEARCH_API_RESPONSE_NOT_COMPLETED")

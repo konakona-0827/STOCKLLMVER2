@@ -5,7 +5,7 @@
 ## 觀察與頁面
 
 1. `Doctor.cmd` 檢查行情與OpenAI設定，不顯示key。
-2. `Observe.cmd --agents --max-packets 3 --max-calls 7`：固定可配置20檔、SEARCH選股、最多3對研究／反證。
+2. `Observe.cmd --agents --max-packets 4 --max-calls 9`：固定可配置20檔、SEARCH選股、最多4對研究／反證。
 3. `Dashboard.cmd` 啟動本機服務，再開 <http://127.0.0.1:8765>。`OpenReport.cmd` 則只看靜態當輪報告。
 4. 核對資料日、資料拒絕原因、模型是否完成，再讀個股結論與支撐失效價。
 

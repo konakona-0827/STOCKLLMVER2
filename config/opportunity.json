@@ -1,9 +1,14 @@
 {
   "schema_version": 1,
-  "version": "jp-active-manual-v2-20261030",
+  "version": "jp-multi-style-short-cycle-v1-20261030",
   "enabled": true,
   "mode": "ACTIVE_MANUAL",
-  "pattern_ids": ["H-002"],
+  "pattern_ids": [
+    "H-004",
+    "H-003",
+    "H-005",
+    "H-002"
+  ],
   "max_distance_fraction": 0.06,
   "max_risk_fraction": 0.06,
   "minimum_net_rr": 1.5,
@@ -13,5 +18,16 @@
   "entry_cost_fraction": 0.005,
   "exit_cost_fraction": 0.005,
   "gap_buffer_fraction": 0.005,
-  "agent_guidance": "積極評估近期支撐守住後的條件式人工試單機會，無須等舊ATR型態完全確認。以H-002自己的固定支撐與價量為依據，不用舊ATR失效價否決另一個獨立情境；公司論點已破壞、H-002失效、追高或風報不足仍否決。資料未獨立核實與未知consensus要列人工核對，不冒稱已解決；純價量試單不要求超預期催化。可以判斷PROBE_BUY_REVIEW、WAIT或AVOID，不必為符合案例買進，不估勝率、不下單。"
+  "agent_guidance": "從支撐試單、趨勢回檔、站回／突破、動能延續中判斷買入類型，優先研究3至5個交易日的價格上漲2%情境。不計PayPay成本作為尋標與策略風報資格，實際成本後報酬另列；2%不是保證。多種型態符合可選最適合的pattern_id，研究與反證要針對同一型態；無法達成共識等待。突破待觸發者只能提出條件式計畫，目標與戰術風險價需按實際進場價重算，成交後不可任意下移。已知基本面破壞、資料修訂、流動性不足及虛構引用仍可否決；不得為增加數量而預設買進或捏造勝率。",
+  "short_horizon": {
+    "target_basis": "PRICE_MOVE",
+    "target_return_fraction": 0.02,
+    "holding_sessions": [
+      3,
+      5
+    ],
+    "time_exit_sessions": 5,
+    "minimum_strategy_rr": 0.8,
+    "cost_basis": "EXCLUDE_BROKER_COSTS_FOR_SELECTION"
+  }
 }

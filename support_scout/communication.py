@@ -38,7 +38,7 @@ def encode(value):
 
 def _pattern(value):
     return {k: deepcopy(value[k]) for k in ("pattern_id", "version", "stage", "support", "metrics",
-        "reason_codes", "research_candidate", "empirical_status", "limitations") if k in value}
+        "reason_codes", "research_candidate", "empirical_status", "limitations", "buy_type", "buy_type_label") if k in value}
 
 
 def _technical(value):
@@ -160,6 +160,34 @@ def review_wire(packet):
         if key in core:
             value[key] = deepcopy(core[key])
     value["pattern_parameters"] = {p["pattern_id"]: p.get("definition", {}).get("parameters", {}) for p in core.get("patterns", [])}
+    reverse={v:k for k,v in aliases.items()}
+    if core.get("opportunity_policy",{}).get("short_horizon"):
+        value["pattern_required"]={p["pattern_id"]:[reverse[x] for x in p["required_evidence_ids"]] for p in core.get("patterns",[]) if p.get("research_candidate")}
+        # Guidance is already in system instructions. Shared numerical defaults
+        # are carried once, with per-pattern overrides, without losing values.
+        value["opportunity_policy"].pop("agent_guidance",None)
+        short_ids=[p["pattern_id"] for p in core.get("patterns",[]) if p.get("buy_type") in {"TREND_PULLBACK","RECLAIM_BREAKOUT","MOMENTUM_CONTINUATION"}]
+        if short_ids:
+            params=value["pattern_parameters"]
+            common={k:v for k,v in params[short_ids[0]].items() if all(params[pid].get(k)==v for pid in short_ids)}
+            value["shared_short_cycle_parameters"]=common
+            for pid in short_ids:
+                params[pid]={"shared_parameter_ref":"shared_short_cycle_parameters",
+                    "overrides":{k:v for k,v in params[pid].items() if k not in common}}
+    if "opportunity_reference_plans" in core:
+        value.pop("opportunity_reference_plan",None)
+        value["opportunity_reference_plans"]=deepcopy(core["opportunity_reference_plans"])
+        by_kind={p.get("buy_type"):p for p in value["patterns"] if p.get("buy_type")}
+        for row in value["evidence"].values():
+            if row.get("kind")!="SHORT_SIGNAL":continue
+            facts=row["value"];pattern=by_kind.get(facts.get("buy_type"))
+            if not pattern:continue
+            links={}
+            for key in list(facts):
+                field="entry_trigger_reference" if key=="trigger_reference" else key
+                if field in pattern["metrics"] and facts[key]==pattern["metrics"][field]:
+                    links[key]=field;del facts[key]
+            row["values_from_pattern_metrics"]={"pattern_id":pattern["pattern_id"],"fields":links}
     metrics = wire_metrics({"packet_id": packet["packet_id"], "core": core}, value, policy)
     return value, EvidenceAliases(aliases, packet["packet_id"], core["symbol"]), metrics
 
@@ -223,6 +251,7 @@ def search_wire(packet):
             "technical_values": [features.get(k) for k in technical_columns],
             "technical_support_values": [(features.get("support") or {}).get(k) for k in support_columns],
             "patterns": [{"id": p["pattern_id"], "stage": p["stage"], "research_candidate": p.get("research_candidate"),
+                "buy_type":p.get("buy_type","SUPPORT_PROBE"),
                 "support": [(p.get("support") or {}).get(k) for k in value["pattern_layouts"][p["pattern_id"]]["support"]],
                 "metrics": [p.get("metrics", {}).get(k) for k in value["pattern_layouts"][p["pattern_id"]]["metrics"]],
                 "reasons": [code(r) for r in p.get("reason_codes", [])]} for p in c.get("patterns", [])],
@@ -238,6 +267,16 @@ def search_wire(packet):
             value["candidates"][-1]["support_model_boundaries"] = deepcopy(c["support_model_boundaries"])
         if "opportunity_reference_plan" in c:
             value["candidates"][-1]["opportunity_reference_plan"] = deepcopy(c["opportunity_reference_plan"])
+        if "opportunity_reference_plans" in c:
+            value["candidates"][-1].pop("opportunity_reference_plan",None)
+            value["candidates"][-1]["opportunity_reference_plans"]={k:{f:v.get(f) for f in
+                ("buy_type","entry_reference","entry_trigger_reference","entry_ceiling_reference","invalidation_reference","target_reference",
+                 "risk_fraction","selection_reward_risk","estimated_net_return_fraction","holding_sessions","trigger_required")}
+                for k,v in c["opportunity_reference_plans"].items() if v}
+            for pid, plan in value["candidates"][-1]["opportunity_reference_plans"].items():
+                source=c["opportunity_reference_plans"][pid]
+                for field in ("minimum_reward_risk", "exclude_broker_costs_for_selection"):
+                    if field in source:plan[field]=source[field]
     return value, CandidateAliases(mapping, packet["packet_id"]), wire_metrics(packet["core"], value, policy, role="search")
 
 

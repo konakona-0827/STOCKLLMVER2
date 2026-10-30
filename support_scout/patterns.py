@@ -514,8 +514,9 @@ def detect_h002(series, cutoff, definition, context):
     return result
 
 
-HANDLERS = {"support_catalyst_reversal": detect_h001, "recent_support_reclaim": detect_h002}
-PARAMETERS = {"support_catalyst_reversal": H001Parameters, "recent_support_reclaim": H002Parameters}
+from .short_cycle import detect_short_cycle, ShortCycleParameters
+HANDLERS = {"support_catalyst_reversal": detect_h001, "recent_support_reclaim": detect_h002, "short_cycle": detect_short_cycle}
+PARAMETERS = {"support_catalyst_reversal": H001Parameters, "recent_support_reclaim": H002Parameters, "short_cycle": ShortCycleParameters}
 
 
 def evaluate_patterns(series, cutoff, registry, context=None):

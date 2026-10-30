@@ -1,6 +1,8 @@
 # Japan Support Desk：日股尋標與人工決策
 
-目前版本0.9.0，工作分支 `codex/japan-support-desk-phase1`。依2026-10-29最新需求，預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
+目前版本0.10.0，工作分支 `codex/japan-support-desk-phase1`。預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
+
+2026-10-30新增短線機會：H-003趨勢回檔、H-004站回／突破（含待觸發）、H-005動能延續；保留H-002支撐試單。依使用者最新選擇，短線以3／5交易日、**股價+2%**為目標，不以PayPay費用提高選股門檻；成本後估算另外顯示。JX金屬5016及6027加入20檔池，暫換出8316及9432，兩者保留在備選欄位，整份名單仍可替換。高波動沒有方向時只列觀察，不冒充買訊。詳見[短線型態與評估](docs/short-cycle.md)。
 
 ```mermaid
 flowchart LR
@@ -27,7 +29,7 @@ Python 3.11以上，不需第三方執行期套件。在本目錄執行：
 
 ```powershell
 python -m support_scout doctor --require-agents
-python -m support_scout observe --agents --max-packets 3 --max-calls 7
+python -m support_scout observe --agents --max-packets 4 --max-calls 9
 python -m support_scout serve
 ```
 
@@ -88,7 +90,7 @@ python -m support_scout pattern-case
 
 ## Python決策總表、成交回報與提醒
 
-0.9.0新增Python決策總表，顯示哪檔、買進／等待條件、建議金額／換算股數與情境虧損。個人本金及風險設定在忽略的 `local_data/sizing_settings.json`；初次每檔上限25%（可調）、多檔共享資金及新風險預算。只有條件式試單才給正數，等待／不進場為0，已有持倉不自動加碼。PayPay價差已納入估算；換算小數股數不代表實際成交。見[部位試算](docs/position-sizing.md)。
+Python決策總表顯示哪檔、買入類型、買進／等待條件、目標與期限、建議金額／換算股數及情境虧損。個人本金及風險設定在忽略的 `local_data/sizing_settings.json`；初次每檔上限25%（可調）、多檔共享資金及新風險預算。只有條件式試單才給正數，等待／不進場為0，已有持倉不自動加碼。短線選股不計券商成本；部位風險與成本後報酬仍獨立估算，換算小數股數不代表實際成交。見[部位試算](docs/position-sizing.md)。
 
 本機頁面填入代號、買賣、股數、實際價格、費用與日期，再勾「我確認已實際成交」才影響持倉。未勾選、研究建議與未回報交易均不視為成交。Python產生持倉JSON供下輪分析，保留成本與日期；可填固定失效價。持倉結論為HOLD、REDUCE_REVIEW、EXIT_REVIEW或REVIEW，缺原風險基準時不硬判續抱或賣出。見[持倉協定](docs/manual-portfolio.md)。
 

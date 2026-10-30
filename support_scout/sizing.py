@@ -91,10 +91,17 @@ def attach_execution_plans(report, settings=None):
         checks.extend(["確認此標的可在你的PayPay帳戶交易；目前名單尚未核實。", "使用券商最新買賣報價重算；參考收盤不是可保證成交價。",
             "金額指定的換算股數只是估計，實際成交後才回報持倉。", "設定值是情境虧損上限，跳空可能使實際虧損超過上限。"])
         condition = "尚未符合進場條件，不買進。"
+        if opportunity.get("volatility_watch"):
+            level=opportunity.get("watch_trigger_reference")
+            condition=(f"高波動觀察，先看是否站回{level:,.2f}並形成方向；尚無可執行進場條件。" if _number(level) else "高波動觀察，方向未確認，不買進。")
         if holding:
             status, condition = "HOLDING_REVIEW_NO_ADD", "已有確認持倉，不新增買進；依持倉評語人工評估續抱或退出。"
         elif action == "PROBE_BUY_REVIEW":
             condition = "先核對可交易性、即時價格與較近供給；仍守住H-002固定下緣且風報通過才評估金額試單。"
+            if reference.get("buy_type"):
+                condition=(f"{reference['buy_type_label']}：" + (f"尚待觸發，價格在{reference['entry_trigger_reference']:,.2f}至{reference['entry_ceiling_reference']:,.2f}間才評估；" if reference.get("trigger_required") else
+                    f"下一時段價格不高於{reference['entry_ceiling_reference']:,.2f}才重新評估；") +
+                    "按實際進場價重算+2%價格目標與戰術風險線；最多5個交易日，未達標也要時間退出評估。")
             if not ready:
                 status = "BUDGET_NOT_CONFIGURED"
             elif portfolio_error:
@@ -106,8 +113,9 @@ def attach_execution_plans(report, settings=None):
                 friction = _d(settings["entry_spread_fraction"]) + _d(settings["exit_spread_fraction"]) + _d(settings["gap_buffer_fraction"])
                 effective_risk = max(_d(reference["risk_fraction"]), (e - s) / e + friction)
                 broker_rr = ((t - e) / e - friction) / effective_risk
-                minimum_rr = _d(report.get("opportunity_policy", {}).get("minimum_net_rr", 1.5))
-                if effective_risk > 1 or broker_rr < minimum_rr:
+                minimum_rr = _d(reference.get("minimum_reward_risk",report.get("opportunity_policy", {}).get("minimum_net_rr", 1.5)))
+                qualification_rr=_d(reference.get("selection_reward_risk",broker_rr)) if reference.get("exclude_broker_costs_for_selection") else broker_rr
+                if effective_risk > 1 or qualification_rr < minimum_rr:
                     status = "BROKER_COST_RISK_REVIEW_REQUIRED"
                 else:
                     cap = min(cash, capital * _d(settings["max_position_fraction"]), per_risk / effective_risk, remaining_risk / effective_risk)
@@ -138,6 +146,13 @@ def attach_execution_plans(report, settings=None):
             "broker_mode": settings["broker_mode"], "held_quantity": holding.get("quantity", 0) if holding else 0,
             "manual_checks": list(dict.fromkeys(checks)), "as_of": report["as_of"], "execution_enabled": False,
             "quantity_meaning": "AMOUNT_JPY的股數僅供換算；不是券商實際數量或訂單。"}
+        if "short_horizon" in report.get("opportunity_policy",{}):
+            plan.update(buy_type=opportunity.get("buy_type"),buy_type_label=opportunity.get("buy_type_label"),
+                holding_sessions=reference.get("holding_sessions"),time_exit_sessions=reference.get("time_exit_sessions"),
+                target_basis=reference.get("target_basis"),target_return_fraction=reference.get("target_return_fraction"),
+                estimated_net_return_fraction=reference.get("estimated_net_return_fraction"),
+                trigger_required=reference.get("trigger_required",False),entry_trigger_reference=reference.get("entry_trigger_reference"),
+                entry_ceiling_reference=reference.get("entry_ceiling_reference"),research_status=opportunity.get("research_status"))
         item["execution_plan"] = plan
         brief.append(deepcopy(plan))
     report["decision_brief"] = {"version": "jp-decision-brief-v1", "as_of": report["as_of"], "rows": brief,

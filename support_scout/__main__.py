@@ -45,6 +45,10 @@ def main(argv=None) -> int:
     real_case.add_argument("--out", type=Path)
     real_replay = sub.add_parser("advantest-case-replay", help="離線核對真實案例保存結果")
     real_replay.add_argument("directory", type=Path)
+    short_eval = sub.add_parser("short-cycle-evaluate", help="保存行情的短線前綴情境評估；不是PIT或投資組合回測")
+    short_eval.add_argument("input", type=Path)
+    short_eval.add_argument("--lookback-sessions", type=int, default=80)
+    short_eval.add_argument("--out", type=Path, required=True)
     case = sub.add_parser("pattern-case", help="H-001 Advantest合成參數截點驗證；與真實行情和帳本隔離")
     case.add_argument("--case", type=Path, help="合成參數紀錄JSON；省略用Advantest H-001案例")
     case.add_argument("--agents", action="store_true", help="實際呼叫尋標、研究與反證模型")
@@ -102,6 +106,15 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command == "short-cycle-evaluate":
+            from .short_eval import evaluate_saved, render_evaluation
+            result = evaluate_saved(read_json(args.input), lookback_sessions=args.lookback_sessions)
+            args.out.mkdir(parents=True, exist_ok=True)
+            (args.out / "evaluation.json").write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+            (args.out / "evaluation.html").write_text(render_evaluation(result), encoding="utf-8")
+            print(json.dumps({"eligible_stocks": result["eligible_stocks"], "signals_by_pattern": result["signals_by_pattern"],
+                "report": str((args.out / "evaluation.html").resolve())}, ensure_ascii=False))
+            return 0
         if args.command == "serve":
             from .dashboard import serve
             serve(args.port)

@@ -9,6 +9,7 @@ from datetime import timedelta, timezone
 STATES = {"RULE_CONFIRMED": "規則確認（暫定）", "RETEST_HELD": "回測守住，等待確認",
     "BOUNCE_SEEN": "已反彈，等待回測", "BASE_FORMING": "底部形成中", "INVALIDATED": "支撐已失效",
     "NO_SETUP": "尚無型態", "EXPIRED": "型態過期", "INSUFFICIENT_DATA": "歷史不足"}
+RESEARCH_PROGRESS = {"REVIEWED":"已完成研究／反證", "AWAITING_REVIEW":"待研究／反證", "NUMERIC_SCAN_ONLY":"僅完成數值掃描"}
 REASONS = {"OBSERVATION_ONLY": "僅供觀察", "CORPORATE_ACTIONS_UNVERIFIED": "公司行動未核實",
     "TRADABILITY_UNVERIFIED": "停牌／鎖價資訊未核實", "POINT_IN_TIME_NOT_VERIFIED": "非歷史當時可得快照",
     "DOSSIER_UNKNOWN_OR_STALE": "公司與公告查核待補", "MARKET_STRESS_UNKNOWN": "市場壓力尚未分類",
@@ -125,12 +126,23 @@ def render_html(report: dict, bundle: dict) -> str:
             opinions = "；".join(f'{role}：{view["action"]} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
             decision_html += (f'<div class="banner"><h4>{escape(opportunity["label"])}</h4>'
                 f'<p>{escape(str(opportunity.get("pattern_id") or "—"))} · {escape(opportunity["policy_version"])} · {escape(opportunity["scope"])}</p>'
-                f'<p>試單參考 {fmt(active_plan.get("entry_reference"))}；本型態固定失效價 {fmt(active_plan.get("invalidation_reference"))}；'
-                f'既有阻力 {fmt(active_plan.get("target_reference"))}；成本與跳空情境後RR {fmt(active_plan.get("net_reward_risk"))}</p>'
+                f'<p>試單參考 {fmt(active_plan.get("entry_reference"))}；參考風險價 {fmt(active_plan.get("invalidation_reference"))}；'
+                f'目標參考 {fmt(active_plan.get("target_reference"))}；策略風報 {fmt(active_plan.get("selection_reward_risk",active_plan.get("net_reward_risk")))}；'
+                f'成本後情境RR {fmt(active_plan.get("net_reward_risk"))}</p>'
                 f'<p>{escape(opinions or "三角色尚未完成機會評估。")}</p>'
                 f'<p>{escape("；".join(opportunity["reason_codes"]))}</p>'
                 f'<details><summary>試單前人工核對</summary>{escape("；".join(opportunity["manual_checks"]))}</details>'
                 '<p>條件式人工評估，未核實事項仍保留；沒有下單、保證停損價或勝率。</p></div>')
+            if opportunity.get("buy_type_label"):
+                target=active_plan.get("target_return_fraction")
+                target_text=f'{target:.1%}價格漲幅（不計券商成本作選股門檻）' if target is not None else '支撐反轉主要阻力目標' if active_plan else '尚無進場目標'
+                after=active_plan.get("estimated_net_return_fraction")
+                after_text=f'{after:.2%}' if after is not None else '另行估算'
+                decision_html += (f'<p><b>買入類型：{escape(opportunity["buy_type_label"])}</b> · '
+                    f'研究進度：{escape(RESEARCH_PROGRESS.get(opportunity.get("research_status"),"待確認"))}<br>'
+                    f'策略目標：{target_text}；成本後估算：{after_text}；最長持有 {active_plan.get("time_exit_sessions","—")} 個交易日。'
+                    f'突破觸發 {fmt(active_plan.get("entry_trigger_reference"))}；進場上限 {fmt(active_plan.get("entry_ceiling_reference"))}。'
+                    '未觸發不得當成交，按實際買價重算目標與戰術風險線。</p>')
         if manual:
             position = manual.get("position") or {}
             decision_html += (f'<p><b>人工持倉／成交決策：{escape(manual["label"])}</b><br>'
@@ -197,12 +209,15 @@ def render_html(report: dict, bundle: dict) -> str:
         counts = report["opportunity_summary"]["counts"]
         active_html = (f'<div class="banner"><b>積極人工機會評估</b> · 可評估試單 {counts.get("PROBE_BUY_REVIEW",0)} · '
             f'等待 {counts.get("WAIT",0)} · 暫不進場 {counts.get("AVOID",0)}。'
-            '三角色共同評估H-002；與原正式交易資格分開，未核實事項須人工核對。</div>')
+            '三角色共同評估各買入類型；未核實事項須人工核對。</div>')
+        overview=report["opportunity_summary"]
+        if "candidate_count" in overview:
+            active_html += f'<p>數值掃描 {overview["scanned_count"]} 檔 · 研究候選 {overview["candidate_count"]} 檔 · 已完成雙方評估 {overview["reviewed_count"]} 檔 · 高波動觀察 {overview.get("volatility_watch_count", 0)} 檔。未研究者不等於模型已否決。</p>'
     brief_html = ""
     brief = report.get("decision_brief")
     if brief:
         brief_rows = "".join(f'<tr><td>{escape(p["symbol"])}<br><small>{escape(p["name"])}</small></td>'
-            f'<td>{escape(p["label"])}</td><td>{escape(p["entry_condition"])}</td>'
+            f'<td>{escape(p["label"])}<br>{escape(p.get("buy_type_label") or "—")}<br>{escape(RESEARCH_PROGRESS.get(p.get("research_status"),""))}</td><td>{escape(p["entry_condition"])}</td>'
             f'<td>{fmt(p["suggested_amount_jpy"])}</td><td>{fmt(p["suggested_shares"])}</td>'
             f'<td>{fmt(p["entry_reference"])} / {fmt(p["invalidation_reference"])} / {fmt(p["target_reference"])}</td>'
             f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(p["sizing_status"])}</td></tr>' for p in brief["rows"])
@@ -212,7 +227,7 @@ def render_html(report: dict, bundle: dict) -> str:
             f'<p>初次試單每檔最多本金{report["sizing_policy"]["max_position_fraction"]:.0%}（設定可調）。金額指定的股數只是估算，尚待核對券商可交易名單；'
             '未符合進場條件即為0。資金由你設定及確認成交推算，不是券商餘額，跳空可能超過情境虧損。</p>'
             '<div class="scroll"><table><thead><tr><th>標的</th><th>結論</th><th>怎麼買／等待條件</th><th>建議JPY</th><th>換算股數</th>'
-            '<th>進場／失效／主要阻力</th><th>情境虧損JPY</th><th>試算狀態</th></tr></thead><tbody>' + brief_rows + '</tbody></table></div></section>')
+            '<th>進場／失效／目標參考</th><th>情境虧損JPY</th><th>試算狀態</th></tr></thead><tbody>' + brief_rows + '</tbody></table></div></section>')
     return f'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Support Desk {market_label}觀察 {escape(latest)}</title><style>
 body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margin:0}}main{{max-width:1500px;margin:auto;padding:30px}}h1{{margin-bottom:6px}}.sub,small{{color:#607185}}.banner{{background:#fff4d7;border-left:4px solid #b58222;padding:16px;margin:22px 0}}.metrics{{display:flex;gap:12px;flex-wrap:wrap}}.metrics div,article{{background:white;padding:18px;border:1px solid #dde4eb;border-radius:8px}}.metrics b{{display:block;font-size:20px}}.scroll{{overflow:auto;background:white;margin:24px 0}}table{{border-collapse:collapse;min-width:1000px;width:100%}}th,td{{text-align:left;padding:12px;vertical-align:top;border-bottom:1px solid #e4e9ed}}th{{background:#eaf0f5}}.notes{{font-size:13px;max-width:360px;color:#536579}}article{{margin:14px 0}}article svg{{max-width:440px;width:100%;height:130px}}a{{color:#246b9b}}input{{padding:10px;width:260px;border:1px solid #c7d1db;border-radius:4px}}.warn{{color:#9d3c29}}footer{{margin:30px 0;color:#607185}}

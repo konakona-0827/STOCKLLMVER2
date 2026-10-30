@@ -18,7 +18,11 @@
 
 ## 預算與量測
 
-研究輸入使用 `max_input_bytes`，預設28,000 bytes；SEARCH可用獨立的 `search_max_input_bytes`，預設設定48,000 bytes。舊凍結policy沒有新欄時，搜尋回退使用原 `max_input_bytes`，不改寫其參數或版本。共同來源加入後必須再檢查最終input，超額受控失敗，不截候選、證據或缺口來冒充完整輸入。每輪有多少候選與API輸入預算是兩個不同限制。
+研究輸入使用 `max_input_bytes`，預設28,000 bytes；SEARCH可用獨立的 `search_max_input_bytes`，0.10.0擴為100,000 bytes以容納多型態候選（上限不代表每次用滿）。舊凍結policy沒有新欄時，搜尋回退使用原 `max_input_bytes`，不改寫其參數或版本。共同來源加入後必須再檢查最終input，超額受控失敗，不截候選、證據或缺口來冒充完整輸入。每輪有多少候選與API輸入預算是兩個不同限制。
+
+短線多型態計畫用 `opportunity_reference_plans`，不再重送單一計畫；每種型態有自己的required引用。SHORT_SIGNAL與pattern.metrics完全相同的數值以 `values_from_pattern_metrics` 指向同封包欄位，差異值原樣保留，能無損還原。SEARCH不重送這些價量event_facts，仍保留公告與催化證據。介面預設最多研究4檔、9次模型請求（SEARCH一次與最多四組研究／反證），未研究候選顯示待評估，不能稱為AI已否決。
+
+研究輸入的三個短線型態共用參數改為 `shared_short_cycle_parameters`，各型態僅傳 `shared_parameter_ref` 與 `overrides`；合併後數值與原參數完全相同。agent_guidance已在系統指令，不在JSON重複傳送。公開搜尋每檔最多2次工具呼叫，研究員查公司公告與重大反例，反證員沿用來源事實；仍會核對實際usage，不把bytes或工具次數直接換算成token節省率。
 
 `wire_metrics(original, final_view, policy, role='review'|'search')` 使用兩側相同的minified JSON編碼量測UTF-8 bytes，避免把pretty-print空白也算成策略節省。記錄角色、byte預算及減少比例。未安裝tokenizer時，`estimated_tokens` 保持null並明示無法估算；可注入本地 `token_counter` 取得估計。**bytes減少比例不是計費token減少比例**，實際模型tokens只採API回傳的`usage`，缺值不當成0。
 
