@@ -1,5 +1,7 @@
 # AI Agent 決策模式
 
+台股下一階段的 A／B／C 多時間尺度實驗，見 [2026-10-30 改造計畫](docs/experiments/TW_MULTI_HORIZON_PLAN.md) 及 [離線研究入口](research/multi_horizon/README.md)。目前是獨立的歷史標籤研究，不變更以下正式決策與交易流程。
+
 這個版本整合 `develop` 的分析資料、正式交易限制、券商連線與對帳、Dashboard 顯示及策略更新。`llm` 和 `agent` 只在決策推論處分流；兩者輸出相同的 `market_view` / `decisions` 契約，之後共用 Python 驗證、風控、送單、成交核對與正式帳本。
 
 ```text
