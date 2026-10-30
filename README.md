@@ -1,6 +1,6 @@
 # Japan Support Desk：日股尋標與人工決策
 
-目前版本0.8.0，工作分支 `codex/japan-support-desk-phase1`。依2026-10-29最新需求，預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
+目前版本0.9.0，工作分支 `codex/japan-support-desk-phase1`。依2026-10-29最新需求，預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
 
 ```mermaid
 flowchart LR
@@ -86,17 +86,19 @@ python -m support_scout pattern-case
 
 預設 `shared_once`：研究員搜尋一次，反證員取得同份來源事實與缺口，不帶研究員結論。保存行情的同快照比較，研究輸入bytes減少約80%，但**不是計費tokens減少80%**；實際tokens採API usage。2026-10-29固定20檔驗證共3次模型請求、49,493 tokens（含工具內容），其中反證員沒有再次搜尋。見[JSON協定與量測](docs/communication-protocol.md)。
 
-## 成交回報與提醒
+## Python決策總表、成交回報與提醒
+
+0.9.0新增Python決策總表，顯示哪檔、買進／等待條件、建議金額／換算股數與情境虧損。個人本金及風險設定在忽略的 `local_data/sizing_settings.json`；初次每檔上限25%（可調）、多檔共享資金及新風險預算。只有條件式試單才給正數，等待／不進場為0，已有持倉不自動加碼。PayPay價差已納入估算；換算小數股數不代表實際成交。見[部位試算](docs/position-sizing.md)。
 
 本機頁面填入代號、買賣、股數、實際價格、費用與日期，再勾「我確認已實際成交」才影響持倉。未勾選、研究建議與未回報交易均不視為成交。Python產生持倉JSON供下輪分析，保留成本與日期；可填固定失效價。持倉結論為HOLD、REDUCE_REVIEW、EXIT_REVIEW或REVIEW，缺原風險基準時不硬判續抱或賣出。見[持倉協定](docs/manual-portfolio.md)。
 
-決策有意義變更時寫入通知佇列，同狀態不重複；Gmail寄收地址相同。本次使用者已重新授權寄送並指定ENV的DEVICEPW，設定只引用該欄，不輸出或提交密碼。應用程式憑證的連線測試已獲SMTP接受；指定ENV尚未讀到DEVICEPW時，正式決策仍保留待寄，不自動回退舊憑證。見[ENV與郵件設定](docs/email-env.md)。
+決策有意義變更時寫入通知佇列，同狀態不重複；Gmail寄收地址相同。本次使用者已重新授權寄送並指定ENV的GOOGLE_DEVEICE_PW，設定只引用該欄，不輸出或提交密碼。應用程式憑證的連線測試已獲SMTP接受；完整欄位已按使用者更正，僅從指定ENV讀GOOGLE_DEVEICE_PW；2026-10-30正式摘要信已獲SMTP接受，未輸出或提交憑證。見[ENV與郵件設定](docs/email-env.md)。
 
 ```powershell
 python -m support_scout notify-status
 ```
 
-使用 `notify-configure 你的地址 --env-file ENV完整路徑` 明確引用DEVICEPW；舊式本機憑證仍可用 `EmailSetup.cmd` 隱藏輸入Google應用程式密碼（不是登入密碼）。`notify-flush` 寄出待寄事件；SMTP結果不明會保留UNKNOWN，不自動重寄。詳見[操作手冊](docs/observation-runbook.md)。
+使用 `notify-configure 你的地址 --env-file ENV完整路徑 --password-key GOOGLE_DEVEICE_PW` 明確引用GOOGLE_DEVEICE_PW；舊式本機憑證仍可用 `EmailSetup.cmd` 隱藏輸入Google應用程式密碼（不是登入密碼）。`notify-flush` 寄出待寄事件；SMTP結果不明會保留UNKNOWN，不自動重寄。詳見[操作手冊](docs/observation-runbook.md)。
 
 ## 決策與資料界線
 

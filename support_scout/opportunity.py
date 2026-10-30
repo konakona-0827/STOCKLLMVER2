@@ -9,7 +9,7 @@ DEFAULT_POLICY = Path(__file__).resolve().parent.parent / "config" / "opportunit
 ACTIONS = {"PROBE_BUY_REVIEW", "WAIT", "AVOID"}
 STAGES = {"SUPPORT_HELD", "SUPPORT_RECLAIMED"}
 LABELS = {"PROBE_BUY_REVIEW": "積極：可評估條件式試單", "WAIT": "機會評估：等待", "AVOID": "機會評估：暫不進場"}
-DERIVED = {"trade_decision", "manual_action", "opportunity_decision"}
+DERIVED = {"trade_decision", "manual_action", "opportunity_decision", "execution_plan"}
 
 
 def load_policy(value=None):

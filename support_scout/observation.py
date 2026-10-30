@@ -164,6 +164,8 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 bundle["communication_policy"] = load_communication()
                 from .opportunity import load_policy as load_opportunity
                 bundle["opportunity_policy"] = load_opportunity()
+                from .sizing import load_settings as load_sizing
+                bundle["sizing_policy"] = load_sizing(db_path.parent / "sizing_settings.json")
             if fill_history is not None:
                 from .portfolio import snapshot as portfolio_snapshot
                 bundle["portfolio_snapshot"] = portfolio_snapshot(fill_history, bundle["as_of"])
@@ -250,6 +252,9 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 if "portfolio_snapshot" in report:
                     from .portfolio import attach_manual_actions
                     attach_manual_actions(report)
+                if "sizing_policy" in report:
+                    from .sizing import attach_execution_plans
+                    attach_execution_plans(report, report["sizing_policy"])
             degraded = not data_ready or (agents and agent_status in {"FAILED", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}) or bool(summary.get("errors"))
             report["observation"]["status"] = "DEGRADED" if degraded else "OBSERVATION_READY"
             code = 2 if rejected == len(report["securities"]) else 3 if degraded else 0
@@ -268,6 +273,10 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                     values["communication_policy.json"] = bundle["communication_policy"]
                 if "opportunity_policy" in bundle:
                     values["opportunity_policy.json"] = bundle["opportunity_policy"]
+                if "sizing_policy" in bundle:
+                    values["sizing_policy.json"] = bundle["sizing_policy"]
+                    values["decision_brief.json"] = report["decision_brief"]
+                    manifest["sizing_policy_digest"] = digest(bundle["sizing_policy"])
                 if "portfolio_snapshot" in bundle:
                     values["portfolio_snapshot.json"] = bundle["portfolio_snapshot"]
                 manifest["pattern_registry_digest"] = digest(bundle["pattern_registry"])

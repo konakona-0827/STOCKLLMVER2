@@ -198,13 +198,28 @@ def render_html(report: dict, bundle: dict) -> str:
         active_html = (f'<div class="banner"><b>積極人工機會評估</b> · 可評估試單 {counts.get("PROBE_BUY_REVIEW",0)} · '
             f'等待 {counts.get("WAIT",0)} · 暫不進場 {counts.get("AVOID",0)}。'
             '三角色共同評估H-002；與原正式交易資格分開，未核實事項須人工核對。</div>')
+    brief_html = ""
+    brief = report.get("decision_brief")
+    if brief:
+        brief_rows = "".join(f'<tr><td>{escape(p["symbol"])}<br><small>{escape(p["name"])}</small></td>'
+            f'<td>{escape(p["label"])}</td><td>{escape(p["entry_condition"])}</td>'
+            f'<td>{fmt(p["suggested_amount_jpy"])}</td><td>{fmt(p["suggested_shares"])}</td>'
+            f'<td>{fmt(p["entry_reference"])} / {fmt(p["invalidation_reference"])} / {fmt(p["target_reference"])}</td>'
+            f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(p["sizing_status"])}</td></tr>' for p in brief["rows"])
+        brief_html = (f'<section id="decision-brief"><h2>Python 決策總表：標的、條件與建議金額</h2>'
+            f'<p>本金 {fmt(brief["capital_jpy"])} JPY；單筆情境虧損上限 {fmt(brief["per_trade_risk_budget_jpy"])} JPY；'
+            f'本輪建議新增投入 {fmt(brief["proposed_total_jpy"])} JPY。</p>'
+            f'<p>初次試單每檔最多本金{report["sizing_policy"]["max_position_fraction"]:.0%}（設定可調）。金額指定的股數只是估算，尚待核對券商可交易名單；'
+            '未符合進場條件即為0。資金由你設定及確認成交推算，不是券商餘額，跳空可能超過情境虧損。</p>'
+            '<div class="scroll"><table><thead><tr><th>標的</th><th>結論</th><th>怎麼買／等待條件</th><th>建議JPY</th><th>換算股數</th>'
+            '<th>進場／失效／主要阻力</th><th>情境虧損JPY</th><th>試算狀態</th></tr></thead><tbody>' + brief_rows + '</tbody></table></div></section>')
     return f'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Support Desk {market_label}觀察 {escape(latest)}</title><style>
 body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margin:0}}main{{max-width:1500px;margin:auto;padding:30px}}h1{{margin-bottom:6px}}.sub,small{{color:#607185}}.banner{{background:#fff4d7;border-left:4px solid #b58222;padding:16px;margin:22px 0}}.metrics{{display:flex;gap:12px;flex-wrap:wrap}}.metrics div,article{{background:white;padding:18px;border:1px solid #dde4eb;border-radius:8px}}.metrics b{{display:block;font-size:20px}}.scroll{{overflow:auto;background:white;margin:24px 0}}table{{border-collapse:collapse;min-width:1000px;width:100%}}th,td{{text-align:left;padding:12px;vertical-align:top;border-bottom:1px solid #e4e9ed}}th{{background:#eaf0f5}}.notes{{font-size:13px;max-width:360px;color:#536579}}article{{margin:14px 0}}article svg{{max-width:440px;width:100%;height:130px}}a{{color:#246b9b}}input{{padding:10px;width:260px;border:1px solid #c7d1db;border-radius:4px}}.warn{{color:#9d3c29}}footer{{margin:30px 0;color:#607185}}
 </style><main><h1>Support Desk · {market_label}支撐決策</h1><div class="sub">快照截止 JST {escape(jst)} · 日線日期依{market_date_label} · 本地收盤觀察，非即時報價</div>
 <div class="banner"><b>{badge}</b>　{escape(banner)} 型態與價位皆為暫定觀察；雙 Agent 同意也不會解除缺口。分數不是勝率。</div>
 <div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(collection.get('status','UNKNOWN'))}</b>{escape(scope_label)}</div><div>觀察執行<b>{escape(status)}</b>模型 {escape(model)}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div>{decision_metrics}</div>
-{active_html}{search_html}
+{active_html}{brief_html}{search_html}
 {wire_html}<p><a href="http://127.0.0.1:8765/">本機成交／持倉頁面</a>（先啟動 Dashboard.cmd；只有確認實際成交才更新持倉）</p>
 <h2>觀察名單與失效條件</h2><input id="filter" placeholder="搜尋代號、名稱或狀態" aria-label="篩選觀察表">
 <div class="scroll"><table><thead><tr><th>標的</th><th>型態</th><th>收盤</th><th>暫定支撐區</th><th>距離上緣</th><th>結論</th><th>候選來源</th><th>跨日變化</th><th>待確認</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>

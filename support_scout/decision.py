@@ -173,7 +173,7 @@ def attach_decisions(report: dict, bundle: dict, *, policy: DecisionPolicy | Non
     """
     policy = policy or DecisionPolicy()
     securities = report.get("securities", [])
-    projection = [{k: v for k, v in item.items() if k not in {"trade_decision", "manual_action", "opportunity_decision"}} for item in securities]
+    projection = [{k: v for k, v in item.items() if k not in {"trade_decision", "manual_action", "opportunity_decision", "execution_plan"}} for item in securities]
     integrity = digest([o.get("packet_id", o) for o in projection]) == report.get("snapshot_id")
     integrity = integrity and (report.get("synthetic") is True) == (bundle.get("synthetic") is True)
     integrity = integrity and (report.get("observation_only") is True) == (bundle.get("observation_only") is True)

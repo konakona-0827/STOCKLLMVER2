@@ -107,7 +107,7 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
     rows = initial_report.get("securities")
     if not isinstance(rows, list):
         raise DataError("SEARCH_SECURITIES_REQUIRED")
-    projection = [{k: v for k, v in row.items() if k not in {"trade_decision", "manual_action", "opportunity_decision"}} for row in rows]
+    projection = [{k: v for k, v in row.items() if k not in {"trade_decision", "manual_action", "opportunity_decision", "execution_plan"}} for row in rows]
     if digest([row.get("packet_id", row) for row in projection]) != initial_report.get("snapshot_id"):
         raise DataError("SEARCH_SOURCE_SNAPSHOT_INTEGRITY_FAILED")
     outputs = {row["packet_id"]: row for row in rows if row.get("packet_id")}

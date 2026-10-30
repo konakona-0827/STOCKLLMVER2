@@ -10,11 +10,39 @@ import unittest
 from unittest.mock import patch
 
 from support_scout.contracts import DataError
-from support_scout.notifications import configure, load_config, _password, email_status, flush, enqueue_report, after_report
+from support_scout.notifications import configure, load_config, _password, email_status, flush, enqueue_report, after_report, decision_email_text
 from support_scout.storage import atomic_json
 
 
 class DevicePasswordTests(unittest.TestCase):
+    def test_user_exact_google_key_reads_only_the_selected_field(self):
+        self.env.write_text('DEVICEPW=wrong-value\nGOOGLE_DEVEICE_PW="abcd efgh ijkl mnop"\n', encoding='utf-8')
+        configure('test@example.com', self.config, secret_env_file=self.env, password_env='GOOGLE_DEVEICE_PW')
+        self.assertEqual(_password(load_config(self.config)), 'abcdefghijklmnop')
+        self.assertEqual(email_status(self.config,self.db)['status'], 'READY')
+
+    def test_email_has_human_amount_and_conditions_without_raw_json(self):
+        body=decision_email_text({'symbol':'9001.T','action':'WAIT','as_of':'2026-10-29T16:00:00+09:00',
+            'decision_brief':{'name':'人造公司','label':'等待','suggested_amount_jpy':0,'suggested_shares':0,
+                'entry_condition':'等待守住支撐','estimated_loss_jpy':0,'risk_budget_jpy':10000}})
+        self.assertIn('建議新增投入：0.00 日圓',body)
+        self.assertIn('等待守住支撐',body)
+        self.assertIn('人造公司',body)
+        self.assertNotIn('"decision_brief"',body)
+
+    def test_only_timestamp_changes_do_not_renotify_and_new_state_supersedes_pending(self):
+        r={'synthetic':False,'as_of':'2026-10-28T16:00:00+09:00','desk':{'mode':'openai','selected_symbols':['9001.T']},
+            'securities':[{'symbol':'9001.T','execution_plan':{'action':'WAIT','as_of':'2026-10-28T16:00:00+09:00','suggested_amount_jpy':0},
+                'trade_decision':{'conclusion':'WAIT','reason_codes':[]}}]}
+        self.assertEqual(len(enqueue_report(r,self.root/'report.html',self.db)['queued']),1)
+        r['as_of']='2026-10-29T16:00:00+09:00';r['securities'][0]['execution_plan']['as_of']=r['as_of']
+        self.assertEqual(enqueue_report(r,self.root/'report.html',self.db)['queued'],[])
+        r['securities'][0]['trade_decision']['conclusion']='NO_TRADE'
+        self.assertEqual(len(enqueue_report(r,self.root/'report.html',self.db)['queued']),1)
+        db=sqlite3.connect(self.db)
+        self.assertEqual(dict(db.execute('SELECT status,count(*) FROM events GROUP BY status')),{'PENDING':1,'SUPERSEDED':1})
+        db.close()
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)

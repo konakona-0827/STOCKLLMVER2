@@ -29,7 +29,9 @@ def main(argv=None) -> int:
     local.add_argument("--port", type=int, default=8765)
     mail = sub.add_parser("notify-configure", help="設定同一Gmail寄件／收件地址；不接受命令列密碼")
     mail.add_argument("email")
-    mail.add_argument("--env-file", type=Path, help="只讀明確指定ENV中的DEVICEPW，不複製整份ENV")
+    mail.add_argument("--env-file", type=Path, help="只讀明確指定ENV的寄信密碼欄位，不複製整份ENV")
+    mail.add_argument("--password-key", choices=("DEVICEPW", "GOOGLE_DEVEICE_PW", "JP_DESK_GMAIL_APP_PASSWORD"),
+        help="明確指定已授權的ENV欄位名，不接受密碼值")
     sub.add_parser("notify-status", help="通知佇列與寄信設定狀態，不輸出憑證")
     sub.add_parser("notify-flush", help="寄送待寄決策事件，未設定Gmail憑證則保留佇列")
     real_case = sub.add_parser("advantest-case", help="真實Advantest近兩週前綴重算，含歷史時點限制")
@@ -107,7 +109,7 @@ def main(argv=None) -> int:
         if args.command in {"notify-configure", "notify-status", "notify-flush"}:
             from .notifications import configure, email_status, flush
             if args.command == "notify-configure":
-                configure(args.email, secret_env_file=args.env_file)
+                configure(args.email, secret_env_file=args.env_file, password_env=args.password_key)
             result = flush() if args.command == "notify-flush" else email_status()
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0

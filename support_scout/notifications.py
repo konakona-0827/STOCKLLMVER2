@@ -17,15 +17,20 @@ from .storage import atomic_json
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = ROOT / "local_data" / "email_settings.json"
 DEFAULT_DB = ROOT / "local_data" / "notifications.sqlite3"
+ENV_PASSWORD_KEYS = {"DEVICEPW", "GOOGLE_DEVEICE_PW", "JP_DESK_GMAIL_APP_PASSWORD"}
 
 
-def configure(address, path=DEFAULT_CONFIG, *, secret_env_file=None):
+def configure(address, path=DEFAULT_CONFIG, *, secret_env_file=None, password_env=None):
     if not isinstance(address, str) or not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", address):
         raise DataError("INVALID_NOTIFICATION_EMAIL")
     value = {"schema_version": 1, "enabled": True, "sender": address, "recipient": address,
         "password_env": "JP_DESK_GMAIL_APP_PASSWORD", "password_file": str((Path(path).parent / "gmail_app_password.txt").resolve())}
     if secret_env_file is not None:
         value.update(password_env="DEVICEPW", secret_env_file=str(Path(secret_env_file).expanduser().resolve()))
+    if password_env is not None:
+        if password_env not in ENV_PASSWORD_KEYS:
+            raise DataError("INVALID_EMAIL_SECRET_REFERENCE")
+        value["password_env"] = password_env
     atomic_json(Path(path), value)
     return value
 
@@ -42,23 +47,26 @@ def load_config(path=DEFAULT_CONFIG):
         if not isinstance(value[field], str) or not re.fullmatch(r"[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+", value[field]):
             raise DataError("INVALID_NOTIFICATION_EMAIL")
     if (not isinstance(value["password_env"], str)
-            or not re.fullmatch(r"JP_DESK_[A-Z_]+|DEVICEPW", value["password_env"])
+            or not re.fullmatch(r"JP_DESK_[A-Z_]+|DEVICEPW|GOOGLE_DEVEICE_PW", value["password_env"])
             or not isinstance(value["password_file"], str)):
         raise DataError("INVALID_EMAIL_SECRET_REFERENCE")
     if "secret_env_file" in value:
-        if not isinstance(value["secret_env_file"], str) or not value["secret_env_file"].strip():
+        if (not isinstance(value["secret_env_file"], str) or not value["secret_env_file"].strip()
+                or value["password_env"] not in ENV_PASSWORD_KEYS):
             raise DataError("INVALID_EMAIL_SECRET_REFERENCE")
         selected = Path(value["secret_env_file"]).expanduser()
         value["secret_env_file"] = str((selected if selected.is_absolute() else Path(path).parent / selected).resolve())
     return value
 
 
-def _device_password(path):
+def _device_password(path, password_env="DEVICEPW"):
     """Read one explicitly authorized dotenv field; never import other settings.
 
     This parser intentionally does not perform interpolation, escapes, shell
     evaluation, or automatic discovery of other .env files.
     """
+    if password_env not in ENV_PASSWORD_KEYS:
+        return "", "GMAIL_ENV_KEY_NOT_ALLOWED"
     found = None
     try:
         with Path(path).open(encoding="utf-8-sig") as stream:
@@ -67,32 +75,32 @@ def _device_password(path):
                 if not line or line.startswith("#") or "=" not in line:
                     continue
                 key, value = line.removeprefix("export ").split("=", 1)
-                if key.strip().casefold() != "devicepw":
+                if key.strip().casefold() != password_env.casefold():
                     continue
                 if found is not None:
-                    return "", "DEVICEPW_DUPLICATE"
+                    return "", password_env + "_DUPLICATE"
                 value = value.strip()
                 if value.startswith(("'", '"')):
                     quote = value[0]
                     closing = value.find(quote, 1)
                     if closing < 0 or (value[closing + 1:].strip() and not value[closing + 1:].lstrip().startswith("#")):
-                        return "", "DEVICEPW_INVALID_FORMAT"
+                        return "", password_env + "_INVALID_FORMAT"
                     value = value[1:closing]
                 else:
                     value = value.split(" #", 1)[0].strip()
                 found = value
     except (OSError, UnicodeError):
-        return "", "DEVICEPW_ENV_FILE_UNREADABLE"
-    return (found, None) if found is not None else ("", "DEVICEPW_NOT_CONFIGURED")
+        return "", password_env + "_ENV_FILE_UNREADABLE"
+    return (found, None) if found is not None else ("", password_env + "_NOT_CONFIGURED")
 
 
 def _password_details(config):
     value = os.environ.get(config["password_env"], "")
     source, error = "PROCESS_ENV", None
-    validate_device = config["password_env"] == "DEVICEPW"
+    validate_device = config["password_env"] in {"DEVICEPW", "GOOGLE_DEVEICE_PW"}
     if not value and config.get("secret_env_file"):
-        value, error = _device_password(config["secret_env_file"])
-        source, validate_device = "DEVICEPW_ENV_FILE", True
+        value, error = _device_password(config["secret_env_file"], config["password_env"])
+        source, validate_device = ("DEVICEPW_ENV_FILE" if config["password_env"] == "DEVICEPW" else "AUTHORIZED_ENV_FILE"), True
     elif not value:
         source = "LEGACY_PASSWORD_FILE"
         try:
@@ -101,7 +109,7 @@ def _password_details(config):
             return "", source, "GMAIL_PASSWORD_FILE_UNREADABLE"
     value = value.replace(" ", "").strip()
     if not error and validate_device and not re.fullmatch(r"[A-Za-z0-9]{16}", value):
-        error = "DEVICEPW_INVALID_FORMAT" if value else "DEVICEPW_NOT_CONFIGURED"
+        error = config["password_env"] + ("_INVALID_FORMAT" if value else "_NOT_CONFIGURED")
     return value, source if value or error else "NOT_CONFIGURED", error
 
 
@@ -152,6 +160,8 @@ def enqueue_report(report, report_path, db_path=DEFAULT_DB):
                 "reasons": sorted(decision.get("reason_codes", []))}
             if opportunity:
                 stable["opportunity_decision"] = opportunity
+            if item.get("execution_plan"):
+                stable["decision_brief"] = {k: deepcopy(v) for k,v in item["execution_plan"].items() if k != "as_of"}
             fingerprint = digest(stable)
             previous = db.execute("SELECT fingerprint,as_of FROM states WHERE symbol=?", (item["symbol"],)).fetchone()
             if previous and (epoch < previous[1] or previous[0] == fingerprint):
@@ -160,6 +170,13 @@ def enqueue_report(report, report_path, db_path=DEFAULT_DB):
             payload = {**stable, "as_of": report["as_of"], "summary": decision.get("summary", ""),
                 "reference_plan": decision.get("reference_plan"), "position": held.get(item["symbol"]),
                 "report": str(Path(report_path).resolve()), "execution_enabled": False}
+            if report.get("decision_brief"):
+                payload["budget"] = {k: report["decision_brief"][k] for k in ("capital_jpy", "per_trade_risk_budget_jpy",
+                    "proposed_total_jpy", "proposed_loss_scenario_jpy", "available_cash_estimate_jpy")}
+                payload["desk_counts"] = deepcopy(report.get("opportunity_summary", {}).get("counts", {}))
+            # A newer state replaces an unsent older recommendation, while its
+            # audit record stays available. Never resend uncertain delivery.
+            db.execute("UPDATE events SET status='SUPERSEDED' WHERE symbol=? AND status='PENDING'", (item["symbol"],))
             db.execute("INSERT OR IGNORE INTO events VALUES(?,?,?,?,?,?,?)",
                 (event_id, item["symbol"], report["as_of"], json.dumps(payload, ensure_ascii=False, allow_nan=False), "PENDING", None, None))
             db.execute("INSERT OR REPLACE INTO states VALUES(?,?,?)", (item["symbol"], fingerprint, epoch))
@@ -183,10 +200,39 @@ def email_status(config_path=DEFAULT_CONFIG, db_path=DEFAULT_DB):
     value, source, error = _password_details(config) if config else ("", "NOT_CONFIGURED", None)
     ready = bool(config and config["enabled"] and value and not error)
     status = ("DISABLED" if not config or not config["enabled"] else "READY" if ready else
-        "NEEDS_GMAIL_APP_PASSWORD" if error in {None, "DEVICEPW_NOT_CONFIGURED"} else "GMAIL_CREDENTIAL_SOURCE_ERROR")
+        "NEEDS_GMAIL_APP_PASSWORD" if error is None or error.endswith("_NOT_CONFIGURED") else "GMAIL_CREDENTIAL_SOURCE_ERROR")
     return {"status": status, "recipient": config["recipient"] if config else None,
         "credential_source": source, "credential_configured": bool(value and not error),
         "credential_error": error, "counts": counts, "execution_enabled": False}
+
+
+def decision_email_text(value):
+    brief = value.get("decision_brief") or {}
+    budget = value.get("budget") or {}
+    number = lambda x: f"{x:,.2f}" if type(x) in (int, float) else "待確認"
+    lines = ["日股三Agent決策摘要（人工操作，沒有自動下單）", "資料截止：" + value.get("as_of", "待確認"), "",
+        f"標的：{value.get('symbol','—')} {brief.get('name','')}",
+        "結論：" + brief.get("label", value.get("action", "等待核對")),
+        "建議新增投入：" + number(brief.get("suggested_amount_jpy")) + " 日圓",
+        "換算股數：" + number(brief.get("suggested_shares")) + " 股（金額指定僅為換算）",
+        "買進條件：" + brief.get("entry_condition", "沒有完整進場計畫，不依此通知買進。"), "",
+        "參考進場：" + number(brief.get("entry_reference")),
+        "固定失效價：" + number(brief.get("invalidation_reference")),
+        "主要阻力參考：" + number(brief.get("target_reference")),
+        "本筆情境虧損：" + number(brief.get("estimated_loss_jpy")) + " 日圓",
+        "單筆虧損上限：" + number(budget.get("per_trade_risk_budget_jpy", brief.get("risk_budget_jpy"))) + " 日圓",
+        "資金設定：" + number(budget.get("capital_jpy")) + " 日圓（非券商餘額）",
+        "試算狀態：" + brief.get("sizing_status", "尚未建立"), "",
+        "判斷說明：" + value.get("summary", "詳見報告。")]
+    if value.get("desk_counts"):
+        c = value["desk_counts"]
+        lines.extend(["", f"本輪：可評估試單 {c.get('PROBE_BUY_REVIEW',0)} 檔、等待 {c.get('WAIT',0)} 檔、暫不進場 {c.get('AVOID',0)} 檔。"])
+    checks = brief.get("manual_checks", [])
+    if checks:
+        lines.extend(["", "人工核對：", *["- " + x for x in checks]])
+    lines.extend(["", "參考價需依下一交易時段重算；失效價不是保證成交的停損單，跳空可能超過情境虧損。",
+        "只有你確認實際成交後才更新持倉。", "本機報告：" + value.get("report", "—")])
+    return "\n".join(lines)
 
 
 def send_email(event, config):
@@ -199,8 +245,7 @@ def send_email(event, config):
     message["Subject"] = f"[日股決策] {value['symbol']} · {value['action']}"
     message["Message-ID"] = f"<{event['id']}@japan-support-desk.local>"
     message["Date"] = format_datetime(datetime.now(timezone.utc))
-    message.set_content("日股三Agent決策更新（人工評估，沒有自動下單）\n\n" +
-        json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False))
+    message.set_content(decision_email_text(value))
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15, context=ssl.create_default_context()) as smtp:
         smtp.login(config["sender"], password)
         smtp.send_message(message)

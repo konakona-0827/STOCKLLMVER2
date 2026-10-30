@@ -33,9 +33,12 @@ class FixedPoolTests(unittest.TestCase):
     def test_failed_stock_manual_actions_do_not_break_search_snapshot_identity(self):
         bundle=demo_bundle()
         bundle['portfolio_snapshot']=snapshot({'schema_version':1,'fills':[]},bundle['as_of'])
+        from support_scout.sizing import load_settings
+        bundle['sizing_policy']=load_settings()
         result=run(bundle)
         self.assertEqual(result['securities'][-1]['data_status'],'REJECTED')
         self.assertIn('manual_action',result['securities'][-1])
+        self.assertIn('execution_plan',result['securities'][-1])
         make_search_packet(result,{'universe_id':'test','symbols':[s['symbol'] for s in bundle['securities']]})
         attach_decisions(result,bundle)
         self.assertNotIn('SNAPSHOT_INTEGRITY_FAILED',result['securities'][0]['trade_decision']['reason_codes'])

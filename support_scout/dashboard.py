@@ -22,7 +22,7 @@ PANEL = '''<style>
 <h2>手動成交回報與持倉</h2><p>這裡只記錄你已在券商完成的交易；沒有下單能力。未勾選確認，不計入持倉。回報會供下一輪三Agent判斷使用。</p>
 <form id="fill-form"><label>代號 <input name="symbol" placeholder="6857" required></label>
 <label>方向 <select name="side"><option>BUY</option><option>SELL</option></select></label>
-<label>股數 <input name="quantity" type="number" min="1" step="1" required></label>
+<label>股數（可填零股） <input name="quantity" type="number" min="0.00000001" step="any" required></label>
 <label>每股成交價 JPY <input name="price" type="number" min="0.001" step="any" required></label>
 <label>手續費 JPY <input name="fees" type="number" min="0" step="any" value="0"></label>
 <label>成交日期時間 JST <input name="filled_at" type="datetime-local" required></label>

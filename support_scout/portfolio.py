@@ -54,7 +54,8 @@ def _validate(entry):
     entry["symbol"] = normalize_symbol(entry["symbol"])
     if not isinstance(entry["side"], str) or entry["side"] not in {"BUY", "SELL"} or type(entry["confirmed"]) is not bool:
         raise DataError("MANUAL_FILL_SIDE_OR_CONFIRMATION")
-    if type(entry["quantity"]) is not int or not 1 <= entry["quantity"] <= 10_000_000:
+    if (not _money(entry["quantity"]) or entry["quantity"] > 10_000_000
+            or Decimal(str(entry["quantity"])).as_tuple().exponent < -8):
         raise DataError("MANUAL_FILL_QUANTITY")
     if not _money(entry["price"]) or not _money(entry["fees"], zero=True):
         raise DataError("MANUAL_FILL_PRICE_OR_FEES")
@@ -102,9 +103,9 @@ def load_fills(path):
 def _positions(rows):
     positions = {}
     for row in sorted(rows, key=lambda r: (timestamp(r["filled_at"]), r["sequence"])):
-        p = positions.setdefault(row["symbol"], {"quantity": 0, "cost": Decimal(0), "opened_at": None,
+        p = positions.setdefault(row["symbol"], {"quantity": Decimal(0), "cost": Decimal(0), "opened_at": None,
             "risk_reference": None, "risk_reference_status": "NOT_PROVIDED"})
-        qty, price, fees = row["quantity"], Decimal(str(row["price"])), Decimal(str(row["fees"]))
+        qty, price, fees = Decimal(str(row["quantity"])), Decimal(str(row["price"])), Decimal(str(row["fees"]))
         if row["side"] == "BUY":
             reference = row.get("risk_reference")
             if not p["quantity"]:
@@ -122,7 +123,7 @@ def _positions(rows):
             p["quantity"] -= qty
             p["cost"] -= qty * average
         p["last_fill_at"] = row["filled_at"]
-    return {symbol: {"symbol": symbol, "quantity": p["quantity"], "currency": "JPY",
+    return {symbol: {"symbol": symbol, "quantity": int(p["quantity"]) if p["quantity"] == p["quantity"].to_integral_value() else float(p["quantity"]), "currency": "JPY",
         "average_cost": float(p["cost"] / p["quantity"]), "total_cost": float(p["cost"]),
         "opened_at": p["opened_at"], "last_fill_at": p["last_fill_at"], "source": SOURCE,
         "risk_reference": deepcopy(p["risk_reference"]), "risk_reference_status": p["risk_reference_status"]}

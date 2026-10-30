@@ -44,6 +44,14 @@ def holding_report(path, *, reference=None, views=("HOLD", "HOLD"), unknown_cont
 
 
 class ManualLedgerTests(unittest.TestCase):
+    def test_fractional_fills_use_decimal_quantity_without_false_oversell(self):
+        self.add(fill('fraction1', quantity=.1))
+        self.add(fill('fraction2', quantity=.2))
+        self.add(fill('fraction3', side='SELL', quantity=.3))
+        self.assertEqual(read_snapshot(self.path, '2026-09-01T12:00:00+09:00')['positions'], {})
+        for q in (1e-9, float('inf'), float('nan'), True):
+            with self.assertRaises(DataError):self.add(fill('fraction4', quantity=q))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.path = Path(self.temp.name)/"fills.json"

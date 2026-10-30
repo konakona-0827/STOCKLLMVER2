@@ -72,6 +72,10 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         from .communication import load_policy as load_communication
         communication_policy = load_communication(bundle["communication_policy"])
     portfolio = deepcopy(bundle.get("portfolio_snapshot"))
+    sizing_policy = None
+    if "sizing_policy" in bundle:
+        from .sizing import load_settings as load_sizing
+        sizing_policy = load_sizing(bundle["sizing_policy"])
     if portfolio is not None:
         from .portfolio import verify_snapshot
         portfolio = verify_snapshot(portfolio, as_of=cutoff.isoformat())
@@ -219,6 +223,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         report["opportunity_policy"] = opportunity_policy
     if portfolio is not None:
         report["portfolio_snapshot"] = portfolio
+    if sizing_policy is not None:
+        report["sizing_policy"] = sizing_policy
     if market == "JP":
         from .decision import attach_decisions
         attach_decisions(report, bundle)
@@ -228,6 +234,9 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         if portfolio is not None:
             from .portfolio import attach_manual_actions
             attach_manual_actions(report)
+        if sizing_policy is not None:
+            from .sizing import attach_execution_plans
+            attach_execution_plans(report, sizing_policy)
     return report
 
 
@@ -278,5 +287,12 @@ def render_markdown(report: dict, *, include_decisions: bool = True) -> str:
                 m = pattern["metrics"]
                 ratio = m.get("volume_contraction_ratio")
                 lines.append(f"| {item['symbol']} | {pattern['pattern_id']} / {pattern['version']} | {pattern['stage_label']} | {m.get('no_new_low_sessions','—')} | {m.get('support_test_count','—')} | {round(ratio,3) if ratio is not None else '—'} |")
+        lines.append("")
+    if report.get("decision_brief"):
+        brief = report["decision_brief"]
+        lines.extend(["## Python 決策總表", "", f"設定本金：{brief['capital_jpy']} JPY；單筆情境虧損上限：{brief['per_trade_risk_budget_jpy']} JPY。", "",
+            "| 標的 | 結論 | 建議投入JPY | 估算股數 | 進場／失效／主要阻力 | 情境虧損JPY |", "|---|---|---:|---:|---|---:|"])
+        for p in brief["rows"]:
+            lines.append(f"|{p['symbol']}|{p['label']}|{p['suggested_amount_jpy']}|{p['suggested_shares']}|{p['entry_reference']} / {p['invalidation_reference']} / {p['target_reference']}|{p['estimated_loss_jpy']}|")
         lines.append("")
     return "\n".join(lines)
