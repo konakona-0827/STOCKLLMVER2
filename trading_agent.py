@@ -13,6 +13,7 @@ from config import now, redact
 from main import save_json
 import position_analyzer
 from web_research import search_audit
+from token_budget import compact
 
 AGENT_VERSION = 'agent-decision-v3-support-scout'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
@@ -43,7 +44,7 @@ def execution_metadata(model):
     except PackageNotFoundError:
         sdk_version = None
     digest = hashlib.sha256()
-    for name in ('trading_agent.py','agent_decision.py','analysis_service.py',
+    for name in ('trading_agent.py','token_budget.py','agent_decision.py','analysis_service.py',
                  'position_analyzer.py','execution/auto_advice_executor.py',
                  'support_scout/trading.py', 'support_scout/market_sessions.py',
                  'support_scout/agents.py', 'support_scout/support.py',
@@ -165,7 +166,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
     @function_tool
     def get_market_data(symbol:str)->dict:
         """Read fresh real market data and strategy evidence for one allowed symbol."""
-        return context.get_market_data(symbol)
+        return compact(context.get_market_data(symbol))
 
     @function_tool
     def get_portfolio()->dict:
@@ -175,7 +176,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
     @function_tool
     def get_trade_history()->list:
         """Read thirty recent attempts/fills from the existing execution database."""
-        return context.get_trade_history()
+        return compact(context.get_trade_history())
 
     tools = [get_market_data, get_portfolio, get_trade_history]
     search = next((tool for tool in context.search_request.get('tools', [])
@@ -224,7 +225,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
                                                    response_include=context.search_request.get('include'),
                                                    max_tokens=min(24000,max(6000,len(context.candidates)*650))))
         result = await asyncio.wait_for(Runner.run(agent,
-            json.dumps(dict(input=context.initial_input,read_only=context.read_only),ensure_ascii=False),
+            json.dumps(dict(input=compact(context.initial_input),read_only=context.read_only),ensure_ascii=False,separators=(',', ':')),
             max_turns=max_turns,run_config=RunConfig(tracing_disabled=True)),timeout_seconds)
         save_json(context.log_path.with_name('agent_sdk_tools.json'),
                   [item.to_input_item() for item in result.new_items
@@ -276,7 +277,7 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
         if not 2<=turns<=60 or not 1<=timeout<=600:
             raise ValueError('INVALID_AGENT_LIMITS')
         decision,usage = asyncio.run((runner or sdk_run)(context,
-            AGENT_INSTRUCTIONS+'\n\n'+strategy_prompt,model,turns,timeout))
+            AGENT_INSTRUCTIONS+'\n日線傳輸採無損壓縮：daily_bars 若為 {columns, rows}，每列依 columns 對應欄位；所有價格、日期、來源及完整性意義不變。\n\n'+strategy_prompt,model,turns,timeout))
         response['api']['usage'] = usage
         response['raw_response'] = json.dumps(decision,ensure_ascii=False)
         if context.stopped() or not context.portfolio_read or not context.history_read:
