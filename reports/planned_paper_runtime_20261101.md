@@ -40,3 +40,10 @@ python -m quant_research.paper_dashboard --auto
 今天休市，尚未在真實開市時段確認券商登入／訂閱可用性；介面已接入本機既有唯讀券商路徑，錯誤會顯示並在後續輪次重試，不會轉成真實委託。A／B 模型仍採原本樣本下限，B 的長期樣本尤其可能不足；自動掃描啟用不代表明日必定有 Paper 成交。
 
 剩餘範圍：仍只有 19 檔實際候選池、尚無自動新聞／財報事件 feed、未知產業共用集中度上限、全年交易日曆僅有 2026 版本；不捏造隔年 T+2 日期。模擬成交仍是可觀察買賣盤 proxy，不等於交易所保證成交。
+
+## 最終提交與運行確認
+
+- 程式提交 `0ecc661` 以 `git archive` 匯出乾淨副本，未帶入使用者原有未提交修改，完整 **349／349 測試通過（55.910 秒）**。見 `planned_paper_runtime_clean_tests_20261101.txt`。
+- 已從該程式版本重新啟動視窗，PID **27868**，實際以 computer-use 驗證停止後為 OFF／STOPPED，再按開始後恢復 ON／WAIT_SESSION。這是驗證時間點的 PID，未表示永久不變。
+- 19 檔最新日線皆為 2026-10-30；最終筆數範圍 165～250，過期檔數 0。實盤開關 false、舊實盤排程 Disabled、GUI／工作執行緒存活、auto_enabled=true、錯誤清單空白。
+- 啟動時點證據在 `planned_paper_ready_20261101.json`；後續即時狀態以 `data/planned_paper/dashboard_status.json` 與實驗目錄的 `runtime.json` 為準。此後的文件提交不修改正在執行的策略程式。
