@@ -33,7 +33,7 @@ def willing_entry(candidate, rows, policy, at, qty):
     pullback = min(Decimal('.005'), Decimal(str(f['atr']))*Decimal('.25'))
     price = floor_stock_price(min(reference, ma5)*(1-pullback))
     expiry = aware(at).replace(hour=13, minute=30, second=0, microsecond=0).isoformat()
-    return PricePlan(plan_id=f"{policy.strategy}:{candidate['symbol']}:{aware(at).date()}:ENTRY",
+    return PricePlan(plan_id=f"{policy.strategy}:{candidate['symbol']}:{aware(at).isoformat()}:ENTRY",
         symbol=candidate['symbol'], side='BUY', qty=qty, limit_price=str(price),
         target_price=str(price*(1+Decimal(str(policy.target)))),
         stop_price=str(price*(1-Decimal(str(policy.stop)))), created_at=at, expires_at=expiry,
@@ -99,6 +99,8 @@ def cycle(path, data, bundle, policy, costs=Costs()):
     for symbol, p in snapshot['positions'].items():
         if symbol in active_symbols or symbol not in quotes:
             continue
+        if aware(p['at']).date() >= stamp.date():
+            continue  # no repeated same-day odd-lot exit proposals
         days = len([s for s in bundle.get('sessions', []) if p['at'][:10] < s <= stamp.date().isoformat()])
         signal, stop = exit_signal(p, quotes[symbol], days, policy,
                                   [b['close'] for b in data.get(symbol, []) if b['date'] < stamp.date().isoformat()])
@@ -107,7 +109,7 @@ def cycle(path, data, bundle, policy, costs=Costs()):
         if signal.startswith('SELL') and stamp.strftime('%H:%M:%S') < '13:30:00':
             try:
                 price = floor_stock_price(quotes[symbol]['bid'])
-                plan = PricePlan(f'{policy.strategy}:{symbol}:{stamp.date()}:EXIT', symbol,
+                plan = PricePlan(f'{policy.strategy}:{symbol}:{stamp.isoformat()}:EXIT', symbol,
                     'SELL', p['qty'], str(price), str(p['target']), str(stop), at,
                     stamp.replace(hour=13, minute=30, second=0, microsecond=0).isoformat(),
                     signal, 'planned-exit-v1', 'deterministic-exit-v1')

@@ -31,6 +31,12 @@ class LiveAgentIntegrationTests(unittest.TestCase):
             (root/'config').mkdir()
             for file in ('scan_rules.json','execution_live.json'):
                 shutil.copyfile(ROOT/'config'/file,root/'config'/file)
+            # This test exercises a mocked LIVE path, independently of the
+            # user's real runtime switch (which is safely off for Paper).
+            mock_live_path = root/'config'/'execution_live.json'
+            mock_live = json.loads(mock_live_path.read_text(encoding='utf-8'))
+            mock_live['enabled'] = True
+            mock_live_path.write_text(json.dumps(mock_live), encoding='utf-8')
             (root/'config'/'universe_tw.json').write_text(json.dumps(dict(symbols=['0050'],etf_symbols=['0050'])),encoding='utf-8')
             prompt = root/'strategy.md'
             prompt.write_text('既有策略',encoding='utf-8')

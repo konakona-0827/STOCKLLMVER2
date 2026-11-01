@@ -36,10 +36,13 @@ def normalize_stock(stock, received_at):
                 open=price(getattr(stock, 'nOpen', 0)), high=price(getattr(stock, 'nHigh', 0)),
                 low=price(getattr(stock, 'nLow', 0)),
                 is_trial=bool(stock.nSimulate), quality=quality(stamp.isoformat(), received_at),
+                bid_size=(int(stock.nBc) if hasattr(stock, 'nBc') and int(stock.nBc) >= 0 else None),
+                ask_size=(int(stock.nAc) if hasattr(stock, 'nAc') and int(stock.nAc) >= 0 else None),
+                lot_type='INTRADAY_ODD_LOT', book_size_unit='shares',
                 evidence_id=f'CAPITAL:ODDLOT:{symbol}:{stamp.isoformat()}',
                 raw_fields={name: getattr(stock, name, None) for name in (
                     'bstrStockNo', 'bstrStockName', 'sDecimal', 'nClose', 'nBid', 'nAsk',
-                    'nRef', 'nOpen', 'nHigh', 'nLow', 'nTQty', 'nTradingDay', 'nDealTime', 'nTradingLotFlag', 'nSimulate')})
+                    'nRef', 'nOpen', 'nHigh', 'nLow', 'nTQty', 'nBc', 'nAc', 'nTradingDay', 'nDealTime', 'nTradingLotFlag', 'nSimulate')})
 
 
 class CapitalMarket:

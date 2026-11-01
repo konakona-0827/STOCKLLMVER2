@@ -256,3 +256,17 @@ class PlannedOrdersTests(unittest.TestCase):
             tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         db.close()
         self.assertEqual(tables, {'execution_attempts'})
+
+    def test_initial_stale_quote_does_not_block_a_fresh_reassessment_all_day(self):
+        c = dict(symbol='2330', passed=True, features=dict(ma={'5': 100}, atr=.02),
+                 prediction=dict(model_version='SYNTHETIC_TEST'))
+        data = {'2330': [dict(date='2026-10-30', close=101)]}
+        with patch('quant_research.planned_cycle.scan', return_value=[c]):
+            stale = dict(self.q, quote_status='LAST_KNOWN')
+            first = cycle(self.path, data, dict(at=self.at, quotes=[stale]), Policy('A'))
+            self.assertFalse(first['plans'])
+            self.assertTrue(first['rejected'])
+            q = quote('2026-11-02T10:05:00+08:00')
+            second = cycle(self.path, data, dict(at=q['quote_timestamp'], quotes=[q]), Policy('A'))
+            self.assertEqual(len(second['plans']), 1)
+            self.assertEqual(second['account']['orders'][0]['status'], 'ACKNOWLEDGED')

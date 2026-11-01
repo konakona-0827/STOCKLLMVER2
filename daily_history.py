@@ -94,7 +94,8 @@ def _fetch_month(symbol, month, cache_dir, as_of, *, require_turnover=False, min
             cached = None
     is_current = (month.year, month.month) == (as_of.year, as_of.month)
     complete_amounts = cached and all(bar.get('turnover_twd') is not None for bar in cached['bars'])
-    latest_present = (not minimum_latest or not is_current or
+    latest_month = (date.fromisoformat(minimum_latest).replace(day=1) if minimum_latest else None)
+    latest_present = (not minimum_latest or month != latest_month or
                       any(bar['date'] >= minimum_latest for bar in (cached or {}).get('bars', [])))
     if cached and latest_present and (not require_turnover or complete_amounts) and (not is_current or cached.get('fetched_at', '')[:10] == as_of.isoformat()):
         return cached.get('bars', []), None
@@ -147,8 +148,9 @@ def load_many(symbols, as_of=None, cache_dir=DEFAULT_CACHE, *, max_bars=MAX_BARS
     grouped = {symbol: {'bars': [], 'failed_months': []} for symbol in symbols}
     with ThreadPoolExecutor(max_workers=6) as pool:
         fetch_options = {'require_turnover': True} if require_turnover else {}
-        if completed_today:
-            fetch_options['minimum_latest'] = expected_latest
+        # Month rollover must also refresh the previous month's incomplete
+        # cache (e.g. Nov 1 still needs the Oct 30 completed session).
+        fetch_options['minimum_latest'] = expected_latest
         futures = {pool.submit(_fetch_month, symbol, month, cache_dir, as_of, **fetch_options): (symbol, month)
                    for symbol, month in jobs}
         for future in as_completed(futures):
