@@ -58,6 +58,7 @@ class AdviceIntent:
     # Optional future fields. Current advice_interface.py may not provide them.
     evidence_ids: tuple[str, ...] = ()
     amount_twd: Decimal | None = None
+    pricing_policy: str = "AT_QUOTE"
 
 
 @dataclass

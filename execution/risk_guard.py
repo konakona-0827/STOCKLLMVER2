@@ -46,6 +46,8 @@ class RiskConfig:
 
     # If True, BUY must have ask and SELL must have bid.
     require_executable_side_price: bool = True
+    # Opt-in only for the durable plan coordinator. Existing live paths stay off.
+    allow_planned_limits: bool = False
 
 
 @dataclass(frozen=True)
@@ -151,6 +153,18 @@ def _validate_quote(intent: AdviceIntent, quote: MarketQuote, cfg: RiskConfig) -
 
 
 def _choose_limit_price(intent: AdviceIntent, quote: MarketQuote, cfg: RiskConfig) -> Decimal:
+    if intent.pricing_policy not in ("AT_QUOTE", "PLANNED_LIMIT"):
+        raise RiskRejected('unknown pricing policy')
+    if intent.pricing_policy == 'PLANNED_LIMIT':
+        if not cfg.allow_planned_limits:
+            raise RiskRejected('planned limits require the order lifecycle coordinator')
+        price = intent.suggested_price
+        if price is None or not price.is_finite() or price <= 0:
+            raise RiskRejected('planned limit price must be positive and finite')
+        if (quote.bid is None or quote.ask is None or not quote.bid.is_finite()
+                or not quote.ask.is_finite() or not 0 < quote.bid <= quote.ask):
+            raise RiskRejected('planned limits require a valid current book')
+        return price
     if intent.side == Side.BUY:
         side_price = quote.ask
         field = "ask"

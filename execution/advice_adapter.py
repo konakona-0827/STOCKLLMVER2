@@ -206,6 +206,7 @@ def build_advice_intents(payload: Mapping[str, Any]) -> list[AdviceIntent]:
                 ai_managed_qty=ai_managed_qty,
                 evidence_ids=tuple(str(x) for x in evidence_ids if str(x).strip()),
                 amount_twd=_decimal(row.get("amount_twd"), f"{symbol}.amount_twd"),
+                pricing_policy=str(row.get('pricing_policy', 'AT_QUOTE')),
             )
         )
 

@@ -1,8 +1,22 @@
 # STOCKLLMVER2 · Support Scout 整合版
 
-分支：`codex/support-scout-architecture`。
+分支：`codex/planned-limit-orders`（由 `codex/support-scout-architecture` 分出）。
 
 此分支整合既有正式交易程式與 Support Scout 研究架構。正式交易底座取自 `fix/ai-sellable-ownership-display@46c020c`，已包含 `develop@363fe8f`、Agent 模式、券商對帳、AI／人工持股歸屬、資金及交易日修正。
+
+## 計畫限價委託（獨立 Paper，尚未切換實盤）
+
+新增「願意在多少價格買」的 A／B 交易計畫與等待中委託：先保存計畫、風控檢查與預留資金，後續可成交買賣盤符合限價時，才依模擬成交回報更新持倉。只看到 last price 或 K 線觸價不算成交。限價、有效期與取消條件不會隨每次行情查詢被改成當下賣一價。
+
+```powershell
+# 可重現的合成行情示範，不連券商／LLM
+python -m quant_research.limit_demo --output output/planned_demo.json
+# 使用已保存的零股報價 bundle（格式見 quant_research/planned_cycle.py）
+python -m quant_research.planned_cycle --bundle quotes.json --output data/planned_paper/experiment_001
+python -m unittest discover -s tests -p test_planned_limit_orders.py -v
+```
+
+此入口僅支援普通股盤中零股的 Paper 模擬，**不會送真實委託，也不會更改下方現有實盤入口或排程**。新的 `PLANNED_LIMIT` 定價模式在既有實盤風控預設關閉。完整規則、測試與限制見 [交付紀錄](reports/planned_orders_20261101.md)。
 
 ## 啟動
 
