@@ -282,7 +282,34 @@ def search_wire(packet):
                 source=c["opportunity_reference_plans"][pid]
                 for field in ("minimum_reward_risk", "exclude_broker_costs_for_selection"):
                     if field in source:plan[field]=source[field]
+    if any(isinstance(c.get("market_quote"),dict) for c in value["candidates"]):
+        factor_session_defaults(value)
     return value, CandidateAliases(mapping, packet["packet_id"]), wire_metrics(packet["core"], value, policy, role="search")
+
+
+def factor_session_defaults(value):
+    """Losslessly share repeated session metadata; retain every candidate."""
+    candidates=value["candidates"]
+    quotes=[c["market_quote"] for c in candidates if isinstance(c.get("market_quote"),dict)]
+    if quotes:
+        common={k:deepcopy(v) for k,v in quotes[0].items() if all(k in q and q[k]==v for q in quotes)}
+        if common:
+            value["shared_market_quote_fields"]=common
+            for q in quotes:
+                for k in common:q.pop(k)
+                q["defaults_ref"]="shared_market_quote_fields"
+    if candidates and all(c.get("support_model_boundaries")==candidates[0].get("support_model_boundaries") for c in candidates):
+        shared=candidates[0].get("support_model_boundaries")
+        if shared is not None:
+            value["shared_support_model_boundaries"]=deepcopy(shared)
+            for c in candidates:c["support_model_boundaries"]={"defaults_ref":"shared_support_model_boundaries"}
+    layouts={}
+    for c in candidates:
+        for pid,p in c.get("opportunity_reference_plans",{}).items():
+            keys=tuple(p)
+            if keys not in layouts:layouts[keys]="p"+str(len(layouts)+1)
+            c["opportunity_reference_plans"][pid]={"layout":layouts[keys],"values":[p[k] for k in keys]}
+    if layouts:value["plan_layouts"]={name:list(keys) for keys,name in layouts.items()}
 
 
 def wire_metrics(original, compact, policy, *, token_counter=None, role="review"):

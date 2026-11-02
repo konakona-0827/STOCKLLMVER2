@@ -267,7 +267,9 @@ class OpenAISearchProvider:
                         "以擴大研究覆蓋為目標，若有多個不同型態且可檢查的候選，優先用足max_selected；選中只是交付研究，不是買入推薦，仍可不足或空選。"
                         "可提交不同買入類型；待觸發的突破要明示，不能說已觸發或保證目標。")
             if any("market_quote" in c for c in packet["core"]["candidates"]):
-                payload["instructions"] += ("market_quote是延遲參考價，並非即時成交價或盤中K；用來核對觸發及進場區間，"
+                payload["instructions"] += ("defaults_ref指向同一封包的共用物件，與當列其他欄位合併即可還原完整資料。"
+                    "opportunity_reference_plans的layout指向plan_layouts欄位名稱，與values逐項配對還原原計畫。"
+                    "market_quote是延遲參考價，並非即時成交價或盤中K；用來核對觸發及進場區間，"
                     "不可聲稱今日已收盤確認。報價過期或缺失只供觀察，不能支持買入提案。")
         response = self.transport(payload, key, self.timeout)
         if not isinstance(response, dict) or response.get("status") != "completed":

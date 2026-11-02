@@ -1,6 +1,6 @@
 # Japan Support Desk：日股尋標與人工決策
 
-目前版本0.12.0，工作分支 `codex/japan-support-desk-phase1`。預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
+目前版本0.12.1，工作分支 `codex/japan-support-desk-phase1`。預設從可配置的20檔日股研究池取Yahoo日線，再由**尋標、研究、反證**三個模型Agent共同完成決策。Head負責程式派工與驗證；沒有第四個決策Agent，也沒有券商下單能力。
 
 0.12.0提供交易時段入口 `python -m support_scout session-scan`（或 `ScanNow.cmd` 單次執行）。延遲價格在尋標前就送入三角色，用於比較觸發與進場上限、重算目標及風險；完整日線型態與延遲價分開。WATCH／等待不寄信，只有具備價位與正數建議金額的買入提案、或已確認持倉的減碼／退出才寄。已設定的Codex排程每半小時喚醒，午休、休市及同時段重複都由程式跳過。電腦及Codex須保持運作；開著HTML報告本身不會執行掃描。詳見[交易時段掃描與操作通知](docs/session-scanning.md)。
 

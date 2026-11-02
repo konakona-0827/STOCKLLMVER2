@@ -81,7 +81,22 @@ class SessionTests(unittest.TestCase):
         self.assertTrue(any(e['kind']=='DELAYED_QUOTE' for e in p['core']['evidence']))
         sp=make_search_packet(r,{'version':'fixture','symbols':[s['symbol'] for s in b['securities']]})
         wire,_,_=search_wire(sp)
-        self.assertTrue(any(x.get('market_quote',{}).get('price')==100 for x in wire['candidates']))
+        self.assertTrue(any({**wire.get('shared_market_quote_fields',{}),**x['market_quote']}.get('price')==100
+            for x in wire['candidates'] if isinstance(x.get('market_quote'),dict)))
+
+    def test_session_wire_shares_defaults_and_plans_losslessly(self):
+        from support_scout.communication import factor_session_defaults
+        original={'candidates':[{'market_quote':{'price':n,'currency':'JPY','usable':True},
+            'support_model_boundaries':{'technical':'strict','patterns':'independent'},
+            'opportunity_reference_plans':{'H-004':{'entry_reference':n,'target_reference':n*1.02,'trigger':None}}} for n in (100,200)]}
+        value=deepcopy(original);factor_session_defaults(value)
+        restored=[]
+        for c in value['candidates']:
+            q=deepcopy(c['market_quote']);q.pop('defaults_ref')
+            plans={pid:dict(zip(value['plan_layouts'][p['layout']],p['values'])) for pid,p in c['opportunity_reference_plans'].items()}
+            restored.append({**c,'market_quote':{**value['shared_market_quote_fields'],**q},
+                'support_model_boundaries':value['shared_support_model_boundaries'],'opportunity_reference_plans':plans})
+        self.assertEqual(restored,original['candidates'])
 
     def test_missing_quote_blocks_an_otherwise_positive_consensus(self):
         from tests.test_opportunity import fixture

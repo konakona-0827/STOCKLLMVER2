@@ -81,6 +81,8 @@ def run_session(*,now=None,observer=None,data_root=None):
                 "model_calls":report.get("discovery",{}).get("total_call_count",0),
                 "opportunity_counts":report.get("opportunity_summary",{}).get("counts",{}),"exit_code":code}
             result["agent_errors"]=report.get("desk",{}).get("error_count",0)
+            if (report.get("discovery",{}).get("search") or {}).get("status")=="FAILED":
+                result["agent_errors"]=max(1,result["agent_errors"])
             if report.get("session_scan",{}).get("model_skip_reason"):
                 result["status"]="SKIPPED_NO_USABLE_DELAYED_QUOTES"
             atomic_json(state_path,result)
