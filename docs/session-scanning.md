@@ -4,13 +4,22 @@
 
 ## 誰啟動程式
 
-目前是Codex對話排程喚醒本工作，執行：
+0.13.0已改成程式內部的ScanScheduler，原Codex排程已刪除。雙擊 `Dashboard.cmd`，或執行：
 
 ```powershell
-python -X utf8 -m support_scout session-scan
+python -X utf8 -m support_scout serve --port 8765 --open-browser
 ```
 
-不需手動維持終端視窗；電腦與Codex必須開啟且不進入睡眠，網路與原本授權的ENV仍須可用。不是Windows獨立背景服務，開著HTML也不會啟動掃描。可雙擊 `ScanNow.cmd` 手動跑一輪；它同樣遵守時段與重複保護。排程在Codex的排程頁管理，勿再加另一個Windows排程造成雙重扣費。
+程式本身提供HTTP Dashboard及背景排程執行緒，不需Codex。控制台有啟動／停止按鈕、上次結果、是否分析中及下一次檢查時間；停止會寫入本機設定，重啟仍維持停止。頁面瀏覽器可以關閉，Python程式要保持執行，電腦有網路且不睡眠；關閉啟動程式的終端視窗也會結束程式。
+
+重複啟動會開啟既有控制台，避免建立第二個掃描器。停止自動掃描不會中斷已在執行的分析。手動分析可明確重跑本半小時，仍遵守交易時段與互斥鎖；CLI是 `python -m support_scout session-scan --rerun`。`ScanNow.cmd` 則維持一般單次去重入口。
+
+### 換電腦
+
+1. 安裝Python 3.11以上、取得本專案；執行期只用標準函式庫。
+2. 將 `local_settings.example.json` 複製成忽略的 `local_settings.json`，將 `.env.example` 複製成忽略的 `.env`，在本機填入自己的OpenAI key。ENV相對路徑以設定檔所在資料夾解析，搬動整個專案不必保留舊電腦使用者路徑。
+3. Gmail寄件地址及應用程式密碼、本金／風險設定、確認成交紀錄是本機資料，需自行配置或搬移，不隨Git傳送；缺本金時不會建議正數部位。Gmail可用 `EmailSetup.cmd`，或明確用notify-configure引用本機ENV。
+4. 雙擊 `Dashboard.cmd`；保持程式執行即可自動掃描。API設定檢查用 `python -m support_scout doctor --require-agents`，不呼叫付費模型。
 
 ## 時段與用量
 
@@ -49,3 +58,5 @@ python -X utf8 -m support_scout session-scan
 全套369項測試通過。既有12個歷史決策面板離線重播MATCH；歷史重建會移除本輪延遲報價與session_scan設定，避免把今日價格帶回過去。
 
 0.12.1修正13:00自動掃描的SEARCH輸入超額：16個候選使原精簡封包達103,432 bytes，超出100,000上限。延遲報價的共同欄位、模型邊界與計畫欄位改為共用預設／layout，完全還原原資料，保留全部16個候選後為97,070 bytes，未調高預算、未截資料或重跑當輪。另修正SEARCH失敗未計入session的agent_errors，後續會正確回傳失敗狀態供排程處理。
+
+0.13.0依使用者明確要求重跑，13:08輪完成9次模型請求、4組雙方研究，agent_errors=0，無買入提案、郵件0封。內建程式也自行完成13:30時段一輪（實際13:34啟動），同樣9次請求、研究錯誤0；仍保留兩個Yahoo日線來源缺口而標DEGRADED，未當成全部資料驗證成功。原Codex heartbeat已刪除，實際控制台確認PROGRAM_INTERNAL、worker_alive=true、requires_codex=false；啟停API與停止狀態保存皆已驗證。380項測試通過，前端腳本語法檢查通過。

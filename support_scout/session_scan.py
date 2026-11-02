@@ -57,7 +57,7 @@ def attach_quotes(bundle):
     return bundle
 
 
-def run_session(*,now=None,observer=None,data_root=None):
+def run_session(*,now=None,observer=None,data_root=None,output_root=None,universe_path=None,rerun=False):
     now=now or datetime.now(JST)
     if not market_open(now):
         return {"status":"SKIPPED_MARKET_CLOSED","time_jst":now.astimezone(JST).isoformat(),"model_calls":0}
@@ -69,14 +69,15 @@ def run_session(*,now=None,observer=None,data_root=None):
             entered=True
             state_path=root/"session_scan_state.json"
             state=json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
-            if state.get("slot")==slot:return {"status":"SKIPPED_DUPLICATE_SLOT","slot":slot,"model_calls":0}
+            if state.get("slot")==slot and not rerun:return {"status":"SKIPPED_DUPLICATE_SLOT","slot":slot,"model_calls":0}
             # Reserve before calling: a failed process cannot repeat the same
             # slot indefinitely and incur duplicate API charges.
             atomic_json(state_path,{"slot":slot,"status":"RUNNING","started_at":now.isoformat()})
             from .observation import observe
             report,target,code=(observer or observe)(agents=True,market="JP",universe_source="fixed",scan_limit=20,
                 max_packets=4,max_calls=9,public_information=True,session_prices=True,
-                db_path=root/"observations.sqlite3",portfolio_path=root/"manual_fills.json")
+                db_path=root/"observations.sqlite3",portfolio_path=root/"manual_fills.json",
+                output_root=output_root,universe_path=universe_path)
             result={"status":"COMPLETE" if code==0 else "DEGRADED","slot":slot,"report":str(target/"report.html"),
                 "model_calls":report.get("discovery",{}).get("total_call_count",0),
                 "opportunity_counts":report.get("opportunity_summary",{}).get("counts",{}),"exit_code":code}

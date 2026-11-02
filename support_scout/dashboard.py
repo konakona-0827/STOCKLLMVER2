@@ -49,10 +49,29 @@ document.getElementById('reload-report').onclick=()=>location.reload();
 refreshDesk();setInterval(refreshDesk,5000);
 </script>'''
 
+SCHEDULER_PANEL='''<section id="scan-control" style="background:#eaf4fa;padding:22px;border:2px solid #306e9b;border-radius:8px;margin:20px 0">
+<h2>日股自動掃描控制台</h2><p>程式內部每30分鐘檢查；交易時段才分析，午休與休市跳過。不需啟動Codex，開著此程式即可。</p>
+<p id="scheduler-status" role="status">正在讀取掃描狀態…</p><p id="scheduler-last"></p>
+<button id="scheduler-start">啟動自動掃描</button> <button id="scheduler-stop">停止自動掃描</button>
+<p>WATCH不寄信；有效買入提案或持倉減碼／退出才寄。停止後不再開始新一輪，已執行中的分析會完成。</p>
+<script>
+async function refreshScheduler(){try{const s=await(await fetch('/api/state')).json();const a=s.scheduler;
+document.getElementById('scheduler-status').textContent=(a.enabled?'自動掃描：已啟用':'自動掃描：已停止')+' · '+(a.running?'分析中':a.market_open?'交易時段':'午休或休市')+' · 下次檢查：'+(a.next_run_jst||'—');
+const last=a.last_result;const labels={COMPLETE:'完成',DEGRADED:'完成但有資料或研究缺口',RUNNING:'執行中',FAILED:'失敗',SKIPPED_MARKET_CLOSED:'午休或休市，已略過',SKIPPED_DUPLICATE_SLOT:'本時段已執行',SKIPPED_NO_USABLE_DELAYED_QUOTES:'延遲報價過期，已略過模型',SKIPPED_BUSY:'已有分析執行中'};
+document.getElementById('scheduler-last').textContent='上次結果：'+(last?(labels[last.status]||last.status)+(last.slot?' · '+last.slot:'')+' · 模型請求 '+(last.model_calls||0)+' 次':'尚無執行紀錄')+(a.error?' · 錯誤：'+a.error:'');
+document.getElementById('scheduler-start').disabled=a.enabled&&a.worker_alive;document.getElementById('scheduler-stop').disabled=!a.enabled;
+const manual=document.getElementById('analyze');if(manual)manual.disabled=a.running||s.analysis.status==='RUNNING';
+}catch(e){document.getElementById('scheduler-status').textContent='無法讀取掃描狀態：'+e.message;}}
+document.getElementById('scheduler-start').onclick=async()=>{await postDesk('/api/scheduler',{enabled:true});await refreshScheduler();};
+document.getElementById('scheduler-stop').onclick=async()=>{await postDesk('/api/scheduler',{enabled:false});await refreshScheduler();};
+refreshScheduler();setInterval(refreshScheduler,5000);
+</script></section>'''
+
 
 class DeskServer(ThreadingHTTPServer):
     daemon_threads = True
-    def __init__(self, port=8765, *, data_root=None, output_root=None, universe_path=None, observer=None):
+    allow_reuse_address = False
+    def __init__(self, port=8765, *, data_root=None, output_root=None, universe_path=None, observer=None,start_scheduler=False,session_runner=None):
         self.data_root = Path(data_root or ROOT / "local_data")
         self.output_root = Path(output_root or ROOT / "output" / "observations")
         self.universe_path, self.observer = universe_path, observer
@@ -60,6 +79,13 @@ class DeskServer(ThreadingHTTPServer):
         self.analysis = {"status": "IDLE"}
         self.analysis_lock = threading.Lock()
         super().__init__(("127.0.0.1", port), Handler)
+        from .scheduler import ScanScheduler
+        self.scheduler=ScanScheduler(self.data_root,output_root=self.output_root,universe_path=self.universe_path,runner=session_runner)
+        if start_scheduler:self.scheduler.start()
+
+    def server_close(self):
+        if getattr(self,'scheduler',None):self.scheduler.close()
+        super().server_close()
 
     def latest(self):
         pointer = self.output_root / "latest.json"
@@ -75,6 +101,10 @@ class DeskServer(ThreadingHTTPServer):
 
     def analyze(self):
         try:
+            if self.observer is None:
+                result=self.scheduler.run_now(rerun=True)
+                self.analysis=result
+                return
             from .observation import observe
             _, target, code = (self.observer or observe)(agents=True, universe_source="fixed", universe_path=self.universe_path,
                 scan_limit=20, max_packets=4, max_calls=9, public_information=True, session_prices=True,
@@ -112,12 +142,16 @@ class Handler(BaseHTTPRequestHandler):
                 report, file = self.server.latest()
                 html = file.read_text(encoding="utf-8") if file else '<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>日股決策與持倉</title><main><h1>Japan Support Desk</h1></main></html>'
                 panel = PANEL.replace("__TOKEN__", json.dumps(self.server.token)).replace("__ASOF__", json.dumps(report.get("as_of") if report else None))
+                html=html.replace('<main>','<main>'+SCHEDULER_PANEL,1)
+                # The controller script needs postDesk, declared in PANEL.
                 self.reply(html.replace("</main>", panel + "</main>"), html=True)
             elif path == "/api/state":
                 report, _ = self.server.latest()
                 now = datetime.now(TOKYO).isoformat()
                 self.reply({"portfolio": read_snapshot(self.server.data_root / "manual_fills.json", now),
+                    "project_root":str(ROOT.resolve()),
                     "analysis": self.server.analysis, "email": email_status(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"),
+                    "scheduler":self.server.scheduler.status(),
                     "report_as_of": report.get("as_of") if report else None,
                     "manual_actions": report.get("manual_actions", []) if report else []})
             else:
@@ -156,17 +190,36 @@ class Handler(BaseHTTPRequestHandler):
                     self.server.analysis = {"status": "RUNNING"}
                     threading.Thread(target=self.server.analyze, daemon=True).start()
                 return self.reply({"status": "RUNNING"}, 202)
+            if path == "/api/scheduler":
+                if set(value)!={'enabled'}:raise DataError('ONLY_SCHEDULER_ENABLED_CAN_BE_CHANGED')
+                self.server.scheduler.set_enabled(value['enabled'])
+                return self.reply(self.server.scheduler.status())
             return self.reply({"error": "NOT_FOUND"}, 404)
         except Exception as exc:
             return self.reply({"error": str(exc) if isinstance(exc, DataError) else "LOCAL_REQUEST_ERROR"}, 400)
 
 
-def serve(port=8765):
+def serve(port=8765,*,open_browser=False):
     if type(port) is not int or not 1024 <= port <= 65535:
         raise DataError("INVALID_DASHBOARD_PORT")
-    server = DeskServer(port)
-    print(f"本機日股頁面：http://127.0.0.1:{server.server_port}（Ctrl+C結束；沒有自動下單）", flush=True)
+    from urllib.request import urlopen
     try:
+        with urlopen(f'http://127.0.0.1:{port}/api/state',timeout=2) as response:state=json.load(response)
+    except (OSError,ValueError):state=None
+    if state is not None:
+        if not isinstance(state,dict) or state.get('scheduler',{}).get('engine')!='PROGRAM_INTERNAL' or state.get('project_root')!=str(ROOT.resolve()):
+            raise DataError('OLD_DASHBOARD_RUNNING_RESTART_REQUIRED')
+        if open_browser:
+            import webbrowser
+            webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')
+        return
+    try:server = DeskServer(port,start_scheduler=True)
+    except OSError:raise DataError('DASHBOARD_PORT_IN_USE_CLOSE_OLD_VERSION_OR_USE_EXISTING_DASHBOARD') from None
+    try:
+        if open_browser:
+            import webbrowser
+            webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')
+        print(f"Japan Support Desk: http://127.0.0.1:{server.server_port}/#scan-control (internal scheduler; Ctrl+C to stop)",flush=True)
         server.serve_forever()
     finally:
         server.server_close()

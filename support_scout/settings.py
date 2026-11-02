@@ -21,6 +21,9 @@ def load_settings(path: Path = DEFAULT_SETTINGS) -> dict:
             raise DataError("INVALID_LOCAL_SETTINGS:" + key)
     if "run_agents" in value and type(value["run_agents"]) is not bool:
         raise DataError("INVALID_LOCAL_SETTINGS:run_agents")
+    if value.get("openai_env_file"):
+        selected=Path(value["openai_env_file"]).expanduser()
+        value["openai_env_file"]=str((selected if selected.is_absolute() else Path(path).resolve().parent/selected).resolve())
     return value
 
 
