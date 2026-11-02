@@ -5,6 +5,7 @@ from html import escape
 import json
 from pathlib import Path
 import secrets
+import re
 import threading
 from urllib.parse import urlsplit
 
@@ -12,6 +13,9 @@ from .contracts import DataError, TOKYO, strict_json_loads
 from .notifications import DEFAULT_CONFIG, email_status, flush
 from .portfolio import read_snapshot, record_fill
 from .settings import ROOT
+from .scan_schedule import SCHEDULE_VERSION
+
+DESK_UI_VERSION = 4
 
 
 PANEL = '''<style>
@@ -50,7 +54,7 @@ refreshDesk();setInterval(refreshDesk,5000);
 </script>'''
 
 SCHEDULER_PANEL='''<section id="scan-control" style="background:#eaf4fa;padding:22px;border:2px solid #306e9b;border-radius:8px;margin:20px 0">
-<h2>日股自動掃描控制台</h2><p>程式內部每30分鐘檢查；交易時段才分析，午休與休市跳過。不需啟動Codex，開著此程式即可。</p>
+<h2>日股自動掃描控制台</h2><p>日本時間固定掃描：09:00、10:00、11:00、12:30、13:30、14:30、15:15。午休與休市跳過，不需Codex。</p>
 <p id="service-status" role="status">尚未確認程式連線，正在檢查…</p><p id="report-freshness"></p>
 <p id="scheduler-status" role="status">正在讀取掃描狀態…</p><p id="scheduler-last"></p>
 <button id="scheduler-start">啟動自動掃描</button> <button id="scheduler-stop">停止自動掃描</button> <button id="scan-now">立即手動分析</button> <button id="view-latest">重新載入最新報告</button>
@@ -165,14 +169,19 @@ class Handler(BaseHTTPRequestHandler):
                     from .field_guide import render_field_guide
                     html=html.replace('</main>',render_field_guide(report)+'</main>',1)
                 panel = PANEL.replace("__TOKEN__", json.dumps(self.server.token)).replace("__ASOF__", json.dumps(report.get("as_of") if report else None))
-                html=html.replace('<main>','<main>'+SCHEDULER_PANEL,1)
+                html=html.replace('http://127.0.0.1:8765/','/')
+                if '<!--SCAN_CONTROL-->' in html:html=html.replace('<!--SCAN_CONTROL-->',SCHEDULER_PANEL,1)
+                else:html=html.replace('<main>','<main>'+SCHEDULER_PANEL,1)
                 # The controller script needs postDesk, declared in PANEL.
-                self.reply(html.replace("</main>", panel + "</main>"), html=True)
+                if '<!--MANUAL_DESK-->' in html:
+                    html=html.replace('<!--MANUAL_DESK-->',panel,1).replace('<p class="static-manual-note">成交回報與通知請開啟本機Dashboard服務。</p>','')
+                else:html=html.replace('</main>',panel+'</main>')
+                self.reply(html, html=True)
             elif path == "/api/state":
                 report, _ = self.server.latest()
                 now = datetime.now(TOKYO).isoformat()
                 self.reply({"portfolio": read_snapshot(self.server.data_root / "manual_fills.json", now),
-                    "project_root":str(ROOT.resolve()), "server_time":now,
+                    "project_root":str(ROOT.resolve()), "server_time":now, "ui_version":DESK_UI_VERSION,
                     "analysis": self.server.analysis, "email": email_status(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"),
                     "scheduler":self.server.scheduler.status(),
                     "report_as_of": report.get("as_of") if report else None,
@@ -222,16 +231,31 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply({"error": str(exc) if isinstance(exc, DataError) else "LOCAL_REQUEST_ERROR"}, 400)
 
 
-def serve(port=8765,*,open_browser=False):
+def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None):
     if type(port) is not int or not 1024 <= port <= 65535:
         raise DataError("INVALID_DASHBOARD_PORT")
-    from urllib.request import urlopen
+    from urllib.request import urlopen,Request
     try:
         with urlopen(f'http://127.0.0.1:{port}/api/state',timeout=2) as response:state=json.load(response)
     except (OSError,ValueError):state=None
     if state is not None:
         if not isinstance(state,dict) or state.get('scheduler',{}).get('engine')!='PROGRAM_INTERNAL' or state.get('project_root')!=str(ROOT.resolve()):
             raise DataError('OLD_DASHBOARD_RUNNING_RESTART_REQUIRED')
+        if state.get('ui_version',0)<DESK_UI_VERSION or state['scheduler'].get('schedule_version')!=SCHEDULE_VERSION:
+            if _migration_depth>=5:raise DataError('TOO_MANY_OLD_DASHBOARDS_RESTART_REQUIRED')
+            # Use the old app's normal CSRF-protected pause control, never terminate its process.
+            if state['scheduler'].get('running'):raise DataError('OLD_DASHBOARD_ANALYSIS_RUNNING_TRY_AFTER_COMPLETION')
+            with urlopen(f'http://127.0.0.1:{port}/',timeout=5) as response:old_html=response.read().decode('utf-8')
+            match=re.search(r'const deskToken=("[^"\r\n]+")',old_html)
+            if not match:raise DataError('OLD_DASHBOARD_PAUSE_CONTROL_UNAVAILABLE')
+            req=Request(f'http://127.0.0.1:{port}/api/scheduler',data=b'{"enabled":false}',headers={
+                'Content-Type':'application/json','Origin':f'http://127.0.0.1:{port}',
+                'X-Desk-Token':json.loads(match.group(1))})
+            with urlopen(req,timeout=5) as response:paused=json.load(response)
+            if paused.get('enabled') is not False:raise DataError('OLD_DASHBOARD_NOT_PAUSED')
+            resume=state['scheduler']['enabled'] or bool(_resume_enabled)
+            print(f'Old automatic scanning paused; using dashboard port {port+1}.',flush=True)
+            return serve(port+1,open_browser=open_browser,_migration_depth=_migration_depth+1,_resume_enabled=resume)
         if open_browser:
             import webbrowser
             webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')
@@ -239,6 +263,7 @@ def serve(port=8765,*,open_browser=False):
     try:server = DeskServer(port,start_scheduler=True)
     except OSError:raise DataError('DASHBOARD_PORT_IN_USE_CLOSE_OLD_VERSION_OR_USE_EXISTING_DASHBOARD') from None
     try:
+        if _resume_enabled is not None:server.scheduler.set_enabled(_resume_enabled)
         if open_browser:
             import webbrowser
             webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')

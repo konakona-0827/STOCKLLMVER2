@@ -16,14 +16,14 @@ from support_scout.dashboard import DeskServer,serve
 class InternalSchedulerTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
-        self.now=timestamp('2026-11-02T13:00:00+09:00');self.calls=[]
+        self.now=timestamp('2026-11-02T13:30:00+09:00');self.calls=[]
         self.scheduler=ScanScheduler(self.root,clock=lambda:self.now,runner=self.run_job)
     def tearDown(self):self.scheduler.close();self.tmp.cleanup()
     def run_job(self,**kwargs):self.calls.append(kwargs);return {'status':'COMPLETE','model_calls':3}
 
-    def test_tick_runs_without_codex_and_only_once_each_half_hour(self):
+    def test_tick_runs_without_codex_and_only_once_each_scheduled_hour(self):
         self.scheduler.tick();self.scheduler.tick();self.assertEqual(len(self.calls),1)
-        self.now+=timedelta(minutes=30);self.scheduler.tick();self.assertEqual(len(self.calls),2)
+        self.now+=timedelta(minutes=60);self.scheduler.tick();self.assertEqual(len(self.calls),2)
         self.assertFalse(self.scheduler.status()['requires_codex'])
         self.assertEqual(self.scheduler.status()['engine'],'PROGRAM_INTERNAL')
 
@@ -35,7 +35,7 @@ class InternalSchedulerTests(unittest.TestCase):
     def test_restart_respects_reserved_slot_and_next_slot_runs(self):
         (self.root/'session_scan_state.json').write_text(json.dumps({'slot':self.now.isoformat(),'status':'DEGRADED'}))
         self.scheduler.tick();self.assertEqual(self.calls,[])
-        self.now+=timedelta(minutes=30);self.scheduler.tick();self.assertEqual(len(self.calls),1)
+        self.now+=timedelta(minutes=60);self.scheduler.tick();self.assertEqual(len(self.calls),1)
 
     def test_stop_is_persisted_and_stops_future_jobs(self):
         self.scheduler.set_enabled(False);self.scheduler.tick();self.assertEqual(self.calls,[])
@@ -50,7 +50,28 @@ class InternalSchedulerTests(unittest.TestCase):
 
     def test_next_run_skips_culture_day_and_lunch(self):
         self.assertEqual(next_session_slot(timestamp('2026-11-02T11:00:00+09:00')),'2026-11-02T12:30:00+09:00')
-        self.assertEqual(next_session_slot(timestamp('2026-11-02T15:00:00+09:00')),'2026-11-04T09:00:00+09:00')
+        self.assertEqual(next_session_slot(timestamp('2026-11-02T15:00:00+09:00')),'2026-11-02T15:15:00+09:00')
+        self.assertEqual(next_session_slot(timestamp('2026-11-02T15:15:00+09:00')),'2026-11-04T09:00:00+09:00')
+
+    def test_full_day_has_exactly_seven_automatic_runs_and_no_backfill(self):
+        from support_scout.scan_schedule import DAILY_SCAN_TIMES
+        for hour in range(8,17):
+            for minute in range(60):
+                self.now=timestamp(f'2026-11-02T{hour:02d}:{minute:02d}:00+09:00')
+                self.scheduler.tick()
+        self.assertEqual([c['now'].strftime('%H:%M') for c in self.calls],list(DAILY_SCAN_TIMES))
+        self.calls.clear();self.now=timestamp('2026-11-04T14:42:00+09:00')
+        self.scheduler.tick();self.assertEqual(self.calls,[])
+        self.assertEqual(self.scheduler.status()['next_run_jst'],'2026-11-04T15:15:00+09:00')
+
+    def test_closing_scan_is_distinct_from_1500_manual_slot(self):
+        from support_scout.session_scan import run_session
+        def observer(**kw):return {},self.root/'fake',0
+        first=run_session(now=timestamp('2026-11-02T15:00:00+09:00'),data_root=self.root,observer=observer)
+        second=run_session(now=timestamp('2026-11-02T15:15:09+09:00'),data_root=self.root,observer=observer)
+        self.assertNotEqual(first['slot'],second['slot']);self.assertEqual(second['status'],'COMPLETE')
+        third=run_session(now=timestamp('2026-11-02T15:19:00+09:00'),data_root=self.root,observer=observer)
+        self.assertEqual(third['status'],'SKIPPED_DUPLICATE_SLOT')
 
     def test_manual_rerun_and_timer_never_overlap(self):
         entered=threading.Event();release=threading.Event()

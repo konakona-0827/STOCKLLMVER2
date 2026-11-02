@@ -564,14 +564,18 @@ def labeled_tree(value, key=''):
     return escape(_scalar(value,key))
 
 
+def render_stock_fields(item):
+    display={k:item[k] for k in ('symbol','name','opportunity_decision','execution_plan','market_quote','agent_reviews','manual_action') if k in item}
+    display.update(item)
+    return labeled_tree(display)+f'<details><summary>原始JSON（完整保留）</summary><pre>{escape(json.dumps(item,ensure_ascii=False,indent=2))}</pre></details>'
+
+
 def render_field_guide(report):
     cards = []
     for item in report.get('securities',[]):
         symbol = str(item['symbol'])
-        display={k:item[k] for k in ('symbol','name','opportunity_decision','execution_plan','market_quote','agent_reviews','manual_action') if k in item}
-        display.update(item)
         cards.append(f'<details id="json-{escape(symbol,quote=True)}"><summary>{escape(symbol)} {escape(item.get("name",""))}：中文欄位與原始JSON</summary>'
-                     f'{labeled_tree(display)}<details><summary>原始JSON（完整保留）</summary><pre>{escape(json.dumps(item,ensure_ascii=False,indent=2))}</pre></details></details>')
+                     f'{render_stock_fields(item)}</details>')
     return '''<style>
 #field-guide{overflow-wrap:anywhere;background:white;padding:20px;border:1px solid #dde4eb;border-radius:8px}
 #field-guide>.field-stock, #field-guide>details{margin:12px 0;padding:10px;border:1px solid #dbe3ea}

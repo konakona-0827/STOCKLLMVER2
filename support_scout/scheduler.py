@@ -9,18 +9,18 @@ from .contracts import DataError
 from .japan import JST
 from .session_scan import market_open,run_session
 from .storage import atomic_json
+from .scan_schedule import DAILY_SCAN_TIMES,SCHEDULE_VERSION,daily_slots,due_slot,reservation_slot
 
 
 def slot_for(now):
-    now=now.astimezone(JST)
-    return now.replace(minute=now.minute//30*30,second=0,microsecond=0)
+    return reservation_slot(now)
 
 
 def next_session_slot(now):
-    candidate=slot_for(now)+timedelta(minutes=30)
-    for _ in range(48*20):
-        if market_open(candidate):return candidate.isoformat()
-        candidate+=timedelta(minutes=30)
+    local=now.astimezone(JST)
+    for offset in range(20):
+        for candidate in daily_slots(local+timedelta(days=offset)):
+            if candidate>local and market_open(candidate):return candidate.isoformat()
     raise DataError("NO_UPCOMING_SESSION_IN_CALENDAR")
 
 
@@ -32,7 +32,7 @@ class ScanScheduler:
         self.enabled=True
         if self.settings_path.exists():
             value=json.loads(self.settings_path.read_text(encoding='utf-8'))
-            if value.get('schema_version')!=1 or type(value.get('enabled')) is not bool:raise DataError('INVALID_INTERNAL_SCHEDULER_SETTINGS')
+            if value.get('schema_version') not in {1,2} or type(value.get('enabled')) is not bool:raise DataError('INVALID_INTERNAL_SCHEDULER_SETTINGS')
             self.enabled=value['enabled']
         self.running=False;self.last_result=None;self.last_error=None;self.attempted_slot=None
         self.lock=threading.RLock();self.job_lock=threading.Lock();self.wake=threading.Event();self.stop=threading.Event();self.thread=None
@@ -41,7 +41,7 @@ class ScanScheduler:
         with self.lock:
             if self.thread and self.thread.is_alive():return
             self.root.mkdir(parents=True,exist_ok=True)
-            atomic_json(self.settings_path,{'schema_version':1,'enabled':self.enabled,'interval_minutes':30,'timezone':'Asia/Tokyo'})
+            self._persist(self.enabled)
             self.thread=threading.Thread(target=self._loop,name='japan-session-scheduler',daemon=True)
             self.thread.start()
 
@@ -52,9 +52,13 @@ class ScanScheduler:
     def set_enabled(self,value):
         if type(value) is not bool:raise DataError('SCHEDULER_ENABLED_MUST_BE_BOOLEAN')
         with self.lock:
-            atomic_json(self.settings_path,{'schema_version':1,'enabled':value,'interval_minutes':30,'timezone':'Asia/Tokyo'})
+            self._persist(value)
             self.enabled=value
         self.start();self.wake.set()
+
+    def _persist(self,enabled):
+        atomic_json(self.settings_path,{'schema_version':2,'enabled':enabled,'interval_minutes':60,
+            'daily_scan_times':list(DAILY_SCAN_TIMES),'schedule_version':SCHEDULE_VERSION,'timezone':'Asia/Tokyo'})
 
     def _state(self):
         path=self.root/'session_scan_state.json'
@@ -77,9 +81,10 @@ class ScanScheduler:
             self.job_lock.release()
 
     def tick(self):
-        now=self.clock();slot=slot_for(now).isoformat()
+        now=self.clock();due=due_slot(now)
         with self.lock:
-            if not self.enabled or self.running or not market_open(now):return
+            if not self.enabled or self.running or due is None or not market_open(now):return
+            slot=due.isoformat()
             if self.attempted_slot==slot or self._state().get('slot')==slot:return
             self.attempted_slot=slot
         return self.run_now()
@@ -96,10 +101,12 @@ class ScanScheduler:
         with self.lock:
             state=self._state();opened=market_open(now)
             upcoming=next_session_slot(now) if self.enabled else None
-            if self.enabled and opened and self.attempted_slot!=slot_for(now).isoformat() and state.get('slot')!=slot_for(now).isoformat():
-                upcoming=now.isoformat()
+            due=due_slot(now)
+            if self.enabled and opened and due is not None and self.attempted_slot!=due.isoformat() and state.get('slot')!=due.isoformat():
+                upcoming=due.isoformat()
             last=deepcopy(self.last_result or state or None)
-            return {'enabled':self.enabled,'engine':'PROGRAM_INTERNAL','interval_minutes':30,'timezone':'Asia/Tokyo',
+            return {'enabled':self.enabled,'engine':'PROGRAM_INTERNAL','interval_minutes':60,'timezone':'Asia/Tokyo',
+                'daily_scan_times':list(DAILY_SCAN_TIMES),'schedule_version':SCHEDULE_VERSION,
                 'worker_alive':bool(self.thread and self.thread.is_alive()),
                 'market_open':opened,'running':self.running or state.get('status')=='RUNNING',
                 'next_run_jst':upcoming,'last_result':last,'error':self.last_error,

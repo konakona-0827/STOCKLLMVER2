@@ -29,7 +29,7 @@ def main(argv=None) -> int:
     local.add_argument("--port", type=int, default=8765)
     local.add_argument("--open-browser",action="store_true")
     session=sub.add_parser("session-scan",help="交易時段內執行一輪，使用延遲報價；休市／午休／同時段重複則跳過")
-    session.add_argument("--rerun",action="store_true",help="明確要求重跑本半小時，仍遵守市場時段與鎖")
+    session.add_argument("--rerun",action="store_true",help="明確要求重跑本時段，仍遵守市場時段與鎖")
     mail = sub.add_parser("notify-configure", help="設定同一Gmail寄件／收件地址；不接受命令列密碼")
     mail.add_argument("email")
     mail.add_argument("--env-file", type=Path, help="只讀明確指定ENV的寄信密碼欄位，不複製整份ENV")

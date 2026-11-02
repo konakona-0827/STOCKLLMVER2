@@ -10,6 +10,7 @@ from .contracts import DataError, timestamp
 from .japan import JST, holidays_for_year
 from .settings import ROOT
 from .storage import atomic_json,pointer_lock
+from .scan_schedule import reservation_slot
 
 MAX_QUOTE_AGE_SECONDS=1800
 
@@ -62,7 +63,7 @@ def run_session(*,now=None,observer=None,data_root=None,output_root=None,univers
     if not market_open(now):
         return {"status":"SKIPPED_MARKET_CLOSED","time_jst":now.astimezone(JST).isoformat(),"model_calls":0}
     root=Path(data_root or ROOT/"local_data");root.mkdir(parents=True,exist_ok=True)
-    slot=now.astimezone(JST).replace(minute=(now.minute//30)*30,second=0,microsecond=0).isoformat()
+    slot=reservation_slot(now).isoformat()
     entered=False
     try:
         with pointer_lock(root/"session_scan.lock"):
