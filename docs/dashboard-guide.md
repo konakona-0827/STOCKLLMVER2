@@ -4,6 +4,8 @@
 
 在 japan-support-desk 資料夾雙擊 `Dashboard.cmd`。保留終端視窗，它就是程式；也可在該資料夾執行 `python -X utf8 -m support_scout serve --port 8765 --open-browser`。同一份專案重複開啟會沿用原服務。
 
+依使用者指定，啟動器會明確在外部Google Chrome應用程式開啟Dashboard，不使用Codex右側或系統預設瀏覽器。請在新電腦安裝Chrome；找不到時會顯示手動網址，不自動回退到其他瀏覽器。
+
 開啟啟動器顯示的網址（通常 <http://127.0.0.1:8765/#scan-control>；舊版占用時會改用8766等後續埠），在「掃描與稽核」依序確認：
 
 1. **程式連線正常**：本機服務剛剛有回應，旁邊顯示日本時間，每5秒更新；不呼叫行情或付費模型。

@@ -17,6 +17,7 @@ from .settings import ROOT
 from .scan_schedule import SCHEDULE_VERSION
 from .presentation import runtime_status
 from .storage import atomic_json
+from .desktop_browser import open_dashboard
 
 DESK_UI_VERSION = 6
 
@@ -324,8 +325,7 @@ def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None
             print(f'Old automatic scanning paused; using dashboard port {port+1}.',flush=True)
             return serve(port+1,open_browser=open_browser,_migration_depth=_migration_depth+1,_resume_enabled=resume)
         if open_browser:
-            import webbrowser
-            webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')
+            open_dashboard(f'http://127.0.0.1:{port}/#scan-control')
         return
     try:server = DeskServer(port,start_scheduler=True)
     except OSError:raise DataError('DASHBOARD_PORT_IN_USE_CLOSE_OLD_VERSION_OR_USE_EXISTING_DASHBOARD') from None
@@ -334,8 +334,7 @@ def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None
         atomic_json(server.data_root/'dashboard_current.json',{'url':f'http://127.0.0.1:{port}/',
             'ui_version':DESK_UI_VERSION,'project_root':str(ROOT.resolve())})
         if open_browser:
-            import webbrowser
-            webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')
+            open_dashboard(f'http://127.0.0.1:{port}/#scan-control')
         print(f"Japan Support Desk: http://127.0.0.1:{server.server_port}/#scan-control (internal scheduler; Ctrl+C to stop)",flush=True)
         server.serve_forever()
     finally:

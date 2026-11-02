@@ -107,7 +107,7 @@ class SchedulerDashboardTests(unittest.TestCase):
         self.assertEqual(e.exception.code,403)
 
     def test_duplicate_launcher_reuses_existing_dashboard(self):
-        with patch('webbrowser.open') as browser:
+        with patch('support_scout.dashboard.open_dashboard') as browser:
             serve(self.server.server_port,open_browser=True)
         browser.assert_called_once()
 
