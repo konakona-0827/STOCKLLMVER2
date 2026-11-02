@@ -123,6 +123,11 @@ def render_html(report: dict, bundle: dict) -> str:
         opportunity = item.get("opportunity_decision")
         if opportunity:
             active_plan = opportunity.get("reference_plan") or {}
+            quote=item.get("market_quote") or {}
+            if quote:
+                decision_html += (f'<p><b>延遲參考價 {fmt(quote.get("price"))} JPY</b> · 報價時間 {escape(quote.get("quoted_at","—"))}；'
+                    f'延遲約 {quote.get("age_seconds",0)/60:.1f} 分鐘。{"可供條件比對" if quote.get("usable") else "過期，不支持買入提案"}。'
+                    '這個報價已提供三Agent參考，型態仍採完整日線；請以券商即時價重驗。</p>')
             opinions = "；".join(f'{role}：{view["action"]} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
             decision_html += (f'<div class="banner"><h4>{escape(opportunity["label"])}</h4>'
                 f'<p>{escape(str(opportunity.get("pattern_id") or "—"))} · {escape(opportunity["policy_version"])} · {escape(opportunity["scope"])}</p>'

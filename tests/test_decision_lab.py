@@ -51,12 +51,14 @@ class LabTests(unittest.TestCase):
     def test_prefix_has_no_future_prices_quotes_dossier_events_or_account_state(self):
         b,p=fixture();day=p['sessions'][0]
         b['portfolio_snapshot']={'secret_position':123};b['sizing_policy']={'capital':999}
+        b['session_scan']={'version':'live'};b['securities'][0]['market_quote']={'price':999999}
         b['discovery']={'future_decision':'BUY'}
         v=build_prefix(b,p['symbols'],day,registry=load_registry(),policy=load_policy(),communication=load_wire(),evaluated_at=b['as_of'],study_id=p['study_id'])
         self.assertTrue(all(r['session']<=day for r in v['securities'][0]['bars']))
         self.assertNotIn('yahoo_metadata',v['securities'][0]);self.assertEqual(v['securities'][0]['dossier'],{})
         self.assertFalse(v['securities'][0]['yahoo_events'])
-        for key in ['portfolio_snapshot','sizing_policy','discovery','public_information_policy']:self.assertNotIn(key,v)
+        for key in ['portfolio_snapshot','sizing_policy','discovery','public_information_policy','session_scan']:self.assertNotIn(key,v)
+        self.assertNotIn('market_quote',v['securities'][0])
         self.assertEqual(v['securities'][0]['bars'][-1]['available_at'],b['securities'][0]['bars'][-7]['available_at'])
 
     def test_changing_future_prices_cannot_change_any_prefix_input(self):

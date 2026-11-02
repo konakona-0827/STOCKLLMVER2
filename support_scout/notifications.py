@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import format_datetime
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -127,8 +128,29 @@ def _connect(path):
     db.execute("CREATE TABLE IF NOT EXISTS states(symbol TEXT PRIMARY KEY, fingerprint TEXT, as_of REAL)")
     db.execute("""CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY, symbol TEXT, as_of TEXT,
         payload TEXT, status TEXT, error TEXT, sent_at TEXT)""")
+    # Enforce the user's WATCH-silent policy even for an older dashboard
+    # process that still has the previous Python module loaded.
+    db.execute("""CREATE TRIGGER IF NOT EXISTS actionable_events_only BEFORE INSERT ON events
+        WHEN COALESCE(json_extract(NEW.payload,'$.action'),'') NOT IN
+        ('PROBE_BUY_REVIEW','ENTRY_REVIEW','CONSIDER','EXIT_REVIEW','REDUCE_REVIEW')
+        BEGIN SELECT RAISE(IGNORE); END""")
     db.commit()
     return db
+
+
+def actionable(value):
+    """Only explicit, structured operations qualify; WAIT with prices is quiet."""
+    action=value.get("action")
+    position=value.get("position") or {}
+    if action in {"EXIT_REVIEW","REDUCE_REVIEW"}:
+        return type(position.get("quantity")) in (int,float) and position["quantity"]>0
+    if action not in {"PROBE_BUY_REVIEW","ENTRY_REVIEW","CONSIDER"}:return False
+    brief=value.get("decision_brief") or {}
+    if action=="ENTRY_REVIEW" and brief.get("action") not in {"PROBE_BUY_REVIEW","CONSIDER"}:return False
+    positive=lambda x:type(x) in (int,float) and math.isfinite(x) and x>0
+    if not positive(brief.get("suggested_amount_jpy")):return False
+    e,s,t=(brief.get(k) for k in ("entry_reference","invalidation_reference","target_reference"))
+    return all(positive(x) for x in (e,s,t)) and s<e<t
 
 
 def enqueue_report(report, report_path, db_path=DEFAULT_DB):
@@ -162,14 +184,20 @@ def enqueue_report(report, report_path, db_path=DEFAULT_DB):
                 stable["opportunity_decision"] = opportunity
             if item.get("execution_plan"):
                 stable["decision_brief"] = {k: deepcopy(v) for k,v in item["execution_plan"].items() if k != "as_of"}
+            stable["position"] = deepcopy(held.get(item["symbol"]))
             fingerprint = digest(stable)
             previous = db.execute("SELECT fingerprint,as_of FROM states WHERE symbol=?", (item["symbol"],)).fetchone()
             if previous and (epoch < previous[1] or previous[0] == fingerprint):
+                continue
+            if not actionable(stable):
+                db.execute("UPDATE events SET status='SUPERSEDED' WHERE symbol=? AND status='PENDING'",(item["symbol"],))
+                db.execute("INSERT OR REPLACE INTO states VALUES(?,?,?)",(item["symbol"],fingerprint,epoch))
                 continue
             event_id = digest({"state": stable, "as_of": report["as_of"]})
             payload = {**stable, "as_of": report["as_of"], "summary": decision.get("summary", ""),
                 "reference_plan": decision.get("reference_plan"), "position": held.get(item["symbol"]),
                 "report": str(Path(report_path).resolve()), "execution_enabled": False}
+            if item.get("market_quote"):payload["market_quote"]=deepcopy(item["market_quote"])
             if report.get("decision_brief"):
                 payload["budget"] = {k: report["decision_brief"][k] for k in ("capital_jpy", "per_trade_risk_budget_jpy",
                     "proposed_total_jpy", "proposed_loss_scenario_jpy", "available_cash_estimate_jpy")}
@@ -228,6 +256,15 @@ def decision_email_text(value):
         lines.extend(["買入類型："+brief["buy_type_label"],"持有交易日："+str(brief.get("holding_sessions") or "依情境重評"),
             "價格目標（不計券商成本）："+ (f'{brief["target_return_fraction"]:.1%}' if brief.get("target_return_fraction") is not None else "主要阻力"),
             "目標成交時成本後估算："+(f'{brief["estimated_net_return_fraction"]:.2%}' if brief.get("estimated_net_return_fraction") is not None else "待確認")])
+    quote=value.get("market_quote") or {}
+    if quote:
+        lines.extend(["延遲參考報價："+number(quote.get("price"))+" JPY；報價時間："+quote.get("quoted_at","待確認"),
+            "資料可能延遲，不是即時可成交價；請先核對券商即時價格。"])
+    if brief.get("entry_ceiling_reference"):
+        lines.append("參考進場區間："+number(brief.get("entry_trigger_reference") or brief.get("entry_reference"))+" ～ "+number(brief["entry_ceiling_reference"])+" JPY")
+        if brief.get("target_reference_at_entry_ceiling"):
+            lines.extend(["若以區間上端進場，重算價格目標："+number(brief["target_reference_at_entry_ceiling"])+" JPY；戰術風險價："+number(brief.get("invalidation_reference_at_entry_ceiling")),
+                "上述價位隨實際買入價重算；條件未觸發或即時價超過上限時不依此買入。"])
     if value.get("desk_counts"):
         c = value["desk_counts"]
         lines.extend(["", f"本輪：可評估試單 {c.get('PROBE_BUY_REVIEW',0)} 檔、等待 {c.get('WAIT',0)} 檔、暫不進場 {c.get('AVOID',0)} 檔。"])
@@ -246,7 +283,9 @@ def send_email(event, config):
     value = strict_json_loads(event["payload"])
     message = EmailMessage()
     message["From"], message["To"] = config["sender"], config["recipient"]
-    message["Subject"] = f"[日股決策] {value['symbol']} · {value['action']}"
+    label={"ENTRY_REVIEW":"條件式買入提案","PROBE_BUY_REVIEW":"條件式買入提案","CONSIDER":"進場評估",
+        "EXIT_REVIEW":"退出評估","REDUCE_REVIEW":"減碼評估"}.get(value['action'],value['action'])
+    message["Subject"] = f"[日股決策] {value['symbol']} · {label}"
     message["Message-ID"] = f"<{event['id']}@japan-support-desk.local>"
     message["Date"] = format_datetime(datetime.now(timezone.utc))
     message.set_content(decision_email_text(value))
@@ -272,6 +311,10 @@ def flush(config_path=DEFAULT_CONFIG, db_path=DEFAULT_DB, *, sender=None, limit=
             if row is None:
                 db.commit()
                 break
+            if not actionable(strict_json_loads(row["payload"])):
+                db.execute("UPDATE events SET status='SUPPRESSED',error='NON_ACTIONABLE_NOTIFICATION' WHERE id=?",(row["id"],))
+                db.commit()
+                continue
             db.execute("UPDATE events SET status='SENDING',error=NULL WHERE id=?", (row["id"],))
             db.commit()
             try:

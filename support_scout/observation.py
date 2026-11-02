@@ -65,7 +65,7 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             timeout=15, bundle=None, builder=None, researcher=None, reviewer=None, rules=None, progress=None,
             market="JP", discover=None, scan_limit=20, search_provider=None, universe=None,
             universe_loader=None, cursor_path=None, public_information=None,
-            universe_path=None, universe_source="fixed", portfolio_path=None):
+            universe_path=None, universe_source="fixed", portfolio_path=None, session_prices=False):
     settings = load_settings(Path(settings_path))
     agents = settings.get("run_agents", False) if agents is None else agents
     rules = rules or Rules()
@@ -178,6 +178,13 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 bundle["public_information_policy"] = policy
         if bundle.get("synthetic") is not False or bundle.get("observation_only") is not True:
             raise DataError("OBSERVE_REQUIRES_REAL_OBSERVATION_SNAPSHOT")
+        if session_prices:
+            if not fresh_bundle or market!="JP":raise DataError("SESSION_PRICES_REQUIRE_FRESH_JAPAN_SNAPSHOT")
+            from .session_scan import attach_quotes
+            attach_quotes(bundle)
+            if not any((s.get("market_quote") or {}).get("usable") for s in bundle["securities"]):
+                agents=False
+                bundle["session_scan"]["model_skip_reason"]="NO_USABLE_DELAYED_QUOTES"
         agent_status = "NOT_REQUESTED"
         report = run(bundle, rules=rules)
         ai = None

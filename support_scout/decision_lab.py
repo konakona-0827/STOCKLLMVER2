@@ -82,7 +82,7 @@ def build_prefix(source, symbols, session, *, registry, policy, communication, e
     cutoff=timestamp(session+"T16:00:00+09:00")
     if timestamp(evaluated_at)<max(timestamp(source["as_of"]),cutoff):raise DataError("LAB_EVALUATION_PRECEDES_SOURCE")
     b=deepcopy(source)
-    for k in ("discovery","source_universe","portfolio_snapshot","sizing_policy","public_information_policy"):
+    for k in ("discovery","source_universe","portfolio_snapshot","sizing_policy","public_information_policy","session_scan"):
         b.pop(k,None)
     raw={r["symbol"]:r for r in b["securities"]}
     if not set(symbols)<=set(raw):raise DataError("LAB_SYMBOL_NOT_IN_SOURCE")
@@ -92,7 +92,7 @@ def build_prefix(source, symbols, session, *, registry, policy, communication, e
         r["bars"]=[x for x in r.get("bars",[]) if x["session"]<=session and timestamp(x["closed_at"])<=cutoff]
         if len(r["bars"])<60 or r["bars"][-1]["session"]!=session:raise DataError("LAB_REQUIRED_PREFIX_UNAVAILABLE:"+symbol+":"+session)
         # Do not expose latest quote metadata, future events, or today's dossier.
-        for k in ("yahoo_metadata","source_documents","pattern_context"):r.pop(k,None)
+        for k in ("yahoo_metadata","source_documents","pattern_context","market_quote"):r.pop(k,None)
         r["yahoo_events"]=[e for e in r.get("yahoo_events",[]) if e.get("session", "9999")<=session]
         r.update(dossier={},collected_bar_count=len(r["bars"]),point_in_time=False)
         r["observation_blockers"]=list(dict.fromkeys([*r.get("observation_blockers",[]),"RETROSPECTIVE_CURRENT_VINTAGE_RECONSTRUCTION"]))

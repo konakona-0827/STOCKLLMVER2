@@ -18,7 +18,7 @@
 
 ## 預算與量測
 
-研究輸入使用 `max_input_bytes`，預設28,000 bytes；SEARCH可用獨立的 `search_max_input_bytes`，0.10.0擴為100,000 bytes以容納多型態候選（上限不代表每次用滿）。舊凍結policy沒有新欄時，搜尋回退使用原 `max_input_bytes`，不改寫其參數或版本。共同來源加入後必須再檢查最終input，超額受控失敗，不截候選、證據或缺口來冒充完整輸入。每輪有多少候選與API輸入預算是兩個不同限制。
+研究輸入使用 `max_input_bytes`，0.12.0起上限36,000 bytes（先前28,000），容納延遲報價證據及共用公開來源；SEARCH可用獨立的 `search_max_input_bytes`，0.10.0擴為100,000 bytes以容納多型態候選（上限不代表每次用滿）。舊凍結policy沒有新欄時，搜尋回退使用原 `max_input_bytes`，不改寫其參數或版本。共同來源加入後必須再檢查最終input，超額受控失敗，不截候選、證據或缺口來冒充完整輸入。每輪有多少候選與API輸入預算是兩個不同限制。
 
 短線多型態計畫用 `opportunity_reference_plans`，不再重送單一計畫；每種型態有自己的required引用。SHORT_SIGNAL與pattern.metrics完全相同的數值以 `values_from_pattern_metrics` 指向同封包欄位，差異值原樣保留，能無損還原。SEARCH不重送這些價量event_facts，仍保留公告與催化證據。介面預設最多研究4檔、9次模型請求（SEARCH一次與最多四組研究／反證），未研究候選顯示待評估，不能稱為AI已否決。
 

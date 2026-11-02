@@ -154,6 +154,8 @@ def attach_execution_plans(report, settings=None):
                 trigger_required=reference.get("trigger_required",False),entry_trigger_reference=reference.get("entry_trigger_reference"),
                 entry_ceiling_reference=reference.get("entry_ceiling_reference"),research_status=opportunity.get("research_status"))
         item["execution_plan"] = plan
+        for key in ("target_reference_at_entry_ceiling","invalidation_reference_at_entry_ceiling"):
+            if key in reference:plan[key]=reference[key]
         brief.append(deepcopy(plan))
     report["decision_brief"] = {"version": "jp-decision-brief-v1", "as_of": report["as_of"], "rows": brief,
         "capital_jpy": settings["capital_jpy"], "per_trade_risk_fraction": settings["per_trade_risk_fraction"],

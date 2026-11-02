@@ -32,15 +32,16 @@ class DevicePasswordTests(unittest.TestCase):
 
     def test_only_timestamp_changes_do_not_renotify_and_new_state_supersedes_pending(self):
         r={'synthetic':False,'as_of':'2026-10-28T16:00:00+09:00','desk':{'mode':'openai','selected_symbols':['9001.T']},
-            'securities':[{'symbol':'9001.T','execution_plan':{'action':'WAIT','as_of':'2026-10-28T16:00:00+09:00','suggested_amount_jpy':0},
-                'trade_decision':{'conclusion':'WAIT','reason_codes':[]}}]}
+            'securities':[{'symbol':'9001.T','execution_plan':{'action':'CONSIDER','as_of':'2026-10-28T16:00:00+09:00','suggested_amount_jpy':1000,
+                'entry_reference':100,'invalidation_reference':98,'target_reference':103},
+                'trade_decision':{'conclusion':'CONSIDER','reason_codes':[]}}]}
         self.assertEqual(len(enqueue_report(r,self.root/'report.html',self.db)['queued']),1)
         r['as_of']='2026-10-29T16:00:00+09:00';r['securities'][0]['execution_plan']['as_of']=r['as_of']
         self.assertEqual(enqueue_report(r,self.root/'report.html',self.db)['queued'],[])
         r['securities'][0]['trade_decision']['conclusion']='NO_TRADE'
-        self.assertEqual(len(enqueue_report(r,self.root/'report.html',self.db)['queued']),1)
+        self.assertEqual(len(enqueue_report(r,self.root/'report.html',self.db)['queued']),0)
         db=sqlite3.connect(self.db)
-        self.assertEqual(dict(db.execute('SELECT status,count(*) FROM events GROUP BY status')),{'PENDING':1,'SUPERSEDED':1})
+        self.assertEqual(dict(db.execute('SELECT status,count(*) FROM events GROUP BY status')),{'SUPERSEDED':1})
         db.close()
 
     def setUp(self):
@@ -137,19 +138,20 @@ class DevicePasswordTests(unittest.TestCase):
         report = {'synthetic':False, 'as_of':'2026-10-29T16:00:00+09:00',
             'desk':{'mode':'openai','selected_symbols':['6857.T']}, 'securities':[
                 {'symbol':'6857.T','trade_decision':{'conclusion':'NO_TRADE','reason_codes':['OBSERVATION_ONLY']},
-                 'opportunity_decision':{'action':'ENTRY_REVIEW','label':'人工積極進場評估',
+                 'execution_plan':{'action':'PROBE_BUY_REVIEW','suggested_amount_jpy':1000,'entry_reference':31070,'invalidation_reference':29700,'target_reference':35000},
+                 'opportunity_decision':{'action':'PROBE_BUY_REVIEW','label':'人工積極進場評估',
                     'pattern_id':'H-002','reference_plan':{'support_lower':29700,'entry_max':31500},
                     'manual_checks':['核對最新報價'],'policy_version':'active-v1', 'ignored_internal':'not-a-mail-field'}}]}
         self.assertEqual(len(enqueue_report(report, self.root/'report.html', self.db)['queued']),1)
         self.assertEqual(enqueue_report(report, self.root/'report.html', self.db)['queued'],[])
         db=sqlite3.connect(self.db)
         payload=json.loads(db.execute('SELECT payload FROM events').fetchone()[0]);db.close()
-        self.assertEqual(payload['action'],'ENTRY_REVIEW')
+        self.assertEqual(payload['action'],'PROBE_BUY_REVIEW')
         self.assertEqual(payload['opportunity_decision']['reference_plan']['support_lower'],29700)
         self.assertNotIn('ignored_internal',payload['opportunity_decision'])
         report['as_of']='2026-10-29T17:00:00+09:00'
         report['securities'][0]['opportunity_decision']['action']='WAIT'
-        self.assertEqual(len(enqueue_report(report, self.root/'report.html', self.db)['queued']),1)
+        self.assertEqual(len(enqueue_report(report, self.root/'report.html', self.db)['queued']),0)
 
     def test_retrospective_and_synthetic_opportunity_do_not_queue_or_flush(self):
         for synthetic,mode in ((True,''),(False,'RETROSPECTIVE_REAL_PRICE_CASE_RECONSTRUCTION')):

@@ -157,6 +157,11 @@ class OpenAIProvider:
                 tool_choice="required", max_tool_calls=policy["max_tool_calls_per_review"],
                 include=["web_search_call.action.sources"])
         holding = packet["core"].get("portfolio_position", {}).get("quantity", 0) > 0
+        if packet["core"].get("session_scan"):
+            payload["instructions"] += ("market_quote是帶時間戳的Yahoo延遲報價，非即時成交價，也不代表完整盤中K線。"
+                "可用來比較觸發與進場上限及重算計畫，但不可據此宣稱今日收盤確認或放量突破。"
+                "報價usable=false或不存在時只能等待；突破尚未觸發時可評估條件提案，不得說已成交。"
+                "只有原始價量、風報與獨立反證皆支持才提出試單；需人工用券商即時價重驗。")
         active = packet["core"].get("opportunity_policy", {}).get("enabled") is True
         if active:
             schema = deepcopy(payload["text"]["format"]["schema"])

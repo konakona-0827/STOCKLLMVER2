@@ -89,7 +89,11 @@ def _reference_plan(core, pattern, policy):
     support = pattern.get("support") or {}
     short = pattern.get("buy_type") in BUY_TYPES and "short_horizon" in policy
     entry = (pattern.get("metrics",{}).get("entry_trigger_reference") or core["technical"].get("latest_close")) if short else core["technical"].get("latest_close")
+    quote=core.get("market_quote") or {}
+    if quote.get("usable"):
+        entry=(pattern.get("metrics",{}).get("entry_trigger_reference") or quote["price"]) if short else quote["price"]
     stop = support.get("lower")
+    if short and quote.get("usable"):stop=entry*(1-pattern["metrics"]["stop_price_fraction"])
     numeric = lambda x: type(x) in (int, float) and math.isfinite(x) and x > 0
     if not numeric(entry) or not numeric(stop) or stop >= entry:
         return None
@@ -102,6 +106,8 @@ def _reference_plan(core, pattern, policy):
         net_return=target*(1-xc)/(entry*(1+ec))-1
         strategy_rr=(target/entry-1)/(stop_fraction+gap)
         ceiling=pattern["metrics"].get("entry_ceiling_reference",entry)
+        if quote.get("usable") and not pattern["metrics"].get("entry_trigger_required"):
+            ceiling=min(ceiling,entry*1.015)
         prior=[b for b in core["visible_series"]["bars"] if b["session"]<support["anchor_session"]][-policy["target_lookback_sessions"]:]
         levels=[b["high"] for i,b in enumerate(prior) if 0<i<len(prior)-1 and b["high"]>entry
             and b["high"]>prior[i-1]["high"] and b["high"]>prior[i+1]["high"]]
@@ -119,7 +125,9 @@ def _reference_plan(core, pattern, policy):
             "price_basis":core["visible_series"].get("price_basis"),"anchor_session":support["anchor_session"],
             "target_limitation":"2%是策略價格目標，不是預測或淨利；成本後估算另列。",
             "invalidation_basis":support["invalidation_basis"],"reprice_before_entry":True,
-            "meaning":"條件式進場、實際成交前重算目標與戰術風險線，成交後固定；5個交易日未達標重新評估退出，不攤平。"}
+            "meaning":"條件式進場、實際成交前重算目標與戰術風險線，成交後固定；5個交易日未達標重新評估退出，不攤平。",
+            **({"target_reference_at_entry_ceiling":ceiling*(1+gain),"invalidation_reference_at_entry_ceiling":ceiling*(1-stop_fraction),
+                "entry_price_basis":"DELAYED_QUOTE_OR_CONDITIONAL_TRIGGER"} if core.get("session_scan") else {})}
     anchor = support.get("anchor_session")
     previous = [b for b in core["visible_series"]["bars"] if anchor and b["session"] < anchor][-policy["target_lookback_sessions"]:]
     if len(previous) < 5:
@@ -184,6 +192,13 @@ def attach_opportunities(report, bundle):
             core = packet["core"]
             plan = _reference_plan(core, pattern, policy)
             distance = pattern.get("metrics", {}).get("distance_from_support_fraction")
+            quote=core.get("market_quote") or {}
+            if core.get("session_scan"):
+                if not quote.get("usable"):reasons.append("FRESH_DELAYED_QUOTE_REQUIRED")
+                elif pattern.get("buy_type") not in BUY_TYPES:
+                    distance=quote["price"]/(pattern.get("support") or {}).get("upper",quote["price"])-1
+                if plan and quote.get("usable") and plan.get("entry_ceiling_reference") and quote["price"]>plan["entry_ceiling_reference"]:
+                    reasons.append("DELAYED_PRICE_ABOVE_ENTRY_CEILING")
             search_ok = not report.get("discovery_required")
             if report.get("discovery_required"):
                 try:

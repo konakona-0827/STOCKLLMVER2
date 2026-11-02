@@ -137,6 +137,18 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                     "technical": {k: v for k, v in technical.items() if k != "evidence"},
                     "context_blockers": context_blockers, "context_reject": context_reject, "evidence": evidence,
                     "required_confirmation_evidence": required}
+            if bundle.get("session_scan"):
+                from .session_scan import validate_quote
+                core["session_scan"]=deepcopy(bundle["session_scan"])
+                core["market_quote"]=validate_quote(item["market_quote"],symbol,cutoff.isoformat(),
+                    max_age_seconds=core["session_scan"].get("max_quote_age_seconds",1800)) if item.get("market_quote") else None
+                if core["market_quote"]:
+                    q=core["market_quote"];qid=f'{symbol}:DELAYED_QUOTE:{q["quoted_at"]}'
+                    core["evidence"].append({"id":qid,"kind":"DELAYED_QUOTE","session":timestamp(q["quoted_at"]).astimezone(TOKYO).date().isoformat(),
+                        "available_at":q["fetched_at"],"values":deepcopy(q)})
+                    core["required_confirmation_evidence"].append(qid)
+                    for p in patterns:
+                        if p.get("research_candidate"):p["required_evidence_ids"].append(qid)
             if registry is not None:
                 core["patterns"] = patterns
                 core["pattern_registry_digest"] = digest(registry)
@@ -175,6 +187,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                             "agent_reviews": accepted, "agent_errors": errors, **decision})
             if registry is not None:
                 outputs[-1]["patterns"] = patterns
+            if bundle.get("session_scan"):
+                outputs[-1]["market_quote"]=deepcopy(core.get("market_quote"))
             pattern_candidate = any(p["research_candidate"] for p in patterns)
             from .opportunity import active_candidate,watch_candidate
             if (technical["state"] not in {"INSUFFICIENT_DATA", "NO_SETUP", "INVALIDATED", "EXPIRED"}
@@ -211,6 +225,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
                             "MANUAL_REVIEW_IDENTITIES_ARE_SELF_REPORTED"]}
     if "discovery" in bundle:
         report["discovery"] = deepcopy(bundle["discovery"])
+    if bundle.get("session_scan"):
+        report["session_scan"]=deepcopy(bundle["session_scan"])
     if registry is not None:
         report["pattern_registry"] = registry
         report["pattern_registry_digest"] = digest(registry)

@@ -91,6 +91,8 @@ def _compact_candidate(source_packet, cutoff):
         candidate["opportunity_reference_plan"] = deepcopy(source.get("opportunity_reference_plan"))
         if "opportunity_reference_plans" in source:
             candidate["opportunity_reference_plans"]=deepcopy(source["opportunity_reference_plans"])
+    if source.get("session_scan"):
+        candidate["market_quote"]=deepcopy(source.get("market_quote"))
     return candidate
 
 
@@ -264,6 +266,9 @@ class OpenAISearchProvider:
                         "短線風報用selection_reward_risk對minimum_reward_risk比較，不可套用H-002的minimum_net_rr。"
                         "以擴大研究覆蓋為目標，若有多個不同型態且可檢查的候選，優先用足max_selected；選中只是交付研究，不是買入推薦，仍可不足或空選。"
                         "可提交不同買入類型；待觸發的突破要明示，不能說已觸發或保證目標。")
+            if any("market_quote" in c for c in packet["core"]["candidates"]):
+                payload["instructions"] += ("market_quote是延遲參考價，並非即時成交價或盤中K；用來核對觸發及進場區間，"
+                    "不可聲稱今日已收盤確認。報價過期或缺失只供觀察，不能支持買入提案。")
         response = self.transport(payload, key, self.timeout)
         if not isinstance(response, dict) or response.get("status") != "completed":
             raise ProviderError("SEARCH_API_RESPONSE_NOT_COMPLETED")

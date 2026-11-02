@@ -25,7 +25,8 @@ from support_scout.decision import attach_decisions
 def report():
     return {'synthetic':False,'as_of':'2026-10-28T16:00:00+09:00',
         'desk':{'mode':'openai','selected_symbols':['6857.T']},'securities':[
-            {'symbol':'6857.T','trade_decision':{'conclusion':'WAIT','summary':'等待確認','reason_codes':['OBSERVATION_ONLY']},
+            {'symbol':'6857.T','trade_decision':{'conclusion':'CONSIDER','summary':'人造操作提案','reason_codes':['OBSERVATION_ONLY']},
+             'execution_plan':{'action':'CONSIDER','suggested_amount_jpy':1000,'entry_reference':100,'invalidation_reference':98,'target_reference':103},
              'patterns':[{'pattern_id':'H-001','stage':'EARLY_WATCH'}]}]}
 
 
@@ -95,7 +96,7 @@ class NotificationTests(unittest.TestCase):
         with patch.dict(os.environ,{'JP_DESK_GMAIL_APP_PASSWORD':'test-secret'},clear=True):
             self.assertEqual(flush(self.config,self.db,sender=lambda *a:calls.append(a))['sent'],1)
             self.assertEqual(flush(self.config,self.db,sender=lambda *a:self.fail('duplicate'))['sent'],0)
-            r=report();r['as_of']='2026-10-29T16:00:00+09:00';r['securities'][0]['trade_decision']['conclusion']='CONSIDER'
+            r=report();r['as_of']='2026-10-29T16:00:00+09:00';r['securities'][0]['execution_plan']['suggested_amount_jpy']=2000
             enqueue_report(r,self.root/'report.html',self.db)
             def uncertain(*a): raise TimeoutError('private transport detail')
             self.assertEqual(flush(self.config,self.db,sender=uncertain)['status'],'ERROR')

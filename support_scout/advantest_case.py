@@ -115,7 +115,9 @@ def build_real_bundle(source_bundle, case, checkpoint, *, documents=None, regist
     if evaluated < latest_retrieval or cutoff > evaluated:
         raise DataError("REAL_CASE_EVALUATION_PRECEDES_SOURCE_OR_CUTOFF")
     bundle = deepcopy(source_bundle)
+    bundle.pop("session_scan",None)
     item = bundle["securities"][0]
+    item.pop("market_quote",None)
     item["bars"] = [r for r in item["bars"] if r["session"] <= cutoff.astimezone(TOKYO).date().isoformat()]
     if len(item["bars"]) < 60 or item["bars"][-1]["session"] != cutoff.date().isoformat():
         raise DataError("REAL_CASE_PREFIX_REQUIRES_60_COMPLETE_BARS_AND_TARGET_SESSION")

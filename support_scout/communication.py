@@ -160,6 +160,9 @@ def review_wire(packet):
         if key in core:
             value[key] = deepcopy(core[key])
     value["pattern_parameters"] = {p["pattern_id"]: p.get("definition", {}).get("parameters", {}) for p in core.get("patterns", [])}
+    if core.get("session_scan"):
+        value["session_scan"]=deepcopy(core["session_scan"])
+        value["market_quote"]=deepcopy(core.get("market_quote"))
     reverse={v:k for k,v in aliases.items()}
     if core.get("opportunity_policy",{}).get("short_horizon"):
         value["pattern_required"]={p["pattern_id"]:[reverse[x] for x in p["required_evidence_ids"]] for p in core.get("patterns",[]) if p.get("research_candidate")}
@@ -263,6 +266,8 @@ def search_wire(packet):
             "counterevidence": {reverse[e["id"]]: deepcopy(e.get("values")) for e in c["evidence"] if e["kind"] in {"INVALIDATED", "EXPIRED"}}})
         if "analysis_context" in c:
             value["candidates"][-1]["analysis_context"] = deepcopy(c["analysis_context"])
+        if "market_quote" in c:
+            value["candidates"][-1]["market_quote"]=deepcopy(c["market_quote"])
         if "support_model_boundaries" in c:
             value["candidates"][-1]["support_model_boundaries"] = deepcopy(c["support_model_boundaries"])
         if "opportunity_reference_plan" in c:

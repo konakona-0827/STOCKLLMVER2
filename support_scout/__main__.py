@@ -27,6 +27,7 @@ def main(argv=None) -> int:
     health.add_argument("--require-agents", action="store_true")
     local = sub.add_parser("serve", help="本機頁面：手動成交／持倉及固定名單分析，沒有下單能力")
     local.add_argument("--port", type=int, default=8765)
+    sub.add_parser("session-scan",help="交易時段內執行一輪，使用延遲報價；休市／午休／同時段重複則跳過")
     mail = sub.add_parser("notify-configure", help="設定同一Gmail寄件／收件地址；不接受命令列密碼")
     mail.add_argument("email")
     mail.add_argument("--env-file", type=Path, help="只讀明確指定ENV的寄信密碼欄位，不複製整份ENV")
@@ -114,6 +115,11 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command=="session-scan":
+            from .session_scan import run_session
+            result=run_session()
+            print(json.dumps(result,ensure_ascii=False))
+            return 3 if result.get("agent_errors") else 0
         if args.command == "decision-lab-replay":
             from .decision_lab import replay_lab
             print(json.dumps(replay_lab(args.directory), ensure_ascii=False))
