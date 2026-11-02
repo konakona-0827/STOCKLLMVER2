@@ -52,7 +52,7 @@ def current_position_quotes(health, result):
             age = (at-stamp).total_seconds()
             symbol = str(quote['symbol']).strip()
             price = float(quote['last_price'])
-            if (quote.get('quote_status') != 'LIVE' or stamp.tzinfo is None
+            if (quote.get('quote_status') != 'LIVE' or quote.get('is_trial') or stamp.tzinfo is None
                     or not symbol
                     or not 0 <= age <= MAX_QUOTE_AGE_SECONDS
                     or not math.isfinite(price) or price <= 0):
@@ -715,12 +715,14 @@ class Dashboard:
         self.scheduler.start_auto(time.time())
 
     def health_delay(self):
-        """Check open orders every minute; otherwise refresh broker state every five."""
+        """Refresh held-stock quotes each market minute without another LLM call."""
         snapshot = self.last_health or {}
         pending = bool(snapshot.get('unresolved_attempts')) or any(
             int(row.get('unconfirmed_qty') or 0) > 0
             for row in snapshot.get('broker_order_reconciliation') or [])
-        return 60 if pending else 300
+        held = any(int(row.get('broker_cash_qty') or 0) > 0
+                   for row in snapshot.get('inventory_comparison') or [])
+        return 60 if pending or (held and is_twse_oddlot_market_window(time.time())) else 300
 
     def launch_health(self):
         if self.health_running:
@@ -728,8 +730,8 @@ class Dashboard:
         self.health_running = True
         def work():
             try:
-                from execution.health_monitor import sync_broker_state
-                self.events.put(('health', sync_broker_state(ROOT)))
+                self.events.put(('health', self.service.refresh_broker_state(
+                    refresh_quotes=is_twse_oddlot_market_window(time.time()))))
             except Exception as exc:
                 self.events.put(('health_error', redact(f'{type(exc).__name__}: {exc}')))
         threading.Thread(target=work, name='health-worker', daemon=True).start()
@@ -965,6 +967,8 @@ class Dashboard:
                 elif kind == 'finished':
                     self.mode_selector.configure(state='readonly')
                     self.scheduler.finish()
+                    # Analysis may outlive the 120-second quote freshness window.
+                    self.next_health_at = time.time()
                     self.schedule_inventory_refresh()
                 elif kind == 'refresh':
                     if not self.scheduler.scan_lock.locked():
@@ -1238,13 +1242,6 @@ class Dashboard:
                     health.get('checked_at') or '--',
                     DECISION_LABELS.get(d.get('decision'), d.get('decision', '--')),
                     value(d.get('confidence'), True)])
-            for q in quotes.values():
-                try:
-                    age = (now() - datetime.fromisoformat(q['quote_timestamp'])).total_seconds()
-                    age = f'{age:,.0f}'
-                except (TypeError, ValueError):
-                    age = '--'
-                self.quote_tree.insert('', 'end', values=[q['symbol'],q.get('name') or '股票名稱未取得',QUALITY_LABELS.get(q['quote_status'],q['quote_status']),value(q['last_price']),age,q['quote_timestamp'] or '--',q['request_started_at'],q.get('received_at') or '--',q['request_completed_at']])
             strategy = r['manifest'].get('strategy') or {}
             detail_text = (f"正式交易策略：{strategy.get('name','--')} v{strategy.get('version','--')}\n\n"
                            if strategy else '')
@@ -1254,6 +1251,25 @@ class Dashboard:
             if r['manifest'].get('display_notice'):
                 detail_text = r['manifest']['display_notice'] + '\n\n' + detail_text
             update_detail_text(self.detail, detail_text)
+        # The live holdings feed must remain visible between analysis runs.
+        display_quotes = dict(quotes)
+        display_quotes.update({q['symbol']: q for q in health.get('position_quotes') or []})
+        for q in display_quotes.values():
+            status = q.get('quote_status', 'UNAVAILABLE')
+            try:
+                seconds = (now() - datetime.fromisoformat(q['quote_timestamp'])).total_seconds()
+                age = f'{seconds:,.0f}'
+                if status == 'LIVE' and not 0 <= seconds <= MAX_QUOTE_AGE_SECONDS:
+                    status = 'LAST_KNOWN'
+            except (KeyError, TypeError, ValueError):
+                age, status = '--', 'UNAVAILABLE'
+            label = ('試撮（不可交易）' if q.get('is_trial') else
+                     QUALITY_LABELS.get(status, status))
+            self.quote_tree.insert('', 'end', values=[
+                q['symbol'], q.get('name') or '股票名稱未取得', label,
+                value(q.get('last_price')), age, q.get('quote_timestamp') or '--',
+                q.get('request_started_at') or '--', q.get('received_at') or '--',
+                q.get('request_completed_at') or '--'])
         self.broker_position_tree.delete(*self.broker_position_tree.get_children())
         for row in health.get('inventory_comparison') or []:
             self.broker_position_tree.insert('', 'end', values=[
@@ -1604,6 +1620,10 @@ class Dashboard:
             f'未結 BUY 安全保留：{money(health.get("pending_buy_reserve_twd"))}\n'
             f'總上限剩餘：{money(health.get("strategy_remaining_twd"))}　'
             f'可供新買：{buy_budget}　持倉參考市值：{market_value}')
+        self.system_budget_text.set(self.system_budget_text.get()
+            + f'\n持股行情查詢時間：{health.get("position_quotes_checked_at") or "尚未查詢"}'
+            + ('；部分行情未更新，請查看行情與時間。'
+               if health.get('position_quote_errors') else ''))
         self.finance_text.set(
             f'一戶通餘額：{money(health.get("broker_one_account_balance_twd"))}\n'
             f'當日買進已預留：{money(health.get("daily_buy_reserved_twd"))}　'

@@ -1,5 +1,6 @@
 """The live dashboard keeps broker, P&L, and reason values in their columns."""
 from decimal import Decimal
+from datetime import datetime, timedelta
 import gc
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from dashboard import Dashboard
+from config import TAIPEI
 
 
 class DashboardTradeDisplayTests(unittest.TestCase):
@@ -95,6 +97,24 @@ class DashboardTradeDisplayTests(unittest.TestCase):
                 second_root.destroy()
                 second = second_root = None
                 gc.collect()
+
+    def test_holdings_quotes_render_without_an_analysis_and_show_current_quality(self):
+        at = datetime(2026, 11, 2, 10, 0, tzinfo=TAIPEI)
+        self.app.result = None
+        self.app.last_health = {'position_quotes': [
+            dict(symbol='1101', last_price=20, quote_status='LIVE',
+                 quote_timestamp=at.isoformat()),
+            dict(symbol='2449', last_price=100, quote_status='LIVE', is_trial=True,
+                 quote_timestamp=at.isoformat()),
+            dict(symbol='2891', last_price=30, quote_status='LIVE',
+                 quote_timestamp=(at-timedelta(seconds=121)).isoformat())]}
+        with patch('dashboard.now', return_value=at):
+            self.app.render()
+        rows = [dict(zip(self.app.quote_tree['columns'],
+                         self.app.quote_tree.item(item, 'values')))
+                for item in self.app.quote_tree.get_children()]
+        self.assertEqual(['即時行情', '試撮（不可交易）', '最近行情'],
+                         [row['行情狀態'] for row in rows])
 
 
 if __name__ == '__main__':

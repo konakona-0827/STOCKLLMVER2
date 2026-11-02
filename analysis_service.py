@@ -575,31 +575,47 @@ class AnalysisService:
         save_json(directory/'execution_report.json', report)
         return report
 
+    def refresh_broker_state(self, refresh_quotes=True):
+        """Shared manual/automatic refresh; quotes use the existing COM worker."""
+        from execution.health_monitor import sync_broker_state
+
+        def add_position_quotes(health, runtime):
+            if not refresh_quotes:
+                return
+            # Clear prior evidence on failures or an empty/unverified inventory.
+            health['position_quotes'] = []
+            health['position_quote_errors'] = {}
+            health['position_quotes_checked_at'] = now().isoformat()
+            symbols = list(dict.fromkeys(
+                row['symbol'] for row in health.get('inventory_comparison', [])
+                if int(row.get('broker_cash_qty') or 0) > 0))
+            if not symbols or not health.get('inventory_checked'):
+                return
+            started = now().isoformat()
+            try:
+                raw, errors = runtime.fetch_quotes(
+                    symbols, Audit(self.directory/'broker_refresh'),
+                    self.stop.is_set, timeout=12)
+                quote_batch = multi_snapshot(
+                    symbols, raw, errors, started, now().isoformat())
+                health['position_quotes'] = quote_batch['quotes']
+                health['position_quote_errors'] = dict(errors)
+                for quote in quote_batch['quotes']:
+                    if quote['quote_status'] != 'LIVE' or quote.get('is_trial'):
+                        health['position_quote_errors'].setdefault(
+                            quote['symbol'], '；'.join(quote.get('warnings') or [])
+                            or '尚無可驗證的即時行情')
+                health['position_quotes_checked_at'] = quote_batch['request_completed_at']
+            except Exception as exc:
+                health['position_quote_errors'] = {
+                    'batch': redact(f'{type(exc).__name__}: {exc}')}
+
+        return sync_broker_state(ROOT, enrich=add_position_quotes)
+
     def refresh(self, sync_broker=False):
         from execution.health_monitor import latest_refresh_snapshot
-        broker_snapshot = latest_refresh_snapshot(ROOT)
-        if sync_broker:
-            # The broker's COM-owning thread also refreshes held-stock quotes.
-            from execution.health_monitor import sync_broker_state
-            def add_position_quotes(health, runtime):
-                symbols = [row['symbol'] for row in health.get('inventory_comparison', [])
-                           if int(row.get('broker_cash_qty') or 0) > 0]
-                if symbols and health.get('inventory_checked'):
-                    started = now().isoformat()
-                    try:
-                        raw, errors = runtime.fetch_quotes(
-                            symbols, Audit(self.directory/'broker_refresh'),
-                            self.stop.is_set, timeout=12)
-                        quote_batch = multi_snapshot(
-                            symbols, raw, errors, started, now().isoformat())
-                        health['position_quotes'] = quote_batch['quotes']
-                        health['position_quote_errors'] = errors
-                        health['position_quotes_checked_at'] = quote_batch['request_completed_at']
-                    except Exception as exc:
-                        health['position_quotes'] = []
-                        health['position_quote_errors'] = {
-                            'batch':redact(f'{type(exc).__name__}: {exc}')}
-            broker_snapshot = sync_broker_state(ROOT, enrich=add_position_quotes)
+        broker_snapshot = (self.refresh_broker_state() if sync_broker
+                           else latest_refresh_snapshot(ROOT))
         path = self.directory/'latest_dashboard.json'
         try:
             result = json.loads(path.read_text(encoding='utf-8'))
