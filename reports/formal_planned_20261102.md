@@ -40,3 +40,11 @@ python -m unittest discover -s tests -v
 - 入場前會拒絕已跌破失效價或逾期的計畫。**已受理等待中的原生限價單不是條件單**；不宣稱內含自動停損或新增盤中自動撤單。盤中撤單必須經券商接受與原精確序號對帳確認後才釋放未成交預留。ROD 剩餘量依交易日失效與既有對帳處理。
 - 不會因新定價模式放寬淨收益、報酬風險比、每筆模型損失、最低保留額或成本檢查。資金小、費用高或資料不足時仍可能沒有委託。
 - Repository 預設 enabled=false／planned_limits_enabled=false；本機才依明確授權啟用。正式帳戶備份、授權與持倉／額度核對證據保存在忽略的 data 目錄，不將個人財務資料推送至 Repository。
+
+## 最終驗證與啟動
+
+- 程式提交 `0f23538` 的乾淨 Git 匯出副本完整測試 **354／354 通過（31.257 秒）**；工作區測試為 362／362。輸出見 `formal_planned_clean_tests_20261102.txt`。
+- 正式資料庫已用 SQLite backup 備份，本機持股列、資金上限列與原風控值經前後比對不變。只啟用本機 enabled／planned_limits_enabled 兩項授權開關；沒有建立新帳戶或發送湊數測試單。
+- 已關閉獨立 Paper 視窗，恢復原 STOCKLLM Dashboard Supervisor 排程並啟動正式 Dashboard。畫面確認自動掃描啟用，2026-11-02 台灣 09:05／日本 10:05 進行第一個原排程時段。
+- 啟動後 2026-11-02 台灣 08:22 的正式券商核對為 OK、inventory_checked=true、errors=[]。目前畫面使用原正式資金、持倉及歷史，而不是研究預設值。
+- 本機詳細證據在 `data/backups/formal_live_activation_20261102/`，包括啟用前後配置／持倉核對與使用者授權；這些個人財務資料未加入 Git。此後的文件提交不修改已啟動的策略程式。
