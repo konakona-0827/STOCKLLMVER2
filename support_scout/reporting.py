@@ -5,6 +5,7 @@ from html import escape
 
 from .contracts import timestamp
 from datetime import timedelta, timezone
+from .field_guide import code_label, render_field_guide
 
 STATES = {"RULE_CONFIRMED": "規則確認（暫定）", "RETEST_HELD": "回測守住，等待確認",
     "BOUNCE_SEEN": "已反彈，等待回測", "BASE_FORMING": "底部形成中", "INVALIDATED": "支撐已失效",
@@ -83,7 +84,7 @@ def render_html(report: dict, bundle: dict) -> str:
             f'<td>{escape(origin)}</td><td>{escape(change)}</td><td class="notes">{reason_text}</td></tr>')
         reviews = []
         for role, review in item.get("agent_reviews", {}).items():
-            reviews.append(f'<p><b>{escape(role)} · {escape(review["verdict"])}</b> {escape(review["summary"])}</p>')
+            reviews.append(f'<p><b>{escape(code_label(role))} · {escape(code_label(review["verdict"]))}</b> {escape(review["summary"])}</p>')
             info = review.get("public_information")
             if info:
                 reviews.append('<details open><summary>主動查找的財報與公開資訊（模型抽取，仍待獨立核實）</summary>')
@@ -107,7 +108,7 @@ def render_html(report: dict, bundle: dict) -> str:
                 f'支撐測試 {metrics.get("support_test_count", "—")} 次；縮量比 {fmt(metrics.get("volume_contraction_ratio"))}；'
                 f'距支撐 {fmt((metrics.get("distance_from_support_fraction") or 0)*100)}%。</p>'
                 '<p>機會階段不等於交易批准；H1／H2尚未經回測驗證。</p>'
-                f'<p class="notes">{escape("；".join(pattern["reason_codes"]))}</p></div>')
+                f'<p class="notes">{escape("；".join(code_label(c) for c in pattern["reason_codes"]))}</p></div>')
         source_rows = source.get("source_documents", [])
         links = " ".join(f'<a href="{escape(s["url"], quote=True)}" target="_blank" rel="noreferrer">來源{i+1}</a>'
             for i, s in enumerate(source_rows) if s.get("url", "").startswith("https://"))
@@ -128,14 +129,14 @@ def render_html(report: dict, bundle: dict) -> str:
                 decision_html += (f'<p><b>延遲參考價 {fmt(quote.get("price"))} JPY</b> · 報價時間 {escape(quote.get("quoted_at","—"))}；'
                     f'延遲約 {quote.get("age_seconds",0)/60:.1f} 分鐘。{"可供條件比對" if quote.get("usable") else "過期，不支持買入提案"}。'
                     '這個報價已提供三Agent參考，型態仍採完整日線；請以券商即時價重驗。</p>')
-            opinions = "；".join(f'{role}：{view["action"]} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
+            opinions = "；".join(f'{code_label(role)}：{code_label(view["action"])} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
             decision_html += (f'<div class="banner"><h4>{escape(opportunity["label"])}</h4>'
                 f'<p>{escape(str(opportunity.get("pattern_id") or "—"))} · {escape(opportunity["policy_version"])} · {escape(opportunity["scope"])}</p>'
                 f'<p>試單參考 {fmt(active_plan.get("entry_reference"))}；參考風險價 {fmt(active_plan.get("invalidation_reference"))}；'
                 f'目標參考 {fmt(active_plan.get("target_reference"))}；策略風報 {fmt(active_plan.get("selection_reward_risk",active_plan.get("net_reward_risk")))}；'
                 f'成本後情境RR {fmt(active_plan.get("net_reward_risk"))}</p>'
                 f'<p>{escape(opinions or "三角色尚未完成機會評估。")}</p>'
-                f'<p>{escape("；".join(opportunity["reason_codes"]))}</p>'
+                f'<p>{escape("；".join(code_label(c) for c in opportunity["reason_codes"]))}</p>'
                 f'<details><summary>試單前人工核對</summary>{escape("；".join(opportunity["manual_checks"]))}</details>'
                 '<p>條件式人工評估，未核實事項仍保留；沒有下單、保證停損價或勝率。</p></div>')
             if opportunity.get("buy_type_label"):
@@ -160,7 +161,7 @@ def render_html(report: dict, bundle: dict) -> str:
             f'確認：{escape(str(support.get("confirmed_at", "—")))}</p>'
             f'<p>價格口徑：{escape(item.get("price_basis", "未知"))}。固定失效下緣：{fmt(support.get("lower"))}；最新日線：{escape(str(t.get("latest_session", "—")))}</p>'
             f'{pattern_html}{decision_html}<p class="notes">{reason_text}</p>{"".join(reviews) or "<p>本檔尚無模型評語。</p>"}'
-            f'<p>{links} <a href="http://127.0.0.1:8765/#manual-desk">回報實際買賣／查看持倉</a></p></article>')
+            f'<p>{links} <a href="#json-{anchor_id}">本檔JSON中文欄位說明</a> · <a href="http://127.0.0.1:8765/#manual-desk">回報實際買賣／查看持倉</a></p></article>')
     jst = timestamp(report["as_of"]).astimezone(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
     queue = ", ".join(report["technical_queue"]) or "本輪沒有，繼續等待"
     status = observation.get("status", "UNKNOWN")
@@ -185,8 +186,8 @@ def render_html(report: dict, bundle: dict) -> str:
             reviews = output.get("agent_reviews", {})
             handoffs.append(f'<tr><td>{selected["agent_order"]}</td><td>{escape(selected["symbol"])}</td>'
                 f'<td>{selected["pre_rank"]}</td><td>{escape(selected["rationale"])}</td>'
-                f'<td>{escape(reviews.get("researcher",{}).get("verdict","未完成"))}</td>'
-                f'<td>{escape(reviews.get("reviewer",{}).get("verdict","未完成"))}</td>'
+                f'<td>{escape(code_label(reviews.get("researcher",{}).get("verdict","未完成")))}</td>'
+                f'<td>{escape(code_label(reviews.get("reviewer",{}).get("verdict","未完成")))}</td>'
                 f'<td>{escape(output.get("trade_decision",{}).get("label", "待裁決"))}</td></tr>')
         status_text = search.get("status", "NOT_RUN")
         if discovery.get("mode") == "NUMERIC_ONLY":
@@ -225,7 +226,7 @@ def render_html(report: dict, bundle: dict) -> str:
             f'<td>{escape(p["label"])}<br>{escape(p.get("buy_type_label") or "—")}<br>{escape(RESEARCH_PROGRESS.get(p.get("research_status"),""))}</td><td>{escape(p["entry_condition"])}</td>'
             f'<td>{fmt(p["suggested_amount_jpy"])}</td><td>{fmt(p["suggested_shares"])}</td>'
             f'<td>{fmt(p["entry_reference"])} / {fmt(p["invalidation_reference"])} / {fmt(p["target_reference"])}</td>'
-            f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(p["sizing_status"])}</td></tr>' for p in brief["rows"])
+            f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(code_label(p["sizing_status"]))}</td></tr>' for p in brief["rows"])
         brief_html = (f'<section id="decision-brief"><h2>Python 決策總表：標的、條件與建議金額</h2>'
             f'<p>本金 {fmt(brief["capital_jpy"])} JPY；單筆情境虧損上限 {fmt(brief["per_trade_risk_budget_jpy"])} JPY；'
             f'本輪建議新增投入 {fmt(brief["proposed_total_jpy"])} JPY。</p>'
@@ -243,5 +244,5 @@ body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margi
 {wire_html}<p><a href="http://127.0.0.1:8765/">本機成交／持倉頁面</a>（先啟動 Dashboard.cmd；只有確認實際成交才更新持倉）</p>
 <h2>觀察名單與失效條件</h2><input id="filter" placeholder="搜尋代號、名稱或狀態" aria-label="篩選觀察表">
 <div class="scroll"><table><thead><tr><th>標的</th><th>型態</th><th>收盤</th><th>暫定支撐區</th><th>距離上緣</th><th>結論</th><th>候選來源</th><th>跨日變化</th><th>待確認</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>
-<h2>個股證據與兩方評語</h2>{''.join(cards)}<footer>Run {escape(observation.get('run_id','—'))} · 規則 {escape(report['rules']['version'])} · 快照 {escape(report['snapshot_id'])}<br>本報告保存於本機；沒有訂單或帳戶執行能力。</footer>
+<h2>個股證據與兩方評語</h2>{''.join(cards)}{render_field_guide(report)}<footer>Run {escape(observation.get('run_id','—'))} · 規則 {escape(report['rules']['version'])} · 快照 {escape(report['snapshot_id'])}<br>本報告保存於本機；沒有訂單或帳戶執行能力。</footer>
 </main><script>document.getElementById('filter').addEventListener('input',function(){{const q=this.value.toLowerCase();document.querySelectorAll('tbody tr').forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q));}});</script></html>'''

@@ -21,7 +21,7 @@ PANEL = '''<style>
 </style><section id="manual-desk" style="background:#fff;padding:22px;margin:20px 0;border:2px solid #306e9b;border-radius:8px">
 <h2>手動成交回報與持倉</h2><p>這裡只記錄你已在券商完成的交易；沒有下單能力。未勾選確認，不計入持倉。回報會供下一輪三Agent判斷使用。</p>
 <form id="fill-form"><label>代號 <input name="symbol" placeholder="6857" required></label>
-<label>方向 <select name="side"><option>BUY</option><option>SELL</option></select></label>
+<label>方向 <select name="side"><option value="BUY">買進 BUY</option><option value="SELL">賣出 SELL</option></select></label>
 <label>股數（可填零股） <input name="quantity" type="number" min="0.00000001" step="any" required></label>
 <label>每股成交價 JPY <input name="price" type="number" min="0.001" step="any" required></label>
 <label>手續費 JPY <input name="fees" type="number" min="0" step="any" value="0"></label>
@@ -51,19 +51,35 @@ refreshDesk();setInterval(refreshDesk,5000);
 
 SCHEDULER_PANEL='''<section id="scan-control" style="background:#eaf4fa;padding:22px;border:2px solid #306e9b;border-radius:8px;margin:20px 0">
 <h2>日股自動掃描控制台</h2><p>程式內部每30分鐘檢查；交易時段才分析，午休與休市跳過。不需啟動Codex，開著此程式即可。</p>
+<p id="service-status" role="status">尚未確認程式連線，正在檢查…</p><p id="report-freshness"></p>
 <p id="scheduler-status" role="status">正在讀取掃描狀態…</p><p id="scheduler-last"></p>
-<button id="scheduler-start">啟動自動掃描</button> <button id="scheduler-stop">停止自動掃描</button>
+<button id="scheduler-start">啟動自動掃描</button> <button id="scheduler-stop">停止自動掃描</button> <button id="scan-now">立即手動分析</button> <button id="view-latest">重新載入最新報告</button>
+<p id="scheduler-operation" role="status"></p>
+<p><a href="#decision-brief">看決策與建議金額</a> · <a href="#field-guide">看個股JSON中文說明</a> · <a href="#manual-desk">回報已完成成交</a></p>
+<details><summary>第一次使用：如何啟動、確認運行與閱讀結果</summary>
+<ol><li>在專案資料夾雙擊 Dashboard.cmd，保留啟動的終端視窗。也可在該資料夾執行 <code>python -X utf8 -m support_scout serve --port 8765 --open-browser</code>。</li>
+<li>看到「程式連線正常」才表示服務有回應；再確認「掃描器運行中」及「自動掃描已啟用」。休市待命正常，與程式關閉不同。連線檢查每5秒更新，不使用模型API。</li>
+<li>自動掃描若曾被停止，按「啟動自動掃描」。想現在重新分析可按「立即手動分析」；會使用API並可能寄有效操作通知，仍受交易時段限制。</li>
+<li>先看報告快照時間及來源報價時間，再看決策總表。WAIT／WATCH、建議金額0都表示目前不新增買進；有參考價不等於買訊。</li>
+<li>有效提案請核對買入類型、觸發價、進場上限、風險價、目標及金額；以券商報價重驗。完成實際交易後才在下方勾選確認成交，讓下一輪知道你的持倉。</li>
+</ol><p>關閉瀏覽器不停止掃描；關閉程式終端、關機或睡眠會中斷服務。舊報告能開啟不代表程式還在運行。</p></details>
 <p>WATCH不寄信；有效買入提案或持倉減碼／退出才寄。停止後不再開始新一輪，已執行中的分析會完成。</p>
 <script>
 async function refreshScheduler(){try{const s=await(await fetch('/api/state')).json();const a=s.scheduler;
+document.getElementById('service-status').textContent='程式連線正常 · '+(a.worker_alive?'掃描器運行中':'掃描器未運行')+' · 狀態確認時間（日本）：'+s.server_time;
+document.getElementById('report-freshness').textContent='目前頁面報告快照：'+(htmlReportAsOf||'尚無')+' · 最新完成報告：'+(s.report_as_of||'尚無')+(s.report_as_of&&s.report_as_of!==htmlReportAsOf?' · 有新報告，請按「重新載入最新報告」':'');
 document.getElementById('scheduler-status').textContent=(a.enabled?'自動掃描：已啟用':'自動掃描：已停止')+' · '+(a.running?'分析中':a.market_open?'交易時段':'午休或休市')+' · 下次檢查：'+(a.next_run_jst||'—');
 const last=a.last_result;const labels={COMPLETE:'完成',DEGRADED:'完成但有資料或研究缺口',RUNNING:'執行中',FAILED:'失敗',SKIPPED_MARKET_CLOSED:'午休或休市，已略過',SKIPPED_DUPLICATE_SLOT:'本時段已執行',SKIPPED_NO_USABLE_DELAYED_QUOTES:'延遲報價過期，已略過模型',SKIPPED_BUSY:'已有分析執行中'};
 document.getElementById('scheduler-last').textContent='上次結果：'+(last?(labels[last.status]||last.status)+(last.slot?' · '+last.slot:'')+' · 模型請求 '+(last.model_calls||0)+' 次':'尚無執行紀錄')+(a.error?' · 錯誤：'+a.error:'');
 document.getElementById('scheduler-start').disabled=a.enabled&&a.worker_alive;document.getElementById('scheduler-stop').disabled=!a.enabled;
 const manual=document.getElementById('analyze');if(manual)manual.disabled=a.running||s.analysis.status==='RUNNING';
-}catch(e){document.getElementById('scheduler-status').textContent='無法讀取掃描狀態：'+e.message;}}
-document.getElementById('scheduler-start').onclick=async()=>{await postDesk('/api/scheduler',{enabled:true});await refreshScheduler();};
-document.getElementById('scheduler-stop').onclick=async()=>{await postDesk('/api/scheduler',{enabled:false});await refreshScheduler();};
+document.getElementById('scan-now').disabled=a.running||s.analysis.status==='RUNNING';
+}catch(e){document.getElementById('service-status').textContent='程式連線中斷，先前畫面可能已過期；請重新執行 Dashboard.cmd。';document.getElementById('scheduler-status').textContent='目前掃描狀態無法確認：'+e.message;for(const id of ['scheduler-start','scheduler-stop','scan-now'])document.getElementById(id).disabled=true;}}
+async function schedulerAction(path,value){try{await postDesk(path,value);document.getElementById('scheduler-operation').textContent=path==='/api/analyze'?'已提交手動分析；完成後請載入最新報告。':'掃描設定已更新。';await refreshScheduler();}catch(e){document.getElementById('scheduler-operation').textContent='操作未完成：'+e.message;}}
+document.getElementById('scheduler-start').onclick=()=>schedulerAction('/api/scheduler',{enabled:true});
+document.getElementById('scheduler-stop').onclick=()=>schedulerAction('/api/scheduler',{enabled:false});
+document.getElementById('scan-now').onclick=()=>schedulerAction('/api/analyze',{});
+document.getElementById('view-latest').onclick=()=>location.reload();
 refreshScheduler();setInterval(refreshScheduler,5000);
 </script></section>'''
 
@@ -141,6 +157,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/":
                 report, file = self.server.latest()
                 html = file.read_text(encoding="utf-8") if file else '<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>日股決策與持倉</title><main><h1>Japan Support Desk</h1></main></html>'
+                if report and file and (file.parent / 'input.json').exists():
+                    # Re-render locally with current labels, without mutating archived artifacts or calling APIs.
+                    from .reporting import render_html
+                    html = render_html(report, strict_json_loads((file.parent / 'input.json').read_text(encoding='utf-8')))
+                elif report and 'id="field-guide"' not in html:
+                    from .field_guide import render_field_guide
+                    html=html.replace('</main>',render_field_guide(report)+'</main>',1)
                 panel = PANEL.replace("__TOKEN__", json.dumps(self.server.token)).replace("__ASOF__", json.dumps(report.get("as_of") if report else None))
                 html=html.replace('<main>','<main>'+SCHEDULER_PANEL,1)
                 # The controller script needs postDesk, declared in PANEL.
@@ -149,7 +172,7 @@ class Handler(BaseHTTPRequestHandler):
                 report, _ = self.server.latest()
                 now = datetime.now(TOKYO).isoformat()
                 self.reply({"portfolio": read_snapshot(self.server.data_root / "manual_fills.json", now),
-                    "project_root":str(ROOT.resolve()),
+                    "project_root":str(ROOT.resolve()), "server_time":now,
                     "analysis": self.server.analysis, "email": email_status(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"),
                     "scheduler":self.server.scheduler.status(),
                     "report_as_of": report.get("as_of") if report else None,
