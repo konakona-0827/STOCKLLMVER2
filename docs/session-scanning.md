@@ -18,7 +18,7 @@ python -X utf8 -m support_scout serve --port 8765 --open-browser
 
 1. 安裝Python 3.11以上、取得本專案；執行期只用標準函式庫。
 2. 將 `local_settings.example.json` 複製成忽略的 `local_settings.json`，將 `.env.example` 複製成忽略的 `.env`，在本機填入自己的OpenAI key。ENV相對路徑以設定檔所在資料夾解析，搬動整個專案不必保留舊電腦使用者路徑。
-3. Gmail寄件地址及應用程式密碼、本金／風險設定、確認成交紀錄是本機資料，需自行配置或搬移，不隨Git傳送；缺本金時不會建議正數部位。Gmail可用 `EmailSetup.cmd`，或明確用notify-configure引用本機ENV。
+3. 本金／風險設定、確認成交、草稿、研究／通知SQLite與排程紀錄已隨Git傳送，兩台皆為正式環境，以commit／push／pull承接。Gmail連線設定及應用程式密碼仍由各機配置；可用 `EmailSetup.cmd`，或明確用notify-configure引用本機ENV。`output`報告不隨Git傳送。
 4. 雙擊 `Dashboard.cmd`；保持程式執行即可自動掃描。API設定檢查用 `python -m support_scout doctor --require-agents`，不呼叫付費模型。
 
 ## 時段與用量

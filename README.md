@@ -132,6 +132,6 @@ python -m unittest discover -s tests -q
 
 報告在 `output/observations/RUN_ID`，查看 `latest_attempt.json`、`latest.json`與`committed.json`，先核對日期及狀態。exit 0表示流程完成，不表示可交易；2為全域失敗，3為部分資料／模型降級。2026-10-29固定20檔實測三角色成功；3檔公司行動待覆核，故整輪DEGRADED，沒有隱藏拒絕資料。
 
-`local_data`包含原始資料、SQLite、成交與通知；`output`包含快照、AI評語、用量及重播報告。兩者與本機設定均不提交Git，需自行備份。
+依2026-11-02使用者授權，`local_data`中的正式成交、草稿、資金設定、研究／通知SQLite與排程紀錄納入Git；兩台皆為正式環境，切換前commit／push，另一台pull後即可承接。Git不會即時同步。ENV、郵件憑證、本機連線設定、快取、程序暫存及`output`報告仍忽略，不隨Git傳送。
 
 [架構](docs/japan-architecture.md) · [操作手冊](docs/observation-runbook.md) · [版本驗收](docs/japan-review.md) · [資料介面](docs/japan-provider.md) · [決策政策](docs/japan-decision.md)
