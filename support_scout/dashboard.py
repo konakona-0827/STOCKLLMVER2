@@ -18,49 +18,13 @@ from .scan_schedule import SCHEDULE_VERSION
 from .presentation import runtime_status
 from .storage import atomic_json
 from .desktop_browser import open_dashboard
+from .manual_ui import PANEL
+from .manual_desk import desk_state, save_draft, save_fill, error_message, confirmation_id, record_feedback
 
-DESK_UI_VERSION = 6
+DESK_UI_VERSION = 9
 
 LIVE_STATUS='''<section class="live-status" aria-label="程式目前狀態"><b id="live-title">正在確認程式狀態…</b><p id="live-report"></p><details><summary>本輪處理情形</summary><p id="live-detail"></p></details><button id="live-reload" hidden type="button" onclick="location.reload()">已有新報告，載入最新排序與結論</button><button id="live-update" hidden type="button"></button></section>'''
 
-
-PANEL = '''<style>
-#manual-desk{overflow-wrap:anywhere}#fill-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px}
-#fill-form label{display:flex;flex-direction:column;min-width:0}#fill-form input,#fill-form select{box-sizing:border-box;width:100%;max-width:100%;padding:9px}
-#fill-form label:has(input[type=checkbox]){flex-direction:row;align-items:center;gap:8px}#manual-desk button{max-width:100%;white-space:normal;padding:9px}
-</style><section id="manual-desk" style="background:#fff;padding:22px;margin:20px 0;border:2px solid #306e9b;border-radius:8px">
-<h2>手動成交回報與持倉</h2><p>這裡只記錄你已在券商完成的交易；沒有下單能力。未勾選確認，不計入持倉。回報會供下一輪三Agent判斷使用。</p>
-<form id="fill-form"><label>代號 <input name="symbol" placeholder="6857" required></label>
-<label>方向 <select name="side"><option value="BUY">買進 BUY</option><option value="SELL">賣出 SELL</option></select></label>
-<label>股數（可填零股） <input name="quantity" type="number" min="0.00000001" step="any" required></label>
-<label>每股成交價 JPY <input name="price" type="number" min="0.001" step="any" required></label>
-<label>手續費 JPY <input name="fees" type="number" min="0" step="any" value="0"></label>
-<label>成交日期時間 JST <input name="filled_at" type="datetime-local" required></label>
-<label>固定失效價（選填） <input name="risk_lower" type="number" min="0.001" step="any"></label>
-<label><input name="confirmed" type="checkbox" style="width:auto">我確認已實際成交</label>
-<button id="fill-save">儲存成交回報</button></form><p id="fill-status" role="status"></p>
-<h3>目前已確認持倉</h3><div id="positions"></div>
-<p>成本只用於持倉記錄，不構成攤平或續抱理由。未提供原風險基準時，退出建議保持待確認。</p>
-<button id="analyze">執行固定名單三Agent分析</button> <span id="analysis-status"></span> <button id="reload-report" hidden>查看新報告</button>
-<h3>決策通知</h3><p id="mail-status"></p><button id="flush-mail">寄送待寄決策事件</button>
-<p>同一決策狀態不重複通知。Gmail需本機寄信憑證，請使用 EmailSetup.cmd 設定，勿把密碼填入成交欄。</p>
-</section>
-<script>
-const deskToken=__TOKEN__;
-const htmlReportAsOf=__ASOF__;
-const pageUIVersion=__UIVERSION__;
-let deskFormDirty=false;
-let fillBusy=false;let pendingFillId=crypto.randomUUID();
-async function postDesk(path,value){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Desk-Token':deskToken},body:JSON.stringify(value)});const x=await r.json();if(!r.ok)throw new Error(x.error||'操作未完成');return x;}
-async function refreshDesk(){const s=await (await fetch('/api/state')).json();const d=document.getElementById('positions');d.replaceChildren();for(const p of Object.values(s.portfolio.positions)){const row=document.createElement('p');row.textContent=p.symbol+' · '+p.quantity+'股 · 均價 '+p.average_cost.toFixed(2)+' JPY · 開倉 '+p.opened_at;d.append(row);}if(!d.children.length)d.textContent='尚無已確認持倉';document.getElementById('flush-mail').disabled=s.email.status!=='READY';document.getElementById('mail-status').textContent='通知：'+({DISABLED:'已暫停',READY:'可寄送',NEEDS_GMAIL_APP_PASSWORD:'待設定Gmail憑證'}[s.email.status]||s.email.status)+' · 待寄 '+(s.email.counts.PENDING||0)+' · 已寄 '+(s.email.counts.SENT||0);document.getElementById('analysis-status').textContent=s.runtime.analyze_text;document.getElementById('analyze').disabled=s.analysis.status==='RUNNING';document.getElementById('reload-report').hidden=!s.report_as_of||s.report_as_of===htmlReportAsOf;}
-const fillForm=document.getElementById('fill-form');fillForm.elements.filled_at.value=new Date(Date.now()+9*3600000).toISOString().slice(0,16);
-fillForm.addEventListener('input',()=>deskFormDirty=true);
-fillForm.addEventListener('submit',async e=>{e.preventDefault();if(fillBusy)return;fillBusy=true;document.getElementById('fill-save').disabled=true;const f=new FormData(fillForm);const value={id:pendingFillId,symbol:f.get('symbol'),side:f.get('side'),quantity:Number(f.get('quantity')),price:Number(f.get('price')),fees:Number(f.get('fees')),filled_at:f.get('filled_at')+':00+09:00',confirmed:f.has('confirmed')};if(f.get('risk_lower')&&value.side==='BUY')value.risk_reference={channel:'MANUAL',lower:Number(f.get('risk_lower')),price_basis:'raw_unverified',defined_at:new Date().toISOString(),anchor_at:null};try{await postDesk('/api/fills',value);deskFormDirty=false;pendingFillId=crypto.randomUUID();fillForm.elements.confirmed.checked=false;document.getElementById('fill-status').textContent=value.confirmed?'已回報實際成交，下輪分析會使用。':'已存未確認記錄，未計入持倉。';await refreshDesk();}catch(x){document.getElementById('fill-status').textContent=x.message;}finally{fillBusy=false;document.getElementById('fill-save').disabled=false;}});
-document.getElementById('analyze').onclick=async()=>{try{await postDesk('/api/analyze',{});await refreshDesk();}catch(x){document.getElementById('analysis-status').textContent=x.message;}};
-document.getElementById('flush-mail').onclick=async()=>{try{await postDesk('/api/notifications/flush',{});await refreshDesk();}catch(x){document.getElementById('mail-status').textContent=x.message;}};
-document.getElementById('reload-report').onclick=()=>location.reload();
-refreshDesk();setInterval(refreshDesk,5000);
-</script>'''
 
 SCHEDULER_PANEL='''<section id="scan-control" style="background:#eaf4fa;padding:22px;border:2px solid #306e9b;border-radius:8px;margin:20px 0">
 <h2>日股自動掃描控制台</h2><p>日本時間固定掃描：09:00、10:00、11:00、12:30、13:30、14:30、15:15。午休與休市跳過，不需Codex。</p>
@@ -103,7 +67,7 @@ document.getElementById('scheduler-start').onclick=()=>schedulerAction('/api/sch
 document.getElementById('scheduler-stop').onclick=()=>schedulerAction('/api/scheduler',{enabled:false});
 document.getElementById('scan-now').onclick=()=>schedulerAction('/api/analyze',{});
 document.getElementById('view-latest').onclick=()=>location.reload();
-refreshScheduler();setInterval(refreshScheduler,5000);
+document.addEventListener('DOMContentLoaded',()=>{refreshScheduler();setInterval(refreshScheduler,5000);});
 </script></section>'''
 
 
@@ -217,7 +181,8 @@ class Handler(BaseHTTPRequestHandler):
                 report, _ = self.server.latest()
                 now = datetime.now(TOKYO).isoformat()
                 scheduler=self.server.scheduler.status()
-                self.reply({"portfolio": read_snapshot(self.server.data_root / "manual_fills.json", now),
+                manual=desk_state(self.server.data_root,report,now)
+                self.reply({"portfolio": manual['portfolio'],"manual_desk":manual,
                     "project_root":str(ROOT.resolve()), "server_time":now, "ui_version":DESK_UI_VERSION,
                     "analysis": self.server.analysis, "email": email_status(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"),
                     "scheduler":scheduler,"runtime":runtime_status(scheduler,report,self.server.analysis),
@@ -239,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.rfile.read(size)
             except (ValueError, OSError):
                 pass
-            return self.reply({"error": "LOCAL_REQUEST_TOKEN_REQUIRED"}, 403)
+            return self.reply({"error": "LOCAL_REQUEST_TOKEN_REQUIRED","message":error_message('LOCAL_REQUEST_TOKEN_REQUIRED')}, 403)
         try:
             length = int(self.headers.get("Content-Length", "0"))
             if not 1 <= length <= 16384 or self.headers.get_content_type() != "application/json":
@@ -249,8 +214,20 @@ class Handler(BaseHTTPRequestHandler):
                 raise DataError("JSON_OBJECT_REQUIRED")
             path = urlsplit(self.path).path
             if path == "/api/fills":
-                row = record_fill(self.server.data_root / "manual_fills.json", value)
-                return self.reply({"recorded": True, "counted_as_holding": row["confirmed"], "id": row["id"]})
+                row = save_fill(self.server.data_root, value)
+                response={"recorded": True, "counted_as_holding": row["confirmed"], "id": row["id"],
+                    'confirmation_id':confirmation_id(row['id']),
+                    'message':'成交已成功儲存，持倉與資金已更新；下一輪會使用你的實際持倉。' if row['confirmed'] else '已儲存為未確認紀錄，目前不計入持倉與資金。核對後勾選確認即可入帳。'}
+                try:
+                    report,_=self.server.latest()
+                    response['manual_desk']=desk_state(self.server.data_root,report,datetime.now(TOKYO).isoformat())
+                except Exception:
+                    response['message']='成交紀錄已成功保存，但列表或資金摘要暫時無法更新。請保留此訊息並重新整理，不要新增同一筆。'
+                record_feedback(self.server.data_root,status='SAVED',code='CONFIRMED' if row['confirmed'] else 'UNCONFIRMED',
+                    message=response['message'],identifier=row['id'],symbol=row['symbol'])
+                return self.reply(response)
+            if path == '/api/fill-drafts':
+                return self.reply(save_draft(self.server.data_root,value))
             if path == "/api/notifications/flush":
                 return self.reply(flush(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"))
             if path == "/api/analyze":
@@ -282,8 +259,15 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown,daemon=True).start()
                 return
             return self.reply({"error": "NOT_FOUND"}, 404)
+        except (BrokenPipeError,ConnectionResetError):
+            return  # A lost response must not relabel an already committed fill as rejected.
         except Exception as exc:
-            return self.reply({"error": str(exc) if isinstance(exc, DataError) else "LOCAL_REQUEST_ERROR"}, 400)
+            if urlsplit(self.path).path in {'/api/fills','/api/fill-drafts'}:
+                request_value=value if isinstance(locals().get('value'),dict) else {}
+                record_feedback(self.server.data_root,status='REJECTED',code=str(exc) if isinstance(exc,DataError) else type(exc).__name__,
+                    message=error_message(exc) if isinstance(exc,DataError) else '操作未完成',identifier=request_value.get('id'),symbol=request_value.get('symbol'))
+            return self.reply({"error": str(exc) if isinstance(exc, DataError) else "LOCAL_REQUEST_ERROR",
+                'message':error_message(exc) if isinstance(exc,DataError) else '操作未完成，請保留輸入並重新整理後再試。'}, 400)
 
 
 def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None):

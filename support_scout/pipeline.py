@@ -245,6 +245,8 @@ def run(bundle: dict, *, as_of: str | None = None, rules: Rules | None = None, r
         report["portfolio_snapshot"] = portfolio
     if sizing_policy is not None:
         report["sizing_policy"] = sizing_policy
+    if 'cash_reservations' in bundle:
+        report['cash_reservations']=deepcopy(bundle['cash_reservations'])
     if market == "JP":
         from .decision import attach_decisions
         attach_decisions(report, bundle)

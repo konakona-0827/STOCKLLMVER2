@@ -240,12 +240,13 @@ def render_html(report: dict, bundle: dict) -> str:
     brief = report.get("decision_brief")
     if brief:
         items={s['symbol']:s for s in ordered}
-        brief_rows = "".join(f'<tr><td><b>#{ranks.get(p["symbol"],"—")} · {escape(stock_priority(items[p["symbol"]],report)["label"])}</b><br><a href="#{escape(p["symbol"],quote=True)}">{escape(p["symbol"])}</a><br><small>{escape(p["name"])}</small></td>'
-            f'<td>{escape(stock_status(items[p["symbol"]],report))}<br>{escape(p.get("buy_type_label") or "—")}</td><td>{escape(p["entry_condition"])}</td>'
-            f'<td>{fmt(p["suggested_amount_jpy"])}</td><td>{fmt(p["suggested_shares"])}</td>'
+        brief_rows = "".join(f'<tr data-funding-symbol="{escape(p["symbol"],quote=True)}"><td><b>#{ranks.get(p["symbol"],"—")} · {escape(stock_priority(items[p["symbol"]],report)["label"])}</b><br><a href="#{escape(p["symbol"],quote=True)}">{escape(p["symbol"])}</a><br><small>{escape(p["name"])}</small></td>'
+            f'<td>{escape(stock_status(items[p["symbol"]],report))}<br>{escape(p.get("buy_type_label") or "—")}<br><b data-funding-field="current_position_note"></b></td><td data-funding-field="entry_condition">{escape(p["entry_condition"])}</td>'
+            f'<td data-funding-field="suggested_amount_jpy">{fmt(p["suggested_amount_jpy"])}</td><td data-funding-field="suggested_shares">{fmt(p["suggested_shares"])}</td>'
             f'<td>{fmt(p["entry_reference"])} / {fmt(p["invalidation_reference"])} / {fmt(p["target_reference"])}</td>'
-            f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(plain_code(p["sizing_status"]))}</td></tr>' for p in sorted(brief["rows"],key=lambda p:ranks.get(p['symbol'],9999)))
+            f'<td data-funding-field="estimated_loss_jpy">{fmt(p["estimated_loss_jpy"])}</td><td data-funding-field="display_status">{escape(plain_code(p["sizing_status"]))}</td></tr>' for p in sorted(brief["rows"],key=lambda p:ranks.get(p['symbol'],9999)))
         brief_html = (f'<section id="decision-brief"><h2>Python 決策總表：標的、條件與建議金額</h2>'
+            '<p id="current-funding-note"></p>'
             f'<p>本金 {fmt(brief["capital_jpy"])} JPY；單筆情境虧損上限 {fmt(brief["per_trade_risk_budget_jpy"])} JPY；'
             f'本輪建議新增投入 {fmt(brief["proposed_total_jpy"])} JPY。</p>'
             f'<p>初次試單每檔最多本金{report["sizing_policy"]["max_position_fraction"]:.0%}（設定可調）。金額指定的股數只是估算，尚待核對券商可交易名單；'

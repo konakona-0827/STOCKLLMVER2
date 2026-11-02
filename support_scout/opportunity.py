@@ -234,6 +234,8 @@ def attach_opportunities(report, bundle):
                 action = "PROBE_BUY_REVIEW"
                 reasons = ["SEARCH_AND_BOTH_AGENTS_SUPPORT_CONDITIONAL_PROBE"]
         core = packet["core"] if packet else {}
+        if 'USER_REPORTED_POSITION_DETAILS_PENDING' in item.get('context_blockers',[]):
+            action='WAIT';reasons.append('USER_REPORTED_POSITION_DETAILS_PENDING')
         simulation = report.get("synthetic") is not False or core.get("analysis_context", {}).get("mode", "").startswith("RETROSPECTIVE")
         checks = list(dict.fromkeys([*item.get("context_blockers", []), "MANUALLY_VERIFY_NEXT_SESSION_PRICE_AND_GAP",
             "VERIFY_CORPORATE_ACTIONS_AND_BROKER_ELIGIBILITY", "USER_MUST_CHOOSE_AFFORDABLE_RISK_AND_CONFIRM_FILL"]))

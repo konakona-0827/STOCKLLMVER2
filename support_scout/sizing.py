@@ -4,7 +4,7 @@ from decimal import Decimal, ROUND_FLOOR
 from pathlib import Path
 import math
 
-from .contracts import DataError, digest, strict_json_loads
+from .contracts import DataError, digest, strict_json_loads, timestamp
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SETTINGS = ROOT / "local_data" / "sizing_settings.json"
@@ -71,6 +71,15 @@ def attach_execution_plans(report, settings=None):
     ready = settings["capital_jpy"] is not None and settings["per_trade_risk_fraction"] is not None
     capital = _d(settings["capital_jpy"] or 0)
     cash, positions, portfolio_error = _cash(report, capital)
+    reservations=report.get('cash_reservations',[])
+    if not isinstance(reservations,list):raise DataError('INVALID_CASH_RESERVATIONS')
+    reserved=Decimal(0);pending_symbols=set();reservation_ids=set()
+    for r in reservations:
+        if (not isinstance(r,dict) or not isinstance(r.get('id'),str) or r['id'] in reservation_ids
+            or not isinstance(r.get('symbol'),str) or not _number(r.get('amount_jpy'))
+            or timestamp(r['reported_at'])>timestamp(report['as_of'])):raise DataError('INVALID_CASH_RESERVATION')
+        reservation_ids.add(r['id']);reserved+=_d(r['amount_jpy']);pending_symbols.add(r['symbol'])
+    cash=max(Decimal(0),cash-reserved)
     initial_cash = cash
     per_risk = capital * _d(settings["per_trade_risk_fraction"] or 0)
     remaining_risk = capital * _d(settings["max_new_risk_fraction"])
@@ -96,6 +105,8 @@ def attach_execution_plans(report, settings=None):
             condition=(f"高波動觀察，先看是否站回{level:,.2f}並形成方向；尚無可執行進場條件。" if _number(level) else "高波動觀察，方向未確認，不買進。")
         if holding:
             status, condition = "HOLDING_REVIEW_NO_ADD", "已有確認持倉，不新增買進；依持倉評語人工評估續抱或退出。"
+        elif item['symbol'] in pending_symbols:
+            status,condition='PENDING_EXECUTION_DETAILS_NO_ADD','已回報買入金額，請先補齊成交股數、價格與時間；本輪不新增買入。'
         elif action == "PROBE_BUY_REVIEW":
             condition = "先核對可交易性、即時價格與較近供給；仍守住H-002固定下緣且風報通過才評估金額試單。"
             if reference.get("buy_type"):
@@ -162,5 +173,6 @@ def attach_execution_plans(report, settings=None):
         "per_trade_risk_budget_jpy": float(per_risk), "available_cash_estimate_jpy": float(initial_cash),
         "proposed_total_jpy": float(allocated), "proposed_loss_scenario_jpy": float(total_risk),
         "remaining_cash_estimate_jpy": float(cash), "sizing_policy_digest": digest(settings),
+        "reserved_cash_jpy":float(reserved),
         "cash_basis": "USER_CAPITAL_AND_CONFIRMED_FILL_CASH_FLOWS_NOT_BROKER_BALANCE", "execution_enabled": False}
     return report

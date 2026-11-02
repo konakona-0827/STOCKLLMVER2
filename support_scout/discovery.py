@@ -128,6 +128,8 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
             raise DataError("SEARCH_SOURCE_PACKET_MISMATCH")
         if source.get("rules") != rules or source.get("market") != "JP":
             raise DataError("SEARCH_SOURCE_RULES_OR_MARKET_MISMATCH")
+        if 'USER_REPORTED_POSITION_DETAILS_PENDING' in source.get('context_blockers',[]):
+            continue  # Already-reported buys require execution details, not additional entry research.
         if symbol not in symbols:
             if source.get("portfolio_position", {}).get("quantity", 0) > 0:
                 continue  # Existing holdings get risk review, not new-entry universe membership.

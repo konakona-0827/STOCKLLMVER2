@@ -59,6 +59,8 @@ def _validate(entry):
         raise DataError("MANUAL_FILL_QUANTITY")
     if not _money(entry["price"]) or not _money(entry["fees"], zero=True):
         raise DataError("MANUAL_FILL_PRICE_OR_FEES")
+    if not isinstance(entry['filled_at'],str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})',entry['filled_at']):
+        raise DataError('MANUAL_FILL_TIME_FORMAT')
     timestamp(entry["filled_at"])
     if "risk_reference" in entry:
         if entry["side"] != "BUY":

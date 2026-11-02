@@ -372,6 +372,8 @@ HELP = {
 }
 
 VALUES = {
+    'PENDING_EXECUTION_DETAILS_NO_ADD':'已回報買入金額，成交明細待補，暫不加碼',
+    'USER_REPORTED_POSITION_DETAILS_PENDING':'使用者已回報買入，成交股數與時間仍待補齊',
     'WATCH': '觀察', 'WAIT': '等待', 'AVOID': '暫不進場', 'PROBE_BUY_REVIEW': '條件式人工試單評估',
     'CONSIDER': '可考慮', 'NO_TRADE': '不交易', 'REJECT': '否決', 'SUPPORT': '支持',
     'HOLD': '續抱評估', 'REDUCE_REVIEW': '評估減碼', 'EXIT_REVIEW': '評估退出', 'REVIEW': '待人工核對',

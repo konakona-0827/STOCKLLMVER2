@@ -9,7 +9,7 @@ from uuid import uuid4
 import hashlib
 import json
 
-from .contracts import DataError, Rules, digest, strict_json_loads
+from .contracts import DataError, Rules, digest, strict_json_loads, timestamp
 from .desk import DeskConfig, run_desk
 from .ledger import record_observation
 from .pipeline import render_markdown, run
@@ -92,11 +92,14 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
     coverage = {}
     fresh_bundle = bundle is None
     fill_history = None
+    pending_reports=[]
     try:
         if market == "JP" and (fresh_bundle or portfolio_path is not None):
             from .portfolio import load_fills, snapshot as portfolio_snapshot
             fill_history = load_fills(portfolio_path or db_path.parent / "manual_fills.json")
             held_now = portfolio_snapshot(fill_history, datetime.now(JST).isoformat())["positions"]
+            from .manual_desk import cash_reservations
+            pending_reports=cash_reservations(db_path.parent,as_of=datetime.now(JST).isoformat())
         else:
             held_now = {}
         if dynamic:
@@ -134,7 +137,7 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                     "cohort_symbols": [s["symbol"] for s in bundle["securities"]],
                     "scope": "SAVED_COHORT_REVIEW_NO_CURSOR_ADVANCE"}
         if bundle is None:
-            extra_holdings = [s for s in held_now if s not in symbols]
+            extra_holdings = [s for s in dict.fromkeys([*held_now,*(r['symbol'] for r in pending_reports)]) if s not in symbols]
             symbols = [*symbols, *extra_holdings]
             if len(symbols) > 100:
                 raise DataError("UNIVERSE_AND_HOLDINGS_EXCEED_FETCH_CAP")
@@ -169,6 +172,11 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             if fill_history is not None:
                 from .portfolio import snapshot as portfolio_snapshot
                 bundle["portfolio_snapshot"] = portfolio_snapshot(fill_history, bundle["as_of"])
+                bundle['cash_reservations']=[r for r in pending_reports if timestamp(r['reported_at'])<=timestamp(bundle['as_of'])]
+                pending_symbols={r['symbol'] for r in bundle['cash_reservations']}
+                for security in bundle['securities']:
+                    if security['symbol'] in pending_symbols:
+                        security['observation_blockers']=list(dict.fromkeys([*security.get('observation_blockers',[]),'USER_REPORTED_POSITION_DETAILS_PENDING']))
             # Existing programmatic fixtures/saved inputs remain opt-in; the live
             # CLI explicitly enables this by default. Freeze before SEARCH IDs.
             if public_information is not None:
