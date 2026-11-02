@@ -208,6 +208,7 @@ def apply_live_position_context(candidates, broker_health, execution_db, audit):
 def apply_buy_limits(candidates, account, live_config=None):
     """Keep initial and Agent-refreshed quotes on the existing budget policy."""
     for candidate in candidates:
+        candidate['pricing_policy'] = ('PLANNED_LIMIT' if getattr(live_config, 'planned_limits_enabled', False) else 'AT_QUOTE')
         candidate['max_buy_qty'] = 0
         if (candidate['last_price'] is None or candidate['quote_status'] != 'LIVE'
                 or candidate.get('is_trial')):

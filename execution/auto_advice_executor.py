@@ -48,7 +48,7 @@ def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
     try:
         economics = evaluate_buy(
             dict(ask=float(quote.ask), bid=float(quote.bid),
-                 asset_type=recommendation.get('asset_type')),
+                 asset_type=recommendation.get('asset_type'), pricing_policy=recommendation.get('pricing_policy')),
             qty=order_plan.quantity, limit_price=order_plan.limit_price,
             target_price=buy_plan['target_price'],
             invalidation_price=buy_plan['invalidation_price'],
@@ -68,6 +68,7 @@ def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
 @dataclass(frozen=True)
 class LiveExecutionConfig:
     enabled: bool = False
+    planned_limits_enabled: bool = False
     max_quote_age_seconds: Decimal = Decimal("120")
     min_confidence_pct: Decimal = Decimal("0")
     max_order_twd: Decimal | None = None
@@ -109,6 +110,7 @@ class LiveExecutionConfig:
 
         return cls(
             enabled=bool(data.get("enabled", False)),
+            planned_limits_enabled=data.get('planned_limits_enabled') is True,
             max_quote_age_seconds=dec("max_quote_age_seconds", 120),
             min_confidence_pct=dec("min_confidence_pct", 0),
             max_order_twd=dec("max_order_twd"),
@@ -128,6 +130,7 @@ class LiveExecutionConfig:
             max_order_twd=self.max_order_twd,
             max_buy_qty=self.max_buy_qty,
             require_executable_side_price=True,
+            allow_planned_limits=self.planned_limits_enabled,
         )
 
 
@@ -436,8 +439,7 @@ def execute_advice_file(
                 raise RiskRejected(f"{intent.symbol}: no market quote")
             quote = _refresh_quote(intent, quote)
 
-            if (intent.side == Side.SELL
-                    and intent.symbol in store.pending_reconciliation_symbols(
+            if (intent.symbol in store.pending_reconciliation_symbols(
                         exclude_decision_id=intent.decision_id)):
                 raise AccountCheckError(
                     f"{intent.symbol}: earlier order may have late fills; "
@@ -494,6 +496,13 @@ def execute_advice_file(
                 check_refreshed_buy(quote, plan, recommendation_map[intent.symbol],
                                     budget_payload.get('strategy_cap_twd'),
                                     config.min_buy_fee_reserve_twd)
+
+            if intent.pricing_policy == 'PLANNED_LIMIT':
+                from .planned_entry import verify
+                if payload.get('pretrade_review_status') != 'VALID':
+                    raise RiskRejected('PLANNED_ENTRY_REQUIRES_VALID_REVIEW')
+                verify(intent, recommendation_map[intent.symbol], quote, datetime.now().astimezone())
+                item.update(pricing_policy='PLANNED_LIMIT', entry_plan=recommendation_map[intent.symbol]['entry_plan'])
 
             reserved_this_order_twd = Decimal("0")
 
@@ -618,6 +627,8 @@ def execute_advice_file(
                         "market_session": "INTRADAY_ODD_LOT",
                         "submitted_at": item["submitted_at"],
                         "buy_plan": item.get("buy_plan"),
+                        "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
+                        "entry_plan": item.get('entry_plan'),
                     },
                 )
 
@@ -630,6 +641,8 @@ def execute_advice_file(
                 "time_in_force": "ROD", "market_session": "INTRADAY_ODD_LOT",
                 "submitted_at": item["submitted_at"],
                 "buy_plan": item.get("buy_plan"),
+                "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
+                "entry_plan": item.get('entry_plan'),
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
                                 if intent.side == Side.BUY else None))
             item["send_attempted"] = True

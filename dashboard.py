@@ -357,6 +357,13 @@ class Dashboard:
         self.strategy_audit_cache = {}
         self.simulation_window = None
         root.title(f'STOCKLLM｜台股行情與 AI 分析｜{CODE_ROOT.name}')
+        try:
+            from execution.auto_advice_executor import LiveExecutionConfig
+            entry_cfg = LiveExecutionConfig.load(ROOT/'config/execution_live.json')
+            if entry_cfg.enabled and entry_cfg.planned_limits_enabled:
+                root.title(f'STOCKLLM｜正式帳戶・計畫限價自動交易｜{CODE_ROOT.name}')
+        except (OSError, ValueError):
+            pass
         ttk.Label(root, text=f'正式帳本與 .env：{ROOT}', wraplength=1100).pack(
             side='bottom', fill='x', padx=12, pady=4)
         root.geometry('1500x920')

@@ -50,6 +50,8 @@ def build_advice_interface(result, generated_at=None):
         decision = decisions.get(symbol, {})
         quote = quotes.get(symbol, {})
         position = candidate.get('position') or {}
+        planned = decision.get('decision') == 'BUY' and candidate.get('pricing_policy') == 'PLANNED_LIMIT'
+        from execution.planned_entry import contract
         warnings = list(dict.fromkeys([*(quote.get('warnings') or []), *(decision.get('warnings') or [])]))
         recommendations.append({
             'symbol': symbol,
@@ -64,6 +66,8 @@ def build_advice_interface(result, generated_at=None):
             'confidence': decision.get('confidence', 0),
             'reference_price': decision.get('reference_price'),
             'suggested_price': decision.get('suggested_price'),
+            'pricing_policy': 'PLANNED_LIMIT' if planned else 'AT_QUOTE',
+            'entry_plan': contract(candidate, decision, generated_at) if planned else None,
             'suggested_qty': decision.get('suggested_qty'),
             'action_ratio': decision.get('action_ratio', 0),
             'reason': decision.get('reason', '本輪沒有有效的 LLM 建議。'),

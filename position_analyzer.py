@@ -131,6 +131,9 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
     instructions = (strategy_prompt if strategy_prompt is not None else
                     (ROOT/'strategies'/'prompt_positions.md').read_text(encoding='utf-8'))
+    if any(c.get('pricing_policy') == 'PLANNED_LIMIT' for c in candidates):
+        from execution.planned_entry import INSTRUCTIONS
+        instructions += INSTRUCTIONS
     instructions += ('\n\n交易日資料判讀：每檔 daily_bars 是程式取得的證交所已完成歷史日 OHLCV，'
                      'daily_trend 是依這些日線收盤與成交量算出的摘要；請先逐檔查看 daily_history_status、'
                      'daily_bars 的實際日期與筆數，再判斷多日趨勢。這些是上市證券日成交資料，'
@@ -360,8 +363,8 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                     f"失效情境淨損估算 NT$ {economics['estimated_net_downside_twd']:.2f}；"
                     '未含無法驗證的未來成交滑價，實際報酬不保證。')
                 if available_cash_cents is not None:
-                    entry_price = max(c.get('budget_price') or c.get('ask') or c['last_price'],
-                                      d['suggested_price'] or 0)
+                    entry_price = (d['suggested_price'] if c.get('pricing_policy') == 'PLANNED_LIMIT' else
+                                   max(c.get('budget_price') or c.get('ask') or c['last_price'], d['suggested_price'] or 0))
                     gross_cents = price_cents(entry_price) * d['suggested_qty']
                     reserve_cents = max(Decimal(str(minimum_buy_fee_twd)) * 100,
                                         Decimal(gross_cents) * Decimal(str(buy_cash_buffer_rate)),

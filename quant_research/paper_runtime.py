@@ -215,7 +215,7 @@ class PaperRuntime:
                 return self.publish()
             # Timestamp after the broker response; never turn retrieval time
             # into a fabricated exchange timestamp.
-            completed = now() if at.date() == now().date() else at
+            completed = now() if self.provider is not None else at
             quotes = batch['quotes']
             live = []
             for q in quotes:

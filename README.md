@@ -2,6 +2,8 @@
 
 分支：`codex/planned-limit-orders`（由 `codex/support-scout-architecture` 分出）。
 
+**2026-11-02 正式帳戶接續版本**：依使用者明確授權，新增原帳戶的計畫限價 BUY 流程，沿用原正式持倉、預算、委託及成交帳本，不建立鏡像帳戶。專用入口 `FormalPlanned.cmd` 要求本機 `enabled` 與 `planned_limits_enabled` 都已明確啟用；Repository 預設仍關閉真實下單。先前 `PlannedPaper.cmd` 僅保留為研究工具，不是本次正式測試入口。詳見 [正式接續紀錄](reports/formal_planned_20261102.md)。
+
 此分支整合既有正式交易程式與 Support Scout 研究架構。正式交易底座取自 `fix/ai-sellable-ownership-display@46c020c`，已包含 `develop@363fe8f`、Agent 模式、券商對帳、AI／人工持股歸屬、資金及交易日修正。
 
 ## 計畫限價委託（獨立 Paper，尚未切換實盤）

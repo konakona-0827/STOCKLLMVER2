@@ -13,7 +13,11 @@ def evaluate_buy(candidate, *, qty, limit_price, target_price, invalidation_pric
     if type(qty) is not int or qty < 1:
         raise ValueError('INVALID_TRADE_PLAN_QTY')
     ask, bid = dec(candidate.get('ask')), dec(candidate.get('bid'))
-    entry = max(ask, dec(limit_price)) if limit_price is not None else ask
+    entry = (dec(limit_price) if candidate.get('pricing_policy') == 'PLANNED_LIMIT' else
+             max(ask, dec(limit_price)) if limit_price is not None else ask)
+    if candidate.get('pricing_policy') == 'PLANNED_LIMIT':
+        from execution.planned_entry import validate_price
+        validate_price(entry, candidate.get('asset_type', 'UNKNOWN'))
     target, stop = dec(target_price), dec(invalidation_price)
     if not bid <= ask or not stop < entry < target:
         raise ValueError('INVALID_TRADE_PLAN_LEVELS')

@@ -36,6 +36,7 @@ class LiveAgentIntegrationTests(unittest.TestCase):
             mock_live_path = root/'config'/'execution_live.json'
             mock_live = json.loads(mock_live_path.read_text(encoding='utf-8'))
             mock_live['enabled'] = True
+            mock_live['planned_limits_enabled'] = False
             mock_live_path.write_text(json.dumps(mock_live), encoding='utf-8')
             (root/'config'/'universe_tw.json').write_text(json.dumps(dict(symbols=['0050'],etf_symbols=['0050'])),encoding='utf-8')
             prompt = root/'strategy.md'
