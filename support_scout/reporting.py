@@ -7,6 +7,7 @@ from .contracts import timestamp
 from datetime import timedelta, timezone
 from .field_guide import code_label, render_stock_fields
 from .desk_layout import STYLE as TAB_STYLE, SCRIPT as TAB_SCRIPT, desk_view, stock_tabs
+from .presentation import ranked_securities, stock_priority, stock_status, report_status, plain_code
 
 STATES = {"RULE_CONFIRMED": "規則確認（暫定）", "RETEST_HELD": "回測守住，等待確認",
     "BOUNCE_SEEN": "已反彈，等待回測", "BASE_FORMING": "底部形成中", "INVALIDATED": "支撐已失效",
@@ -63,25 +64,28 @@ def render_html(report: dict, bundle: dict) -> str:
     coverage = discovery.get("coverage", {})
     ledger = report.get("ledger", {})
     ledger_rows = ledger.get("rows", [])
+    ordered=ranked_securities(report)
+    ranks={s['symbol']:i+1 for i,s in enumerate(ordered)}
     rows, cards = [], []
-    for item in report["securities"]:
+    for item in ordered:
         symbol = item["symbol"]
         anchor_id = escape(str(symbol), quote=True)
         t = item.get("technical", {})
         support = t.get("support") or {}
-        reasons = [REASONS.get(r, r) for r in item["reasons"]]
+        reasons = [REASONS.get(r, plain_code(r)) for r in item["reasons"]]
         changes = [r for r in ledger_rows if r.get("symbol") == symbol]
-        change = ", ".join(r.get("change", "") for r in changes) or "首次／無追蹤型態"
+        change = "；".join(plain_code(r.get("change", "")) for r in changes) or "首次／無追蹤型態"
         reason_text = escape("；".join(reasons))
         decision = item.get("trade_decision", {})
-        conclusion = decision.get("label", item["verdict"])
+        conclusion = stock_status(item,report)
+        priority=stock_priority(item,report)
         selection = selections.get(symbol)
         origin = (f'SEARCH #{selection["agent_order"]}' if selection else "本輪未提交") if discovery else "手動名單"
         state = STATES.get(t.get("state"), item["data_status"])
-        rows.append(f'<tr><td><a href="#{anchor_id}">{escape(str(symbol))}</a><br><small>{escape(item.get("name", ""))}</small></td>'
-            f'<td>{escape(state)}</td><td>{fmt(t.get("latest_close"))}</td>'
+        rows.append(f'<tr><td><b>#{ranks[symbol]} · {escape(priority["label"])}</b><br><a href="#{anchor_id}">{escape(str(symbol))}</a><br><small>{escape(item.get("name", ""))}</small></td>'
+            f'<td>{escape(plain_code(state))}</td><td>{fmt(t.get("latest_close"))}</td>'
             f'<td>{fmt(support.get("lower"))}–{fmt(support.get("upper"))}</td>'
-            f'<td>{fmt(t.get("distance_above_zone_atr"))} ATR</td><td><b>{escape(conclusion)}</b><br><small>{escape(item["verdict"])}</small></td>'
+            f'<td>{fmt(t.get("distance_above_zone_atr"))} ATR</td><td><b>{escape(conclusion)}</b></td>'
             f'<td>{escape(origin)}</td><td>{escape(change)}</td><td class="notes">{reason_text}</td></tr>')
         reviews = []
         for role, review in item.get("agent_reviews", {}).items():
@@ -109,18 +113,18 @@ def render_html(report: dict, bundle: dict) -> str:
                 f'支撐測試 {metrics.get("support_test_count", "—")} 次；縮量比 {fmt(metrics.get("volume_contraction_ratio"))}；'
                 f'距支撐 {fmt((metrics.get("distance_from_support_fraction") or 0)*100)}%。</p>'
                 '<p>機會階段不等於交易批准；H1／H2尚未經回測驗證。</p>'
-                f'<p class="notes">{escape("；".join(code_label(c) for c in pattern["reason_codes"]))}</p></div>')
+                f'<p class="notes">{escape("；".join(plain_code(c) for c in pattern["reason_codes"]))}</p></div>')
         source_rows = source.get("source_documents", [])
         links = " ".join(f'<a href="{escape(s["url"], quote=True)}" target="_blank" rel="noreferrer">來源{i+1}</a>'
             for i, s in enumerate(source_rows) if s.get("url", "").startswith("https://"))
         plan = decision.get("reference_plan") or {}
         decision_html = ""
         if decision:
-            decision_html = (f'<div class="decision"><h4>{escape(conclusion)}</h4><p>{escape(decision.get("summary", ""))}</p>'
+            decision_html = (f'<details class="decision"><summary>原正式資格：{escape(decision.get("label", "待核對"))}</summary><p>{escape(decision.get("summary", ""))}</p>'
                 f'<p>收盤參考：{fmt(plan.get("entry_reference"))}；固定失效下緣：{fmt(plan.get("invalidation_reference"))}；'
                 f'歷史阻力參考：{fmt(plan.get("target_reference"))}；成本與跳空情境後 RR：{fmt(plan.get("net_reward_risk"))}</p>'
                 '<p><small>以上為快照參考價；下個交易時段須重新驗證。支撐下緣是收盤失效條件，並非保證成交的停損單。</small></p>'
-                f'<p>後續條件：{escape("；".join(decision.get("next_steps", [])))}</p></div>')
+                f'<p>後續條件：{escape("；".join(decision.get("next_steps", [])))}</p></details>')
         manual = item.get("manual_action")
         opportunity = item.get("opportunity_decision")
         if opportunity:
@@ -128,16 +132,16 @@ def render_html(report: dict, bundle: dict) -> str:
             quote=item.get("market_quote") or {}
             if quote:
                 decision_html += (f'<p><b>延遲參考價 {fmt(quote.get("price"))} JPY</b> · 報價時間 {escape(quote.get("quoted_at","—"))}；'
-                    f'延遲約 {quote.get("age_seconds",0)/60:.1f} 分鐘。{"可供條件比對" if quote.get("usable") else "過期，不支持買入提案"}。'
-                    '這個報價已提供三Agent參考，型態仍採完整日線；請以券商即時價重驗。</p>')
-            opinions = "；".join(f'{code_label(role)}：{code_label(view["action"])} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
+                    f'在本輪快照時延遲約 {quote.get("age_seconds",0)/60:.1f} 分鐘，該輪{"可供條件比對" if quote.get("usable") else "已過期，不支持買入提案"}。'
+                    '頁面不是即時行情；請比對現在時間並以券商報價重新核對。</p>')
+            opinions = "；".join(f'{plain_code(role)}：{plain_code(view["action"])} / {view["reason"]}' for role,view in opportunity.get("agent_views", {}).items())
             decision_html += (f'<div class="banner"><h4>{escape(opportunity["label"])}</h4>'
-                f'<p>{escape(str(opportunity.get("pattern_id") or "—"))} · {escape(opportunity["policy_version"])} · {escape(opportunity["scope"])}</p>'
+                f'<p>型態 {escape(str(opportunity.get("pattern_id") or "—"))} · 條件式人工評估</p>'
                 f'<p>試單參考 {fmt(active_plan.get("entry_reference"))}；參考風險價 {fmt(active_plan.get("invalidation_reference"))}；'
                 f'目標參考 {fmt(active_plan.get("target_reference"))}；策略風報 {fmt(active_plan.get("selection_reward_risk",active_plan.get("net_reward_risk")))}；'
                 f'成本後情境RR {fmt(active_plan.get("net_reward_risk"))}</p>'
                 f'<p>{escape(opinions or "三角色尚未完成機會評估。")}</p>'
-                f'<p>{escape("；".join(code_label(c) for c in opportunity["reason_codes"]))}</p>'
+                f'<details><summary>判斷依據與待核對事項</summary><p>{escape("；".join(plain_code(c) for c in opportunity["reason_codes"]))}</p></details>'
                 f'<details><summary>試單前人工核對</summary>{escape("；".join(opportunity["manual_checks"]))}</details>'
                 '<p>條件式人工評估，未核實事項仍保留；沒有下單、保證停損價或勝率。</p></div>')
             if opportunity.get("buy_type_label"):
@@ -171,7 +175,8 @@ def render_html(report: dict, bundle: dict) -> str:
             'research':(''.join(reviews) or '<p>本檔尚無模型評語；未研究不等於已否決。</p>')+f'<p>{links}</p>',
             'fields':'<p>中文標籤保留原始鍵名；比例0.02 = 2%，RR是倍數，分數不是勝率。不同型態的風險線分開看。</p>'+render_stock_fields(item)}
         cards.append(f'<article class="stock-card" id="{anchor_id}" data-stock="{anchor_id}" hidden>'
-            f'<h3>{escape(str(symbol))} {escape(item.get("name", ""))} · {escape(state)}</h3>'
+            f'<h3>#{ranks[symbol]} {escape(str(symbol))} {escape(item.get("name", ""))}</h3>'
+            f'<p class="priority-label">{escape(priority["label"])} · {escape(conclusion)}</p><p>{escape(priority["reason"])}</p>'
             f'{stock_tabs(str(symbol),sections)}<p><a href="#json-{anchor_id}">本檔JSON中文欄位說明</a> · '
             '<a href="#manual-desk">回報實際買賣／查看持倉</a></p></article>')
     jst = timestamp(report["as_of"]).astimezone(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
@@ -234,11 +239,12 @@ def render_html(report: dict, bundle: dict) -> str:
     brief_html = ""
     brief = report.get("decision_brief")
     if brief:
-        brief_rows = "".join(f'<tr><td><a href="#{escape(p["symbol"],quote=True)}">{escape(p["symbol"])}</a><br><small>{escape(p["name"])}</small></td>'
-            f'<td>{escape(p["label"])}<br>{escape(p.get("buy_type_label") or "—")}<br>{escape(RESEARCH_PROGRESS.get(p.get("research_status"),""))}</td><td>{escape(p["entry_condition"])}</td>'
+        items={s['symbol']:s for s in ordered}
+        brief_rows = "".join(f'<tr><td><b>#{ranks.get(p["symbol"],"—")} · {escape(stock_priority(items[p["symbol"]],report)["label"])}</b><br><a href="#{escape(p["symbol"],quote=True)}">{escape(p["symbol"])}</a><br><small>{escape(p["name"])}</small></td>'
+            f'<td>{escape(stock_status(items[p["symbol"]],report))}<br>{escape(p.get("buy_type_label") or "—")}</td><td>{escape(p["entry_condition"])}</td>'
             f'<td>{fmt(p["suggested_amount_jpy"])}</td><td>{fmt(p["suggested_shares"])}</td>'
             f'<td>{fmt(p["entry_reference"])} / {fmt(p["invalidation_reference"])} / {fmt(p["target_reference"])}</td>'
-            f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(code_label(p["sizing_status"]))}</td></tr>' for p in brief["rows"])
+            f'<td>{fmt(p["estimated_loss_jpy"])}</td><td>{escape(plain_code(p["sizing_status"]))}</td></tr>' for p in sorted(brief["rows"],key=lambda p:ranks.get(p['symbol'],9999)))
         brief_html = (f'<section id="decision-brief"><h2>Python 決策總表：標的、條件與建議金額</h2>'
             f'<p>本金 {fmt(brief["capital_jpy"])} JPY；單筆情境虧損上限 {fmt(brief["per_trade_risk_budget_jpy"])} JPY；'
             f'本輪建議新增投入 {fmt(brief["proposed_total_jpy"])} JPY。</p>'
@@ -246,7 +252,10 @@ def render_html(report: dict, bundle: dict) -> str:
             '未符合進場條件即為0。資金由你設定及確認成交推算，不是券商餘額，跳空可能超過情境虧損。</p>'
             '<div class="scroll"><table><thead><tr><th>標的</th><th>結論</th><th>怎麼買／等待條件</th><th>建議JPY</th><th>換算股數</th>'
             '<th>進場／失效／目標參考</th><th>情境虧損JPY</th><th>試算狀態</th></tr></thead><tbody>' + brief_rows + '</tbody></table></div></section>')
-    comparison=(f'{active_html}{brief_html}<section id="observation-table"><h2>觀察名單與失效條件</h2>'
+    summary=report_status(report)
+    comparison=(f'<section class="round-summary"><h2>{escape(summary["title"])}</h2><p>{escape(summary["text"])}</p>'
+        '<p>顯示順序：持倉操作／有效買入提案 → 本輪重點觀察 → 型態潛力 → 波動與一般觀察 → 暫不進場／資料待修復。</p></section>'
+        f'{active_html}{brief_html}<section id="observation-table"><h2>觀察名單與失效條件</h2>'
         '<input id="filter" placeholder="搜尋代號、名稱或狀態" aria-label="篩選比較表">'
         '<div class="scroll"><table><thead><tr><th>標的</th><th>型態</th><th>收盤</th><th>暫定支撐區</th><th>距離上緣</th><th>結論</th><th>候選來源</th><th>跨日變化</th><th>待確認</th></tr></thead>'
         f'<tbody>{"".join(rows)}</tbody></table></div></section>'
@@ -256,9 +265,10 @@ def render_html(report: dict, bundle: dict) -> str:
 <title>Support Desk {market_label}觀察 {escape(latest)}</title><style>
 body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margin:0}}main{{max-width:1500px;margin:auto;padding:30px}}h1{{margin-bottom:6px}}.sub,small{{color:#607185}}.banner{{background:#fff4d7;border-left:4px solid #b58222;padding:16px;margin:22px 0}}.metrics{{display:flex;gap:12px;flex-wrap:wrap}}.metrics div,article{{background:white;padding:18px;border:1px solid #dde4eb;border-radius:8px}}.metrics b{{display:block;font-size:20px}}.scroll{{overflow:auto;background:white;margin:24px 0}}table{{border-collapse:collapse;min-width:1000px;width:100%}}th,td{{text-align:left;padding:12px;vertical-align:top;border-bottom:1px solid #e4e9ed}}th{{background:#eaf0f5}}.notes{{font-size:13px;max-width:360px;color:#536579}}article{{margin:14px 0}}article svg{{max-width:440px;width:100%;height:130px}}a{{color:#246b9b}}input{{padding:10px;width:260px;border:1px solid #c7d1db;border-radius:4px}}.warn{{color:#9d3c29}}footer{{margin:30px 0;color:#607185}}
 {TAB_STYLE}</style><main><h1>Support Desk · {market_label}支撐決策</h1><div class="sub">快照截止 JST {escape(jst)} · 日線日期依{market_date_label} · 本地收盤觀察，非即時報價</div>
-<details class="report-notes"><summary>來源說明與資料狀態：{escape(status)} · {escape(model)}</summary>
+<!--LIVE_STATUS-->
+<details class="report-notes"><summary>資料與研究說明：{escape(plain_code(status))} · {escape(plain_code(model))}</summary>
 <div class="banner"><b>{badge}</b>　{escape(banner)} 型態與價位皆為暫定觀察；雙 Agent 同意也不會解除缺口。分數不是勝率。</div>
-<div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(collection.get('status','UNKNOWN'))}</b>{escape(scope_label)}</div><div>觀察執行<b>{escape(status)}</b>模型 {escape(model)}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div>{decision_metrics}</div>
+<div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(plain_code(collection.get('status','UNKNOWN')))}</b>{escape(scope_label)}</div><div>觀察執行<b>{escape(plain_code(status))}</b>模型 {escape(plain_code(model))}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div>{decision_metrics}</div>
 </details>
 {view}<footer>Run {escape(observation.get('run_id','—'))} · 規則 {escape(report['rules']['version'])} · 快照 {escape(report['snapshot_id'])}<br>本報告保存於本機；沒有訂單或帳戶執行能力。</footer>
 </main><script>{TAB_SCRIPT}</script></html>'''

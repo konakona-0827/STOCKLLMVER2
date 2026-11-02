@@ -1,5 +1,6 @@
 """Accessible client-side desk tabs. Changing tabs never calls a model."""
 from html import escape
+from .presentation import ranked_securities, stock_priority
 
 STYLE = '''
 [hidden]{display:none!important}
@@ -17,6 +18,8 @@ STYLE = '''
 .stock-card details{margin:10px 0}.stock-card summary{cursor:pointer;font-weight:600}
 .report-notes{margin:12px 0}.report-notes>summary{cursor:pointer;color:#536579}
 footer{overflow-wrap:anywhere}.stock-picker select{box-sizing:border-box}
+.round-summary,.live-status{background:#eaf4fa;border:1px solid #bad0df;border-radius:8px;padding:14px;margin:14px 0;overflow-wrap:anywhere}
+.live-status p{margin:5px 0}.priority-label{color:#245f88;font-weight:600}
 @media(max-width:800px){main{padding:14px}.field-row{grid-template-columns:1fr}.desk-tabs button{padding:8px}.stock-facts>div{min-width:120px}}
 '''
 
@@ -32,7 +35,7 @@ def stock_tabs(symbol, sections):
 def desk_view(report, overview, cards, operations, audit):
     labels=(('overview','總覽比較'),('stocks','個股研究'),('portfolio','持倉與通知'),('operations','掃描與稽核'))
     buttons=''.join(f'<button type="button" role="tab" id="desk-tab-{key}" aria-controls="desk-{key}" aria-selected="{str(i==0).lower()}" tabindex="{0 if i==0 else -1}" data-desk-tab="{key}">{label}</button>' for i,(key,label) in enumerate(labels))
-    options=''.join(f'<option value="{escape(s["symbol"],quote=True)}">{escape(s["symbol"])} · {escape(s.get("name",""))}</option>' for s in report['securities'])
+    options=''.join(f'<option value="{escape(s["symbol"],quote=True)}">#{i+1} {escape(s["symbol"])} · {escape(stock_priority(s,report)["label"])} · {escape(s.get("name",""))}</option>' for i,s in enumerate(ranked_securities(report)))
     return f'''<nav class="desk-tabs" role="tablist" aria-label="日股工作台分類">{buttons}</nav>
 <section role="tabpanel" aria-labelledby="desk-tab-overview" id="desk-overview" data-desk-panel="overview">{overview}</section>
 <section role="tabpanel" aria-labelledby="desk-tab-stocks" id="desk-stocks" data-desk-panel="stocks" hidden>

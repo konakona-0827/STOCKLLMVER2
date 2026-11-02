@@ -7,6 +7,7 @@ from pathlib import Path
 import secrets
 import re
 import threading
+import time
 from urllib.parse import urlsplit
 
 from .contracts import DataError, TOKYO, strict_json_loads
@@ -14,8 +15,12 @@ from .notifications import DEFAULT_CONFIG, email_status, flush
 from .portfolio import read_snapshot, record_fill
 from .settings import ROOT
 from .scan_schedule import SCHEDULE_VERSION
+from .presentation import runtime_status
+from .storage import atomic_json
 
-DESK_UI_VERSION = 4
+DESK_UI_VERSION = 6
+
+LIVE_STATUS='''<section class="live-status" aria-label="程式目前狀態"><b id="live-title">正在確認程式狀態…</b><p id="live-report"></p><details><summary>本輪處理情形</summary><p id="live-detail"></p></details><button id="live-reload" hidden type="button" onclick="location.reload()">已有新報告，載入最新排序與結論</button><button id="live-update" hidden type="button"></button></section>'''
 
 
 PANEL = '''<style>
@@ -42,11 +47,14 @@ PANEL = '''<style>
 <script>
 const deskToken=__TOKEN__;
 const htmlReportAsOf=__ASOF__;
+const pageUIVersion=__UIVERSION__;
+let deskFormDirty=false;
 let fillBusy=false;let pendingFillId=crypto.randomUUID();
 async function postDesk(path,value){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Desk-Token':deskToken},body:JSON.stringify(value)});const x=await r.json();if(!r.ok)throw new Error(x.error||'操作未完成');return x;}
-async function refreshDesk(){const s=await (await fetch('/api/state')).json();const d=document.getElementById('positions');d.replaceChildren();for(const p of Object.values(s.portfolio.positions)){const row=document.createElement('p');row.textContent=p.symbol+' · '+p.quantity+'股 · 均價 '+p.average_cost.toFixed(2)+' JPY · 開倉 '+p.opened_at;d.append(row);}if(!d.children.length)d.textContent='尚無已確認持倉';document.getElementById('flush-mail').disabled=s.email.status!=='READY';document.getElementById('mail-status').textContent='通知：'+({DISABLED:'已暫停',READY:'可寄送',NEEDS_GMAIL_APP_PASSWORD:'待設定Gmail憑證'}[s.email.status]||s.email.status)+' · 待寄 '+(s.email.counts.PENDING||0)+' · 已寄 '+(s.email.counts.SENT||0);document.getElementById('analysis-status').textContent=s.analysis.status+(s.analysis.error?' · '+s.analysis.error:'');document.getElementById('analyze').disabled=s.analysis.status==='RUNNING';document.getElementById('reload-report').hidden=!s.report_as_of||s.report_as_of===htmlReportAsOf;}
+async function refreshDesk(){const s=await (await fetch('/api/state')).json();const d=document.getElementById('positions');d.replaceChildren();for(const p of Object.values(s.portfolio.positions)){const row=document.createElement('p');row.textContent=p.symbol+' · '+p.quantity+'股 · 均價 '+p.average_cost.toFixed(2)+' JPY · 開倉 '+p.opened_at;d.append(row);}if(!d.children.length)d.textContent='尚無已確認持倉';document.getElementById('flush-mail').disabled=s.email.status!=='READY';document.getElementById('mail-status').textContent='通知：'+({DISABLED:'已暫停',READY:'可寄送',NEEDS_GMAIL_APP_PASSWORD:'待設定Gmail憑證'}[s.email.status]||s.email.status)+' · 待寄 '+(s.email.counts.PENDING||0)+' · 已寄 '+(s.email.counts.SENT||0);document.getElementById('analysis-status').textContent=s.runtime.analyze_text;document.getElementById('analyze').disabled=s.analysis.status==='RUNNING';document.getElementById('reload-report').hidden=!s.report_as_of||s.report_as_of===htmlReportAsOf;}
 const fillForm=document.getElementById('fill-form');fillForm.elements.filled_at.value=new Date(Date.now()+9*3600000).toISOString().slice(0,16);
-fillForm.addEventListener('submit',async e=>{e.preventDefault();if(fillBusy)return;fillBusy=true;document.getElementById('fill-save').disabled=true;const f=new FormData(fillForm);const value={id:pendingFillId,symbol:f.get('symbol'),side:f.get('side'),quantity:Number(f.get('quantity')),price:Number(f.get('price')),fees:Number(f.get('fees')),filled_at:f.get('filled_at')+':00+09:00',confirmed:f.has('confirmed')};if(f.get('risk_lower')&&value.side==='BUY')value.risk_reference={channel:'MANUAL',lower:Number(f.get('risk_lower')),price_basis:'raw_unverified',defined_at:new Date().toISOString(),anchor_at:null};try{await postDesk('/api/fills',value);pendingFillId=crypto.randomUUID();fillForm.elements.confirmed.checked=false;document.getElementById('fill-status').textContent=value.confirmed?'已回報實際成交，下輪分析會使用。':'已存未確認記錄，未計入持倉。';await refreshDesk();}catch(x){document.getElementById('fill-status').textContent=x.message;}finally{fillBusy=false;document.getElementById('fill-save').disabled=false;}});
+fillForm.addEventListener('input',()=>deskFormDirty=true);
+fillForm.addEventListener('submit',async e=>{e.preventDefault();if(fillBusy)return;fillBusy=true;document.getElementById('fill-save').disabled=true;const f=new FormData(fillForm);const value={id:pendingFillId,symbol:f.get('symbol'),side:f.get('side'),quantity:Number(f.get('quantity')),price:Number(f.get('price')),fees:Number(f.get('fees')),filled_at:f.get('filled_at')+':00+09:00',confirmed:f.has('confirmed')};if(f.get('risk_lower')&&value.side==='BUY')value.risk_reference={channel:'MANUAL',lower:Number(f.get('risk_lower')),price_basis:'raw_unverified',defined_at:new Date().toISOString(),anchor_at:null};try{await postDesk('/api/fills',value);deskFormDirty=false;pendingFillId=crypto.randomUUID();fillForm.elements.confirmed.checked=false;document.getElementById('fill-status').textContent=value.confirmed?'已回報實際成交，下輪分析會使用。':'已存未確認記錄，未計入持倉。';await refreshDesk();}catch(x){document.getElementById('fill-status').textContent=x.message;}finally{fillBusy=false;document.getElementById('fill-save').disabled=false;}});
 document.getElementById('analyze').onclick=async()=>{try{await postDesk('/api/analyze',{});await refreshDesk();}catch(x){document.getElementById('analysis-status').textContent=x.message;}};
 document.getElementById('flush-mail').onclick=async()=>{try{await postDesk('/api/notifications/flush',{});await refreshDesk();}catch(x){document.getElementById('mail-status').textContent=x.message;}};
 document.getElementById('reload-report').onclick=()=>location.reload();
@@ -70,15 +78,25 @@ SCHEDULER_PANEL='''<section id="scan-control" style="background:#eaf4fa;padding:
 <p>WATCH不寄信；有效買入提案或持倉減碼／退出才寄。停止後不再開始新一輪，已執行中的分析會完成。</p>
 <script>
 async function refreshScheduler(){try{const s=await(await fetch('/api/state')).json();const a=s.scheduler;
+const rt=s.runtime;
+document.getElementById('live-title').textContent=rt.title;
+document.getElementById('live-report').textContent=rt.report_title;
+document.getElementById('live-detail').textContent=rt.report_text;
+document.getElementById('live-reload').hidden=!s.report_as_of||s.report_as_of===htmlReportAsOf;
+document.getElementById('analysis-status').textContent=rt.analyze_text;
+if(s.active_dashboard&&s.active_dashboard.ui_version>pageUIVersion){
+const target=new URL(s.active_dashboard.url);if(target.hostname==='127.0.0.1'){
+if(!deskFormDirty&&!fillBusy){location.replace(target.href);return;}
+const notice=document.getElementById('live-update');notice.hidden=false;notice.textContent='新版已開放。你有未儲存輸入，請先保留內容，再按此開啟新版。';notice.onclick=()=>location.replace(target.href);}}
 document.getElementById('service-status').textContent='程式連線正常 · '+(a.worker_alive?'掃描器運行中':'掃描器未運行')+' · 狀態確認時間（日本）：'+s.server_time;
 document.getElementById('report-freshness').textContent='目前頁面報告快照：'+(htmlReportAsOf||'尚無')+' · 最新完成報告：'+(s.report_as_of||'尚無')+(s.report_as_of&&s.report_as_of!==htmlReportAsOf?' · 有新報告，請按「重新載入最新報告」':'');
-document.getElementById('scheduler-status').textContent=(a.enabled?'自動掃描：已啟用':'自動掃描：已停止')+' · '+(a.running?'分析中':a.market_open?'交易時段':'午休或休市')+' · 下次檢查：'+(a.next_run_jst||'—');
+document.getElementById('scheduler-status').textContent=rt.title;
 const last=a.last_result;const labels={COMPLETE:'完成',DEGRADED:'完成但有資料或研究缺口',RUNNING:'執行中',FAILED:'失敗',SKIPPED_MARKET_CLOSED:'午休或休市，已略過',SKIPPED_DUPLICATE_SLOT:'本時段已執行',SKIPPED_NO_USABLE_DELAYED_QUOTES:'延遲報價過期，已略過模型',SKIPPED_BUSY:'已有分析執行中'};
-document.getElementById('scheduler-last').textContent='上次結果：'+(last?(labels[last.status]||last.status)+(last.slot?' · '+last.slot:'')+' · 模型請求 '+(last.model_calls||0)+' 次':'尚無執行紀錄')+(a.error?' · 錯誤：'+a.error:'');
+document.getElementById('scheduler-last').textContent=rt.last_text+' · 模型請求 '+(last&&last.model_calls||0)+' 次';
 document.getElementById('scheduler-start').disabled=a.enabled&&a.worker_alive;document.getElementById('scheduler-stop').disabled=!a.enabled;
 const manual=document.getElementById('analyze');if(manual)manual.disabled=a.running||s.analysis.status==='RUNNING';
 document.getElementById('scan-now').disabled=a.running||s.analysis.status==='RUNNING';
-}catch(e){document.getElementById('service-status').textContent='程式連線中斷，先前畫面可能已過期；請重新執行 Dashboard.cmd。';document.getElementById('scheduler-status').textContent='目前掃描狀態無法確認：'+e.message;for(const id of ['scheduler-start','scheduler-stop','scan-now'])document.getElementById(id).disabled=true;}}
+}catch(e){document.getElementById('live-title').textContent='目前連不到程式，畫面是先前報告。請重新開啟 Dashboard.cmd。';document.getElementById('service-status').textContent='程式連線中斷，先前畫面可能已過期；請重新執行 Dashboard.cmd。';document.getElementById('scheduler-status').textContent='目前掃描狀態無法確認，請檢查程式是否運行。';for(const id of ['scheduler-start','scheduler-stop','scan-now'])document.getElementById(id).disabled=true;}}
 async function schedulerAction(path,value){try{await postDesk(path,value);document.getElementById('scheduler-operation').textContent=path==='/api/analyze'?'已提交手動分析；完成後請載入最新報告。':'掃描設定已更新。';await refreshScheduler();}catch(e){document.getElementById('scheduler-operation').textContent='操作未完成：'+e.message;}}
 document.getElementById('scheduler-start').onclick=()=>schedulerAction('/api/scheduler',{enabled:true});
 document.getElementById('scheduler-stop').onclick=()=>schedulerAction('/api/scheduler',{enabled:false});
@@ -97,6 +115,7 @@ class DeskServer(ThreadingHTTPServer):
         self.universe_path, self.observer = universe_path, observer
         self.token = secrets.token_urlsafe(32)
         self.analysis = {"status": "IDLE"}
+        self.retiring = False
         self.analysis_lock = threading.Lock()
         super().__init__(("127.0.0.1", port), Handler)
         from .scheduler import ScanScheduler
@@ -106,6 +125,18 @@ class DeskServer(ThreadingHTTPServer):
     def server_close(self):
         if getattr(self,'scheduler',None):self.scheduler.close()
         super().server_close()
+
+    def active_dashboard(self):
+        fallback={'url':f'http://127.0.0.1:{self.server_port}/','ui_version':DESK_UI_VERSION}
+        try:
+            value=strict_json_loads((self.data_root/'dashboard_current.json').read_text(encoding='utf-8'))
+            address=urlsplit(value['url'])
+            if (value.get('project_root')==str(ROOT.resolve()) and type(value.get('ui_version')) is int
+                and value['ui_version']>=DESK_UI_VERSION and address.scheme=='http' and address.hostname=='127.0.0.1'
+                and address.port and 1024<=address.port<=65535 and address.path=='/' and not address.query
+                and not address.fragment and not address.username and not address.password):return value
+        except (OSError,ValueError,KeyError,TypeError):pass
+        return fallback
 
     def latest(self):
         pointer = self.output_root / "latest.json"
@@ -168,7 +199,11 @@ class Handler(BaseHTTPRequestHandler):
                 elif report and 'id="field-guide"' not in html:
                     from .field_guide import render_field_guide
                     html=html.replace('</main>',render_field_guide(report)+'</main>',1)
-                panel = PANEL.replace("__TOKEN__", json.dumps(self.server.token)).replace("__ASOF__", json.dumps(report.get("as_of") if report else None))
+                panel = PANEL.replace("__TOKEN__", json.dumps(self.server.token)).replace("__ASOF__", json.dumps(report.get("as_of") if report else None)).replace('__UIVERSION__',str(DESK_UI_VERSION))
+                if '<!--LIVE_STATUS-->' in html:html=html.replace('<!--LIVE_STATUS-->',LIVE_STATUS,1)
+                else:html=html.replace('<main>','<main>'+LIVE_STATUS,1)
+                # The live header already explains this round; keep the static summary in archived HTML only.
+                html=html.replace('<section class="round-summary">','<section class="round-summary" hidden>',1)
                 html=html.replace('http://127.0.0.1:8765/','/')
                 if '<!--SCAN_CONTROL-->' in html:html=html.replace('<!--SCAN_CONTROL-->',SCHEDULER_PANEL,1)
                 else:html=html.replace('<main>','<main>'+SCHEDULER_PANEL,1)
@@ -180,10 +215,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/state":
                 report, _ = self.server.latest()
                 now = datetime.now(TOKYO).isoformat()
+                scheduler=self.server.scheduler.status()
                 self.reply({"portfolio": read_snapshot(self.server.data_root / "manual_fills.json", now),
                     "project_root":str(ROOT.resolve()), "server_time":now, "ui_version":DESK_UI_VERSION,
                     "analysis": self.server.analysis, "email": email_status(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"),
-                    "scheduler":self.server.scheduler.status(),
+                    "scheduler":scheduler,"runtime":runtime_status(scheduler,report,self.server.analysis),
+                    "active_dashboard":self.server.active_dashboard(),"can_retire":True,
                     "report_as_of": report.get("as_of") if report else None,
                     "manual_actions": report.get("manual_actions", []) if report else []})
             else:
@@ -217,6 +254,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(flush(self.server.data_root / "email_settings.json", self.server.data_root / "notifications.sqlite3"))
             if path == "/api/analyze":
                 with self.server.analysis_lock:
+                    if self.server.retiring:return self.reply({'error':'DASHBOARD_UPDATING_OPEN_NEW_VERSION'},409)
                     if self.server.analysis["status"] == "RUNNING":
                         return self.reply({"error": "ANALYSIS_ALREADY_RUNNING"}, 409)
                     self.server.analysis = {"status": "RUNNING"}
@@ -224,8 +262,24 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply({"status": "RUNNING"}, 202)
             if path == "/api/scheduler":
                 if set(value)!={'enabled'}:raise DataError('ONLY_SCHEDULER_ENABLED_CAN_BE_CHANGED')
-                self.server.scheduler.set_enabled(value['enabled'])
+                with self.server.analysis_lock:
+                    if self.server.retiring:return self.reply({'error':'DASHBOARD_UPDATING_OPEN_NEW_VERSION'},409)
+                    self.server.scheduler.set_enabled(value['enabled'])
                 return self.reply(self.server.scheduler.status())
+            if path == '/api/retire':
+                if value:raise DataError('RETIRE_BODY_MUST_BE_EMPTY')
+                with self.server.analysis_lock:
+                    if self.server.scheduler.status()['running'] or self.server.analysis['status']=='RUNNING':
+                        return self.reply({'error':'ANALYSIS_RUNNING_CANNOT_RETIRE'},409)
+                    if not self.server.scheduler.job_lock.acquire(blocking=False):
+                        return self.reply({'error':'ANALYSIS_RUNNING_CANNOT_RETIRE'},409)
+                    try:
+                        self.server.scheduler.set_enabled(False)
+                        self.server.retiring=True
+                    finally:self.server.scheduler.job_lock.release()
+                self.reply({'retiring':True})
+                threading.Thread(target=self.server.shutdown,daemon=True).start()
+                return
             return self.reply({"error": "NOT_FOUND"}, 404)
         except Exception as exc:
             return self.reply({"error": str(exc) if isinstance(exc, DataError) else "LOCAL_REQUEST_ERROR"}, 400)
@@ -242,7 +296,7 @@ def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None
         if not isinstance(state,dict) or state.get('scheduler',{}).get('engine')!='PROGRAM_INTERNAL' or state.get('project_root')!=str(ROOT.resolve()):
             raise DataError('OLD_DASHBOARD_RUNNING_RESTART_REQUIRED')
         if state.get('ui_version',0)<DESK_UI_VERSION or state['scheduler'].get('schedule_version')!=SCHEDULE_VERSION:
-            if _migration_depth>=5:raise DataError('TOO_MANY_OLD_DASHBOARDS_RESTART_REQUIRED')
+            if _migration_depth>=16:raise DataError('TOO_MANY_OLD_DASHBOARDS_RESTART_REQUIRED')
             # Use the old app's normal CSRF-protected pause control, never terminate its process.
             if state['scheduler'].get('running'):raise DataError('OLD_DASHBOARD_ANALYSIS_RUNNING_TRY_AFTER_COMPLETION')
             with urlopen(f'http://127.0.0.1:{port}/',timeout=5) as response:old_html=response.read().decode('utf-8')
@@ -254,6 +308,19 @@ def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None
             with urlopen(req,timeout=5) as response:paused=json.load(response)
             if paused.get('enabled') is not False:raise DataError('OLD_DASHBOARD_NOT_PAUSED')
             resume=state['scheduler']['enabled'] or bool(_resume_enabled)
+            if state.get('can_retire') is True:
+                retire=Request(f'http://127.0.0.1:{port}/api/retire',data=b'{}',headers={
+                    'Content-Type':'application/json','Origin':f'http://127.0.0.1:{port}',
+                    'X-Desk-Token':json.loads(match.group(1))})
+                with urlopen(retire,timeout=5) as response:retired=json.load(response)
+                if retired.get('retiring') is not True:raise DataError('DASHBOARD_RETIRE_NOT_CONFIRMED')
+                for _ in range(40):
+                    time.sleep(.05)
+                    try:
+                        with urlopen(f'http://127.0.0.1:{port}/api/state',timeout=.2):pass
+                    except OSError:break
+                else:raise DataError('DASHBOARD_RETIRE_TIMEOUT')
+                return serve(port,open_browser=open_browser,_migration_depth=_migration_depth+1,_resume_enabled=resume)
             print(f'Old automatic scanning paused; using dashboard port {port+1}.',flush=True)
             return serve(port+1,open_browser=open_browser,_migration_depth=_migration_depth+1,_resume_enabled=resume)
         if open_browser:
@@ -264,6 +331,8 @@ def serve(port=8765,*,open_browser=False,_migration_depth=0,_resume_enabled=None
     except OSError:raise DataError('DASHBOARD_PORT_IN_USE_CLOSE_OLD_VERSION_OR_USE_EXISTING_DASHBOARD') from None
     try:
         if _resume_enabled is not None:server.scheduler.set_enabled(_resume_enabled)
+        atomic_json(server.data_root/'dashboard_current.json',{'url':f'http://127.0.0.1:{port}/',
+            'ui_version':DESK_UI_VERSION,'project_root':str(ROOT.resolve())})
         if open_browser:
             import webbrowser
             webbrowser.open(f'http://127.0.0.1:{port}/#scan-control')
