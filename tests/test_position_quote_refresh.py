@@ -84,7 +84,11 @@ class PositionQuoteRefreshTests(unittest.TestCase):
         with patch('dashboard.time.time', return_value=self.at.timestamp()):
             self.assertEqual(60, Dashboard.health_delay(app))
         with patch('dashboard.time.time', return_value=self.at.replace(hour=15).timestamp()):
-            self.assertEqual(300, Dashboard.health_delay(app))
+            # Idle off-hours checks resume at the next weekday 08:00; current
+            # quote freshness is still enforced independently below.
+            from scheduler import health_check_due_or_next
+            wall=self.at.replace(hour=15).timestamp()
+            self.assertEqual(health_check_due_or_next(wall)-wall,Dashboard.health_delay(app))
         snapshot = self.refresh()
         with patch('dashboard.now', return_value=self.at + timedelta(seconds=121)):
             self.assertEqual({}, current_position_quotes(snapshot, None))

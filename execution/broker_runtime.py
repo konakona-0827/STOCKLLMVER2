@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from concurrent.futures import Future
 from pathlib import Path
-from queue import Queue
+from queue import Queue, Empty
 from threading import Lock, Thread
 from state_lock import StateLease
 
@@ -60,7 +60,17 @@ class BrokerRuntime:
 
         try:
             while True:
-                kind, args, future = self._queue.get()
+                try:
+                    kind, args, future = self._queue.get(timeout=.2)
+                except Empty:
+                    # A blocking Queue.get leaves the STA's COM callbacks
+                    # unprocessed between jobs, including Reply disconnects.
+                    pump=getattr(session,'pump',None)
+                    if callable(pump):
+                        try:pump(.01)
+                        except Exception as exc:
+                            login_error=f'COM event pump: {type(exc).__name__}: {exc}'
+                    continue
                 stop_worker = False
                 try:
                     if kind == "shutdown":

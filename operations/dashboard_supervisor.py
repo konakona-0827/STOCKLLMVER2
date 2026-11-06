@@ -97,7 +97,17 @@ def supervise(state_root: Path, *, mode: str, fallback_strategy: Path | None,
             )
             record(supervisor_log, "DASHBOARD_STARTED", child_pid=child.pid,
                    strategy_override=env.get("TRADING_STRATEGY_PATH"))
-            exit_code = child.wait()
+            while True:
+                try:
+                    exit_code = child.wait(timeout=30)
+                    break
+                except subprocess.TimeoutExpired:
+                    reason = watchdog_reason(lifecycle_log, child.pid, launched_at)
+                    if reason:
+                        record(supervisor_log, 'WATCHDOG_RESTART', child_pid=child.pid, reason=reason)
+                        child.terminate()
+                        exit_code = child.wait()
+                        break
         life = lifecycle_exit(lifecycle_log, child.pid, launched_at)
         if life["normal_close"]:
             record(supervisor_log, "NORMAL_CLOSE", child_pid=child.pid,
@@ -114,6 +124,42 @@ def supervise(state_root: Path, *, mode: str, fallback_strategy: Path | None,
                    window_seconds=restart_window_seconds)
             return 1
         time.sleep(3)
+
+
+def watchdog_reason(path: Path, pid: int, launched_at: datetime, *, at=None):
+    """A live PID alone does not prove Tk or its analysis worker is progressing."""
+    at = at or utc_now()
+    latest = None
+    try:
+        # Read a bounded tail; ignore incomplete records from a concurrent append.
+        with path.open('rb') as stream:
+            stream.seek(0, 2)
+            stream.seek(max(0, stream.tell() - 128 * 1024))
+            lines = stream.read().decode('utf-8', errors='replace').splitlines()
+        for line in lines:
+            try:
+                row = json.loads(line)
+                stamp = datetime.fromisoformat(row['time_utc'])
+                if row.get('pid') == pid and stamp >= launched_at - timedelta(seconds=3):
+                    latest = row
+            except (ValueError, KeyError, TypeError):
+                continue
+    except OSError:
+        pass
+    stamp = datetime.fromisoformat(latest['time_utc']) if latest else launched_at
+    if (at - stamp).total_seconds() > 180:
+        return 'HEARTBEAT_STALE_180_SECONDS'
+    detail = (latest or {}).get('detail') or {}
+    if detail.get('analysis_running') and detail.get('analysis_age_seconds', 0) > 900:
+        try:
+            activity=json.loads((path.parent.parent/'analysis/research_activity.json').read_text('utf-8'))
+            progress_at=datetime.fromisoformat(activity['at'])
+            if (activity.get('pid')==pid and progress_at>=launched_at
+                    and 0 <= (at-progress_at).total_seconds() <= 900):
+                return None
+        except (OSError,ValueError,KeyError,TypeError):pass
+        return 'ANALYSIS_STALLED_900_SECONDS'
+    return None
 
 
 def main() -> int:

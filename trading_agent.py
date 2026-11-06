@@ -13,18 +13,36 @@ from config import now, redact
 from main import save_json
 import position_analyzer
 from web_research import search_audit
-from token_budget import compact
+from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v3-support-scout'
+AGENT_VERSION = 'agent-decision-v7-research-without-usage-quotas'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
-先呼叫 get_portfolio、get_trade_history，再自行選擇標的呼叫 get_market_data；可多次查詢。
+帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
+需要更新時可呼叫 get_portfolio、get_trade_history。BUY / SELL 前必須查最新 get_market_data，
+多檔可用 get_market_data_batch 一次查詢；刷新帳戶後須重新查交易標的行情。
 BUY / SELL 前必須查詢該標的行情。只依據提供的真實行情、資金與持倉，不得虛構資料。
 每檔都要回傳一筆 BUY / SELL / HOLD / WAIT 決策、股數、理由與原有其他欄位。
 未持倉時不可 HOLD / SELL；觀望填 WAIT。HOLD / WAIT 的股數與 action_ratio 都是 0。
 SELL 股數與 action_ratio 必須符合目前 AI 管理持倉；不可賣出人工持股。
 盤中零股不得當沖，SELL 另須遵守最新 max_sell_qty；成本與買賣日期依 ai_cost_basis、ai_trade_dates。
 daily_bars、daily_trend 與 daily_history_status 是既有日線資料，不得在重新查價後忽略。
+初始 daily_bars 僅最近五筆、market_history 僅最近三筆；coverage 標明完整筆數，並非缺資料。
+需要更早原始資料驗證結構時呼叫 get_research_data；不可從截短顯示推論歷史缺漏。
+entry_screen 是 Python 按既有成本、配置及風控算出的有限情境，非訊號或完整可行性證明。
+先看 trade_setups 的現價與回落限價情境；有數字可行路徑才優先安排支撐研究，訊號與反證仍須獨立判斷。
+trade_setups 已按當前帳戶、訊號層級、結構停損與配置驗算；先驗證其中排名最高的可交易路徑。
+market_scout 是獨立尋標代理從上市普通股完成日線挑選的初步研究理由與觀察條件；
+它在程式買進計畫篩選之前執行，沒有下單權限，觀察條件不是買進訊號或目標。
+候選有 market_scout 時應核對其反證與最新 trade_setups，不能把前一日日線當即時零股報價。
+若數值、訊號與兩方研究未發現具體否決證據，可提出 BUY，不要求未來上漲已被證明。
+MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE 是完成日線突破及量能條件下的目標情境，必須如實揭露。
+PLANNED_LIMIT 的進場基準是具證據的 suggested_price，不是強制按 ask 追買；
+可提出等待回落的當日限價，須說明回落後仍有效的條件，成交與獲利均不保證。
+其他模式按 ask 與建議價較高者估算。不得為通過門檻跳過近端壓力或貼近失效價。
+WAIT/HOLD 的 reason 簡述主要未通過條件，以及可重新評估的具體價位/事件；
+有持倉先評估原計畫與退出風險，不為沒有數字可行性的候選反覆研究。
+每檔 reason 精簡重複歷史、預算與策略條文；BUY/SELL 保留必要計算與反證，不為縮短篇幅省略關鍵依據。
 BUY 須遵守 eligible_strategies，填目標價、失效價與持有天數，所有 BUY 合計含費用不得超過預算。
 只讀、非 LIVE、試撮合或過期行情只回傳 HOLD / WAIT。
 data_quality 必須逐字等於該檔 quote_status。LAST_KNOWN 的 warnings 至少一項須逐字包含「不是即時行情」，並列出 quote_timestamp；UNAVAILABLE 只能 WAIT 且 reference_price=null。
@@ -44,11 +62,16 @@ def execution_metadata(model):
     except PackageNotFoundError:
         sdk_version = None
     digest = hashlib.sha256()
-    for name in ('trading_agent.py','token_budget.py','agent_decision.py','analysis_service.py',
-                 'position_analyzer.py','execution/auto_advice_executor.py',
+    for name in ('trading_agent.py','token_budget.py','research_runtime.py','entry_screen.py','opportunity_engine.py','opportunity_gate.py',
+                 'config/opportunity_search.json','config/market_discovery.json','market_discovery.py',
+                 'config/execution_live.json','advice_interface.py',
+                 'daily_history.py','agent_decision.py','analysis_service.py',
+                 'position_analyzer.py','trade_plan_context.py','execution/auto_advice_executor.py',
+                 'execution/broker_runtime.py','execution/capital_reply_session.py',
                  'support_scout/trading.py', 'support_scout/market_sessions.py',
                  'support_scout/agents.py', 'support_scout/support.py',
-                 'config/support_agents.json'):
+                 'config/support_agents.json', 'daily_participation.py',
+                 'config/daily_participation.json'):
         digest.update((Path(__file__).parent/name).read_bytes())
     return dict(trading_mode='agent',agent_version=AGENT_VERSION,sdk_version=sdk_version,model=model,
                 implementation_sha256=digest.hexdigest(),
@@ -69,6 +92,8 @@ class TradingTools:
         self.search_request = search_request or {}
         self.search_output = []
         self.support = None
+        self.history = []
+        self.usage_requests = []
 
     def _call(self, name, args, operation):
         item = dict(call_id=f'{self.run_id}:{len(self.calls)+1}',tool=name,arguments=args,
@@ -103,6 +128,9 @@ class TradingTools:
                 c['position']['ai_managed_qty'] = c['paper_position']['qty']
             apply_buy_limits(list(self.candidates.values()), self.account,
                              self.rules if self.live_enabled else None)
+            from opportunity_engine import refresh
+            for c in self.candidates.values():
+                if c.get('opportunity_policy'):refresh(c,self.account,self.rules)
             self.portfolio_read = True
             return self.account
         return self._call('get_portfolio',{},read)
@@ -110,7 +138,9 @@ class TradingTools:
     def get_trade_history(self):
         self.history_read = False
         def read():
+            self.history = []
             result = self.history_reader()
+            self.history = deepcopy(result)
             self.history_read = True
             return result
         return self._call('get_trade_history',{},read)
@@ -130,6 +160,9 @@ class TradingTools:
             c = self.candidates[symbol]
             if self.account is not None:
                 apply_buy_limits([c], self.account, self.rules if self.live_enabled else None)
+                if c.get('opportunity_policy'):
+                    from opportunity_engine import refresh
+                    refresh(c,self.account,self.rules)
             self.observed.add(symbol)
             return dict(c)
         return self._call('get_market_data',dict(symbol=symbol),read)
@@ -166,7 +199,25 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
     @function_tool
     def get_market_data(symbol:str)->dict:
         """Read fresh real market data and strategy evidence for one allowed symbol."""
-        return compact(context.get_market_data(symbol))
+        row = context.get_market_data(symbol)
+        return row if 'error' in row else candidate_view(row, context.account, context.rules)
+
+    @function_tool
+    def get_market_data_batch(symbols:list[str])->list:
+        """Refresh 1-5 distinct symbols in one turn, after research and before trading."""
+        if not 1 <= len(symbols) <= 5 or len(set(symbols)) != len(symbols):
+            return [dict(error='EXPECTED_1_TO_5_DISTINCT_SYMBOLS')]
+        rows = [context.get_market_data(symbol) for symbol in symbols]
+        return [row if 'error' in row else candidate_view(row, context.account, context.rules) for row in rows]
+
+    @function_tool
+    def get_research_data(symbol:str)->dict:
+        """Read full stored daily bars and intraday samples to verify older structure; not a quote refresh."""
+        def read():
+            if symbol not in context.candidates:
+                raise ValueError('SYMBOL_OUTSIDE_ANALYSIS_SET')
+            return deepcopy(context.candidates[symbol])
+        return compact(context._call('get_research_data', dict(symbol=symbol), read))
 
     @function_tool
     def get_portfolio()->dict:
@@ -178,12 +229,12 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
         """Read thirty recent attempts/fills from the existing execution database."""
         return compact(context.get_trade_history())
 
-    tools = [get_market_data, get_portfolio, get_trade_history]
+    tools = [get_market_data, get_market_data_batch, get_research_data, get_portfolio, get_trade_history]
     search = next((tool for tool in context.search_request.get('tools', [])
                    if tool.get('type') == 'web_search'), None)
-    search_limit = context.search_request.get('max_tool_calls', 3)
+    search_limit = context.search_request.get('max_tool_calls')
     if search is not None:
-        if type(search_limit) is not int or not 1 <= search_limit <= 10:
+        if search_limit is not None and (type(search_limit) is not int or not 1 <= search_limit <= 10):
             raise ValueError('WEB_SEARCH_MAX_TOOL_CALLS_MUST_BE_1_TO_10')
         tools.append(WebSearchTool(user_location=search.get('user_location'),
                                    search_context_size=search.get('search_context_size', 'medium'),
@@ -196,8 +247,10 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
 
         async def get_response(self, *args, **kwargs):
             used = sum(item.get('type') == 'web_search_call' for item in context.search_output)
-            remaining = search_limit - used
-            if remaining:
+            remaining = search_limit - used if search_limit is not None else None
+            if remaining is None:
+                pass
+            elif remaining:
                 settings = kwargs['model_settings']
                 kwargs['model_settings'] = replace(
                     settings, extra_args={**(settings.extra_args or {}), 'max_tool_calls': remaining})
@@ -205,7 +258,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
                 kwargs['tools'] = [tool for tool in kwargs['tools'] if tool.name != 'web_search']
             response = await self.delegate.get_response(*args, **kwargs)
             context.search_output.extend(item.model_dump(mode='json') for item in response.output)
-            if sum(item.get('type') == 'web_search_call' for item in context.search_output) > search_limit:
+            if search_limit is not None and sum(item.get('type') == 'web_search_call' for item in context.search_output) > search_limit:
                 raise ValueError('AGENT_WEB_SEARCH_LIMIT_EXCEEDED')
             return response
 
@@ -213,8 +266,49 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
             raise NotImplementedError('Trading decisions use the non-streaming runner')
             yield
 
-    async with AsyncOpenAI(timeout=min(timeout_seconds,60),max_retries=0) as client:
-        provider = OpenAIResponsesModel(model=model,openai_client=client)
+    class MeteredModel(Model):
+        """Persist every completed call, including specialists, before parsing output."""
+        def __init__(self, delegate):
+            self.delegate = delegate
+
+        async def get_response(self, *args, **kwargs):
+            before=len(context.usage_requests)
+            try:
+                response = await self.delegate.get_response(*args, **kwargs)
+            except BaseException:
+                # A failed/timeout provider call can still be billable; never
+                # report the previous successful calls as the full invoice.
+                context.usage_incomplete |= not recorder.accounting_complete or len(context.usage_requests)==before
+                raise
+            row = dict(usage_snapshot(response.usage), response_id=response.response_id,
+                       input_characters=len(json.dumps(kwargs.get('input', ''), ensure_ascii=False)))
+            # Real provider responses were recorded before SDK validation;
+            # custom/test Model implementations still need this fallback.
+            if not any(r.get('response_id')==response.response_id for r in context.usage_requests):
+                context.usage_requests.append(row)
+            save_json(context.log_path.with_name('api_usage_requests.json'), context.usage_requests)
+            return response
+
+        async def stream_response(self, *args, **kwargs):
+            raise NotImplementedError('Trading decisions use the non-streaming runner')
+            yield
+
+    # Read deterministic account/history before spending a model turn asking
+    # for them. The same methods/guards/logs are used by later tool refreshes.
+    context.usage_requests = []
+    context.usage_incomplete = False
+    for read in (context.get_portfolio, context.get_trade_history):
+        if 'error' in read():
+            raise ValueError('AGENT_ACCOUNT_PREFLIGHT_FAILED')
+    model_input = dict(input=decision_input(context), read_only=context.read_only)
+    save_json(context.log_path.with_name('agent_model_input.json'), model_input)
+    from research_runtime import ResponseRecorder,totals
+    async with AsyncOpenAI(timeout=timeout_seconds or 180,max_retries=0) as client:
+        recorder=ResponseRecorder(context.log_path.with_name('api_usage_requests.json'),
+            'trading_and_support',context.usage_requests,context.stopped,
+            on_incomplete=lambda response:context.search_output.extend(
+                item.model_dump(mode='json') for item in response.output)).install(client)
+        provider = MeteredModel(OpenAIResponsesModel(model=model,openai_client=client))
         if context.support is not None:
             tools.extend(context.support.sdk_tools(provider))
             instructions += context.support.instructions()
@@ -223,16 +317,16 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
                       tools=tools,output_type=FinalReport,
                       model_settings=ModelSettings(parallel_tool_calls=False,store=False,
                                                    response_include=context.search_request.get('include'),
-                                                   max_tokens=min(24000,max(6000,len(context.candidates)*650))))
-        result = await asyncio.wait_for(Runner.run(agent,
-            json.dumps(dict(input=compact(context.initial_input),read_only=context.read_only),ensure_ascii=False,separators=(',', ':')),
-            max_turns=max_turns,run_config=RunConfig(tracing_disabled=True)),timeout_seconds)
+                                                   max_tokens=None))
+        task=Runner.run(agent,
+            json.dumps(model_input,ensure_ascii=False,separators=(',', ':')),
+            max_turns=max_turns,run_config=RunConfig(tracing_disabled=True))
+        result=await asyncio.wait_for(task,timeout_seconds) if timeout_seconds else await task
+        context.usage_incomplete |= not recorder.accounting_complete
         save_json(context.log_path.with_name('agent_sdk_tools.json'),
                   [item.to_input_item() for item in result.new_items
                    if item.type in ('tool_call_item','tool_call_output_item')])
-        usage = result.context_wrapper.usage
-        return result.final_output.model_dump(),dict(input_tokens=usage.input_tokens,output_tokens=usage.output_tokens,
-                                                     requests=usage.requests)
+        return result.final_output.model_dump(), totals(context.usage_requests)
 
 
 async def _sdk_review(request):
@@ -250,19 +344,22 @@ async def _sdk_review(request):
         model_config = ConfigDict(extra='forbid')
         reviews: list[ReviewItem]
 
-    timeout = float(os.getenv('AGENT_TIMEOUT_SECONDS', '180'))
-    async with AsyncOpenAI(timeout=min(timeout, 60), max_retries=0) as client:
+    timeout = float(os.environ['AGENT_TIMEOUT_SECONDS']) if os.getenv('AGENT_TIMEOUT_SECONDS') else None
+    from research_runtime import ResponseRecorder,totals
+    async with AsyncOpenAI(timeout=timeout or 180, max_retries=0) as client:
+        recorder=ResponseRecorder(Path(request['usage_path']),'pretrade_review').install(client) if request.get('usage_path') else None
         agent = Agent(name='Trading Pretrade Review Agent', instructions=request['instructions'],
                       model=OpenAIResponsesModel(model=request['model'], openai_client=client),
                       output_type=ReviewReport,
-                      model_settings=ModelSettings(store=False, max_tokens=request['max_output_tokens']))
-        result = await asyncio.wait_for(Runner.run(agent, request['input'], max_turns=1,
-            run_config=RunConfig(tracing_disabled=True)), timeout)
+                      model_settings=ModelSettings(store=False, max_tokens=None))
+        task=Runner.run(agent, request['input'], max_turns=None,run_config=RunConfig(tracing_disabled=True))
+        result=await asyncio.wait_for(task,timeout) if timeout else await task
         usage = result.context_wrapper.usage
+        recorded=totals(recorder.rows) if recorder and recorder.rows else usage_snapshot(usage)
         return json.dumps(result.final_output.model_dump(), ensure_ascii=False), dict(
-            model=request['model'], runtime='openai-agents-sdk', usage=dict(
-                input_tokens=usage.input_tokens, output_tokens=usage.output_tokens,
-                total_tokens=usage.total_tokens))
+            model=request['model'], runtime='openai-agents-sdk', usage=dict(recorded,
+                total_tokens=recorded['input_tokens']+recorded['output_tokens']),
+            usage_accounting_complete=recorder.accounting_complete if recorder else True)
 
 
 def sdk_review(request):
@@ -273,11 +370,12 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
     model = model or agent_model()
     response = dict(request_started_at=now().isoformat(),api=execution_metadata(model),raw_response='')
     try:
-        turns,timeout = int(os.getenv('AGENT_MAX_TURNS','24')),float(os.getenv('AGENT_TIMEOUT_SECONDS','180'))
-        if not 2<=turns<=60 or not 1<=timeout<=600:
+        turns=None
+        timeout=float(os.environ['AGENT_TIMEOUT_SECONDS']) if os.getenv('AGENT_TIMEOUT_SECONDS') else None
+        if timeout is not None and timeout<1:
             raise ValueError('INVALID_AGENT_LIMITS')
         decision,usage = asyncio.run((runner or sdk_run)(context,
-            AGENT_INSTRUCTIONS+'\n日線傳輸採無損壓縮：daily_bars 若為 {columns, rows}，每列依 columns 對應欄位；所有價格、日期、來源及完整性意義不變。\n\n'+strategy_prompt,model,turns,timeout))
+            AGENT_INSTRUCTIONS+'\n表格傳輸：daily_bars／market_history／price_levels 若為 {columns, rows}，每列依 columns 對應欄位。\n\n'+strategy_prompt,model,turns,timeout))
         response['api']['usage'] = usage
         response['raw_response'] = json.dumps(decision,ensure_ascii=False)
         if context.stopped() or not context.portfolio_read or not context.history_read:
@@ -287,21 +385,40 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
                 if context.read_only or item.get('symbol') not in context.observed:
                     raise ValueError('TRADE_REQUIRES_MARKET_TOOL_AND_NON_READ_ONLY_MODE')
         position_analyzer.validate(decision,list(context.candidates.values()),context.account['available_cash_cents'],
-                                   context.rules.min_buy_fee_reserve_twd,context.rules.buy_cash_buffer_rate,
-                                   capital_twd=context.account.get('capital_limit_twd'))
+                                   context.rules.economic_minimum_commission_twd,context.rules.buy_cash_buffer_rate,
+                                   capital_twd=context.account.get('capital_limit_twd'),
+                                   funding_fee_reserve_twd=context.rules.min_buy_fee_reserve_twd)
         if context.support is not None:
             for item in decision['decisions']:
                 if item['decision'] == 'BUY':
                     reasons = context.support.buy_block_reasons(item['symbol'])
                     if reasons:
                         position_analyzer._veto_trade(item, reasons[0], '；'.join(reasons))
+        from daily_participation import add_probes
+        response['daily_participation'] = add_probes(context, decision)
+        if response['daily_participation']['proposed']:
+            position_analyzer.validate(decision, list(context.candidates.values()),
+                context.account['available_cash_cents'], context.rules.economic_minimum_commission_twd,
+                context.rules.buy_cash_buffer_rate, capital_twd=context.account.get('capital_limit_twd'),
+                funding_fee_reserve_twd=context.rules.min_buy_fee_reserve_twd)
         review_input = dict(context.initial_input or {})
         review_input.update(analysis_set=list(context.candidates.values()), paper_account=context.account)
+        from daily_participation import policy, progress
+        review_input['daily_participation'] = dict(policy=policy(), progress=progress())
         review_input.setdefault('paper_simulation_rules', dict(
-            minimum_commission_twd=float(context.rules.min_buy_fee_reserve_twd),
+            minimum_commission_twd=float(context.rules.economic_minimum_commission_twd),
             buy_cash_buffer_rate=float(context.rules.buy_cash_buffer_rate)))
+        def default_review(request):
+            return sdk_review(dict(request,usage_path=str(context.log_path.with_name('pretrade_usage_requests.json'))))
         response['pretrade_review'] = position_analyzer.review_trades(decision,
-            dict(model=model, input=json.dumps(review_input, ensure_ascii=False)), reviewer or sdk_review)
+            dict(model=model, input=json.dumps(review_input, ensure_ascii=False)), reviewer or default_review)
+        response['daily_participation']['remaining_without_intent'] = [
+            side for side in response['daily_participation']['before']['needed']
+            if response['daily_participation'].get('enabled')
+            and not any(d['decision'] == side for d in decision['decisions'])]
+        remaining = response['daily_participation']['remaining_without_intent']
+        if remaining:
+            decision['market_view'] += '；每日參與尚缺動作：' + '、'.join(remaining) + '（請查看試單資格與交易前檢查原因）。'
         response['validation'] = 'VALID'
     except Exception as exc:
         response.update(validation='ERROR')
@@ -314,6 +431,13 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
             for c in context.candidates.values()])
     if any(tool.get('type') == 'web_search' for tool in context.search_request.get('tools', [])):
         response['api']['web_search'] = search_audit({'output': context.search_output})
+    if context.usage_requests or getattr(context, 'usage_incomplete', False):
+        response['api']['usage_requests'] = context.usage_requests
+        response['api']['usage_accounting_complete'] = not getattr(context, 'usage_incomplete', False)
+        if 'usage' not in response['api'] and context.usage_requests:
+            response['api']['usage'] = {key: sum(row[key] for row in context.usage_requests)
+                for key in ('input_tokens', 'output_tokens', 'requests', 'cached_input_tokens',
+                            'cache_write_tokens', 'reasoning_tokens')}
     response.update(response_received_at=now().isoformat(),tool_calls=context.calls)
     if context.support is not None:
         response['support_research'] = context.support.summary()

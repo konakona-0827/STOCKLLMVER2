@@ -193,7 +193,7 @@ def apply_live_position_context(candidates, broker_health, execution_db, audit):
     from trade_plan_context import live_plans
     plans = live_plans(execution_db, {
         c['symbol']: int((c.get('paper_position') or {}).get('qty') or 0)
-        for c in candidates})
+        for c in candidates}, analysis_path=Path(execution_db).parent.parent/'analysis'/'market_history.sqlite3')
     for candidate in candidates:
         candidate['buy_plans'] = plans.get(candidate['symbol'], {'available': False, 'lots': []})
     try:
@@ -295,12 +295,37 @@ class AnalysisService:
         live_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
         live_enabled = (self.directory.resolve() == (ROOT/'data'/'analysis').resolve()
                         and live_config.enabled)
+        from opportunity_engine import policy as opportunity_policy, select as select_opportunities
+        search_policy = opportunity_policy()
+        opportunity_active = (live_enabled and manifest.get('trading_mode') == 'agent'
+                              and strategy['name'] in ('strategy_support_scout_v1','strategy_opportunity_v1',
+                                                       'strategy_opportunity_v2') and search_policy['enabled'])
         broker_health = None
         if live_enabled:
             from execution.health_monitor import sync_broker_state
             broker_health, _ = sync_broker_state(ROOT, return_report=True)
         paper_positions = (live_ai_positions(ROOT/'data'/'execution'/'live_execution.sqlite3')
                            if live_enabled else paper_portfolio.positions(self.db_path))
+        discovery = None
+        if opportunity_active and not manifest.get('read_only'):
+            phase('MARKET_DISCOVERY')
+            from execution.execution_store import ExecutionStore
+            from market_discovery import discover
+            try:
+                reserved = ExecutionStore(ROOT/'data/execution/live_execution.sqlite3',must_exist=True).daily_reserved_buy_twd()
+                scout_budget = live_buy_budget(broker_health,reserved,paper_state['capital_limit_twd'],live_config.max_daily_buy_twd)
+                scout_account = dict(paper_state,available_cash_twd=float(scout_budget['available']),
+                                     budget_status=scout_budget['status'])
+                excluded = [symbol for symbol,setting in (broker_health.get('ai_position_settings') or {}).items()
+                            if setting.get('enabled') is False]
+                discovery = discover(ROOT,directory,scout_account,search_policy,stopped=self.stop.is_set,excluded=excluded)
+            except (OSError,sqlite3.Error,ValueError,TypeError) as exc:
+                discovery = dict(status='UNAVAILABLE',symbols=[],watchlist=[],model_called=False,error=redact(exc))
+            # Persist the fixed seed list and the independent scout's additions.
+            universe = {**universe,'fixed_symbols':list(universe['symbols']),
+                        'discovery_symbols':list(discovery['symbols']),
+                        'symbols':list(dict.fromkeys(universe['symbols']+discovery['symbols']))}
+            save_json(directory/'market_discovery.json',discovery)
         symbols = list(dict.fromkeys(universe['symbols'] +
                      # Manual holdings still need quote snapshots for current
                      # value display and inventory context, but are not added
@@ -368,7 +393,7 @@ class AnalysisService:
         scanned += [scan_quote(q, rules, at) for q in batch['quotes'] if q['symbol'] not in universe['symbols']]
         save_json(directory/'quant_scan.json', dict(rule_config=rules, quotes=scanned))
         save_json(directory/'candidate_ranking.json', dict(ranking=ranked, top_candidates=top))
-        candidates = build_union(top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
+        candidates = build_union(ranked if opportunity_active else top, ranked, batch['quotes'], positions, self.db_path, started, scanned,
                                  universe.get('etf_symbols', []), paper_positions, live_managed=live_enabled,
                                  ai_settings=(broker_health or {}).get('ai_position_settings'))
         phase('DAILY_HISTORY')
@@ -389,6 +414,32 @@ class AnalysisService:
                 candidate['buy_plans'] = context.get('buy_plans',
                     {'available': False, 'lots': []})
         apply_buy_limits(candidates, paper_state, live_config if live_enabled else None)
+        opportunity_audit = None
+        opportunity_trigger = None
+        if opportunity_active:
+            from execution.execution_store import ExecutionStore
+            try:
+                pending_symbols=ExecutionStore(ROOT/'data/execution/live_execution.sqlite3',must_exist=True).pending_reconciliation_symbols()
+            except (OSError,sqlite3.Error,ValueError):
+                pending_symbols=set(universe['symbols'])
+                audit.event('OPPORTUNITY_PENDING_ORDER_STATE_UNAVAILABLE',{})
+            for c in candidates:
+                c['opportunity_buy_eligible'] = c['symbol'] in universe['symbols']
+                c['pending_execution'] = c['symbol'] in pending_symbols
+                scout = next((w for w in (discovery or {}).get('watchlist',[]) if w['symbol']==c['symbol']),None)
+                if scout:c['market_scout'] = scout
+            save_json(directory/'opportunity_pool_before_selection.json', candidates)
+            candidates, opportunity_audit = select_opportunities(candidates, paper_state, live_config, search_policy)
+            # Keep the entire researched pool for explaining rejected/omitted
+            # symbols; only actual entry candidates and holdings reach the LLM.
+            from opportunity_gate import evaluate
+            opportunity_trigger = evaluate(manifest['trigger_type'], candidates, paper_state,
+                self.directory/'opportunity_review_state.json', search_policy)
+            save_json(directory/'opportunity_search.json', dict(search=opportunity_audit, trigger=opportunity_trigger))
+        if discovery is not None:
+            from market_discovery import watch_status
+            discovery['watch_status'] = watch_status(discovery.get('watchlist',[]),batch['quotes'])
+            save_json(directory/'market_discovery.json',discovery)
         save_json(directory/'analysis_set.json', candidates)
         agent_mode = manifest.get('trading_mode') == 'agent'
         if agent_mode:
@@ -404,7 +455,8 @@ class AnalysisService:
         if (manifest.get('read_only') or budget_ready or has_managed_position) and (
                 (manifest.get('read_only') and not self.stop.is_set()) or
                 should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
-                                   stopped=self.stop.is_set(), wall=now().timestamp())):
+                                   stopped=self.stop.is_set(), wall=now().timestamp())) and (
+                    not opportunity_active or opportunity_trigger['call_model']):
             if agent_mode:
                 from agent_decision import analyze_existing
                 decision, response = analyze_existing(self, directory, manifest, request, candidates,
@@ -422,6 +474,9 @@ class AnalysisService:
                 save_json(directory/'multi_market_snapshot.json', batch)
             else:
                 decision, response = position_analyzer.analyze(candidates, request)
+            if opportunity_active and response['validation'] == 'VALID':
+                from opportunity_gate import record
+                record(self.directory/'opportunity_review_state.json', candidates, paper_state)
         else:
             market_closed = twse_closed_reason(now().date())
             has_live_candidate = any(
@@ -438,11 +493,18 @@ class AnalysisService:
                       'AUTO 等待盤中零股交易時段；本輪不呼叫 AI，也不送出委託。'
                       if manifest['trigger_type'] == 'AUTO' and not self.stop.is_set()
                       else '沒有可分析集合，或已要求停止。')
+            if opportunity_active and not opportunity_trigger['call_model']:
+                reason = ('已完成研究池的機會篩選；目前沒有符合成本與風險的進場計畫，也沒有需重評的持倉變化，本輪未呼叫交易決策模型。')
+                if (discovery or {}).get('model_called'):
+                    reason = '本輪已執行獨立尋標子代理；' + reason
             manifest['display_notice'] = reason
             decision = dict(market_view=reason, decisions=[])
             response = dict(validation='NOT_CALLED', api={
                 'error':'BUY_BUDGET_CHECK_FAILED' if not budget_ready else None,
             }, raw_response='')
+        if discovery is not None:
+            from market_discovery import merge_usage
+            merge_usage(response,directory,discovery)
         phase('PROCESSING_RESULT')
         if response['validation'] == 'VALID' and not self.stop.is_set() and not live_enabled and not manifest.get('read_only'):
             simulation = paper_portfolio.apply_decisions(
@@ -473,12 +535,22 @@ class AnalysisService:
                         llm_response_received_at=response.get('response_received_at'),
                         status='ERROR' if failures else 'COMPLETE', error='; '.join(failures),
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
+        if discovery is not None:
+            manifest['discovery_status']=discovery['status']
+            manifest['research_warning']=discovery.get('error')
+            if not failures and discovery['status'] in ('UNAVAILABLE','SCOUT_RETRY_DEFERRED','CACHED_AFTER_FAILURE'):
+                manifest['status']='WARN'
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
                       pretrade_review=response.get('pretrade_review'),
+                      daily_participation=response.get('daily_participation'),
                       support_research=response.get('support_research'),
                       web_search=response.get('api', {}).get('web_search'),
                       paper_trade_history=paper_portfolio.trades(self.db_path))
+        if opportunity_active:
+            result['opportunity_search'] = dict(search=opportunity_audit, trigger=opportunity_trigger)
+        if discovery is not None:
+            result['market_discovery'] = discovery
         if live_enabled:
             result['execution_budget'] = {k:paper_state.get(k) for k in (
                 'available_cash_twd','minimum_balance_reserve_twd',
@@ -488,6 +560,7 @@ class AnalysisService:
                 'daily_buy_remaining_twd','budget_status')}
             result['execution_budget'].update(
                 min_buy_fee_reserve_twd=float(live_config.min_buy_fee_reserve_twd),
+                minimum_commission_twd=float(live_config.economic_minimum_commission_twd),
                 buy_cash_buffer_rate=float(live_config.buy_cash_buffer_rate))
         if broker_health is not None:
             result['broker_health'] = broker_health

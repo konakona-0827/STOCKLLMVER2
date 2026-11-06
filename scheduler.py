@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from config import TAIPEI
 from market_calendar import twse_closed_reason
 
-AUTO_INTERVAL_SECONDS = 1800
+AUTO_INTERVAL_SECONDS = 3600
 MANUAL_SCAN_COOLDOWN_SECONDS = 60
 
 

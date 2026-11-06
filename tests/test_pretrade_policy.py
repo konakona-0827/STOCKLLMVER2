@@ -94,6 +94,25 @@ class PretradePolicyTests(unittest.TestCase):
         self.assertEqual(review['status'], 'ERROR')
         self.assertEqual(trade['decision'], 'WAIT')
 
+    def test_review_gets_only_proposed_symbols_with_full_history_and_original_plans(self):
+        candidate = self.candidate()
+        candidate.update(daily_bars=[dict(date=f'2026-09-{day:02}', high=120, low=95)
+                                     for day in range(1, 23)],
+                         buy_plans=dict(available=True, lots=[dict(quantity=10, plan=dict(target_price=120))]))
+        unrelated = {**self.candidate(), 'symbol':'OTHER', 'private_unused_text':'unrelated'}
+        original = json.dumps(dict(analysis_set=[candidate, unrelated], paper_simulation_rules={}))
+        trade = self.decision()
+        def approve(request):
+            data = json.loads(request['input'])['original_input']
+            self.assertEqual([c['symbol'] for c in data['analysis_set']], ['2330'])
+            visible = data['analysis_set'][0]
+            self.assertEqual(len(visible['daily_bars']['rows']), 22)
+            self.assertEqual(visible['buy_plans'], candidate['buy_plans'])
+            return json.dumps(dict(reviews=[dict(symbol='2330', approved=True, reason='測試核准')])), {}
+        result = review_trades(dict(decisions=[trade]), dict(model='test', input=original), approve)
+        self.assertEqual(result['status'], 'VALID', result)
+        self.assertEqual(len(json.loads(original)['analysis_set']), 2)
+
     def test_only_confirmed_remaining_lots_carry_plan(self):
         events = [
             dict(side='BUY', at='2026-10-08T10:00:00+08:00', quantity=5,

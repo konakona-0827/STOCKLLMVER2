@@ -37,7 +37,7 @@ from .risk_guard import (
 
 
 def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
-                        minimum_commission_twd):
+                        minimum_commission_twd, existing_modeled_risk_twd=0):
     """Re-evaluate an approved BUY at the executable quote immediately before send."""
     from pretrade_policy import MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
     from trade_economics import evaluate_buy
@@ -59,10 +59,41 @@ def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
         capital = Decimal(str(capital_twd))
     except (KeyError, ValueError, TypeError, ArithmeticError) as exc:
         raise RiskRejected(f'{order_plan.symbol}: cannot recheck BUY economics: {exc}') from exc
-    if (net_return < MIN_NET_RETURN or reward_risk < MIN_REWARD_RISK or
-            Decimal(str(economics['estimated_net_downside_twd'])) > capital * MAX_POSITION_RISK):
+    from daily_participation import MARKER, probe_allowed
+    probe = (MARKER in recommendation.get('warnings', []) and
+             probe_allowed('BUY', order_plan.quantity, max(quote.ask, order_plan.limit_price)))
+    if ((not probe and (net_return < MIN_NET_RETURN or reward_risk < MIN_REWARD_RISK)) or
+            Decimal(str(economics['estimated_net_downside_twd']))+Decimal(str(existing_modeled_risk_twd)) > capital * MAX_POSITION_RISK):
         raise RiskRejected(f'{order_plan.symbol}: refreshed BUY price fails net return, reward/risk or risk budget')
+    if recommendation.get('entry_setup'):
+        from opportunity_engine import policy
+        p=policy()
+        hurdle=max(p['minimum_target_net_profit_twd'],p['analysis_cost_budget_twd']*p['minimum_target_profit_to_analysis_cost'])
+        if economics['estimated_net_upside_twd']<hurdle:
+            raise RiskRejected('BUY_TARGET_PROFIT_BELOW_RESEARCH_BUDGET_HURDLE')
     return economics
+
+
+def check_setup_allocation(quote, plan, recommendation, capital_twd, ai_qty, config):
+    setup=recommendation.get('entry_setup')
+    if not setup:
+        return Decimal(0)
+    from opportunity_engine import policy,existing_position_risk
+    fractions=policy()['allocation_capital_fractions']
+    if setup.get('tier') not in fractions:
+        raise RiskRejected('UNKNOWN_ENTRY_SETUP_TIER')
+    capital=Decimal(str(capital_twd))
+    basis=recommendation.get('existing_cost_basis') or {}
+    unit=max(quote.ask,Decimal(str(basis['average_unit_cost_twd'])) if basis.get('available') else quote.ask)
+    allocation=min(Decimal(str(setup['allocation_limit_twd'])),
+                   capital*Decimal(str(fractions[setup['tier']]))-unit*ai_qty)
+    funding=plan.estimated_value_twd+max(config.min_buy_fee_reserve_twd,
+                                       plan.estimated_value_twd*config.buy_cash_buffer_rate)
+    if funding>allocation:
+        raise RiskRejected('BUY_SETUP_ALLOCATION_EXCEEDED_AFTER_REFRESH')
+    return existing_position_risk(dict(paper_position=dict(qty=ai_qty),ai_cost_basis=basis,
+        buy_plans=recommendation.get('existing_buy_plans'),asset_type=recommendation.get('asset_type'),
+        ask=float(quote.ask),bid=float(quote.bid)),recommendation['buy_plan']['invalidation_price'],config)
 
 
 @dataclass(frozen=True)
@@ -76,8 +107,15 @@ class LiveExecutionConfig:
     buy_cash_buffer_rate: Decimal = Decimal("0.01")
     min_available_to_buy_twd: Decimal = Decimal("10000")
     min_buy_fee_reserve_twd: Decimal = Decimal("20")
+    minimum_commission_twd: Decimal | None = None
     max_daily_buy_twd: Decimal = Decimal("20000")
     observe_seconds: float = 20.0
+
+    @property
+    def economic_minimum_commission_twd(self):
+        # Legacy configurations keep their conservative assumption until an
+        # explicit commission schedule is supplied. Funding reserve is separate.
+        return self.min_buy_fee_reserve_twd if self.minimum_commission_twd is None else self.minimum_commission_twd
 
     @staticmethod
     def set_daily_buy_limit(path: str | Path, amount_twd: int) -> None:
@@ -118,6 +156,7 @@ class LiveExecutionConfig:
             buy_cash_buffer_rate=dec("buy_cash_buffer_rate", "0.01"),
             min_available_to_buy_twd=dec("min_available_to_buy_twd", 10000),
             min_buy_fee_reserve_twd=dec("min_buy_fee_reserve_twd", 20),
+            minimum_commission_twd=dec("minimum_commission_twd"),
             max_daily_buy_twd=dec("max_daily_buy_twd", 20000),
             observe_seconds=float(data.get("observe_seconds", 20)),
         )
@@ -180,6 +219,7 @@ def execute_advice_file(
     root = Path(project_root)
     config = LiveExecutionConfig.load(config_path)
     if (config.min_available_to_buy_twd < 0 or config.min_buy_fee_reserve_twd < 0
+            or config.economic_minimum_commission_twd < 0 or not config.economic_minimum_commission_twd.is_finite()
             or config.max_daily_buy_twd <= 0
             or config.buy_cash_buffer_rate < 0):
         raise ValueError("BUY cash guards must be nonnegative")
@@ -493,9 +533,11 @@ def execute_advice_file(
             )
 
             if intent.side == Side.BUY and payload.get('pretrade_review_status') == 'VALID':
+                existing_risk=check_setup_allocation(quote,plan,recommendation_map[intent.symbol],
+                                       budget_payload.get('strategy_cap_twd'),ai_qty,config)
                 check_refreshed_buy(quote, plan, recommendation_map[intent.symbol],
                                     budget_payload.get('strategy_cap_twd'),
-                                    config.min_buy_fee_reserve_twd)
+                                    config.economic_minimum_commission_twd,existing_risk)
 
             if intent.pricing_policy == 'PLANNED_LIMIT':
                 from .planned_entry import verify

@@ -25,11 +25,12 @@ def settings(root):
     if config.get('policy') not in ('advisory', 'confirmed_support'):
         raise ValueError('INVALID_SUPPORT_POLICY')
     for key, low, high in [('history_bars', 60, 250), ('max_symbols', 1, 5),
-                           ('max_calls', 2, 10), ('timeout_seconds', 1, 120),
+                           ('max_calls', 2, 10), ('timeout_seconds', 1, 600),
                            ('max_output_tokens', 256, 8000)]:
+        if key in ('max_symbols','max_calls','max_output_tokens') and config.get(key) is None:continue
         if type(config.get(key)) is not int or not low <= config[key] <= high:
             raise ValueError('INVALID_SUPPORT_LIMIT:' + key)
-    if config['max_calls'] < config['max_symbols'] * 2:
+    if config['max_calls'] is not None and config['max_symbols'] is not None and config['max_calls'] < config['max_symbols'] * 2:
         raise ValueError('SUPPORT_CALL_BUDGET_MUST_COVER_BOTH_ROLES')
     return config
 
@@ -79,9 +80,11 @@ class SupportCoordinator:
     def instructions(self):
         return ('\n\n本分支啟用 Support Scout 子代理。主 Agent 仍負責最終 BUY/HOLD/SELL/WAIT。'
                 f'目前研究政策為 {self.config["policy"]}。'
-                '讀取 get_portfolio、get_trade_history 後，至少選一檔候選依序呼叫 '
-                'research_support(symbol)、review_support(symbol)，兩者各自只讀固定快照，不共享意見。'
-                f'每輪最多 {self.config["max_symbols"]} 檔、{self.config["max_calls"]} 次子代理呼叫。'
+                '程式已預讀帳戶與交易歷史；先看 entry_screen 與實際證據，'
+                '有值得驗證的交易情境才依序呼叫 research_support(symbol)、review_support(symbol)。'
+                '全數不具數字可行性時可以零次子研究，直接說明 WAIT 條件；'
+                '不可為完成流程固定研究一檔。兩者各自只讀固定快照，不共享意見。'
+                '按候選需要完成研究；已取得且仍有效的資料不機械式重複查詢。'
                 'BUY 的每一檔都須有兩方有效研究；先研究，再用 get_market_data 取得最新可成交行情，'
                 '不可讓子研究耗時使交易行情過期。研究結論不是下單批准。'
                 'advisory 模式下 WATCH／公司行動未知只限制支撐研究，仍可依既有可用策略評估；'
@@ -104,9 +107,9 @@ class SupportCoordinator:
                 raise ValueError('SUPPORT_REQUIRES_CURRENT_ACCOUNT_AND_HISTORY')
             if symbol not in self.context.candidates:
                 raise ValueError('SUPPORT_SYMBOL_OUTSIDE_ANALYSIS_SET')
-            if len(self.calls) >= self.config['max_calls']:
+            if self.config['max_calls'] is not None and len(self.calls) >= self.config['max_calls']:
                 raise ValueError('SUPPORT_CALL_BUDGET_EXHAUSTED')
-            if symbol not in self.observations and len(self.observations) >= self.config['max_symbols']:
+            if self.config['max_symbols'] is not None and symbol not in self.observations and len(self.observations) >= self.config['max_symbols']:
                 raise ValueError('SUPPORT_SYMBOL_BUDGET_EXHAUSTED')
             call = dict(role=role, symbol=symbol, status='STARTED', started_at=now().isoformat())
             self.calls.append(call)
@@ -243,7 +246,7 @@ class SupportCoordinator:
                     try:
                         selected = json.loads(arguments).get('symbol', '?')
                         symbol = selected if isinstance(selected, str) else '?'
-                        return await asyncio.wait_for(original(ctx, arguments), self.config['timeout_seconds'])
+                        return await original(ctx, arguments)
                     except asyncio.CancelledError as exc:
                         self.fail(role, symbol, exc)
                         raise

@@ -11,6 +11,18 @@ from operations import dashboard_supervisor as supervisor
 
 
 class DashboardSupervisorTests(unittest.TestCase):
+    def test_long_analysis_with_fresh_research_progress_is_not_killed_for_elapsed_time(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);path=root/'data/health/dashboard_lifecycle.jsonl';path.parent.mkdir(parents=True)
+            at=supervisor.utc_now();launched=at-timedelta(seconds=1200)
+            path.write_text(json.dumps(dict(time_utc=at.isoformat(),pid=22,event='HEARTBEAT',
+                detail=dict(analysis_running=True,analysis_age_seconds=1100)))+'\n',encoding='utf-8')
+            progress=root/'data/analysis/research_activity.json';progress.parent.mkdir()
+            progress.write_text(json.dumps(dict(pid=22,at=(at-timedelta(seconds=5)).isoformat())),encoding='utf-8')
+            self.assertIsNone(supervisor.watchdog_reason(path,22,launched,at=at))
+            progress.write_text(json.dumps(dict(pid=99,at=at.isoformat())),encoding='utf-8')
+            self.assertEqual(supervisor.watchdog_reason(path,22,launched,at=at),'ANALYSIS_STALLED_900_SECONDS')
+
     def test_restart_after_silent_exit_then_stop_on_normal_close(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

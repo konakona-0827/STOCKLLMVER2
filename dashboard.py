@@ -21,6 +21,7 @@ from config import ROOT, CODE_ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS, 
 from state_lock import StateLease
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
+    is_health_check_window, health_check_due_or_next,
 )
 from market_calendar import twse_closed_reason
 from analysis_service import AnalysisService
@@ -68,8 +69,8 @@ DECISION_LABELS = {'BUY': '買進', 'HOLD': '持有', 'SELL': '賣出', 'WAIT': 
 QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情'}
 STATUS_LABELS = {
     'IDLE': '閒置', 'SCANNING_QUOTES': '取得行情中', 'QUANT_ANALYSIS': '量化分析中',
-    'DAILY_HISTORY': '取得歷史日線中',
-    'WAITING_OPENAI': '等待 AI 分析', 'PROCESSING_RESULT': '整理分析結果中',
+    'DAILY_HISTORY': '取得歷史日線中', 'MARKET_DISCOVERY': '子代理主動尋標中',
+    'WAITING_OPENAI': '等待 AI 分析', 'PROCESSING_RESULT': '整理分析結果中', 'WARN':'研究部分受阻',
     'COMPLETE': '完成', 'ERROR': '錯誤', 'RUNNING': '執行中',
     'PAUSED_LOW_BALANCE': '券商資金低於保留額；自動掃描已停止',
 }
@@ -116,12 +117,35 @@ SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+
 
 
 def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None, web_search=None,
-                  support_research=None):
+                  support_research=None, market_discovery=None):
     asset_types = {c.get('symbol'): c.get('asset_type', 'UNKNOWN') for c in analysis_set}
     names = {c.get('symbol'): c.get('name') or '股票名稱未取得' for c in analysis_set}
     candidates = {c.get('symbol'): c for c in analysis_set}
     lines = [f"AI 分析時間：{analysis_at or '未取得'}（台北時間 UTC+8）\n\n",
              f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
+    if market_discovery is not None:
+        scout=market_discovery
+        status={'COMPLETE':'已完成尋標','CACHED_UNCHANGED':'沿用當日觀察清單',
+                'CACHED_DAILY_BUDGET':'沿用清單，今日研究次數已用完','UNAVAILABLE':'本輪尋標失敗',
+                'SCOUT_RETRY_DEFERRED':'先前尋標失敗，等待下次研究時段',
+                'CACHED_AFTER_FAILURE':'先前更新失敗，暫沿用有效觀察清單',
+                'NO_BUY_BUDGET':'目前沒有可用買進預算',
+                'NO_AFFORDABLE_LIQUID_COMMON_STOCKS':'沒有符合流動性與資金條件的股票',
+                'DISABLED_STOPPED_OR_OUTSIDE_MARKET':'本輪未執行尋標'}.get(scout.get('status'),'尚未完成')
+        lines.append(f"\n\n主動尋標子代理：{status}；本輪模型呼叫 {int(bool(scout.get('model_called')))} 次。")
+        if scout.get('market_count') is not None:
+            lines.append(f"\n來源日線 {scout.get('source_session')}；上市普通股 {scout['market_count']} 檔，"
+                         f"符合資金與流動性 {scout.get('eligible_count',0)} 檔，送交尋標 {scout.get('screen_count',0)} 檔。")
+        if scout.get('summary'):lines.append('\n'+scout['summary'])
+        if scout.get('error'):lines.append('\n'+scout['error'])
+        for watch in scout.get('watch_status',[]):
+            condition={'BREAK_ABOVE_HIGH':'突破日線高點','RECLAIM_OPEN':'站回日線開盤價',
+                       'PULLBACK_TO_CLOSE':'回落至日線收盤價'}.get(watch['trigger_kind'],'觀察')
+            touched={'RESEARCH_CONDITION_MET':'研究條件已觸及','WAITING_FOR_CONDITION':'等待條件',
+                     'NO_LIVE_QUOTE':'缺即時報價'}.get(watch['status'],'待核對')
+            lines.append(f"\n{watch['symbol']}：{condition} {watch['condition_price']}（{touched}）；"
+                         f"{watch.get('rationale','')}。反證待查：{watch.get('counter_evidence_to_check','')}。")
+        if scout.get('watchlist'):lines.append('\n觀察條件用於後續研究；買進另須通過最新報價、計畫與獨立審查。')
     if support_research:
         calls = support_research.get('calls') or []
         lines.append(f"\n\n支撐子代理：{support_research.get('policy')}；"
@@ -722,6 +746,8 @@ class Dashboard:
             for row in snapshot.get('broker_order_reconciliation') or [])
         held = any(int(row.get('broker_cash_qty') or 0) > 0
                    for row in snapshot.get('inventory_comparison') or [])
+        if not pending and not is_health_check_window(time.time()):
+            return max(60,health_check_due_or_next(time.time())-time.time())
         return 60 if pending or (held and is_twse_oddlot_market_window(time.time())) else 300
 
     def launch_health(self):
@@ -835,6 +861,7 @@ class Dashboard:
         threading.Thread(target=work, name='daily-limit-worker', daemon=True).start()
 
     def launch(self, trigger):
+        self.analysis_started_at = time.monotonic()
         self.select_decision_mode()
         self.mode_selector.configure(state='disabled')
         self.status = 'SCANNING_QUOTES'
@@ -1076,6 +1103,8 @@ class Dashboard:
             self.last_lifecycle_heartbeat = mono
             self.lifecycle.event('HEARTBEAT', status=self.status, closing=self.closing,
                                  analysis_running=self.scheduler.scan_lock.locked(),
+                                 analysis_age_seconds=(mono - getattr(self, 'analysis_started_at', mono)
+                                                       if self.scheduler.scan_lock.locked() else 0),
                                  health_running=self.health_running,
                                  refresh_pending=self.refresh_pending,
                                  auto_enabled=self.scheduler.next_auto is not None,
@@ -1172,6 +1201,7 @@ class Dashboard:
             f'券商餘額：{broker_balance_label}　｜　'
             f'未解委託：{len(health.get("unresolved_attempts") or [])} 筆　｜　'
             f'新買單預算：{budget_label}　｜　'
+            f'每日參與：{getattr(self, "daily_progress_label", "待核對")}　｜　'
             f'正式委託：{len(health.get("execution_attempts") or [])} 筆　｜　'
             f'持倉核對：{"不一致" if mismatches else "相符" if comparisons else "待核對"}')
         self.system_status_text.set(
@@ -1197,6 +1227,14 @@ class Dashboard:
         self.root.after(100, self.tick)
 
     def render(self):
+        from daily_participation import policy, progress
+        if policy().get('enabled'):
+            daily = progress()
+            self.daily_progress_label = ('資料不可用' if daily['status'] != 'READY' else '／'.join(
+                f'{label}{daily["filled"][side]}/1 成交（{daily["pending"][side]} 待結）'
+                for side, label in [('BUY', '買'), ('SELL', '賣')]))
+        else:
+            self.daily_progress_label = '未啟用'
         self.update_live_strategy_label()
         for tree in (self.top_tree, self.union_tree, self.position_tree, self.quote_tree):
             tree.delete(*tree.get_children())
@@ -1247,7 +1285,7 @@ class Dashboard:
                            if strategy else '')
             detail_text += decision_text(r['decision'], r['analysis_set'],
                 r['manifest'].get('llm_response_received_at'), r.get('execution_budget'), r.get('web_search'),
-                r.get('support_research'))
+                r.get('support_research'),r.get('market_discovery'))
             if r['manifest'].get('display_notice'):
                 detail_text = r['manifest']['display_notice'] + '\n\n' + detail_text
             update_detail_text(self.detail, detail_text)
@@ -1765,7 +1803,7 @@ def _main():
     parser.add_argument('--interval', type=int, default=AUTO_INTERVAL_SECONDS)
     args = parser.parse_args()
     if args.interval <= 0 or (args.interval != AUTO_INTERVAL_SECONDS and not args.test_mode):
-        parser.error('非 1800 秒間隔需要 --test-mode；間隔須大於 0')
+        parser.error(f'非 {AUTO_INTERVAL_SECONDS} 秒間隔需要 --test-mode；間隔須大於 0')
     lifecycle = LifecycleLog(ROOT / 'data' / 'health')
     lifecycle.start()
     root = None

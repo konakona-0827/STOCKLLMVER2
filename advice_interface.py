@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 from config import TAIPEI, now
+from opportunity_engine import match_setup
 
 
 def _age_seconds(exchange_time, at):
@@ -53,16 +54,21 @@ def build_advice_interface(result, generated_at=None):
         planned = decision.get('decision') == 'BUY' and candidate.get('pricing_policy') == 'PLANNED_LIMIT'
         from execution.planned_entry import contract
         warnings = list(dict.fromkeys([*(quote.get('warnings') or []), *(decision.get('warnings') or [])]))
+        setup = match_setup(candidate,decision) if decision.get('decision')=='BUY' and candidate.get('opportunity_policy') else None
+        buy_plan = ({key:decision.get(key) for key in ('strategy_id','target_price','invalidation_price',
+                    'holding_days','reason','suggested_price')} if decision.get('decision')=='BUY' else None)
+        if setup is not None:
+            buy_plan['entry_setup'] = setup
         recommendations.append({
             'symbol': symbol,
             'strategy_name': strategy.get('name'),
             'strategy_version': strategy.get('version'),
             'asset_type': candidate.get('asset_type', 'UNKNOWN'),
             'decision': decision.get('decision', 'WAIT'),
-            'buy_plan': ({key: decision.get(key) for key in
-                          ('strategy_id', 'target_price', 'invalidation_price',
-                           'holding_days', 'reason', 'suggested_price')}
-                         if decision.get('decision') == 'BUY' else None),
+            'buy_plan': buy_plan,
+            'entry_setup': setup,
+            'existing_cost_basis': candidate.get('ai_cost_basis'),
+            'existing_buy_plans': candidate.get('buy_plans'),
             'confidence': decision.get('confidence', 0),
             'reference_price': decision.get('reference_price'),
             'suggested_price': decision.get('suggested_price'),

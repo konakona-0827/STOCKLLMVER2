@@ -1,5 +1,75 @@
 # 交易執行與健康檢查
 
+## 2026-11-05 研究不設用量額度
+
+依最新指示，優化傳輸、快取及重複查證，不用用量額度中止掃描。
+累積輸入 token、尋標每日呼叫、子研究呼叫／標的數與搜尋呼叫均無預設額度；
+`market_discovery.json`、`support_agents.json`、`web_search.json` 的相關上限設為 `null`。
+主代理不再讀取舊 `AGENT_MAX_INPUT_TOKENS`、`AGENT_MAX_TURNS`；預設沒有整輪分析時長限制。
+輸出不設固定 token 或字數上限；`research_runtime.py` 記錄每次回覆，在輸出截斷時擴大同一步請求的
+輸出容量後重試，沿用原輸入與已完成的本機工具結果，所有嘗試用量都計入。
+託管工具仍可能在模型重試時再次執行，其實際呼叫亦記錄。
+成功且未變化的清單仍快取；失敗可以在下一輪正常掃描重試，不被每日額度或成功快取冷卻擋住。
+單次網路逾時與真正無進度的監督恢復保留；有持續研究進度時，不因整輪超過十五分鐘重啟。
+交易資金、持股歸屬、冷卻與風險檢查保留。說明見 `reports/research_without_quotas_20261105.md`。
+
+## 2026-11-05 主動尋標與連線恢復
+
+正式策略為 `strategies/strategy_opportunity_v2.md`。單檔累積配置 Early／Confirmed／Strong
+提高至固定策略資金的 35%／45%／50%，仍扣除同檔既有曝光，並受現金與同檔合計失效風險限制。
+策略資金 10,000 元時配置為 3,500／4,500／5,000 元，合計模型失效損失預算仍為 50 元。
+
+`market_discovery.py` 在可執行買入計畫篩選前獨立派出尋標子代理：證交所完整日線及上市公司清單
+→ 流動性／資金篩選 → 最多 40 檔供子代理比較 → 自主選最多 6 檔 → 券商零股報價、完整日線
+→ 買入計畫 → 兩方支撐研究與交易審查。既有 20 檔仍保留為種子名單。
+設定見 `config/market_discovery.json`；成功清單預設 3 小時重評，其他每小時掃描沿用並追蹤當日清單，不設每日次數額度。
+09:05 台北時間仍先略過尋標，避免把試撮當成可交易情境；實際首次通常是 10:05。
+觀察條件僅供研究，不是停損單或買進批准；每日到期，不自動擴大資金上限。
+
+尋標輸出不設固定 token 上限，優先精簡摘要與反證；API 回覆在 SDK 解析前先保存用量，
+包括 `response.incomplete`，截斷則重試同一步模型請求。失敗不視為成功空清單，後續可再研究。
+交易決策模型未被呼叫時，也不能把已執行的尋標成本顯示為零。
+`opportunity_status.rejection_reasons`／`near_misses` 記錄成本、停損距離、目標及報酬風險比的排除原因。
+
+券商 STA 執行緒待命時持續處理 COM 事件；Reply 狀態 2 等待回補完成，不立即重新連線。
+狀態 1 仍須 `OnComplete` 才算就緒。重連逾時後下次恢復先以 `SolaceCloseByID` 清理，
+確認斷線才重連，禁止盲目重複 Center login。盤外無未結問題時延後例行查詢至次工作日 08:00；
+啟動時仍核對一次，未結委託仍保留追蹤。60 分鐘交易掃描及日本時間 14:05 時段保留。
+
+檢討與證據見 `reports/active_market_scout_20261105.md`；測試見 `reports/active_market_scout_20261105_tests.txt`。
+
+## 2026-11-03 機會搜尋策略
+
+`strategy_opportunity_v1.md` 由完整既有研究池先生成有訊號、結構停損與費後空間的進場計畫，
+再選最多三個研究候選，加上 AI 既有持倉。設定在 `config/opportunity_search.json`。
+佣金參數 `minimum_commission_twd` 與現金保留 `min_buy_fee_reserve_twd` 分開；
+新倉比例採固定 AI 資金上限、扣同檔曝光，並合計同檔舊部位的失效風險。
+`opportunity_gate.py` 讓新機會／風險變化喚醒模型，穩定且沒有新機會的輪次可不購買分析。
+每 60 分鐘掃描不變，風險條件不是即時停損委託。
+說明、重播限制及測試見 `reports/opportunity_search_20261103.md`。
+
+## 2026-11-03 持倉原計畫與月末日線修正
+
+對舊版本未保存 `buy_plan` 的已成交買單，以原 run_id／symbol 從分析資料庫恢復原計畫，
+再依既有 FIFO 配對剩餘持倉。取消／未成交／已賣完批次不會供應現有部位的計畫；
+人工轉入無原計畫時仍明示未知。`review_status` 提供原期限的重新評估狀態，不自動賣出。
+跨月日線快取會驗證是否在前月最後交易日資料發布後取得，避免新月份有資料就永久
+沿用缺少前月最後一日的快取；狀態另列近期缺漏交易日，根數不再冒充連續性。
+交易停滯統計、費用／篩選敏感度及驗證見 `reports/inactivity_20261103.md`。
+
+## 2026-11-02 Agent 輸入成本優化
+
+Agent v4 會由 Python 預讀帳戶及近期交易歷史，使用有截短狀態標記的日線／盤中摘要；
+`get_research_data` 可取得完整原始資料，正式風控仍使用完整候選與原持倉計畫。
+`entry_screen.py` 預算現價及回落限價的成本、配置與風險情境，不自動產生 BUY。
+觀望輪次不強制支撐研究或搜尋；BUY 的雙方研究與獨立下單前審查保留。
+決策及子研究每次回覆會寫入 `api_usage_requests.json`；已完成呼叫達
+`AGENT_MAX_INPUT_TOKENS`（預設 180000）後不再新增模型呼叫，單次仍可能越過此門檻，
+獨立下單前審查另計。`AGENT_MAX_TURNS` 預設 12。
+詳細原因、離線比較與啟動驗證見 `reports/token_optimization_20261102.md`。
+`python operations/audit_agent_usage.py --date YYYY-MM-DD --output reports/api_usage_YYYYMMDD.json`
+可離線重算保存用量，不連線模型或券商。
+
 ## 歷史日線提供給 AI
 
 Dashboard、單檔分析與多檔掃描會從[證交所個股日成交資訊](https://www.twse.com.tw/zh/trading/historical/stock-day.html)取得每檔最多 22 個已結束交易日的開高低收與成交股數，並附上 5／20 日收盤變化、均線及最近兩組 5 日成交量比。正式 AI 請求的每檔候選包含 `daily_bars`、`daily_trend`、`daily_history_status`；原本的 `market_history` 仍是盤中抽樣。日線來自上市證券日成交資料，未經除權息調整，不能視為盤中零股可成交價。
@@ -54,6 +124,10 @@ Dashboard 開啟時立即與券商對帳；有未結委託時每 1 分鐘再查�
 SDK 文件指出 `SKQuoteLib_LeaveMonitor` 也會中斷 Reply 連線。多批行情掃描結束後，broker runtime 會在同一 COM 執行緒確認並恢復 Reply 連線；恢復失敗就視為掃描錯誤。訂閱前以唯讀 `SKQuoteLib_GetQuoteStatus` 記錄連線數與超限旗標；訂閱回傳 3030 時會再查一次。`data/health/capital_com_events.csv` 記錄 PID、Capital session、COM object ID、建立呼叫點、Login API/旗標/回傳碼，以及 Quote monitor、訂閱和離開呼叫。程式碼沒有 `SKCenterLib_LoginSetQuote` 呼叫點。Dashboard 關閉時會在 broker COM 執行緒離開 Quote monitor。若首次 Center 登入已嘗試但後續初始化失敗，本次 Dashboard 執行期間不再重試登入。
 
 Reply 每次重新連線會重新回放歷史委託事件；重連前必須清掉上一條 Reply 連線的成交／委託事件列，再等待新的 `OnComplete`。否則跨日掃描造成多次 `LeaveMonitor`／Reply 重連時，相同成交會被累加成多倍，產生假的成交帳本差異與未結買單保留失敗。超過原委託股數的回放仍由正式對帳擋下，不會據此補記持股或送出新買單。主畫面上方常駐顯示下次自動掃描的倒數秒數；自動掃描未啟用時顯示 `--`。
+
+2026-10-29 增補：監督程序每 30 秒檢查生命週期，180 秒無進展或分析超過 900 秒時記錄 WATCHDOG_RESTART 並重新啟動。每日參與試單與驗證詳見 [修正紀錄](../reports/daily_participation_20261029.md)。
+
+2026-10-30：每日參與試單已依使用者要求停用，恢復正常策略判斷；監督程序保留。四筆試買在程式送單前被自己的 STARTED 狀態取消試單豁免，未送達券商；詳見 [撤回與買單查核](../reports/daily_participation_withdrawal_20261030.md)。
 
 ## 紀錄位置
 

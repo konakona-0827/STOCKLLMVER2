@@ -135,6 +135,7 @@ class CapitalReplySession:
         self._connected = False
         self._owner_thread_id: int | None = None
         self._center_login_attempted = False
+        self._reply_needs_reset = False
 
     @property
     def connected(self) -> bool:
@@ -196,6 +197,22 @@ class CapitalReplySession:
 
             def OnComplete(_self, bstrUserID):
                 state.replay_complete = True
+
+            def OnSolaceReplyConnection(_self, bstrUserID, nErrorCode):
+                record_capital_event(self.project_root,session_id=self.session_id,
+                    call_site='CapitalReplySession.ReplyEvents',event='REPLY_CONNECTION',
+                    object_type='SKReplyLib',object_id=hex(id(self._skR)),
+                    api_name='OnSolaceReplyConnection',return_code=int(nErrorCode))
+
+            def OnSolaceReplyDisconnect(_self, bstrUserID, nErrorCode):
+                state.replay_complete = False
+                record_capital_event(self.project_root,session_id=self.session_id,
+                    call_site='CapitalReplySession.ReplyEvents',event='REPLY_DISCONNECT',
+                    object_type='SKReplyLib',object_id=hex(id(self._skR)),
+                    api_name='OnSolaceReplyDisconnect',return_code=int(nErrorCode))
+
+            def OnReplyClearMessage(_self, bstrUserID):
+                state.begin_replay()
 
             def OnNewData(_self, bstrUserID, bstrData):
                 raw = str(bstrData)
@@ -389,18 +406,20 @@ class CapitalReplySession:
 
         # If the installed DLL exposes IsConnectedByID, require state=1.
         if state is not None:
-            reply_ok = state == 1
+            replay_complete=bool(self.snapshot.replay_complete)
+            reply_ok = state == 1 and replay_complete
+            pending=state in (1,2) and not reply_ok
             return SessionHealth(
                 ready=local and reply_ok and account_ok,
                 local_connected=local,
                 reply_state=state,
                 reply_connected=reply_ok,
                 account_selected=account_ok,
-                action="REUSE" if reply_ok and account_ok else "REPLY_RECONNECT_REQUIRED",
+                action="REUSE" if reply_ok and account_ok else ("REPLAY_PENDING" if pending else "REPLY_RECONNECT_REQUIRED"),
                 message=(
                     "Existing session is healthy."
                     if reply_ok and account_ok
-                    else f"SKReply connection is not healthy (state={state})."
+                    else f"SKReply not ready (state={state}, replay_complete={replay_complete})."
                 ),
             )
 
@@ -427,11 +446,32 @@ class CapitalReplySession:
                 "Cannot reconnect SKReply without an existing logged-in session."
             )
 
+        if getattr(self,'_reply_needs_reset',False):
+            close=getattr(self._skR,'SKReplyLib_SolaceCloseByID',None)
+            if not callable(close):
+                raise CapitalReplySessionError('Reply reset requires SKReplyLib_SolaceCloseByID; restart required.')
+            rc=close(self.user)
+            record_capital_event(self.project_root,session_id=self.session_id,
+                call_site='CapitalReplySession._reconnect_reply_only',event='API_CALL',
+                object_type='SKReplyLib',object_id=hex(id(self._skR)),
+                api_name='SKReplyLib_SolaceCloseByID',return_code=rc)
+            if rc!=0:raise CapitalReplySessionError(f'Reply reset failed: rc={rc}')
+            end=time.monotonic()+5
+            while self.reply_connection_state() not in (0,None) and time.monotonic()<end:
+                self._comtypes.PumpEvents(.1)
+            if self.reply_connection_state() not in (0,None):
+                raise CapitalReplySessionError('Reply reset did not disconnect; refusing another ConnectByID.')
+
         # ConnectByID replays historical orders again. Keeping the prior rows
         # would count the same fills once per quote-driven Reply reconnect.
         self.snapshot.begin_replay()
         rc = self._skR.SKReplyLib_ConnectByID(self.user)
+        record_capital_event(self.project_root,session_id=self.session_id,
+            call_site='CapitalReplySession._reconnect_reply_only',event='API_CALL',
+            object_type='SKReplyLib',object_id=hex(id(self._skR)),
+            api_name='SKReplyLib_ConnectByID',return_code=rc)
         if rc != 0:
+            self._reply_needs_reset=True
             raise CapitalReplySessionError(
                 f"SKReplyLib_ConnectByID reconnect failed: rc={rc}"
             )
@@ -441,13 +481,15 @@ class CapitalReplySession:
             self._comtypes.PumpEvents(0.25)
 
         if not self.snapshot.replay_complete:
+            self._reply_needs_reset=True
             raise CapitalReplySessionError(
-                "Reply reconnect did not reach OnComplete."
+                f"Reply reconnect did not reach OnComplete (state={self.reply_connection_state()}); clean reset required."
             )
 
         end = time.time() + max(0.0, replay_grace_seconds)
         while time.time() < end:
             self._comtypes.PumpEvents(0.25)
+        self._reply_needs_reset=False
 
     def ensure_ready(
         self,
@@ -465,6 +507,23 @@ class CapitalReplySession:
         health = self.health_check()
         if health.ready:
             return health
+
+        if health.action=='REPLAY_PENDING':
+            # State 2 means downloading, not disconnected. Never restart its
+            # replay repeatedly just because OnComplete has not arrived yet.
+            end=time.monotonic()+20
+            while time.monotonic()<end:
+                self._comtypes.PumpEvents(.25)
+                health=self.health_check()
+                if health.ready:return health
+                if health.action!='REPLAY_PENDING':break
+            self._reply_needs_reset=True
+            if not allow_reply_reconnect:
+                raise CapitalReplySessionError('Reply replay did not complete; reconnect disabled.')
+            self._reconnect_reply_only()
+            health=self.health_check()
+            if health.ready:return health
+            raise CapitalReplySessionError(f'Reply still not ready after clean reset: {health.message}')
 
         if (
             allow_reply_reconnect

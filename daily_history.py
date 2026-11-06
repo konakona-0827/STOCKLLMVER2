@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -13,7 +13,7 @@ import ssl
 
 import certifi
 
-from config import ROOT, now
+from config import ROOT, TAIPEI, now
 from market_calendar import previous_trading_day, twse_closed_reason
 
 SOURCE = 'TWSE_DAILY'
@@ -97,7 +97,19 @@ def _fetch_month(symbol, month, cache_dir, as_of, *, require_turnover=False, min
     latest_month = (date.fromisoformat(minimum_latest).replace(day=1) if minimum_latest else None)
     latest_present = (not minimum_latest or month != latest_month or
                       any(bar['date'] >= minimum_latest for bar in (cached or {}).get('bars', [])))
-    if cached and latest_present and (not require_turnover or complete_amounts) and (not is_current or cached.get('fetched_at', '')[:10] == as_of.isoformat()):
+    # A snapshot fetched on the last session's morning is not a complete
+    # month. Once the new month has data, minimum_latest alone no longer
+    # notices the old month's missing final session (0050 on Oct 30).
+    finalized = True
+    if month < as_of.replace(day=1):
+        last_session = previous_trading_day((month + timedelta(days=32)).replace(day=1))
+        try:
+            fetched = datetime.fromisoformat((cached or {}).get('fetched_at', ''))
+            finalized = (fetched.tzinfo is not None and
+                         fetched >= datetime.combine(last_session, time(16), TAIPEI))
+        except (ValueError, TypeError):
+            finalized = False
+    if cached and finalized and latest_present and (not require_turnover or complete_amounts) and (not is_current or cached.get('fetched_at', '')[:10] == as_of.isoformat()):
         return cached.get('bars', []), None
     url = BASE_URL + '?' + urlencode(dict(response='json', date=month.strftime('%Y%m%d'), stockNo=symbol))
     try:
@@ -177,6 +189,13 @@ def load_many(symbols, as_of=None, cache_dir=DEFAULT_CACHE, *, max_bars=MAX_BARS
         source_urls = list(dict.fromkeys(bar['source_url'] for bar in source_bars
                                          if bar.get('source_url')))
         count = len(bars)
+        expected_sessions = []
+        cursor = date.fromisoformat(expected_latest)
+        for _ in range(min(max_bars, 21)):
+            expected_sessions.append(cursor.isoformat())
+            cursor = previous_trading_day(cursor)
+        dates_present = {bar['date'] for bar in bars}
+        missing_sessions = sorted(set(expected_sessions)-dates_present)
         result[symbol] = dict(bars=bars, trend=daily_trend(bars),
                               status=dict(source=SOURCE, as_of=as_of.isoformat(),
                                           market='TWSE_LISTED_DAILY_NOT_ODD_LOT',
@@ -186,8 +205,10 @@ def load_many(symbols, as_of=None, cache_dir=DEFAULT_CACHE, *, max_bars=MAX_BARS
                                           latest_retrieved_at=(source_bars[-1].get('retrieved_at')
                                                                if source_bars else None),
                                           expected_latest_date=expected_latest,
+                                          missing_recent_trading_dates=sorted(set(expected_sessions[:5])-dates_present),
+                                          missing_20d_trading_dates=missing_sessions,
                                           coverage=('STALE' if bars and bars[-1]['date'] < expected_latest else
-                                                    'SUFFICIENT_FOR_20D_COMPARISON' if count >= 21 else
+                                                    'SUFFICIENT_FOR_20D_COMPARISON' if count >= 21 and not missing_sessions else
                                                     'PARTIAL' if count else 'UNAVAILABLE'),
                                           failed_months=sorted(item['failed_months'])))
     return result

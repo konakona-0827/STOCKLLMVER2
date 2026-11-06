@@ -138,7 +138,7 @@ class AgentDecisionTests(unittest.TestCase):
         self.assertEqual(self.context.calls[0]['result']['positions'][0]['qty'], 10)
         self.assertEqual(self.context.calls[1]['result']['positions'][0]['qty'], 5)
 
-    def scripted_model(self,endless=False,delay=0,web_search=False,excess_search=False):
+    def scripted_model(self,endless=False,delay=0,web_search=False,excess_search=False,actions_override=None,input_tokens=10):
         try:
             from agents import Model,ModelResponse,Usage
             from openai.types.responses import (ResponseFunctionToolCall, ResponseFunctionWebSearch,
@@ -147,6 +147,8 @@ class AgentDecisionTests(unittest.TestCase):
             self.skipTest('Optional Agents SDK not installed')
         actions = [('get_portfolio',{}),('get_trade_history',{}),('get_market_data',{'symbol':'0050'}),
                    ('get_market_data',{'symbol':'0050'})]
+        if actions_override is not None:
+            actions = actions_override
         report = copy.deepcopy(self.decision)
         class ScriptedModel(Model):
             def __init__(self):
@@ -175,7 +177,7 @@ class AgentDecisionTests(unittest.TestCase):
                             id=f'web-{i}-{search_index}', type='web_search_call', status='completed',
                             action=dict(type='search', queries=['測試公司公告'], sources=[
                                 dict(type='url', url='https://example.com/announcement')])))
-                return ModelResponse(output=out,usage=Usage(requests=1,input_tokens=10,output_tokens=5),response_id=f'r-{i}')
+                return ModelResponse(output=out,usage=Usage(requests=1,input_tokens=input_tokens,output_tokens=5),response_id=f'r-{i}')
             async def stream_response(self,*args,**kwargs):
                 raise NotImplementedError
                 yield
@@ -209,6 +211,15 @@ class AgentDecisionTests(unittest.TestCase):
         self.assertEqual(response['validation'], 'ERROR')
         self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
         self.assertIn('AGENT_WEB_SEARCH_LIMIT_EXCEEDED', response['api']['error'])
+
+    def test_unlimited_search_setting_allows_needed_calls_and_keeps_tools_available(self):
+        self.context.search_request=dict(tools=[dict(type='web_search')],max_tool_calls=None)
+        model=self.scripted_model(web_search=True,excess_search=True)
+        with patch.dict(os.environ,{'OPENAI_API_KEY':'sk-test'}),patch('agents.OpenAIResponsesModel',return_value=model):
+            decision,response=analyze(self.context,'策略')
+        self.assertEqual(response['validation'],'VALID',response)
+        self.assertEqual(response['api']['web_search']['tool_calls'],6)
+        self.assertTrue(all('web_search' in tools for tools in model.tool_sets))
 
     def test_real_responses_adapter_serializes_search_budget_and_sources(self):
         try:
@@ -262,17 +273,55 @@ class AgentDecisionTests(unittest.TestCase):
             result,response = analyze(self.context,'策略')
         self.assertEqual(response['validation'],'VALID',response)
         self.assertEqual(model.requests,5)
-        self.assertEqual(model.tools,{'get_portfolio','get_trade_history','get_market_data'})
+        self.assertEqual(model.tools,{'get_portfolio','get_trade_history','get_market_data',
+                                      'get_market_data_batch','get_research_data'})
         self.assertEqual(result['decisions'][0]['suggested_qty'],5)
 
-    def test_sdk_turn_limit_discards_decision(self):
-        model = self.scripted_model(endless=True)
+    def test_preloaded_account_batch_quotes_and_lazy_history_use_two_model_turns(self):
+        self.candidate['daily_bars'] = [dict(date=f'2026-10-{day:02}', open=99, high=130,
+            low=95, close=100, volume=100, source='TWSE_DAILY', complete=True) for day in range(1, 23)]
+        original = copy.deepcopy(self.candidate)
+        model = self.scripted_model(actions_override=[('get_market_data_batch', {'symbols':['0050']})])
+        with patch.dict(os.environ, {'OPENAI_API_KEY':'sk-test'}), \
+                patch('agents.OpenAIResponsesModel', return_value=model):
+            decision, response = analyze(self.context, '策略')
+        self.assertEqual(response['validation'], 'VALID', response)
+        self.assertEqual(decision['decisions'][0]['decision'], 'BUY')
+        self.assertEqual(model.requests, 2)
+        model_input = json.loads((Path(self.tmp.name)/'agent_model_input.json').read_text('utf-8'))['input']
+        self.assertTrue(model_input['account_and_history_preloaded'])
+        candidate = model_input['analysis_set'][0]
+        self.assertEqual(candidate['daily_bars_coverage']['total_rows'], 22)
+        self.assertEqual(len(candidate['daily_bars']['rows']), 5)
+        self.assertEqual(self.candidate['daily_bars'], original['daily_bars'])
+        self.assertEqual(len(response['api']['usage_requests']), 2)
+
+    def test_large_input_usage_is_recorded_without_aborting_the_scan(self):
+        model = self.scripted_model(input_tokens=700)
+        with patch.dict(os.environ, {'OPENAI_API_KEY':'sk-test', 'AGENT_MAX_INPUT_TOKENS':'1000'}), \
+                patch('agents.OpenAIResponsesModel', return_value=model):
+            decision, response = analyze(self.context, '策略')
+        self.assertEqual(response['validation'], 'VALID',response)
+        self.assertGreater(response['api']['usage']['input_tokens'],1000)
+        ledger = json.loads((Path(self.tmp.name)/'api_usage_requests.json').read_text('utf-8'))
+        self.assertEqual(len(ledger),model.requests)
+
+    def test_full_history_tool_does_not_authorize_a_trade_without_a_fresh_quote(self):
+        model = self.scripted_model(actions_override=[('get_research_data', {'symbol':'0050'})])
+        with patch.dict(os.environ, {'OPENAI_API_KEY':'sk-test'}), \
+                patch('agents.OpenAIResponsesModel', return_value=model):
+            decision, response = analyze(self.context, '策略')
+        self.assertEqual(response['validation'], 'ERROR')
+        self.assertIn('TRADE_REQUIRES_MARKET_TOOL', response['api']['error'])
+        self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
+
+    def test_long_research_finishes_without_the_old_turn_quota(self):
+        model = self.scripted_model(actions_override=[('get_market_data',{'symbol':'0050'})]*15)
         with patch.dict(os.environ,{'OPENAI_API_KEY':'sk-test','AGENT_MAX_TURNS':'5'}), \
                 patch('agents.OpenAIResponsesModel',return_value=model):
             result,response = analyze(self.context,'策略')
-        self.assertEqual(response['validation'],'ERROR')
-        self.assertIn('MaxTurnsExceeded',response['api']['error'])
-        self.assertEqual(result['decisions'][0]['decision'],'WAIT')
+        self.assertEqual(response['validation'],'VALID',response)
+        self.assertGreater(model.requests,12)
 
     def test_sdk_timeout_discards_decision(self):
         model = self.scripted_model(delay=2)

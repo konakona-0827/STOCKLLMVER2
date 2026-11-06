@@ -11,20 +11,23 @@ def enable_search(request):
         raise ValueError('WEB_SEARCH_ENABLED_MUST_BE_BOOLEAN')
     if not settings['enabled']:
         return request
-    limit = settings.get('max_tool_calls', 3)
-    if type(limit) is not int or not 1 <= limit <= 10:
+    limit = settings.get('max_tool_calls')
+    if limit is not None and (type(limit) is not int or not 1 <= limit <= 10):
         raise ValueError('WEB_SEARCH_MAX_TOOL_CALLS_MUST_BE_1_TO_10')
     request = dict(request)
     request.update(tools=[{'type': 'web_search', 'external_web_access': True,
                           'search_context_size': 'medium',
                           'user_location': {'type': 'approximate', 'country': 'TW',
                                             'timezone': 'Asia/Taipei'}}],
-                   tool_choice='auto', max_tool_calls=limit,
+                   tool_choice='auto',
                    include=['web_search_call.action.sources'])
+    if limit is not None:request['max_tool_calls']=limit
     request['instructions'] += (
         '\n\n網路查證補充（允許使用 web_search 取得外部證據）：'
-        f'本輪查證時間 {now().isoformat()}。先搜尋一次候選公司近期重大公告、財報及產業事件；'
-        f'每輪最多 {limit} 次工具呼叫，合併相關標的查詢，不為每檔機械式重複搜尋。'
+        f'本輪查證時間 {now().isoformat()}。先根據已提供的帳戶與行情聚焦問題；'
+        '對有數字可行性的新買候選，或持倉有待查明的重大風險，再搜尋近期重大公告、財報及產業事件。'
+        '全數觀望且沒有待查事件時不強制搜尋；不得把未搜尋說成已查證或沒有風險。'
+        '依查證需要使用搜尋，合併相關標的查詢，不為每檔機械式重複搜尋。'
         '優先採公司投資人關係、公開資訊觀測站、證交所及其他原始來源，次用可信新聞。'
         '核對股票代號、公司、發布日期及事件日期；舊聞不得當成今天事件。'
         '前述「只使用輸入」亦包含本輪工具實際取得的資料；沒搜尋到就明示未查證，'

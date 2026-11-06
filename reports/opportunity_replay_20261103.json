@@ -1,0 +1,1947 @@
+{
+  "scope": "Fixed research universe and AI holdings only; manual holdings do not expand the buy universe.",
+  "limitations": [
+    "Repaired completed daily data, including later retrievals, are used. Not a performance backtest.",
+    "Qualified plans still require model research, two specialists, independent review and fresh execution guards.",
+    "No fill, profit, hit-rate or exact API saving can be inferred from this replay."
+  ],
+  "runs": [
+    {
+      "run": "20261102T093500-gui-2b4f1460",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2317": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "CURRENT_ASK",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 39.4658
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 38.7087
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.0,
+            "entry_basis": "OBSERVED_SUPPORT_PULLBACK",
+            "target": 295.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 833.0,
+            "net_return": 0.08046683046683047,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.0,
+            "target_exit_after_spread_twd": 294.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 65.5,
+            "estimated_net_downside_twd": 42.5,
+            "estimated_buy_cost_twd": 814.0,
+            "reward_risk_ratio": 1.5411764705882354,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 42.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.55,
+            "setup_id": "f77c98d0fc51",
+            "priority_score": 37.9399
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T094410-gui-1234a2ba",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2317": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "CURRENT_ASK",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 38.9679
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.0,
+            "entry_basis": "OBSERVED_SUPPORT_PULLBACK",
+            "target": 295.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 833.0,
+            "net_return": 0.08046683046683047,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.0,
+            "target_exit_after_spread_twd": 294.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 65.5,
+            "estimated_net_downside_twd": 42.5,
+            "estimated_buy_cost_twd": 814.0,
+            "reward_risk_ratio": 1.5411764705882354,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 42.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.55,
+            "setup_id": "f77c98d0fc51",
+            "priority_score": 38.1992
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T100500-gui-6c8ad025",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 10,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 273.0,
+            "entry_basis": "CURRENT_ASK",
+            "target": 301.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 839.0,
+            "net_return": 0.09451219512195122,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 273.0,
+            "target_exit_after_spread_twd": 300.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 77.5,
+            "estimated_net_downside_twd": 48.5,
+            "estimated_buy_cost_twd": 820.0,
+            "reward_risk_ratio": 1.597938144329897,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 48.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.75,
+            "setup_id": "caa8f9680dc9",
+            "priority_score": 40.4306
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 38.9473
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 38.1902
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T103500-gui-78250bf3",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.5,
+            "entry_basis": "CURRENT_ASK",
+            "target": 299.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 837.5,
+            "net_return": 0.09102015882712279,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.5,
+            "target_exit_after_spread_twd": 299.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 74.5,
+            "estimated_net_downside_twd": 47.0,
+            "estimated_buy_cost_twd": 818.5,
+            "reward_risk_ratio": 1.5851063829787233,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 47.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.45,
+            "setup_id": "baa86dcd43cc",
+            "priority_score": 39.9531
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 39.2066
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 38.4494
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T110500-gui-355addab",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2891": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 273.0,
+            "entry_basis": "CURRENT_ASK",
+            "target": 301.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 839.0,
+            "net_return": 0.09451219512195122,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 273.0,
+            "target_exit_after_spread_twd": 300.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 77.5,
+            "estimated_net_downside_twd": 48.5,
+            "estimated_buy_cost_twd": 820.0,
+            "reward_risk_ratio": 1.597938144329897,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 48.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.75,
+            "setup_id": "caa8f9680dc9",
+            "priority_score": 40.4306
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 38.9473
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 38.1902
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T113500-gui-67f3699c",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "3017": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2308": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2345": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2356": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 273.5,
+            "entry_basis": "CURRENT_ASK",
+            "target": 302.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 840.5,
+            "net_return": 0.09799147900182593,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 273.5,
+            "target_exit_after_spread_twd": 302.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 80.5,
+            "estimated_net_downside_twd": 50.0,
+            "estimated_buy_cost_twd": 821.5,
+            "reward_risk_ratio": 1.61,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 50.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 8.05,
+            "setup_id": "2c6c191dbdd0",
+            "priority_score": 40.8991
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 38.688
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 37.9309
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T120500-gui-3a38dccc",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 12,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "3017": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2308": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2345": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2356": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2377": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 274.0,
+            "entry_basis": "CURRENT_ASK",
+            "target": 304.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 2,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 568.0,
+            "net_return": 0.10018214936247723,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 274.0,
+            "target_exit_after_spread_twd": 303.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 55.0,
+            "estimated_net_downside_twd": 35.0,
+            "estimated_buy_cost_twd": 549.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 35.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 5.5,
+            "setup_id": "7cc7d20ab0d9",
+            "priority_score": 40.7325
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 38.4288
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 37.6716
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T123500-gui-f1b0c2f6",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2891": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2308": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2345": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2356": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 274.0,
+            "entry_basis": "CURRENT_ASK",
+            "target": 304.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 2,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 568.0,
+            "net_return": 0.10018214936247723,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 274.0,
+            "target_exit_after_spread_twd": 303.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 55.0,
+            "estimated_net_downside_twd": 35.0,
+            "estimated_buy_cost_twd": 549.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 35.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 5.5,
+            "setup_id": "7cc7d20ab0d9",
+            "priority_score": 40.7325
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 38.4288
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 37.6716
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261102T130500-gui-35d53d51",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 12,
+      "opportunity_model_candidate_count": 3,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [
+          "2603"
+        ],
+        "research_symbols": [
+          "2603",
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2891": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2881": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2308": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2345": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2356": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {
+        "2603": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 274.0,
+            "entry_basis": "CURRENT_ASK",
+            "target": 304.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 2,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 568.0,
+            "net_return": 0.10018214936247723,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 274.0,
+            "target_exit_after_spread_twd": 303.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 55.0,
+            "estimated_net_downside_twd": 35.0,
+            "estimated_buy_cost_twd": 549.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 35.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 5.5,
+            "setup_id": "7cc7d20ab0d9",
+            "priority_score": 40.7325
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 272.0,
+            "entry_basis": "today_open",
+            "target": 298.0,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 836.0,
+            "net_return": 0.08751529987760098,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 272.0,
+            "target_exit_after_spread_twd": 297.5,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 71.5,
+            "estimated_net_downside_twd": 45.5,
+            "estimated_buy_cost_twd": 817.0,
+            "reward_risk_ratio": 1.5714285714285714,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 45.5,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 7.15,
+            "setup_id": "c8b7fbcc1724",
+            "priority_score": 38.4288
+          },
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Strong",
+            "entry": 271.5,
+            "entry_basis": "previous_close",
+            "target": 296.5,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 259.0,
+            "holding_days": 10,
+            "max_qty": 3,
+            "allocation_limit_twd": 3000.0,
+            "funding_required_twd": 834.5,
+            "net_return": 0.08399754751686082,
+            "atr14": 9.642857142857142,
+            "completed_volume_ratio": 2.8018325546679415,
+            "daily_breakout_confirmed": true,
+            "entry_twd": 271.5,
+            "target_exit_after_spread_twd": 296.0,
+            "stop_exit_after_spread_twd": 258.5,
+            "estimated_net_upside_twd": 68.5,
+            "estimated_net_downside_twd": 44.0,
+            "estimated_buy_cost_twd": 815.5,
+            "reward_risk_ratio": 1.5568181818181819,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.5,
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 44.0,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 6.85,
+            "setup_id": "d2b7981ba3eb",
+            "priority_score": 37.6716
+          }
+        ]
+      }
+    },
+    {
+      "run": "20261103T100500-gui-84e1ff0c",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 2,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [],
+        "research_symbols": [
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2603": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {}
+    },
+    {
+      "run": "20261103T110500-gui-18c12bc4",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 12,
+      "opportunity_model_candidate_count": 2,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [],
+        "research_symbols": [
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2603": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {}
+    },
+    {
+      "run": "20261103T120500-gui-014a7dfc",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 2,
+      "account_cash": 5460.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [],
+        "research_symbols": [
+          "2891",
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "BUY_LOSING_POSITION_ADD_BLOCKED"
+          ],
+          "2881": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2603": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {}
+    },
+    {
+      "run": "20261103T130500-gui-e1ff9c3b",
+      "baseline_qualified_symbols": [],
+      "baseline_model_candidate_count": 11,
+      "opportunity_model_candidate_count": 1,
+      "account_cash": 7350.265,
+      "search": {
+        "version": "opportunity-search-v1",
+        "pool_count": 20,
+        "qualified_symbols": [],
+        "research_symbols": [
+          "1101"
+        ],
+        "blockers": {
+          "0050": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2330": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2454": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2317": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2382": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3231": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "3017": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2891": [
+            "BUY_REENTRY_COOLDOWN"
+          ],
+          "2881": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2882": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2303": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2308": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2345": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2357": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2376": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2356": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2377": [
+            "NO_TREND_OR_RECOVERY_SETUP"
+          ],
+          "2603": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "2609": [
+            "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH"
+          ],
+          "1101": [
+            "BUY_REENTRY_COOLDOWN"
+          ]
+        }
+      },
+      "plans": {}
+    }
+  ]
+}
