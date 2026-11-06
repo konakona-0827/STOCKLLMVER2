@@ -2,6 +2,8 @@
 
 分支：`codex/planned-limit-orders`（由 `codex/support-scout-architecture` 分出）。
 
+**2026-11-06 尋標與市場機會修正**：加入候選輪替及排除原因回饋、當日觀察觸發研究、按 Early 配置的當日價格突破計畫，並修正跨日回升目標與中途阻力檢查。每輪與 Dashboard 顯示進場流失階段，避免把程式失敗或候選池無計畫解讀成全市場沒有機會。沿用 `strategy_opportunity_v2`、正式帳本及原掃描時程；更新後須重新啟動原正式程式。詳見 [診斷、驗證與下個交易日執行方式](reports/market_opportunity_repair_20261106.md)。
+
 **2026-11-02 正式帳戶接續版本**：依使用者明確授權，新增原帳戶的計畫限價 BUY 流程，沿用原正式持倉、預算、委託及成交帳本，不建立鏡像帳戶。專用入口 `FormalPlanned.cmd` 要求本機 `enabled` 與 `planned_limits_enabled` 都已明確啟用；Repository 預設仍關閉真實下單。先前 `PlannedPaper.cmd` 僅保留為研究工具，不是本次正式測試入口。詳見 [正式接續紀錄](reports/formal_planned_20261102.md)。
 
 此分支整合既有正式交易程式與 Support Scout 研究架構。正式交易底座取自 `fix/ai-sellable-ownership-display@46c020c`，已包含 `develop@363fe8f`、Agent 模式、券商對帳、AI／人工持股歸屬、資金及交易日修正。

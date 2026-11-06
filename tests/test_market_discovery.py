@@ -141,7 +141,8 @@ class MarketDiscoveryTests(unittest.TestCase):
     def test_watch_touch_requires_live_quote_and_is_never_order_approval(self):
         rows=m.normalize(self.daily,self.companies,date(2026,11,3));a,_=answer(dict(candidates=rows),None,self.p,None)
         watch=m.validate_selection(a,rows,self.p,'2026-11-04')
-        quotes=[dict(symbol=watch[0]['symbol'],quote_status='LIVE',is_trial=False,last_price=111)]
+        quotes=[dict(symbol=watch[0]['symbol'],quote_status='LIVE',is_trial=False,last_price=111,
+                     quote_timestamp=self.at.isoformat())]
         result=m.watch_status(watch,quotes)
         self.assertEqual(result[0]['status'],'RESEARCH_CONDITION_MET')
         self.assertEqual(result[0]['purpose'],'RESEARCH_TRIGGER_NOT_ORDER')

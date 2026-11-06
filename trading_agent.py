@@ -15,7 +15,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v7-research-without-usage-quotas'
+AGENT_VERSION = 'agent-decision-v8-watch-and-market-opportunities'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -35,8 +35,13 @@ trade_setups 已按當前帳戶、訊號層級、結構停損與配置驗算；�
 market_scout 是獨立尋標代理從上市普通股完成日線挑選的初步研究理由與觀察條件；
 它在程式買進計畫篩選之前執行，沒有下單權限，觀察條件不是買進訊號或目標。
 候選有 market_scout 時應核對其反證與最新 trade_setups，不能把前一日日線當即時零股報價。
+research_only=true 代表觀察條件已觸發、尚無可執行計畫：核對完整日線與尋標反證，
+需要時使用 research_support、review_support 研究，並刷新行情重算計畫。
+trade_setups 仍為空時只能 WAIT（有持倉可 HOLD/SELL），不能把觀察觸發當成 BUY 批准。
 若數值、訊號與兩方研究未發現具體否決證據，可提出 BUY，不要求未來上漲已被證明。
-MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE 是完成日線突破及量能條件下的目標情境，必須如實揭露。
+MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE 是估算目標情境，必須如實揭露 breakout_confirmation。
+FIRST_DAY_BREAKOUT 僅確認當日 LIVE 價格突破，在趨勢背景下按 Early 配置；
+不得把昨日量能或盤中零股量當成今日完整日線放量確認。
 PLANNED_LIMIT 的進場基準是具證據的 suggested_price，不是強制按 ask 追買；
 可提出等待回落的當日限價，須說明回落後仍有效的條件，成交與獲利均不保證。
 其他模式按 ask 與建議價較高者估算。不得為通過門檻跳過近端壓力或貼近失效價。
@@ -63,6 +68,7 @@ def execution_metadata(model):
         sdk_version = None
     digest = hashlib.sha256()
     for name in ('trading_agent.py','token_budget.py','research_runtime.py','entry_screen.py','opportunity_engine.py','opportunity_gate.py',
+                 'opportunity_watch.py','opportunity_diagnostics.py',
                  'config/opportunity_search.json','config/market_discovery.json','market_discovery.py',
                  'config/execution_live.json','advice_interface.py',
                  'daily_history.py','agent_decision.py','analysis_service.py',

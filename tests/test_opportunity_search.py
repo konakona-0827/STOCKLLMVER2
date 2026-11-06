@@ -70,9 +70,11 @@ class OpportunitySearchTests(unittest.TestCase):
                  funding_fee_reserve_twd=20)
         self.assertEqual(d['decision'],'BUY')
 
-    def test_signal_volume_and_real_intervening_swing_resistance_are_required(self):
+    def test_unconfirmed_volume_uses_early_tier_and_intervening_resistance_remains_required(self):
         c=candidate();c['daily_bars'][-1]['volume']=1000
-        self.assertFalse(refresh(c,self.account,self.rules,self.p)['trade_setups'])
+        early=refresh(c,self.account,self.rules,self.p)['trade_setups']
+        self.assertTrue(early)
+        self.assertTrue(all(s['tier']=='Early' and not s['daily_breakout_confirmed'] for s in early))
         c=candidate();c['daily_bars'][3]['high']=135;c['price_levels']=price_levels(c)
         result=refresh(c,self.account,self.rules,self.p)
         self.assertTrue(result['trade_setups'],result['opportunity_status'])
@@ -186,10 +188,19 @@ class OpportunitySearchTests(unittest.TestCase):
             self.assertFalse(evaluate('AUTO',[noise],self.account,path,self.p,at+timedelta(hours=1))['call_model'])
 
     def test_qualified_buy_survives_real_agent_validation_and_two_research_checks(self):
+        self.exercise_qualified_buy(candidate())
+
+    def test_first_day_breakout_buy_survives_both_specialists_and_independent_pretrade_review(self):
+        c=candidate()
+        c['daily_bars'][-1].update(open=121,high=124,low=120,close=121,volume=1000)
+        c['price_levels']=price_levels(c)
+        self.exercise_qualified_buy(c)
+
+    def exercise_qualified_buy(self,source):
         from trading_agent import TradingTools,analyze
         from support_scout.trading import SupportCoordinator
         with tempfile.TemporaryDirectory() as tmp:
-            c=refresh(candidate(),self.account,self.rules,self.p)
+            c=refresh(source,self.account,self.rules,self.p)
             context=TradingTools([c],self.rules,'test',Path(tmp)/'tools.json',lambda symbol,old:deepcopy(old),
                 lambda:{**deepcopy(self.account),'positions':[]},lambda:[])
             settings=dict(enabled=True,policy='advisory',history_bars=100,max_symbols=2,max_calls=4,

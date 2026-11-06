@@ -94,6 +94,7 @@ def refresh(candidate, account, rules, p=None):
     p = deepcopy(p or candidate.get('opportunity_policy') or policy())
     candidate['opportunity_policy'] = p
     candidate['trade_setups'] = []
+    candidate['research_only'] = False
     candidate['opportunity_status'] = dict(blockers=[], signal=None)
     status = candidate['opportunity_status']
     try:
@@ -146,11 +147,17 @@ def refresh(candidate, account, rules, p=None):
         trend=ma5>ma20 and closes[-1]>=ma5 and closes[-1]>=closes[-6]
         daily_breakout=(closes[-1]>max(_number(b['high']) for b in bars[-21:-1])
                         and vol_ratio>=Decimal(str(p['breakout_volume_ratio'])))
+        breakout_level=max(_number(b['high']) for b in bars[-20:])
+        # Today's live price can break out before a completed breakout bar
+        # exists. It is an Early trend scenario, never daily volume confirmation.
+        first_day_breakout=(trend and not daily_breakout and last>breakout_level
+                            and last>_number(candidate['open']) and last>=ma5)
         recovery=(last>_number(candidate['open']) and
                   (last-_number(candidate['low']))/max(Decimal('.01'),_number(candidate['high'])-_number(candidate['low']))>=Decimal('.6'))
         if not trend and not recovery:
             raise ValueError('NO_TREND_OR_RECOVERY_SETUP')
         tier='Strong' if trend and last>=ma5 and vol_ratio>=Decimal(str(p['breakout_volume_ratio'])) else ('Confirmed' if trend else 'Early')
+        if first_day_breakout:tier='Early'
         strategy='multi_day_trend' if trend else 'intraday_recovery'
         if strategy not in candidate.get('eligible_strategies',[]):
             raise ValueError('SETUP_STRATEGY_NOT_ELIGIBLE')
@@ -188,6 +195,8 @@ def refresh(candidate, account, rules, p=None):
             raise ValueError('PER_SYMBOL_ALLOCATION_EXHAUSTED')
         candidates=[];rejections=set();near_misses=[]
         for entry,entry_basis in entries.items():
+            if first_day_breakout and entry<breakout_level:
+                rejections.add('ENTRY_BELOW_BREAKOUT_REFERENCE');continue
             if ask-entry>min(atr*Decimal(str(p['maximum_pullback_atr'])),ask*Decimal(str(p['maximum_pullback_fraction']))):
                 rejections.add('ENTRY_OUTSIDE_REACH')
                 continue
@@ -198,14 +207,16 @@ def refresh(candidate, account, rules, p=None):
                 rejections.add('NO_OBSERVED_STOP_WITH_MINIMUM_ATR_DISTANCE');continue
             stop=max(stops)
             existing_risk=existing_position_risk(candidate,stop,rules)
-            targets=[r for r in resistances if r>max(last,entry)]
-            if not trend and _number(candidate['high'])>entry:targets.append(_number(candidate['high']))
+            targets=[r for r in resistances if r>entry]
             kind='OBSERVED_SWING_RESISTANCE'
             if targets:target=min(targets)
-            elif daily_breakout:
+            elif daily_breakout or first_day_breakout:
                 target=_round_price(entry+min((entry-stop)*Decimal(str(p['breakout_target_r_multiple'])),
                     atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
                 kind='MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE'
+            elif not trend and _number(candidate['high'])>entry:
+                target=_number(candidate['high'])
+                kind='OBSERVED_INTRADAY_HIGH_FALLBACK'
             else:
                 rejections.add('NO_OBSERVED_TARGET_OR_CONFIRMED_BREAKOUT');continue
             qty_max=min(999,int(rules.max_buy_qty or 999),int(allocation/entry))
@@ -243,6 +254,11 @@ def refresh(candidate, account, rules, p=None):
                     max_qty=qty,allocation_limit_twd=float(allocation),funding_required_twd=float(gross+reserve),
                     net_return=float(net),atr14=float(atr),completed_volume_ratio=float(vol_ratio),
                     daily_breakout_confirmed=bool(daily_breakout),**economics)
+                setup['setup_family']=('FIRST_DAY_BREAKOUT' if first_day_breakout else
+                                       'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY')
+                setup['breakout_confirmation']=('COMPLETED_DAILY_PRICE_AND_VOLUME' if daily_breakout else
+                    'LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION' if first_day_breakout else None)
+                setup['breakout_reference_price']=float(breakout_level) if first_day_breakout else None
                 setup['existing_modeled_risk_twd']=float(existing_risk)
                 setup['combined_modeled_risk_twd']=float(existing_risk+Decimal(str(economics['estimated_net_downside_twd'])))
                 setup['analysis_cost_budget_twd']=p['analysis_cost_budget_twd']
@@ -260,6 +276,13 @@ def refresh(candidate, account, rules, p=None):
         if not candidates:status['blockers']=['NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH']
     except (KeyError,ValueError,TypeError,ArithmeticError) as exc:
         status['blockers']=[str(exc)]
+    if candidate.get('market_scout'):
+        from opportunity_watch import observe
+        candidate['market_scout']=observe(candidate['market_scout'],candidate)
+        candidate['research_only']=bool(not candidate['trade_setups'] and
+            candidate['market_scout']['status']=='RESEARCH_CONDITION_MET' and status['blockers'] and
+            set(status['blockers']).issubset({'NO_TREND_OR_RECOVERY_SETUP',
+                                            'NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH'}))
     return candidate
 
 
@@ -280,13 +303,22 @@ def select(candidates, account, rules, p):
     opportunities=sorted((c for c in candidates if c['trade_setups']),
         key=lambda c:(-c['trade_setups'][0]['priority_score'],c.get('quant_rank') or 999))
     selected=opportunities[:p['max_research_candidates']]
+    # A live watch touch can request research before an executable plan exists.
+    # Missing data, pending orders and account/ownership blocks remain excluded.
+    watch_candidates=[c for c in candidates if c['research_only']]
+    watch_candidates.sort(key=lambda c:(c.get('quant_rank') or 999,c['symbol']))
+    selected += watch_candidates[:max(0,p['max_research_candidates']-len(selected))]
     selected_symbols={c['symbol'] for c in selected}
     selected += [c for c in candidates if int((c.get('paper_position') or {}).get('qty') or 0)>0
                  and c['symbol'] not in selected_symbols]
     for c in selected:
         held=int((c.get('paper_position') or {}).get('qty') or 0)>0
         c['analysis_source']='OPPORTUNITY+POSITION' if c['trade_setups'] and held else (
-            'OPPORTUNITY_SEARCH' if c['trade_setups'] else 'POSITION_RISK_REVIEW')
+            'OPPORTUNITY_SEARCH' if c['trade_setups'] else
+            'WATCH_TRIGGER_RESEARCH' if c['research_only'] else 'POSITION_RISK_REVIEW')
     return selected,dict(version=p['version'],pool_count=len(candidates),
         qualified_symbols=[c['symbol'] for c in opportunities],research_symbols=[c['symbol'] for c in selected],
+        watch_research_symbols=[c['symbol'] for c in selected if c['research_only']],
+        rejection_reasons={c['symbol']:c['opportunity_status'].get('rejection_reasons',[]) for c in candidates if not c['trade_setups']},
+        near_misses={c['symbol']:c['opportunity_status'].get('near_misses',[]) for c in candidates if not c['trade_setups']},
         blockers={c['symbol']:c['opportunity_status']['blockers'] for c in candidates if not c['trade_setups']})

@@ -24,7 +24,29 @@ class OpportunityServiceTests(unittest.TestCase):
     def test_independent_scout_adds_an_outside_symbol_to_quotes_history_and_decision_pipeline(self):
         self.exercise_service(with_scout=True)
 
-    def exercise_service(self,with_scout=False):
+    def test_watch_only_candidate_reaches_real_service_model_gate_and_saved_diagnostics(self):
+        self.exercise_service(with_scout=True,watch_only=True)
+
+    def test_pipeline_exception_saves_failed_stage_instead_of_no_opportunity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            service=AnalysisService(Path(tmp)/'analysis')
+            strategy=strategy_catalog.read_strategy(CODE_ROOT/'strategies/strategy_opportunity_v2.md')
+            def failed(directory,manifest,phase,strategy):
+                phase('DAILY_HISTORY')
+                raise ValueError('synthetic history failure')
+            with (patch.dict(os.environ,{'TRADING_MODE':'agent'}),patch('analysis_service.load_env'),
+                  patch('strategy_catalog.live_selection',return_value=strategy),
+                  patch.object(service,'_run',side_effect=failed)):
+                with self.assertRaisesRegex(ValueError,'synthetic history failure'):service.run('AUTO')
+            saved=next((service.directory/'runs').glob('*/opportunity_diagnostics.json'))
+            diagnosis=json.loads(saved.read_text('utf-8'))
+            self.assertEqual(diagnosis['outcome'],'PIPELINE_EXECUTION_FAILED')
+            self.assertEqual(diagnosis['last_phase'],'DAILY_HISTORY')
+
+    def exercise_service(self,with_scout=False,watch_only=False):
+        from opportunity_engine import policy
+        search_policy=policy()
+        if watch_only:search_policy['minimum_target_net_profit_twd']=10000
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'config').mkdir()
             for name in ('execution_live.json','scan_rules.json'):
@@ -56,8 +78,11 @@ class OpportunityServiceTests(unittest.TestCase):
                         missing_20d_trading_dates=[],coverage='SUFFICIENT_FOR_20D_COMPARISON')
                 return cs
             def model(service,directory,manifest,request,cs,account,*args,**kwargs):
-                self.assertEqual(len(cs),3)
-                self.assertTrue(all(c['trade_setups'] for c in cs))
+                self.assertEqual(len(cs),1 if watch_only else 3)
+                if watch_only:
+                    self.assertTrue(cs[0]['research_only'])
+                    self.assertEqual(cs[0]['trade_setups'],[])
+                else:self.assertTrue(all(c['trade_setups'] for c in cs))
                 if with_scout:
                     self.assertIn('9999',[c['symbol'] for c in cs])
                     self.assertTrue(next(c for c in cs if c['symbol']=='9999')['market_scout'])
@@ -72,6 +97,7 @@ class OpportunityServiceTests(unittest.TestCase):
                   patch('analysis_service.ROOT',root),patch('position_analyzer.ROOT',root),
                   patch('analysis_service.now',return_value=at),patch('capital_multi_quote.now',return_value=at),
                   patch('strategy_catalog.live_selection',return_value=strategy),
+                  patch('opportunity_engine.policy',return_value=search_policy),
                   patch('market_discovery.discover',return_value=scout),
                   patch('daily_history.enrich_candidates',side_effect=enrich),
                   patch('execution.broker_runtime.get_broker_runtime',return_value=runtime),
@@ -80,7 +106,14 @@ class OpportunityServiceTests(unittest.TestCase):
                   patch.object(service,'_execute_after_advice_written',return_value=None)):
                 first=service.run('AUTO')
                 self.assertEqual(first['opportunity_search']['search']['pool_count'],21 if with_scout else 20)
-                self.assertEqual(len(first['analysis_set']),3)
+                self.assertEqual(len(first['analysis_set']),1 if watch_only else 3)
+                diagnosis=first['opportunity_diagnostics']
+                self.assertEqual(diagnosis['outcome'],'RESEARCH_COMPLETED_WITHOUT_BUY')
+                saved=json.loads((Path(first['manifest']['run_directory'])/'opportunity_diagnostics.json').read_text('utf-8'))
+                self.assertEqual(saved,diagnosis)
+                if watch_only:
+                    self.assertEqual(diagnosis['counts']['watch_research'],1)
+                    self.assertEqual(diagnosis['counts']['qualified_entries'],0)
                 self.assertEqual(len(first['top']),10)
                 second=service.run('AUTO')
                 self.assertEqual(model_call.call_count,1)

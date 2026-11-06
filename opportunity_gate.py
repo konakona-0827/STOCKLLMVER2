@@ -13,6 +13,11 @@ def snapshot(candidates, account, at):
         plans={'|'.join((c['symbol'],s['strategy_id'],s['tier'],s['entry_basis'],s['target_kind'])):
                {key:s[key] for key in ('entry','target','invalidation','max_qty')}
                for c in candidates for s in c.get('trade_setups',[])},
+        watches={c['symbol']:dict(trigger_kind=c['market_scout']['trigger_kind'],
+            condition_price=c['market_scout']['condition_price'],
+            expires_session=c['market_scout']['expires_session'],price=c['last_price'])
+            for c in candidates if c.get('research_only') and
+                (c.get('market_scout') or {}).get('status')=='RESEARCH_CONDITION_MET'},
         holdings={c['symbol']:dict(qty=int((c.get('paper_position') or {}).get('qty') or 0),
                                   price=c.get('bid') or c.get('last_price'))
                   for c in candidates if int((c.get('paper_position') or {}).get('qty') or 0)>0})
@@ -24,12 +29,13 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
     result=dict(call_model=False,reason='NO_QUALIFIED_ENTRY_OR_POSITION',snapshot=current)
     if trigger=='MANUAL':
         return {**result,'call_model':True,'reason':'MANUAL_REVIEW'}
-    if not current['setups'] and not current['holdings']:
+    if not current['setups'] and not current['holdings'] and not current['watches']:
         return result
     try:
         previous=json.loads(Path(path).read_text('utf-8'))
         if (not isinstance(previous,dict) or not isinstance(previous.get('plans',{}),dict)
-                or not isinstance(previous.get('holdings',{}),dict)):
+                or not isinstance(previous.get('holdings',{}),dict)
+                or not isinstance(previous.get('watches',{}),dict)):
             raise ValueError('invalid review state')
         for row in previous.get('plans',{}).values():
             if not isinstance(row,dict) or any(type(row.get(k)) not in (int,float) or
@@ -38,6 +44,10 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
         for row in previous.get('holdings',{}).values():
             if not isinstance(row,dict) or type(row.get('qty')) is not int:
                 raise ValueError('invalid holding state')
+        for row in previous.get('watches',{}).values():
+            if (not isinstance(row,dict) or any(type(row.get(k)) not in (int,float) or
+                    not math.isfinite(row[k]) or row[k]<=0 for k in ('condition_price','price'))):
+                raise ValueError('invalid watch state')
         previous_time=datetime.fromisoformat(previous['reviewed_at'])
         if previous_time.tzinfo is None:raise ValueError('missing timezone')
         age=(at-previous_time).total_seconds()
@@ -55,6 +65,13 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
                 return {**result,'call_model':True,'reason':'ORIGINAL_EXIT_LEVEL_TOUCHED'}
     if previous_time.date()!=at.date() or current['cash']!=previous.get('cash'):
         return {**result,'call_model':True,'reason':'NEW_SESSION_OR_ACCOUNT_CHANGE'}
+    old_watches=previous.get('watches',{})
+    for symbol,row in current['watches'].items():
+        old=old_watches.get(symbol,{})
+        if (any(row[k]!=old.get(k) for k in ('trigger_kind','condition_price','expires_session'))
+                or not old.get('price') or
+                abs(row['price']/old['price']-1)>=policy['entry_price_change_fraction']):
+            return {**result,'call_model':True,'reason':'WATCH_RESEARCH_CONDITION_CHANGED'}
     old_plans=previous.get('plans',{})
     changed=set(current['plans'])!=set(old_plans)
     if not changed:
@@ -75,7 +92,7 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
             return {**result,'call_model':True,'reason':'HOLDING_CHANGED_OR_UNKNOWN_PRICE'}
         if abs(row['price']/old['price']-1)>=policy['portfolio_price_change_fraction']:
             return {**result,'call_model':True,'reason':'POSITION_PRICE_CHANGED'}
-    limit=(policy['unchanged_opportunity_review_seconds'] if current['setups']
+    limit=(policy['unchanged_opportunity_review_seconds'] if current['setups'] or current['watches']
            else policy['max_portfolio_review_gap_seconds'])
     if age>=limit:
         return {**result,'call_model':True,'reason':'PERIODIC_REVIEW_DUE'}

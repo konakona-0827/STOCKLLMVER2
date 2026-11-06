@@ -117,12 +117,29 @@ SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+
 
 
 def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None, web_search=None,
-                  support_research=None, market_discovery=None):
+                  support_research=None, market_discovery=None, opportunity_diagnostics=None):
     asset_types = {c.get('symbol'): c.get('asset_type', 'UNKNOWN') for c in analysis_set}
     names = {c.get('symbol'): c.get('name') or '股票名稱未取得' for c in analysis_set}
     candidates = {c.get('symbol'): c for c in analysis_set}
     lines = [f"AI 分析時間：{analysis_at or '未取得'}（台北時間 UTC+8）\n\n",
              f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
+    if opportunity_diagnostics:
+        diagnosis=opportunity_diagnostics
+        label={'ACCOUNT_OR_BROKER_BLOCKED':'帳戶或券商檢查受阻',
+            'PIPELINE_EXECUTION_FAILED':'分析流程中斷',
+            'LIVE_MARKET_DATA_UNAVAILABLE':'缺少可驗證即時行情',
+            'DECISION_RESEARCH_FAILED':'決策研究失敗',
+            'MARKET_DISCOVERY_INCOMPLETE':'尋標未完整完成',
+            'NO_ENTRY_UNDER_CURRENT_RULES':'本輪研究池未通過進場規則',
+            'UNCHANGED_RESEARCH_DEFERRED':'條件未變，沿用前次研究',
+            'RESEARCH_COMPLETED_WITHOUT_BUY':'研究完成，未提出買進',
+            'BUY_DECISION_PRODUCED':'已形成買進決策，成交另依券商回報'}.get(diagnosis.get('outcome'),'待核對')
+        counts=diagnosis.get('counts',{})
+        lines.append(f"\n\n本輪診斷：{label}。即時非試撮 {counts.get('live_non_trial',0)} 檔，"
+            f"合格計畫 {counts.get('qualified_entries',0)} 檔，觀察觸發研究 {counts.get('watch_research',0)} 檔，"
+            f"買進決策 {counts.get('final_buy_decisions',0)} 檔。")
+        if diagnosis.get('outcome')=='NO_ENTRY_UNDER_CURRENT_RULES':
+            lines.append('\n此結果僅涵蓋本輪研究池，不能推論整個市場沒有機會。')
     if market_discovery is not None:
         scout=market_discovery
         status={'COMPLETE':'已完成尋標','CACHED_UNCHANGED':'沿用當日觀察清單',
@@ -142,7 +159,7 @@ def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None,
             condition={'BREAK_ABOVE_HIGH':'突破日線高點','RECLAIM_OPEN':'站回日線開盤價',
                        'PULLBACK_TO_CLOSE':'回落至日線收盤價'}.get(watch['trigger_kind'],'觀察')
             touched={'RESEARCH_CONDITION_MET':'研究條件已觸及','WAITING_FOR_CONDITION':'等待條件',
-                     'NO_LIVE_QUOTE':'缺即時報價'}.get(watch['status'],'待核對')
+                     'NO_LIVE_QUOTE':'缺即時報價','EXPIRED_WATCH':'觀察已到期'}.get(watch['status'],'待核對')
             lines.append(f"\n{watch['symbol']}：{condition} {watch['condition_price']}（{touched}）；"
                          f"{watch.get('rationale','')}。反證待查：{watch.get('counter_evidence_to_check','')}。")
         if scout.get('watchlist'):lines.append('\n觀察條件用於後續研究；買進另須通過最新報價、計畫與獨立審查。')
@@ -1285,7 +1302,8 @@ class Dashboard:
                            if strategy else '')
             detail_text += decision_text(r['decision'], r['analysis_set'],
                 r['manifest'].get('llm_response_received_at'), r.get('execution_budget'), r.get('web_search'),
-                r.get('support_research'),r.get('market_discovery'))
+                r.get('support_research'),r.get('market_discovery'),
+                r.get('opportunity_diagnostics') or r['manifest'].get('opportunity_diagnostics'))
             if r['manifest'].get('display_notice'):
                 detail_text = r['manifest']['display_notice'] + '\n\n' + detail_text
             update_detail_text(self.detail, detail_text)

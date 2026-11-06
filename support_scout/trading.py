@@ -82,6 +82,8 @@ class SupportCoordinator:
                 f'目前研究政策為 {self.config["policy"]}。'
                 '程式已預讀帳戶與交易歷史；先看 entry_screen 與實際證據，'
                 '有值得驗證的交易情境才依序呼叫 research_support(symbol)、review_support(symbol)。'
+                'research_only=true 的當日觀察觸發可先核對完整結構與反證，尚無計畫不等於禁止研究；'
+                '研究後必須刷新行情重算 trade_setups，仍無有效計畫不得 BUY。'
                 '全數不具數字可行性時可以零次子研究，直接說明 WAIT 條件；'
                 '不可為完成流程固定研究一檔。兩者各自只讀固定快照，不共享意見。'
                 '按候選需要完成研究；已取得且仍有效的資料不機械式重複查詢。'

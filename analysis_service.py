@@ -265,11 +265,18 @@ class AnalysisService:
                         strategy={k: strategy[k] for k in ('name', 'path', 'version', 'sha256')})
         (directory/'strategy.md').write_text(strategy['prompt'], encoding='utf-8')
         save_json(directory/'run.json', manifest)
+        def tracked_phase(value):
+            manifest['last_phase']=value
+            phase(value)
         try:
             with single_instance(self.directory/'runtime.lock'):
-                return self._run(directory, manifest, phase, strategy)
+                return self._run(directory, manifest, tracked_phase, strategy)
         except Exception as exc:
             manifest.update(finished_at=now().isoformat(), status='ERROR', error=redact(f'{type(exc).__name__}: {exc}'))
+            manifest['opportunity_diagnostics']=dict(outcome='PIPELINE_EXECUTION_FAILED',
+                scope='OBSERVED_RESEARCH_POOL_ONLY_NOT_WHOLE_MARKET',last_phase=manifest.get('last_phase'),
+                error=manifest['error'],counts={})
+            save_json(directory/'opportunity_diagnostics.json',manifest['opportunity_diagnostics'])
             save_json(directory/'run.json', manifest)
             save_json(directory/'error.json', manifest)
             try:
@@ -429,7 +436,12 @@ class AnalysisService:
                 scout = next((w for w in (discovery or {}).get('watchlist',[]) if w['symbol']==c['symbol']),None)
                 if scout:c['market_scout'] = scout
             save_json(directory/'opportunity_pool_before_selection.json', candidates)
+            opportunity_pool=candidates
             candidates, opportunity_audit = select_opportunities(candidates, paper_state, live_config, search_policy)
+            save_json(directory/'opportunity_pool_after_selection.json', opportunity_pool)
+            if discovery is not None:
+                from market_discovery import record_entry_feedback
+                record_entry_feedback(ROOT,opportunity_pool,at)
             # Keep the entire researched pool for explaining rejected/omitted
             # symbols; only actual entry candidates and holdings reach the LLM.
             from opportunity_gate import evaluate
@@ -551,6 +563,12 @@ class AnalysisService:
             result['opportunity_search'] = dict(search=opportunity_audit, trigger=opportunity_trigger)
         if discovery is not None:
             result['market_discovery'] = discovery
+        if opportunity_active:
+            from opportunity_diagnostics import summarize
+            result['opportunity_diagnostics']=summarize(batch,ranked,opportunity_pool,candidates,
+                opportunity_audit,discovery,response,decision,paper_state)
+            manifest['opportunity_diagnostics']=result['opportunity_diagnostics']
+            save_json(directory/'opportunity_diagnostics.json',result['opportunity_diagnostics'])
         if live_enabled:
             result['execution_budget'] = {k:paper_state.get(k) for k in (
                 'available_cash_twd','minimum_balance_reserve_twd',
@@ -605,6 +623,13 @@ class AnalysisService:
                 result['broker_refresh_error'] = redact(f'{type(exc).__name__}: {exc}')
             save_json(directory/'dashboard_result.json', result)
             save_json(self.directory/'latest_dashboard.json', result)
+        if opportunity_active and execution_report is not None:
+            result['opportunity_diagnostics'].update(execution_status=execution_report.get('status'),
+                broker_orders_sent=sum(r.get('broker_order_sent') is True for r in execution_report.get('results',[])))
+            save_json(directory/'opportunity_diagnostics.json',result['opportunity_diagnostics'])
+            save_json(directory/'run.json',manifest)
+            save_json(directory/'dashboard_result.json',result)
+            save_json(self.directory/'latest_dashboard.json',result)
         return result
 
     def _execute_after_advice_written(self, trigger, result, directory, advice_path):
