@@ -34,6 +34,8 @@
 
 完整回歸結果見 `market_opportunity_repair_20261106_tests.txt`。既有測試另外改用 ExitStack 避免 Python 的靜態巢狀區塊上限，Windows 短／長路徑比對改為實際解析路徑，沒有移除斷言或跳過測試。
 
+程式提交 `3549b57` 的乾淨 Git 匯出副本，完整 **441／441** 項測試通過（49.636 秒），另有 **3／3** 項建議介面測試通過，`python -m pip check` 無損壞依賴。輸出見 `market_opportunity_repair_20261106_clean_tests.txt`；此後的紀錄提交只新增驗證結果與說明，不修改已測試的程式。
+
 ## 下個交易日執行
 
 在原台股正式電腦更新同一分支，保留原帳本、`.env`、正式帳戶設定與既有 `strategy_opportunity_v2` 選擇。先正常關閉原 Dashboard，確認舊程序退出，再更新並透過原 `FormalPlanned.cmd` 或原監督排程重新啟動，避免同時開兩個實例。
