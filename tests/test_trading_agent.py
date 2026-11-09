@@ -305,7 +305,7 @@ class AgentDecisionTests(unittest.TestCase):
         def client(**kwargs):
             return AsyncOpenAI(api_key='sk-test', http_client=httpx.AsyncClient(
                 transport=httpx.MockTransport(handler)), **kwargs)
-        with patch('openai.AsyncOpenAI', side_effect=client):
+        with patch('codex_cli.AsyncCodexClient', side_effect=client):
             decision, response = analyze(self.context, '策略', model='test-model')
         self.assertEqual(response['validation'], 'VALID', response)
         self.assertEqual(decision['decisions'][0]['decision'], 'BUY')

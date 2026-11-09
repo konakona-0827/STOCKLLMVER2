@@ -15,7 +15,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v11-entry-evidence-skill-control'
+AGENT_VERSION = 'agent-decision-v11-codex-cli'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -47,16 +47,17 @@ data_quality 必須逐字等於該檔 quote_status。LAST_KNOWN 的 warnings 至
 
 def agent_model():
     """Select the Agent model independently from the legacy LLM setting."""
-    return os.getenv('OPENAI_AGENT_MODEL') or DEFAULT_AGENT_MODEL
+    return os.getenv('CODEX_MODEL') or os.getenv('OPENAI_AGENT_MODEL') or DEFAULT_AGENT_MODEL
 
 
 def execution_metadata(model):
+    from codex_cli import metadata
     try:
         sdk_version = version('openai-agents')
     except PackageNotFoundError:
         sdk_version = None
     digest = hashlib.sha256()
-    for name in ('trading_agent.py','token_budget.py','research_runtime.py','runtime_skills.py',
+    for name in ('trading_agent.py','codex_cli.py','token_budget.py','research_runtime.py','runtime_skills.py',
                  'skills/tw-entry-research/SKILL.md','config/research_skills.json',
                  'trade_economics.py','pretrade_policy.py','strategies/strategy_opportunity_v2.md',
                  'entry_decision.py','config/entry_decision.json',
@@ -72,7 +73,7 @@ def execution_metadata(model):
                  'config/support_agents.json', 'daily_participation.py',
                  'config/daily_participation.json'):
         digest.update((Path(__file__).parent/name).read_bytes())
-    return dict(trading_mode='agent',agent_version=AGENT_VERSION,sdk_version=sdk_version,model=model,
+    return dict(trading_mode='agent',agent_version=AGENT_VERSION,sdk_version=sdk_version,model=model,**metadata(),
                 implementation_sha256=digest.hexdigest(),
                 instructions_sha256=hashlib.sha256(AGENT_INSTRUCTIONS.encode()).hexdigest())
 
@@ -199,7 +200,7 @@ class TradingTools:
 async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
     # Optional SDK: original LLM installations do not import it.
     from agents import Agent,Model,ModelSettings,Runner,RunConfig,OpenAIResponsesModel,WebSearchTool,function_tool
-    from openai import AsyncOpenAI
+    from codex_cli import AsyncCodexClient
     from pydantic import BaseModel,ConfigDict
 
     class Decision(BaseModel):
@@ -330,7 +331,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
     model_input = dict(input=decision_input(context), read_only=context.read_only)
     save_json(context.log_path.with_name('agent_model_input.json'), model_input)
     from research_runtime import ResponseRecorder,totals
-    async with AsyncOpenAI(timeout=timeout_seconds or 180,max_retries=0) as client:
+    async with AsyncCodexClient(timeout=timeout_seconds or 180) as client:
         recorder=ResponseRecorder(context.log_path.with_name('api_usage_requests.json'),
             'trading_and_support',context.usage_requests,context.stopped,
             on_incomplete=lambda response:context.search_output.extend(
@@ -358,7 +359,7 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
 
 async def _sdk_review(request):
     from agents import Agent, ModelSettings, Runner, RunConfig, OpenAIResponsesModel
-    from openai import AsyncOpenAI
+    from codex_cli import AsyncCodexClient
     from pydantic import BaseModel, ConfigDict
 
     class ReviewItem(BaseModel):
@@ -373,7 +374,7 @@ async def _sdk_review(request):
 
     timeout = float(os.environ['AGENT_TIMEOUT_SECONDS']) if os.getenv('AGENT_TIMEOUT_SECONDS') else None
     from research_runtime import ResponseRecorder,totals
-    async with AsyncOpenAI(timeout=timeout or 180, max_retries=0) as client:
+    async with AsyncCodexClient(timeout=timeout or 180) as client:
         recorder=ResponseRecorder(Path(request['usage_path']),'pretrade_review').install(client) if request.get('usage_path') else None
         agent = Agent(name='Trading Pretrade Review Agent', instructions=request['instructions'],
                       model=OpenAIResponsesModel(model=request['model'], openai_client=client),
@@ -384,7 +385,7 @@ async def _sdk_review(request):
         usage = result.context_wrapper.usage
         recorded=totals(recorder.rows) if recorder and recorder.rows else usage_snapshot(usage)
         return json.dumps(result.final_output.model_dump(), ensure_ascii=False), dict(
-            model=request['model'], runtime='openai-agents-sdk', usage=dict(recorded,
+            model=request['model'], runtime='codex-cli', billing_source='chatgpt-plan', api_fallback=False, usage=dict(recorded,
                 total_tokens=recorded['input_tokens']+recorded['output_tokens']),
             usage_accounting_complete=recorder.accounting_complete if recorder else True)
 
@@ -454,6 +455,7 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
         response['validation'] = 'VALID'
     except Exception as exc:
         response.update(validation='ERROR')
+        response['failure_kind']='CODEX_QUOTA_EXHAUSTED' if 'CODEX_QUOTA_EXHAUSTED' in str(exc) else 'MODEL_OR_TOOL_ERROR'
         response['api']['error'] = redact(f'{type(exc).__name__}: {exc}')
         decision = dict(market_view='Agent 決策失敗，本輪全部 WAIT。',decisions=[dict(
             symbol=c['symbol'],decision='WAIT',confidence=0,action_ratio=0,suggested_qty=0,
@@ -462,7 +464,8 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
             data_quality=c['quote_status'],warnings=['不是即時行情'] if c['quote_status']=='LAST_KNOWN' else [])
             for c in context.candidates.values()])
     if any(tool.get('type') == 'web_search' for tool in context.search_request.get('tools', [])):
-        response['api']['web_search'] = search_audit({'output': context.search_output})
+        from codex_cli import metadata
+        response['api']['web_search'] = search_audit({'output': context.search_output, 'metadata': metadata()})
     if context.usage_requests or getattr(context, 'usage_incomplete', False):
         response['api']['usage_requests'] = context.usage_requests
         response['api']['usage_accounting_complete'] = not getattr(context, 'usage_incomplete', False)

@@ -177,7 +177,10 @@ def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None,
     if web_search is not None:
         search_cost = web_search.get('estimated_search_tool_cost_usd')
         cost_text = f'US$ {search_cost:.4f}（不含 token 費用）' if search_cost is not None else '尚無計費次數資料'
-        lines.append(f"\n\n網路查證：{web_search.get('tool_calls', 0)} 次工具呼叫；搜尋工具費用估算：{cost_text}")
+        if web_search.get('billing_source') == 'chatgpt-plan':
+            lines.append(f"\n\n網路查證：{web_search.get('tool_calls', 0)} 次工具呼叫；使用 Codex 方案額度。")
+        else:
+            lines.append(f"\n\n網路查證：{web_search.get('tool_calls', 0)} 次工具呼叫；搜尋工具費用估算：{cost_text}")
         if not web_search.get('tool_calls'):
             lines.append('\n本輪未執行搜尋，外部事件未經網路查證。')
         for source in web_search.get('sources') or []:

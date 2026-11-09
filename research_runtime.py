@@ -55,6 +55,8 @@ class ResponseRecorder:
                         cache_write_tokens=getattr(detail,'cache_write_tokens',0) or 0,
                         reasoning_tokens=getattr(output,'reasoning_tokens',0) or 0,role=self.role,
                         response_id=response.id,response_status=response.status,
+                        runtime=(getattr(response,'metadata',None) or {}).get('runtime'),
+                        billing_source=(getattr(response,'metadata',None) or {}).get('billing_source'),
                         input_characters=len(json.dumps(options.get('input',''),ensure_ascii=False,default=str))))
                     save_json(self.path,self.rows)
                 self.progress('RESPONSE_RECEIVED')

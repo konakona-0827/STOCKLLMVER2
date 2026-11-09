@@ -1,6 +1,8 @@
 # STOCKLLMVER2 · Support Scout 整合版
 
-分支：`codex/planned-limit-orders`（由 `codex/support-scout-architecture` 分出）。
+分支：`codex/plannedlimit-codex-cli`（由 `codex/planned-limit-orders@6636cf3` 分出）。
+
+**2026-11-09 Codex CLI 子分支**：所有決策推論（主 Agent、支撐研究、反證、交易前複核、尋標及舊版 LLM 入口）改由電腦上的 `codex exec` 執行。只接受 ChatGPT 登入，使用 Codex 方案額度；不需要 API Key，也不會在失敗或額度不足時切回 API。沿用既有 Agents SDK 工具、JSON 驗證、帳本與限價風控。[安裝、啟動與限制](docs/CODEX_CLI.md)。
 
 **2026-11-06 尋標與市場機會修正**：加入候選輪替及排除原因回饋、當日觀察觸發研究、按 Early 配置的當日價格突破計畫，並修正跨日回升目標與中途阻力檢查。每輪與 Dashboard 顯示進場流失階段，避免把程式失敗或候選池無計畫解讀成全市場沒有機會。沿用 `strategy_opportunity_v2`、正式帳本及原掃描時程；更新後須重新啟動原正式程式。詳見 [診斷、驗證與下個交易日執行方式](reports/market_opportunity_repair_20261106.md)。
 

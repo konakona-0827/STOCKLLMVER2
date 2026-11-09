@@ -80,14 +80,10 @@ def build_request(payload):
 
 
 def decide(payload):
-    from openai import OpenAI
-    key = os.getenv('OPENAI_API_KEY')
-    if not key:
-        raise ValueError('OPENAI_API_KEY_MISSING')
-    model = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
-    with OpenAI(api_key=key, timeout=120, max_retries=0) as client:
+    from codex_cli import CodexClient, metadata
+    with CodexClient(timeout=120) as client:
         response = client.responses.create(**build_request(payload))
-    return response.output_text, {'model': model, 'response_status': response.status, 'response_id': response.id,
+    return response.output_text, {**metadata(), 'model': response.model, 'response_status': response.status, 'response_id': response.id,
                                  'response_object': response.model_dump(),
                                  'usage': response.usage.model_dump() if response.usage else {},
                                  'web_search': search_audit(response.model_dump())}

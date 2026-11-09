@@ -230,7 +230,7 @@ class MarketDiscoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'usage.json'
             client=AsyncOpenAI(api_key='test-no-network')
-            with patch('openai.AsyncOpenAI',return_value=client),patch('agents.Runner.run',side_effect=fake_run):
+            with patch('codex_cli.AsyncCodexClient',return_value=client),patch('agents.Runner.run',side_effect=fake_run):
                 result,usage=asyncio.run(m._sdk_scout(packet,'gpt-6-sol',self.p,path))
             self.assertTrue(result['selections']);self.assertEqual(usage[0]['input_tokens'],1400)
             self.assertTrue(path.exists())
@@ -261,7 +261,7 @@ class MarketDiscoveryTests(unittest.TestCase):
             root=Path(tmp);run=root/'run';run.mkdir()
             client=AsyncOpenAI(api_key='test-no-network',base_url='https://unit.test/v1',
                 http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
-            with patch('openai.AsyncOpenAI',return_value=client):
+            with patch('codex_cli.AsyncCodexClient',return_value=client):
                 result=m.discover(root,run,self.account,self.op,at=self.at,fetcher=self.fetch)
             self.assertEqual(len(seen),2);self.assertEqual(result['status'],'COMPLETE',result)
             self.assertTrue(result['usage_accounting_complete'])

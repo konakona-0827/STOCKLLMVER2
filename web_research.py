@@ -60,6 +60,10 @@ def search_audit(response_object):
                 seen.add(url)
                 sources.append({'url': url, 'title': link.get('title') or url})
     billed = ((response_object.get('tool_usage') or {}).get('web_search') or {}).get('num_requests')
+    if (response_object.get('metadata') or {}).get('billing_source') == 'chatgpt-plan':
+        return dict(tool_calls=len(calls), calls=calls, sources=sources,
+            billing_source='chatgpt-plan', billed_search_requests=None,
+            estimated_search_tool_cost_usd=None, cost_note='使用 Codex 方案額度；不估算 API 費用。')
     return {'tool_calls': len(calls), 'calls': calls, 'sources': sources,
             'billed_search_requests': billed,
             'estimated_search_tool_cost_usd': round(billed * .01, 4)

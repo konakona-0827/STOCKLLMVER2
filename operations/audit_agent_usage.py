@@ -47,6 +47,8 @@ def audit(root, day, encoder=None):
         input_tokens=0, output_tokens=0, missing_usage_runs=[], decision_counts={},
         price_assumption='gpt-6-sol Standard: uncached input $2/M, output $10/M; observed searches $0.01 each')
     decisions, search_calls = Counter(), 0
+    api_input_tokens = api_output_tokens = api_search_calls = 0
+    result['codex_plan_tokens'] = 0
     for directory in sorted((root/'data/analysis/runs').iterdir()):
         if not (directory/'run.json').is_file():
             continue
@@ -92,6 +94,15 @@ def audit(root, day, encoder=None):
             result['missing_usage_runs'].append(directory.name)
         calls = (api.get('web_search') or {}).get('tool_calls') or 0
         search_calls += calls
+        plan = (api.get('billing_source') or scout.get('billing_source')) == 'chatgpt-plan'
+        tokens = {key: usage.get(key,0)+(review_usage or {}).get(key,0)
+                  for key in ('input_tokens','output_tokens')}
+        if plan:
+            result['codex_plan_tokens'] += sum(tokens.values())
+        else:
+            api_input_tokens += tokens['input_tokens']
+            api_output_tokens += tokens['output_tokens']
+            api_search_calls += calls
         decision = read(directory/'selection_decision.json') if (directory/'selection_decision.json').is_file() else {}
         counts = Counter(d['decision'] for d in decision.get('decisions', []))
         decisions.update(counts)
@@ -117,10 +128,11 @@ def audit(root, day, encoder=None):
                                  if c['entry_screen']['scenarios']})
         result['runs'].append(row)
     result.update(total_tokens=result['input_tokens']+result['output_tokens'],
-        token_cost_usd_uncached=(result['input_tokens']*2+result['output_tokens']*10)/1e6,
-        observed_search_calls=search_calls, search_cost_usd_estimate=search_calls*.01,
+        token_cost_usd_uncached=(api_input_tokens*2+api_output_tokens*10)/1e6,
+        observed_search_calls=search_calls, search_cost_usd_estimate=api_search_calls*.01,
         decision_counts=dict(decisions))
     result['total_cost_usd_estimate'] = result['token_cost_usd_uncached']+result['search_cost_usd_estimate']
+    result['codex_billing_note'] = 'Codex ChatGPT plan tokens are excluded from API cost estimates; quota remaining is unavailable.'
     # UTC ledger times must be converted before defining the JST day.
     ledger = root/'data/execution/live_execution.sqlite3'
     if ledger.is_file():

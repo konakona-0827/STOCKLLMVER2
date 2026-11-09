@@ -11,7 +11,20 @@ def main():
     from .trading import settings
     load_env()
     report = dict(code_root=str(CODE_ROOT), state_root=str(ROOT), checks={}, errors=[])
-    for key in ('OPENAI_API_KEY', 'CAPITAL_USER_ID', 'CAPITAL_PASSWORD'):
+    from codex_cli import executable, child_environment, _capture, metadata
+    import asyncio
+    import tempfile
+    report.update(metadata())
+    try:
+        cli = executable()
+        with tempfile.TemporaryDirectory(prefix='codex-login-check-') as tmp:
+            code, out, err = asyncio.run(_capture([cli, 'login', 'status'], cwd=tmp, env=child_environment()))
+        report['checks']['codex_chatgpt_login'] = code == 0 and 'Logged in using ChatGPT' in out+err
+        if not report['checks']['codex_chatgpt_login']:
+            report['errors'].append('CODEX_CHATGPT_LOGIN_REQUIRED')
+    except (RuntimeError, OSError, TimeoutError) as exc:
+        report['errors'].append(type(exc).__name__+': CODEX_CLI_UNAVAILABLE')
+    for key in ('CAPITAL_USER_ID', 'CAPITAL_PASSWORD'):
         report['checks'][key+'_configured'] = bool(os.getenv(key))
         if not report['checks'][key+'_configured']:
             report['errors'].append(key+'_MISSING')

@@ -179,7 +179,7 @@ def validate_selection(answer, rows, p, session):
 
 async def _sdk_scout(packet, model, p, usage_path, stopped=lambda:False):
     from agents import Agent,ModelSettings,OpenAIResponsesModel,Runner,RunConfig
-    from openai import AsyncOpenAI
+    from codex_cli import AsyncCodexClient
     from pydantic import BaseModel,ConfigDict
 
     class Pick(BaseModel):
@@ -194,7 +194,7 @@ async def _sdk_scout(packet, model, p, usage_path, stopped=lambda:False):
         summary:str
         selections:list[Pick]
 
-    async with AsyncOpenAI(timeout=p['timeout_seconds'],max_retries=0) as client:
+    async with AsyncCodexClient(timeout=p['timeout_seconds']) as client:
         from research_runtime import ResponseRecorder
         recorder=ResponseRecorder(usage_path,'market_scout',stopped=stopped).install(client)
         agent=Agent(name='TWSE Active Market Scout',instructions=INSTRUCTIONS,
@@ -213,8 +213,9 @@ def discover(root, directory, account, opportunity_policy, *, at=None, stopped=l
     """One automatically dispatched scout, cached intraday; never calls the broker."""
     from scheduler import is_twse_oddlot_market_window, twse_oddlot_first_match
     from trading_agent import agent_model
+    from codex_cli import metadata
     at=at or now();root=Path(root);directory=Path(directory);p=settings()
-    result=dict(enabled=p['enabled'],status='NOT_DUE',symbols=[],watchlist=[],model_called=False,
+    result=dict(**metadata(),enabled=p['enabled'],status='NOT_DUE',symbols=[],watchlist=[],model_called=False,
                 usage_accounting_complete=True,scope='TWSE_LISTED_COMMON_STOCKS',policy=p)
     if (not p['enabled'] or stopped() or not is_twse_oddlot_market_window(at.timestamp())
             or at.time() < twse_oddlot_first_match(at.date())):

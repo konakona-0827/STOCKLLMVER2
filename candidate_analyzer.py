@@ -93,10 +93,11 @@ def validate(result, candidates):
 
 
 def call_openai(request):
-    from openai import OpenAI
-    with OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), timeout=120, max_retries=0) as client:
+    from codex_cli import CodexClient
+    with CodexClient(timeout=120) as client:
         response = client.responses.create(**request)
-    return response.output_text, dict(response_id=response.id, status=response.status,
+    from codex_cli import metadata
+    return response.output_text, dict(**metadata(), response_id=response.id, status=response.status,
                                       usage=response.usage.model_dump() if response.usage else {},
                                       response_object=response.model_dump(),
                                       web_search=search_audit(response.model_dump()))
