@@ -1,0 +1,57 @@
+{
+  "request_started_at": "2026-10-13T10:05:05+08:00",
+  "api": {
+    "trading_mode": "agent",
+    "agent_version": "agent-decision-v11-entry-evidence-skill-control",
+    "sdk_version": "0.23.1",
+    "model": "gpt-6-sol",
+    "implementation_sha256": "2b6b44188ad38e9112e34c25d85acd41b937865c20d6fd3c77293207b7ea8d3b",
+    "instructions_sha256": "9759380ab4a794baded381002859ca4a64ee848da05bda67fac35c00d96f0298",
+    "research_skill_policy": {
+      "version": "entry-research-ablation-v1",
+      "enabled": false,
+      "source": "CODE_CONFIG",
+      "config_sha256": "a6411c910c8a2027bb689406aa6ba0fccf6d98595aa5bf15ad9a78251d0c1478"
+    },
+    "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+    "usage_requests": [],
+    "usage_accounting_complete": false
+  },
+  "raw_response": "",
+  "validation": "ERROR",
+  "response_received_at": "2026-10-13T10:05:05+08:00",
+  "tool_calls": [
+    {
+      "call_id": "paired-20261013T100500-gui-22f967e4:1",
+      "tool": "get_portfolio",
+      "arguments": {},
+      "started_at": "2026-10-13T10:05:05+08:00",
+      "status": "COMPLETE",
+      "result": {
+        "capital_limit_twd": 10000,
+        "available_cash_twd": 10000,
+        "available_cash_cents": 1000000,
+        "budget_status": "READY",
+        "positions": []
+      },
+      "finished_at": "2026-10-13T10:05:05+08:00"
+    },
+    {
+      "call_id": "paired-20261013T100500-gui-22f967e4:2",
+      "tool": "get_trade_history",
+      "arguments": {},
+      "started_at": "2026-10-13T10:05:05+08:00",
+      "status": "COMPLETE",
+      "result": [],
+      "finished_at": "2026-10-13T10:05:05+08:00"
+    }
+  ],
+  "support_research": {
+    "enabled": true,
+    "policy": "advisory",
+    "max_calls": null,
+    "max_symbols": null,
+    "calls": [],
+    "packets": []
+  }
+}

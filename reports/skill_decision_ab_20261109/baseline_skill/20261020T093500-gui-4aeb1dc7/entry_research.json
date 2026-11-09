@@ -1,0 +1,76 @@
+{
+  "skill": {
+    "name": "tw-entry-research",
+    "version": "2",
+    "sha256": "70a6e27aff109d9113fd3a15d278804302dbef34d4661ae08de888cc3cf68da0",
+    "symbols": [
+      "2303"
+    ]
+  },
+  "model_validation": "ERROR",
+  "entries": [
+    {
+      "symbol": "2303",
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-20T09:35:03+08:00",
+      "daily_history_status": null,
+      "setup_ids": [
+        "8a7b1e03e890",
+        "c07743adacab"
+      ],
+      "research_only": false,
+      "decision": "WAIT",
+      "reason": "AGENT_FAILED_WAIT",
+      "independent_research": [
+        {
+          "role": "researcher",
+          "status": "COMPLETE",
+          "packet_id": "30a49d39bdab030c4f287c18f754fd08b1589b5b8abce5e4481da1e2f4b2666a",
+          "state_key": "f8d57500a0cc3e6ecd29c7f7b22e7db788cbfd4a425f012fab8dd16f86210e78",
+          "verdict": "WATCH",
+          "evidence_ids": [
+            "2303:SUPPORT_DATA",
+            "2303:ENTRY_CONTEXT",
+            "2303:ACCOUNT"
+          ],
+          "summary": "當前 LIVE 價格為131.0元、買價131.0元、賣價131.5元；實際兩個計畫均屬 MULTI_SESSION_RECOVERY，分別以今日開盤130.5元或目前賣價131.5元為進場基準，目標144.0元，失效價126.0元（2303:ENTRY_CONTEXT）。歷史上，9/15低點138.0元曾形成可觀察區域，但10/15收133.5元已跌破；10/19再探126.0元後收131.5元，顯示單日反彈，尚非獨立回測成功（2303:SUPPORT_DATA）。今日低點129.0元、現價131.0元，是盤中自低點站回，未回測126.0元，也不等於完整日線確認；現價仍低於昨日收盤131.5元（2303:ENTRY_CONTEXT）。因此保留觀察反彈能否延續及日線確認；跌破126.0元將使兩個目前計畫失效。帳戶快照無持倉，但不構成進場批准（2303:ACCOUNT）。",
+          "risks": [
+            "反證：10/15跌破較早的138.0元區域，10/19又下探126.0元；把先前支撐或10/19單日反彈直接視為已確認，會高估兩個 MULTI_SESSION_RECOVERY 計畫的依據（2303:SUPPORT_DATA）。",
+            "今日129.0元低點高於126.0元，不能宣稱已完成對失效價附近支撐的獨立回測；盤中站回也可能在收盤前逆轉（2303:ENTRY_CONTEXT）。",
+            "以目前賣價131.5元估算的報酬風險比為1.66，低於以開盤價130.5元估算的2.13；估算值不是目標達成機率，且開盤價不等於目前可成交價格（2303:ENTRY_CONTEXT）。"
+          ],
+          "missing_data": [
+            "公司行動及其對歷史價格可比性的核實資料未提供；歷史資料標示為重建日線（2303:SUPPORT_DATA）。",
+            "相關事件是否影響近期下跌與反彈，快照未提供核實資料（2303:SUPPORT_DATA）。",
+            "10/20完整日線及收盤確認尚未提供，無法確認今日站回是否維持（2303:ENTRY_CONTEXT）。"
+          ]
+        },
+        {
+          "role": "reviewer",
+          "status": "COMPLETE",
+          "packet_id": "30a49d39bdab030c4f287c18f754fd08b1589b5b8abce5e4481da1e2f4b2666a",
+          "state_key": "f8d57500a0cc3e6ecd29c7f7b22e7db788cbfd4a425f012fab8dd16f86210e78",
+          "verdict": "WATCH",
+          "evidence_ids": [
+            "2303:SUPPORT_DATA",
+            "2303:ENTRY_CONTEXT",
+            "2303:ACCOUNT"
+          ],
+          "summary": "當前 LIVE 報價為131.0元、買價131.0元、賣價131.5元。兩個現行計畫均屬 MULTI_SESSION_RECOVERY：以當日開盤價130.5元或當前賣價131.5元為進場基準，目標144元，失效價126元。10/15、10/16的132.5元低點於10/19跌破；10/19最低126元、收131.5元，顯示當日自低點反彈，但收盤仍未站回132.5元。今日最低129元後，現價站回開盤價130.5元，尚未站回前收131.5元；盤中回升不等於完整日線確認。126元目前是10/19觀察低點，尚無其後完整交易日的獨立回測確認；若跌破126元，兩個現行復甦計畫的失效條件即受影響。待確認的是後續完整日線能否守住低點並延續反彈，而非僅憑盤中站回判定支撐成立。",
+          "risks": [
+            "10/19跌破132.5元後未收復，反證原有支撐已失守；今日高點131.5元亦未突破該價位。",
+            "126元僅有一日觀察低點，今日129元的盤中低點不足以證明獨立回測成功。",
+            "開盤價方案估算報酬風險比約2.13，但當前賣價方案約1.66；估算情境報酬不代表達標機率，開盤價也不是當前賣價。"
+          ],
+          "missing_data": [
+            "公司行動與相關事件尚未核實，歷史資料亦標示為重建資料。",
+            "10/20完整日線及其後獨立回測、反彈延續的確認資料。"
+          ]
+        }
+      ],
+      "pretrade_reviews": []
+    }
+  ],
+  "tool_calls": 4,
+  "successful_batch_quote_calls": 0
+}

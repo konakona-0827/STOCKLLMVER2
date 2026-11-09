@@ -1,0 +1,74 @@
+{
+  "skill": {
+    "name": "tw-entry-research",
+    "version": "2",
+    "sha256": "70a6e27aff109d9113fd3a15d278804302dbef34d4661ae08de888cc3cf68da0",
+    "symbols": [
+      "2377"
+    ]
+  },
+  "model_validation": "ERROR",
+  "entries": [
+    {
+      "symbol": "2377",
+      "quote_status": "LIVE",
+      "quote_timestamp": "2026-10-19T11:35:00+08:00",
+      "daily_history_status": null,
+      "setup_ids": [
+        "b763b194f570"
+      ],
+      "research_only": false,
+      "decision": "WAIT",
+      "reason": "AGENT_FAILED_WAIT",
+      "independent_research": [
+        {
+          "role": "researcher",
+          "status": "COMPLETE",
+          "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+          "state_key": "4d5d0108fdd53067c7842f5739400d4d4f4996b6f05252bdcb21e328668108aa",
+          "verdict": "WATCH",
+          "evidence_ids": [
+            "2377:SUPPORT_DATA",
+            "2377:ENTRY_CONTEXT",
+            "2377:ACCOUNT"
+          ],
+          "summary": "當前 LIVE 報價為159元；實際計畫是 TREND_PULLBACK，擬以賣價159元進場、167.5元為目標、156元為失效價，並非 FIRST_DAY_BREAKOUT。歷史上，9月23日收151元，跌破先前約153元支撐；其後10月13日盤中低至152元、收157元，10月14至15日兩度觸及156元，10月16日收161.5元，構成反彈及較高價位的支撐觀察。10月19日盤中低157.5元、現價159元，站回資料所列5日均線158.1元，但尚未實際回測156元，也不等於當日日線確認。若跌破計畫失效價156元，TREND_PULLBACK 邏輯即受損；167.5元僅是10月16日觀察到的高點，非已確認可達目標。帳戶資料顯示無持股，但本評估不構成買進批准。",
+          "risks": [
+            "10月16日最高167.5元、收161.5元，留下明顯上影線；10月19日現價159元低於前一完成日收盤價，反證當前計畫的延續力仍待確認。",
+            "10月19日157.5元低點只能視為接近156元的盤中觀察，不能充作獨立完成日線回測；盤中站回均線亦可能在收盤前失守。",
+            "目標與失效價所形成的情境報酬及資料所列風險報酬比，不代表達標機率。"
+          ],
+          "missing_data": [
+            "公司行動及可能影響價格的事件尚未核實，歷史日線亦標示為重建資料。",
+            "缺少10月19日完成日線與成交量，無法確認盤中站回能否維持至收盤。",
+            "缺少156元附近後續獨立回測及守穩的完成日線證據。"
+          ]
+        },
+        {
+          "role": "reviewer",
+          "status": "COMPLETE",
+          "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+          "state_key": "4d5d0108fdd53067c7842f5739400d4d4f4996b6f05252bdcb21e328668108aa",
+          "verdict": "WATCH",
+          "evidence_ids": [
+            "2377:SUPPORT_DATA",
+            "2377:ENTRY_CONTEXT",
+            "2377:ACCOUNT"
+          ],
+          "summary": "先核對當前計畫：LIVE 報價為159元；實際 setup_family 是 TREND_PULLBACK，以當前賣價159元為進場基準、167.5元為目標、156元為失效價，並非 FIRST_DAY_BREAKOUT（2377:ENTRY_CONTEXT）。156元支撐有10/14、10/15連續兩日低點作為依據；10/13曾跌至152元，發生在此支撐形成之前，不宜說成當前計畫已失效。10/16收161.5元、成交量放大，提供已完成日線的反彈證據，但當日觸及167.5元後未收在高點。今日低點157.5元後站回159元，尚未回測156元，也不能以盤中站回代替今日完整日線確認。若後續跌破156元，當前趨勢拉回計畫的支撐前提即失效；現有證據不足以否決，但資料缺口使結論維持WATCH（2377:SUPPORT_DATA；2377:ENTRY_CONTEXT）。",
+          "risks": [
+            "今日159元仍低於前一完成日收盤161.5元；167.5元是10/16曾觸及的高點，也是目標阻力，續漲尚未獲今日收盤確認（2377:ENTRY_CONTEXT；2377:SUPPORT_DATA）。",
+            "159元至156元的失效距離為3元；計畫估計淨報酬風險比約1.61，不代表達標機率。帳戶資料顯示目前無持股，但不構成進場批准（2377:ENTRY_CONTEXT；2377:ACCOUNT）。"
+          ],
+          "missing_data": [
+            "公司行動尚未核實，且僅有重建的過去日線歷史，需確認價格資料口徑（2377:SUPPORT_DATA）。",
+            "未提供已核實的公司事件資料，以及今日收盤後的完整日線與成交量；因此無法確認今日站回能否維持至收盤（2377:SUPPORT_DATA；2377:ENTRY_CONTEXT）。"
+          ]
+        }
+      ],
+      "pretrade_reviews": []
+    }
+  ],
+  "tool_calls": 4,
+  "successful_batch_quote_calls": 0
+}

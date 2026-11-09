@@ -1,0 +1,71 @@
+{
+  "cases": [
+    {
+      "variant": "baseline_skill",
+      "group": "20261020T093500-gui-4aeb1dc7",
+      "original_response_sha256": "6cc01df5964b7f52a6490c497472fd6efb2ef4cfec0ebccfe4eb3cb87e99b169",
+      "original_validation": "ERROR",
+      "replayed_validation": "VALID",
+      "normalized_decision": {
+        "market_view": "聯電盤中自129元回升，但仍低於昨收131.5元；前兩日132.5元支撐失守後，反彈首先面臨近端壓力。",
+        "decisions": [
+          {
+            "symbol": "2303",
+            "decision": "WAIT",
+            "confidence": 0.83,
+            "action_ratio": 0.0,
+            "suggested_qty": 0,
+            "reference_price": 131.0,
+            "suggested_price": null,
+            "strategy_id": "NONE",
+            "target_price": null,
+            "invalidation_price": null,
+            "holding_days": null,
+            "reason": "最新券商報價仍為LIVE。兩個Early回升計畫雖通過數字篩選，但完整日線顯示10/19跌破10/15、10/16的132.5元低點，昨日高點僅132元；今日最高131.5元，尚未收復這道近端壓力。以130.5元回落限價計畫的144元目標，須先穿越132–132.5元及136–137元區域；目前不足以將兩日內可達144元的估算空間視為已獲結構支持。兩方研究均提示支撐未經獨立回測，並非否決；公司事件仍未知。若後續站穩132.5元、突破136–137元且形成仍合格的新計畫，或回落130.5元後守住129元並再度轉強，可重新評估；跌破126元則原計畫失效。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "非交易動作附帶的計畫欄位已清除，本輪不產生該檔委託。"
+            ]
+          }
+        ]
+      },
+      "no_api_calls": true,
+      "no_orders": true
+    },
+    {
+      "variant": "revised_skill",
+      "group": "20261019T113500-gui-b4fbd193",
+      "original_response_sha256": "63612535cf0374803667d69302fa3406681b23bb5387a0ed345fde01b66ee34f",
+      "original_validation": "ERROR",
+      "replayed_validation": "VALID",
+      "normalized_decision": {
+        "market_view": "微星有量增後的趨勢拉回計畫，但前一交易日的突破漲幅已在今日盤中回吐；本輪先觀望。",
+        "decisions": [
+          {
+            "symbol": "2377",
+            "decision": "WAIT",
+            "confidence": 0.7,
+            "action_ratio": 0.0,
+            "suggested_qty": 0,
+            "reference_price": 159.0,
+            "suggested_price": null,
+            "strategy_id": "NONE",
+            "target_price": null,
+            "invalidation_price": null,
+            "holding_days": null,
+            "reason": "刷新後 LIVE 賣價仍為159元；Strong 趨勢拉回計畫以159元進場、167.5元為已觀測阻力目標、156元為失效價，11股估計費後獲利78元、失效損失48.5元，數字達標。惟10/16放量觸及167.5元後收161.5元，今日最高僅159元，且已跌破該日低點160元；突破後的延續力出現具體反證，雖然156元支撐尚未失效，仍不在此刻進場。兩方研究均為WATCH而非否決（2377:ENTRY_CONTEXT、2377:SUPPORT_DATA）；今日收盤量價及公司事件尚未核實。若重新站回160至161.5元，或回測156元後守穩反彈，再依新行情及仍有效的費後計畫重評。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "156元為模型失效參考，並非已掛停損；零股當日不能賣出，隔夜跳空仍有風險。",
+              "非交易動作附帶的計畫欄位已清除，本輪不產生該檔委託。"
+            ]
+          }
+        ]
+      },
+      "no_api_calls": true,
+      "no_orders": true
+    }
+  ],
+  "original_study_results_preserved": true,
+  "implementation_sha256": "a0df1b6cb96e9e6e041a54d5e071e91801f565ba522f1e88a96f9dd7f11ba420"
+}

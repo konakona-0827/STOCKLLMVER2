@@ -19,9 +19,23 @@ def read(path):
 
 
 def save(path, data):
+    import tempfile
+    import time
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    temp=path.with_suffix(path.suffix+'.tmp')
-    temp.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');temp.replace(path)
+    with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=path.parent,
+            prefix=path.name+'.',suffix='.tmp',delete=False) as stream:
+        stream.write(json.dumps(data,ensure_ascii=False,indent=2)+'\n');temp=Path(stream.name)
+    try:
+        for attempt in range(40):
+            try:
+                temp.replace(path);break
+            except PermissionError:
+                # Windows readers/scanners may briefly hold the destination
+                # without delete-sharing. The temporary file remains unique.
+                if attempt==39:raise
+                time.sleep(.01)
+    finally:
+        if temp.exists():temp.unlink()
 
 
 def digest(data):
@@ -167,12 +181,30 @@ def load_api_env(path):
         if value:os.environ[key]=value
 
 
-def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
+def archive_incomplete(directory,output):
+    directory=Path(directory).resolve();root=Path(output).resolve()
+    archive=root/'_attempts'/directory.name/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+    if directory.parent!=root or not archive.resolve().is_relative_to(root):raise ValueError('UNSAFE_ATTEMPT_ARCHIVE')
+    archive.parent.mkdir(parents=True,exist_ok=True)
+    directory.rename(archive)
+    return archive
+
+
+def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None,retry_incomplete=False):
     # This mode deliberately never opens labels.json or outcome price files.
+    permission_path=Path(__file__).resolve().parent.parent/'config/replay_api.json'
+    if permission_path.exists() and read(permission_path).get('allow_model_requests') is not True:
+        print('BLOCKED_USER_PAUSED_API: using existing evidence only',flush=True)
+        return dict(blocked=True,reason='USER_PAUSED_API')
+    quota_path=Path(benchmark_path).parent/'api_quota_stop.json'
+    if quota_path.exists() and read(quota_path).get('blocked'):
+        kind=read(quota_path).get('kind','API_QUOTA_EXHAUSTED')
+        print('BLOCKED_'+kind+': model calls are stopped',flush=True)
+        return dict(blocked=True,reason=kind)
     from config import CODE_ROOT
     from execution.auto_advice_executor import LiveExecutionConfig
     from opportunity_engine import select,policy
-    from trading_agent import TradingTools,analyze,agent_model,execution_metadata
+    from trading_agent import TradingTools,analyze,agent_model,execution_metadata,api_quota_exhausted
     from support_scout.trading import SupportCoordinator
     import strategy_catalog
     import shutil
@@ -189,13 +221,19 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
         hashlib.sha256((CODE_ROOT/name).read_bytes()).hexdigest()==sha for name,sha in manifest.items())
     for index,group in enumerate(b['groups']):
         if index%shards!=shard:continue
+        if quota_path.exists() and read(quota_path).get('blocked'):
+            print('BLOCKED_API_QUOTA: stopped before another model request',flush=True)
+            return dict(blocked=True)
         dest=output/group['group_id'];result_path=dest/'result.json'
         if result_path.exists():
             previous_result=read(result_path)
             if previous_result['benchmark_sha256']!=b['benchmark_sha256']:raise ValueError('RESUME_BENCHMARK_MISMATCH')
-            if previous_result['response']['api']['implementation_sha256']!=execution_metadata(agent_model())['implementation_sha256']:
-                raise ValueError('RESUME_RUNTIME_MISMATCH')
-            continue
+            if retry_incomplete and previous_result['response']['validation']!='VALID':
+                archive_incomplete(dest,output)
+            else:
+                if previous_result['response']['api']['implementation_sha256']!=execution_metadata(agent_model())['implementation_sha256']:
+                    raise ValueError('RESUME_RUNTIME_MISMATCH')
+                continue
         candidates=deepcopy(group['selection_pool']) if 'selection_pool' in group else [deepcopy(lookup[e]['candidate']) for e in group['events']]
         selected,selection=select(candidates,account,rules,p)
         # Reuse a real model observation only when all selected FULL inputs,
@@ -254,6 +292,10 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
             broker_access=False,executor_available=False,orders_sent=False))
         progress=dict(shard=shard,index=index,group=group['group_id'],selected=len(selected),validation=response['validation'])
         save(output/f'progress_{shard}.json',progress);print(json.dumps(progress),flush=True)
+        if response.get('failure_kind')=='API_QUOTA_EXHAUSTED' or api_quota_exhausted(response.get('api',{}).get('error','')):
+            save(quota_path,dict(blocked=True,kind='API_QUOTA_EXHAUSTED',group=group['group_id'],
+                observed_at=datetime.now(timezone.utc).isoformat(),retry_automatically=False))
+            return dict(blocked=True)
 
 
 def score_variant(benchmark, labels, directory):
@@ -295,7 +337,9 @@ def score_variant(benchmark, labels, directory):
         row['proposed_buy']=raw.get('decision')=='BUY'
         if not c or not c.get('trade_setups'):row['reason']='STRATEGY_FILTER'
         elif not row['selected']:row['reason']='SHORTLIST_OMISSION'
-        elif r['response']['validation']!='VALID':row['reason']='MODEL_ERROR'
+        elif r['response']['validation']!='VALID':
+            from trading_agent import api_quota_exhausted
+            row['reason']='API_QUOTA_EXHAUSTED' if api_quota_exhausted(r['response'].get('api',{}).get('error','')) else 'MODEL_ERROR'
         elif not row['buy']:
             warnings=set(d.get('warnings',[]))
             row['reason']=('PRETRADE_VETO' if 'PRETRADE_REVIEW_VETO' in warnings else
@@ -338,6 +382,9 @@ def score_variant(benchmark, labels, directory):
             late_captures=sum(r['late_capture'] for r in rows),
             same_day_original_plan_recall=sum(r['opportunity_positive'] and not r['same_day_miss'] for r in rows)/positives if positives else None,
             unique_error_events=sum(r['wrong_pick'] or r['miss'] for r in rows),
+            process_errors=sum(r['reason'] in ('MODEL_ERROR','API_QUOTA_EXHAUSTED','PRETRADE_UNAVAILABLE','REPLAY_NOT_COMPLETED') for r in rows),
+            unique_errors_including_process=sum(r['wrong_pick'] or r['miss'] or r['reason'] in
+                ('MODEL_ERROR','API_QUOTA_EXHAUSTED','PRETRADE_UNAVAILABLE','REPLAY_NOT_COMPLETED') for r in rows),
             shortlist_recall=sum(r['opportunity_positive'] and r['selected'] for r in rows)/positives if positives else None,
             unscored_reference=sum(r['reference'] not in ('SUCCESS','FAILURE') for r in rows),
             unscored_buys=sum(r['buy'] and r['chosen_outcome'] not in ('SUCCESS','FAILURE') for r in rows),
@@ -374,11 +421,14 @@ def main():
     p.add_argument('--archive-root',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--benchmark',type=Path);p.add_argument('--api-env',type=Path)
     p.add_argument('--reuse-from',type=Path)
+    p.add_argument('--retry-incomplete',action='store_true')
     p.add_argument('--shard',type=int,default=0);p.add_argument('--shards',type=int,default=1)
     a=p.parse_args()
     if a.mode=='prepare':prepare(a.archive_root,a.output)
     elif a.mode=='label':label(a.archive_root,a.output)
-    elif a.mode=='run':run(a.benchmark,a.output,a.api_env,a.shard,a.shards,a.reuse_from)
+    elif a.mode=='run':
+        status=run(a.benchmark,a.output,a.api_env,a.shard,a.shards,a.reuse_from,a.retry_incomplete)
+        if status and status.get('blocked'):raise SystemExit(75)
     else:compare(a.output)
 
 
