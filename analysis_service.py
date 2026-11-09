@@ -506,7 +506,10 @@ class AnalysisService:
                       if manifest['trigger_type'] == 'AUTO' and not self.stop.is_set()
                       else '沒有可分析集合，或已要求停止。')
             if opportunity_active and not opportunity_trigger['call_model']:
-                reason = ('已完成研究池的機會篩選；目前沒有符合成本與風險的進場計畫，也沒有需重評的持倉變化，本輪未呼叫交易決策模型。')
+                if batch['quotes'] and all(q.get('is_trial') for q in batch['quotes']):
+                    reason = '本輪收到的行情全是零股試撮，沒有可用於交易評估的即時成交行情。'
+                else:
+                    reason = ('已完成研究池的機會篩選；目前沒有符合成本與風險的進場計畫，也沒有需重評的持倉變化，本輪未呼叫交易決策模型。')
                 if (discovery or {}).get('model_called'):
                     reason = '本輪已執行獨立尋標子代理；' + reason
             manifest['display_notice'] = reason
@@ -548,10 +551,9 @@ class AnalysisService:
                         status='ERROR' if failures else 'COMPLETE', error='; '.join(failures),
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
         if discovery is not None:
+            # Optional scouting can fail while the seed universe still yields valid advice.
             manifest['discovery_status']=discovery['status']
             manifest['research_warning']=discovery.get('error')
-            if not failures and discovery['status'] in ('UNAVAILABLE','SCOUT_RETRY_DEFERRED','CACHED_AFTER_FAILURE'):
-                manifest['status']='WARN'
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
                       pretrade_review=response.get('pretrade_review'),

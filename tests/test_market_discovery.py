@@ -54,6 +54,24 @@ class MarketDiscoveryTests(unittest.TestCase):
         self.daily[0]['Date']='1151103';self.daily.append(self.daily[0])
         with self.assertRaisesRegex(ValueError,'DUPLICATE'):m.normalize(self.daily,self.companies,date(2026,11,3))
 
+    def test_company_directory_can_be_published_between_daily_session_and_scan(self):
+        expected = date(2026, 11, 6)
+        as_of = date(2026, 11, 9)
+        daily = [dict(row, Date='1151106') for row in self.daily]
+        companies = [dict(row, 出表日期='1151108') for row in self.companies]
+        companies[0]['上市日期'] = '20261109'
+        rows = m.normalize(daily, companies, expected, as_of=as_of)
+        self.assertEqual(len(rows), 49)
+        self.assertEqual({row['date'] for row in rows}, {expected.isoformat()})
+        for invalid_date in ('1151105', '1151110'):
+            with self.subTest(invalid_date=invalid_date):
+                invalid = [dict(row, 出表日期=invalid_date) for row in companies]
+                with self.assertRaisesRegex(ValueError, 'TWSE_COMPANY_LIST_NOT_CURRENT'):
+                    m.normalize(daily, invalid, expected, as_of=as_of)
+        daily[1]['Date'] = '1151105'
+        with self.assertRaisesRegex(ValueError, 'TWSE_MARKET_NOT_LATEST_COMPLETE_SESSION'):
+            m.normalize(daily, companies, expected, as_of=as_of)
+
     def test_screen_covers_new_symbols_and_filters_cost_liquidity_and_disabled(self):
         rows=m.normalize(self.daily,self.companies,date(2026,11,3))
         rows[0]['close']=6000;rows[1]['turnover']=10

@@ -32,7 +32,7 @@ class DashboardTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_fixed_schedule_and_cooldown(self):
-        s = Scheduler()
+        s = Scheduler(1800)
         s.start_auto(0)
         self.assertEqual(s.next_auto,1800)
         self.assertTrue(s.manual(720,100))

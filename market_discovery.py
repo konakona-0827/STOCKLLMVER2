@@ -76,12 +76,22 @@ def _number(raw, *, positive=True):
     return value
 
 
-def normalize(daily, companies, expected):
+def normalize(daily, companies, expected, *, as_of=None):
     if not isinstance(daily,list) or not isinstance(companies,list):
         raise ValueError('TWSE_MARKET_SCHEMA_CHANGED')
-    listed={str(c.get('公司代號')):str(c.get('產業別')) for c in companies
-            if re.fullmatch(r'[1-9]\d{3}',str(c.get('公司代號','')))
-            and _day(c['出表日期'])==expected}
+    as_of = as_of or expected
+    # The directory's publication date can advance on non-trading days.
+    listed = {}
+    for company in companies:
+        symbol = str(company.get('公司代號', ''))
+        if not re.fullmatch(r'[1-9]\d{3}', symbol):
+            continue
+        if not expected <= _day(company['出表日期']) <= as_of:
+            continue
+        listing_date = company.get('上市日期')
+        if listing_date and _day(listing_date) > expected:
+            continue
+        listed[symbol] = str(company.get('產業別'))
     if not listed:raise ValueError('TWSE_COMPANY_LIST_NOT_CURRENT')
     rows=[];seen=set()
     for raw in daily:
@@ -201,13 +211,13 @@ async def _sdk_scout(packet, model, p, usage_path, stopped=lambda:False):
 def discover(root, directory, account, opportunity_policy, *, at=None, stopped=lambda:False,
              runner=None, fetcher=None, excluded=()):
     """One automatically dispatched scout, cached intraday; never calls the broker."""
-    from scheduler import is_twse_oddlot_market_window
+    from scheduler import is_twse_oddlot_market_window, twse_oddlot_first_match
     from trading_agent import agent_model
     at=at or now();root=Path(root);directory=Path(directory);p=settings()
     result=dict(enabled=p['enabled'],status='NOT_DUE',symbols=[],watchlist=[],model_called=False,
                 usage_accounting_complete=True,scope='TWSE_LISTED_COMMON_STOCKS',policy=p)
     if (not p['enabled'] or stopped() or not is_twse_oddlot_market_window(at.timestamp())
-            or (at.hour,at.minute)<(9,10)):
+            or at.time() < twse_oddlot_first_match(at.date())):
         return {**result,'status':'DISABLED_STOPPED_OR_OUTSIDE_MARKET'}
     if account.get('budget_status','READY')!='READY' or account.get('available_cash_twd',0)<=20:
         return {**result,'status':'NO_BUY_BUDGET'}
@@ -224,7 +234,7 @@ def discover(root, directory, account, opportunity_policy, *, at=None, stopped=l
             rows=snapshot['rows']
         else:
             fetch=fetcher or fetch_json
-            rows=normalize(fetch(DAILY_URL),fetch(COMPANIES_URL),expected)
+            rows=normalize(fetch(DAILY_URL),fetch(COMPANIES_URL),expected,as_of=at.date())
             save_json(cache,dict(session=expected.isoformat(),retrieved_at=at.isoformat(),
                 source_urls=[DAILY_URL,COMPANIES_URL],rows=rows))
         state_path=state_dir/'scout_state.json'

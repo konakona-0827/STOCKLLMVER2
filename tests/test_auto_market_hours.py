@@ -6,8 +6,9 @@ from datetime import datetime
 from analysis_service import should_call_openai
 from config import TAIPEI
 from scheduler import (
-    Scheduler, is_twse_oddlot_market_window, is_health_check_window,
-    health_check_due_or_next, next_health_check_after,
+    Scheduler, AUTO_INTERVAL_SECONDS, AUTO_PHASE_OFFSET_SECONDS,
+    is_twse_oddlot_market_window, is_health_check_window,
+    health_check_due_or_next, next_health_check_after, twse_auto_scan_slot,
 )
 
 
@@ -16,6 +17,24 @@ def wall(year, month, day, hour, minute):
 
 
 class AutoMarketHoursTests(unittest.TestCase):
+    def test_formal_opening_scan_waits_for_first_match_without_moving_later_slots(self):
+        scheduler = Scheduler(AUTO_INTERVAL_SECONDS, allowed_slot=is_twse_oddlot_market_window,
+                              phase_offset_seconds=AUTO_PHASE_OFFSET_SECONDS,
+                              adjust_slot=twse_auto_scan_slot)
+        scheduler.start_auto(wall(2026, 11, 9, 9, 7))
+        self.assertEqual(wall(2026, 11, 9, 9, 11), scheduler.next_auto)
+        self.assertFalse(scheduler.tick(wall(2026, 11, 9, 9, 10)))
+        self.assertTrue(scheduler.tick(wall(2026, 11, 9, 9, 11)))
+        scheduler.finish()
+        self.assertEqual(wall(2026, 11, 9, 10, 5), scheduler.next_auto)
+
+    def test_formal_opening_scan_returns_to_nine_oh_five_after_exchange_change(self):
+        scheduler = Scheduler(AUTO_INTERVAL_SECONDS, allowed_slot=is_twse_oddlot_market_window,
+                              phase_offset_seconds=AUTO_PHASE_OFFSET_SECONDS,
+                              adjust_slot=twse_auto_scan_slot)
+        scheduler.start_auto(wall(2026, 12, 4, 13, 30))
+        self.assertEqual(wall(2026, 12, 7, 9, 5), scheduler.next_auto)
+
     def test_waiting_before_open_starts_at_nine_oh_five_taipei_time(self):
         scheduler = Scheduler(1800, allowed_slot=is_twse_oddlot_market_window,
                               phase_offset_seconds=300)

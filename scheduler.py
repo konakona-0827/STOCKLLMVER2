@@ -1,13 +1,29 @@
 """Fixed wall-clock slots; manual scans never move the auto deadline."""
 import math
 import threading
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from config import TAIPEI
 from market_calendar import twse_closed_reason
 
 AUTO_INTERVAL_SECONDS = 3600
+AUTO_PHASE_OFFSET_SECONDS = 300
 MANUAL_SCAN_COOLDOWN_SECONDS = 60
+TWSE_ODDLOT_OPEN_CHANGE = date(2026, 12, 7)
+
+
+def twse_oddlot_first_match(day):
+    return time(9, 10) if day < TWSE_ODDLOT_OPEN_CHANGE else time(9)
+
+
+def twse_auto_scan_slot(wall):
+    """Defer the opening slot until one minute after the first odd-lot match."""
+    local = datetime.fromtimestamp(wall, TAIPEI)
+    first_match = twse_oddlot_first_match(local.date())
+    if time(9) <= local.time() < first_match:
+        return (datetime.combine(local.date(), first_match, TAIPEI)
+                + timedelta(minutes=1)).timestamp()
+    return wall
 
 
 def is_twse_oddlot_market_window(wall):
@@ -57,7 +73,7 @@ def next_health_check_after(wall):
 
 class Scheduler:
     def __init__(self, interval=AUTO_INTERVAL_SECONDS, allowed_slot=None,
-                 phase_offset_seconds=0):
+                 phase_offset_seconds=0, adjust_slot=None):
         if interval <= 0:
             raise ValueError('interval must be positive')
         if not 0 <= phase_offset_seconds < interval:
@@ -65,6 +81,7 @@ class Scheduler:
         self.interval = interval
         self.phase_offset_seconds = phase_offset_seconds
         self.allowed_slot = allowed_slot or (lambda _wall: True)
+        self.adjust_slot = adjust_slot or (lambda wall: wall)
         self.scan_lock = threading.Lock()
         self.next_auto = None
         self.last_manual = None
@@ -73,16 +90,16 @@ class Scheduler:
 
     def start_auto(self, wall):
         if self.next_auto is None:
-            first_slot = (
-                (math.floor((wall - self.phase_offset_seconds) / self.interval) + 1)
-                * self.interval + self.phase_offset_seconds
-            )
-            self.next_auto = self._next_allowed(first_slot)
+            self.next_auto = self._next_after(wall)
 
-    def _next_allowed(self, slot):
-        while not self.allowed_slot(slot):
+    def _next_after(self, wall):
+        slot = (math.floor((wall - self.phase_offset_seconds) / self.interval)
+                * self.interval + self.phase_offset_seconds)
+        while True:
+            adjusted = self.adjust_slot(slot)
+            if adjusted > wall and self.allowed_slot(adjusted):
+                return adjusted
             slot += self.interval
-        return slot
 
     def stop_auto(self):
         self.next_auto = None
@@ -100,8 +117,7 @@ class Scheduler:
     def tick(self, wall):
         if self.next_auto is None or wall < self.next_auto:
             return False
-        following = self.next_auto + (math.floor((wall - self.next_auto) / self.interval) + 1) * self.interval
-        self.next_auto = self._next_allowed(following)
+        self.next_auto = self._next_after(wall)
         # If the process resumed after market close, the missed slot must not
         # start a late analysis or live execution run.
         if not self.allowed_slot(wall):

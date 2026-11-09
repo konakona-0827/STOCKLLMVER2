@@ -20,8 +20,9 @@ from tkinter import ttk, messagebox, simpledialog, filedialog
 from config import ROOT, CODE_ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS, load_env, trading_mode
 from state_lock import StateLease
 from scheduler import (
-    Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window,
-    is_health_check_window, health_check_due_or_next,
+    Scheduler, AUTO_INTERVAL_SECONDS, AUTO_PHASE_OFFSET_SECONDS,
+    is_twse_oddlot_market_window, is_health_check_window, health_check_due_or_next,
+    twse_auto_scan_slot,
 )
 from market_calendar import twse_closed_reason
 from analysis_service import AnalysisService
@@ -373,7 +374,8 @@ class Dashboard:
                 is_twse_oddlot_market_window
                 if interval == AUTO_INTERVAL_SECONDS else None
             ),
-            phase_offset_seconds=300 if interval == AUTO_INTERVAL_SECONDS else 0,
+            phase_offset_seconds=AUTO_PHASE_OFFSET_SECONDS if interval == AUTO_INTERVAL_SECONDS else 0,
+            adjust_slot=twse_auto_scan_slot if interval == AUTO_INTERVAL_SECONDS else None,
         )
         self.next_health_at = time.time()
         self.health_running = False
@@ -1003,6 +1005,8 @@ class Dashboard:
                     self.last_scan = payload['manifest']['finished_at']
                     self.status = payload['manifest']['status']
                     self.last_error = payload['manifest']['error']
+                    if self.status == 'COMPLETE' and payload['manifest'].get('research_warning'):
+                        self.status = 'WARN'
                     self.render()
                 elif kind == 'error':
                     self.status, self.last_error = 'ERROR', payload

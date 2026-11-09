@@ -11,6 +11,7 @@ from unittest.mock import Mock,patch
 
 from analysis_service import AnalysisService
 from config import CODE_ROOT,TAIPEI
+from execution.advice_adapter import build_advice_intents
 from execution.execution_store import ExecutionStore
 import paper_portfolio
 import strategy_catalog
@@ -43,7 +44,10 @@ class OpportunityServiceTests(unittest.TestCase):
             self.assertEqual(diagnosis['outcome'],'PIPELINE_EXECUTION_FAILED')
             self.assertEqual(diagnosis['last_phase'],'DAILY_HISTORY')
 
-    def exercise_service(self,with_scout=False,watch_only=False):
+    def test_scout_failure_keeps_a_valid_seed_buy_eligible_for_execution_checks(self):
+        self.exercise_service(scout_unavailable=True)
+
+    def exercise_service(self,with_scout=False,watch_only=False,scout_unavailable=False):
         from opportunity_engine import policy
         search_policy=policy()
         if watch_only:search_policy['minimum_target_net_profit_twd']=10000
@@ -57,6 +61,8 @@ class OpportunityServiceTests(unittest.TestCase):
                 watchlist=[dict(symbol='9999',trigger_kind='BREAK_ABOVE_HIGH',condition_price=120,
                     rationale='研究新標的',counter_evidence_to_check='核對阻力',expires_session='2026-11-03')] if with_scout else [],
                 model_called=False)
+            if scout_unavailable:
+                scout.update(status='UNAVAILABLE', error='TWSE_COMPANY_LIST_NOT_CURRENT')
             (root/'config/universe_tw.json').write_text(json.dumps(dict(symbols=symbols,etf_symbols=[])),encoding='utf-8')
             service=AnalysisService(root/'data/analysis')
             paper_portfolio.set_capital_limit(service.db_path,10000)
@@ -86,11 +92,33 @@ class OpportunityServiceTests(unittest.TestCase):
                 if with_scout:
                     self.assertIn('9999',[c['symbol'] for c in cs])
                     self.assertTrue(next(c for c in cs if c['symbol']=='9999')['market_scout'])
-                return dict(market_view='測試研究結論',decisions=[dict(symbol=c['symbol'],decision='WAIT',
+                decisions = [dict(symbol=c['symbol'],decision='WAIT',
                     confidence=0,action_ratio=0,suggested_qty=0,reference_price=125,suggested_price=None,
                     strategy_id='NONE',target_price=None,invalidation_price=None,holding_days=None,
-                    reason='測試等待事件確認',data_quality='LIVE',warnings=[]) for c in cs]),dict(
+                    reason='測試等待事件確認',data_quality='LIVE',warnings=[]) for c in cs]
+                if scout_unavailable:
+                    setup = cs[0]['trade_setups'][0]
+                    decisions[0].update(decision='BUY', confidence=0.6, suggested_qty=setup['max_qty'],
+                        suggested_price=setup['entry'], strategy_id=setup['strategy_id'],
+                        target_price=setup['target'], invalidation_price=setup['invalidation'],
+                        holding_days=setup['holding_days'])
+                return dict(market_view='測試研究結論',decisions=decisions),dict(
                         validation='VALID',api={},raw_response='')
+
+            def execute(path):
+                advice = json.loads(path.read_text(encoding='utf-8'))
+                intents = build_advice_intents(advice)
+                self.assertEqual(len(intents), int(scout_unavailable))
+                if scout_unavailable:
+                    self.assertEqual(intents[0].side.value, 'BUY')
+                return dict(status='TEST_CHECKS_ONLY', results=[])
+
+            runtime.execute = Mock(side_effect=execute)
+            refreshed = dict(status='OK', current_buy_budget_twd='20000')
+
+            def sync(root, *, return_report=False):
+                return (health, refreshed) if return_report else refreshed
+
             strategy=strategy_catalog.read_strategy(CODE_ROOT/'strategies'/
                 ('strategy_opportunity_v2.md' if with_scout else 'strategy_opportunity_v1.md'))
             with (patch.dict(os.environ,{'TRADING_MODE':'agent'}),patch('analysis_service.load_env'),
@@ -101,14 +129,14 @@ class OpportunityServiceTests(unittest.TestCase):
                   patch('market_discovery.discover',return_value=scout),
                   patch('daily_history.enrich_candidates',side_effect=enrich),
                   patch('execution.broker_runtime.get_broker_runtime',return_value=runtime),
-                  patch('execution.health_monitor.sync_broker_state',return_value=(health,{})),
-                  patch('agent_decision.analyze_existing',side_effect=model) as model_call,
-                  patch.object(service,'_execute_after_advice_written',return_value=None)):
+                  patch('execution.health_monitor.sync_broker_state',side_effect=sync),
+                  patch('agent_decision.analyze_existing',side_effect=model) as model_call):
                 first=service.run('AUTO')
                 self.assertEqual(first['opportunity_search']['search']['pool_count'],21 if with_scout else 20)
                 self.assertEqual(len(first['analysis_set']),1 if watch_only else 3)
                 diagnosis=first['opportunity_diagnostics']
-                self.assertEqual(diagnosis['outcome'],'RESEARCH_COMPLETED_WITHOUT_BUY')
+                self.assertEqual(diagnosis['outcome'],
+                    'BUY_DECISION_PRODUCED' if scout_unavailable else 'RESEARCH_COMPLETED_WITHOUT_BUY')
                 saved=json.loads((Path(first['manifest']['run_directory'])/'opportunity_diagnostics.json').read_text('utf-8'))
                 self.assertEqual(saved,diagnosis)
                 if watch_only:
@@ -119,6 +147,12 @@ class OpportunityServiceTests(unittest.TestCase):
                 self.assertEqual(model_call.call_count,1)
                 self.assertEqual(second['manifest']['ai_validation'],'NOT_CALLED')
                 self.assertEqual(second['opportunity_search']['trigger']['reason'],'UNCHANGED_OPPORTUNITIES_AND_HOLDINGS')
+                runtime.execute.assert_called_once()
+                if scout_unavailable:
+                    self.assertEqual(first['manifest']['status'], 'COMPLETE')
+                    self.assertEqual(first['manifest']['research_warning'], scout['error'])
+                    self.assertEqual(first['execution_report']['status'], 'TEST_CHECKS_ONLY')
+                    self.assertFalse(first['manifest']['real_order_sent'])
                 if with_scout:
                     self.assertIn('9999',runtime.fetch_quotes.call_args[0][0])
                     self.assertEqual(first['market_discovery']['watch_status'][0]['status'],'RESEARCH_CONDITION_MET')
