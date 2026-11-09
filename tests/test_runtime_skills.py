@@ -42,7 +42,7 @@ class RuntimeSkillTests(unittest.TestCase):
             raw=(CODE_ROOT/'skills/tw-entry-research/SKILL.md').read_bytes()
             self.assertIn('tw-entry-research',instructions)
             self.assertEqual(context.entry_research_skill['symbols'],['1101','2891'])
-            self.assertEqual(context.entry_research_skill['version'],'2')
+            self.assertEqual(context.entry_research_skill['version'],'3')
             self.assertEqual(context.entry_research_skill['sha256'],hashlib.sha256(raw).hexdigest())
             self.assertEqual((Path(tmp)/'entry_research_skill.md').read_bytes(),raw)
             self.assertEqual(cs,original)
