@@ -70,9 +70,10 @@ class StrategyExperimentTests(unittest.TestCase):
         small_prompt.write_text('小額策略',encoding='utf-8')
         small = self.store.add_strategy(small_prompt,initial_twd=5000)
         self.assertEqual(self.store.summary(second)['capital_limit_twd'],50000)
-        self.assertEqual(self.store.account_input(self.store.strategies()[2],self.rules)['available_cash_twd'],0)
+        accounts={row['id']:row for row in self.store.strategies()}
+        self.assertEqual(self.store.account_input(accounts[small],self.rules)['available_cash_twd'],0)
         self.assertEqual(self.store.summary(small)['cash_twd'],5000)
-        strategy = self.store.strategies()[0]
+        strategy = accounts[self.first]
         self.store.record('before-topup',strategy,[self.candidate()],self.decision(),
                           dict(validation='VALID',api={}),self.rules,True)
         self.store.mark_equity('before-topup',[self.first],[self.candidate()])

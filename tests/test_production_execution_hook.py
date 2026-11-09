@@ -17,7 +17,7 @@ class ProductionExecutionHookTests(unittest.TestCase):
             run_dir = root / "analysis" / "runs" / "run-1"
             run_dir.mkdir(parents=True)
             advice_path = run_dir / "advice_interface.json"
-            advice_path.write_text("{}", encoding="utf-8")
+            advice_path.write_text('{"execution_budget":{"available_cash_twd":1000}}', encoding="utf-8")
             runtime = SimpleNamespace(execute=Mock(return_value={"status": "COMPLETE"}))
             with patch("execution.broker_runtime.get_broker_runtime",
                        return_value=runtime) as get_runtime, \
@@ -41,7 +41,7 @@ class ProductionExecutionHookTests(unittest.TestCase):
             run_dir = root / "analysis" / "runs" / "run-1"
             run_dir.mkdir(parents=True)
             advice_path = run_dir / "advice_interface.json"
-            advice_path.write_text("{}", encoding="utf-8")
+            advice_path.write_text('{"execution_budget":{"available_cash_twd":1000}}', encoding="utf-8")
 
             runtime = SimpleNamespace(execute=Mock(return_value={"status": "NO_TRADE_ACTION"}))
             with patch("execution.broker_runtime.get_broker_runtime", return_value=runtime), \

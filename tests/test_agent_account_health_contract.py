@@ -43,7 +43,7 @@ class AgentAccountHealthContractTests(unittest.TestCase):
         budget = live_buy_budget(snapshot, Decimal('0'), Decimal('10000'), Decimal('30000'))
         self.assertEqual(budget['available'], Decimal('5433.5'))
 
-    def exercise_agent(self, inventory_verified):
+    def exercise_agent(self, inventory_verified, use_batch=False):
         health = deepcopy(self.health)
         if not inventory_verified:
             health.update(status='ERROR', inventory_checked=False, errors=['inventory query failed'])
@@ -57,8 +57,11 @@ class AgentAccountHealthContractTests(unittest.TestCase):
         async def runner(context, *args):
             observed.update(deepcopy(context.get_portfolio()))
             context.get_trade_history()
-            for c in candidates:
-                context.get_market_data(c['symbol'])
+            if use_batch:
+                rows=context.get_market_data_batch([c['symbol'] for c in candidates])
+                self.assertEqual([row['symbol'] for row in rows],['2891','1101'])
+            else:
+                for c in candidates:self.assertNotIn('error',context.get_market_data(c['symbol']))
             return dict(market_view='只驗證帳戶資料，不交易', decisions=[dict(
                 symbol=c['symbol'], decision='HOLD', confidence=0, action_ratio=0,
                 suggested_qty=0, suggested_price=None, reference_price=c['last_price'],
@@ -72,7 +75,8 @@ class AgentAccountHealthContractTests(unittest.TestCase):
         account = dict(available_cash_cents=0, available_cash_twd=0, positions=[], capital_limit_twd=10000)
         with patch('agent_decision.ROOT', self.root), \
                 patch('execution.broker_runtime.get_broker_runtime', return_value=runtime), \
-                patch('quant_scanner.scan_quote', return_value={}), \
+                patch('agent_decision.scan_quote', return_value={}), \
+                patch('main.is_twse_oddlot_market_window', return_value=True), \
                 patch('trading_agent.sdk_run', side_effect=runner):
             _, response = analyze_existing(self.service, self.root/'run',
                 dict(run_id='account-contract', read_only=True),
@@ -87,12 +91,17 @@ class AgentAccountHealthContractTests(unittest.TestCase):
                          {'2891': 25, '1101': 100} if inventory_verified else {'2891': 0, '1101': 0})
         self.assertTrue(all(c['max_buy_qty'] > 0 for c in candidates) if inventory_verified
                         else all(c['max_buy_qty'] == 0 for c in candidates))
+        self.assertEqual(runtime.fetch_quotes.call_count,1 if use_batch else 2)
+        if use_batch:self.assertEqual(runtime.fetch_quotes.call_args.args[0],['2891','1101'])
 
     def test_actual_sync_gives_agent_the_same_nonzero_budget_and_sell_limits_as_llm(self):
         self.exercise_agent(True)
 
     def test_failed_current_inventory_still_blocks_trades_without_erasing_holdings(self):
         self.exercise_agent(False)
+
+    def test_agent_batch_handoff_uses_one_broker_query_for_both_symbols(self):
+        self.exercise_agent(True,use_batch=True)
 
 
 if __name__ == '__main__':

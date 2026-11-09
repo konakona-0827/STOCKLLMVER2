@@ -1,0 +1,108 @@
+{
+  "symbol": "3231",
+  "as_of": "2026-10-16T11:23:54+08:00",
+  "trade_setups": [
+    {
+      "strategy_id": "intraday_recovery",
+      "tier": "Early",
+      "entry": 178.0,
+      "entry_basis": "OBSERVED_SUPPORT_PULLBACK",
+      "target": 190.5,
+      "target_kind": "OBSERVED_SWING_RESISTANCE",
+      "invalidation": 173.5,
+      "holding_days": 2,
+      "max_qty": 8,
+      "allocation_limit_twd": 3500.0,
+      "funding_required_twd": 1444.0,
+      "net_return": 0.061009817671809255,
+      "atr14": 5.642857142857143,
+      "completed_volume_ratio": 2.2355166201559835,
+      "daily_breakout_confirmed": false,
+      "entry_twd": 178.0,
+      "target_exit_after_spread_twd": 190.0,
+      "stop_exit_after_spread_twd": 173.0,
+      "estimated_net_upside_twd": 87.0,
+      "estimated_net_downside_twd": 48.0,
+      "estimated_buy_cost_twd": 1426.0,
+      "estimated_buy_commission_twd": 2.0,
+      "estimated_target_commission_twd": 2.0,
+      "estimated_stop_commission_twd": 1.0,
+      "estimated_target_tax_twd": 5.0,
+      "estimated_stop_tax_twd": 5.0,
+      "commission_rounding": "floor_to_whole_TWD_before_minimum",
+      "tax_rounding": "ceiling_to_whole_TWD",
+      "reward_risk_ratio": 1.8125,
+      "tax_rate": 0.003,
+      "commission_rate": 0.001425,
+      "minimum_commission_twd": 1.0,
+      "exit_spread_reserve_twd": 0.5,
+      "setup_family": "MULTI_SESSION_RECOVERY",
+      "breakout_confirmation": null,
+      "breakout_reference_price": null,
+      "existing_modeled_risk_twd": 0.0,
+      "combined_modeled_risk_twd": 48.0,
+      "analysis_cost_budget_twd": 10,
+      "target_profit_to_analysis_budget": 8.7,
+      "setup_id": "9397481f472c",
+      "priority_score": 21.1247,
+      "entry_evidence": {
+        "last_completed_date": "2026-10-15",
+        "last_completed_close": 176.0,
+        "today_open": 180.0,
+        "today_low": 179.0,
+        "stop_basis": "COMPLETED_SUPPORT",
+        "distance_from_open_atr": -0.3544,
+        "distance_from_previous_close_atr": 0.3544,
+        "target_probability": null
+      }
+    }
+  ],
+  "status": {
+    "blockers": [],
+    "signal": "Early",
+    "rejected_setups": [
+      {
+        "setup_id": "4498cf9370ef",
+        "reason": "HISTORICAL_STOP_BROKEN_ON_LAST_COMPLETED_CLOSE",
+        "invalidation": 178.0,
+        "last_completed_close": 176.0,
+        "last_completed_date": "2026-10-15"
+      }
+    ],
+    "atr14": 5.642857142857143,
+    "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+    "allocation_limit_twd": 3500.0,
+    "completed_volume_ratio": 2.2355166201559835,
+    "rejection_reasons": [
+      "ENTRY_OUTSIDE_REACH",
+      "REWARD_RISK_BELOW_MINIMUM"
+    ],
+    "near_misses": [
+      {
+        "entry": 179.5,
+        "target": 190.5,
+        "invalidation": 173.5,
+        "qty": 6,
+        "net_upside_twd": 57.0,
+        "combined_stop_risk_twd": 45.0,
+        "net_return": 0.05287569573283859,
+        "reward_risk_ratio": 1.2666666666666666,
+        "rejection": "REWARD_RISK_BELOW_MINIMUM",
+        "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+      },
+      {
+        "entry": 181.0,
+        "target": 190.5,
+        "invalidation": 173.5,
+        "qty": 5,
+        "net_upside_twd": 40.0,
+        "combined_stop_risk_twd": 45.0,
+        "net_return": 0.04415011037527594,
+        "reward_risk_ratio": 0.8888888888888888,
+        "rejection": "REWARD_RISK_BELOW_MINIMUM",
+        "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+      }
+    ]
+  },
+  "orders_sent": false
+}

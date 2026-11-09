@@ -93,6 +93,8 @@ def build_advice_interface(result, generated_at=None):
         quality_counts[quality] = quality_counts.get(quality, 0) + 1
     validation = manifest.get('ai_validation', 'NOT_RECORDED')
     run_status = 'READY' if manifest.get('status') == 'COMPLETE' and validation == 'VALID' else 'ERROR'
+    if manifest.get('status') == 'BLOCKED_BUDGET':
+        run_status = 'BLOCKED_BUDGET'
     if manifest.get('read_only'):
         run_status = 'READ_ONLY'
     return {
@@ -104,6 +106,8 @@ def build_advice_interface(result, generated_at=None):
         'read_only': bool(manifest.get('read_only')),
         'run_status': run_status,
         'run_error': manifest.get('error') or None,
+        'display_notice': manifest.get('display_notice'),
+        'quote_warnings': manifest.get('quote_warnings') or {},
         'llm_validation': validation,
         'pretrade_review_status': (result.get('pretrade_review') or {}).get('status'),
         'llm_model': manifest.get('llm_model'),

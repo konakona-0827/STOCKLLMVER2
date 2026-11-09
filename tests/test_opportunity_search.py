@@ -81,6 +81,36 @@ class OpportunitySearchTests(unittest.TestCase):
         self.assertEqual(result['trade_setups'][0]['target'],135)
         self.assertEqual(result['trade_setups'][0]['target_kind'],'OBSERVED_SWING_RESISTANCE')
 
+    def test_broken_historical_stop_rejected_but_fresh_today_low_remains_available(self):
+        c=candidate();c.update(last_price=135,ask=135,bid=134.9,open=132,high=136,low=120)
+        c['price_levels']=[dict(id='low_20d',price=128,basis='past'),
+            dict(id='high_20d',price=155,basis='past'),dict(id='today_low',price=120,basis='LIVE')]
+        result=refresh(c,self.account,self.rules,self.p)
+        self.assertTrue(result['opportunity_status']['rejected_setups'])
+        self.assertFalse(any(s['invalidation']==128 for s in result['trade_setups']))
+        c['low']=128;c['price_levels']=[dict(id='today_low',price=128,basis='LIVE'),
+            dict(id='high_20d',price=155,basis='past')]
+        result=refresh(c,self.account,self.rules,self.p)
+        self.assertTrue(any(s['invalidation']==128 for s in result['trade_setups']),result['opportunity_status'])
+
+    def test_pretrade_cost_evidence_preserves_integer_rounding_at_marginal_hurdle(self):
+        from trade_economics import evaluate_buy
+        from position_analyzer import review_trades
+        c=dict(symbol='X',asset_type='STOCK',ask=27.6,bid=27.55,pricing_policy='PLANNED_LIMIT')
+        e=evaluate_buy(c,qty=41,limit_price=27.6,target_price=29.6,invalidation_price=26.6)
+        self.assertEqual(e['estimated_buy_commission_twd'],1)
+        self.assertEqual(e['estimated_target_tax_twd'],4)
+        self.assertAlmostEqual(e['reward_risk_ratio'],73.95/49.05)
+        captured=[]
+        def approve(request):
+            captured.append(json.loads(request['input']))
+            return json.dumps(dict(reviews=[dict(symbol='X',approved=True,reason='same rounding verified')])),{}
+        d=dict(symbol='X',decision='BUY',suggested_qty=41,suggested_price=27.6,target_price=29.6,
+            invalidation_price=26.6)
+        review_trades(dict(decisions=[d]),dict(model='test',input=json.dumps(dict(analysis_set=[c]))),approve)
+        self.assertEqual(captured[0]['computed_checks'][0]['commission_rounding'],'floor_to_whole_TWD_before_minimum')
+        self.assertEqual(d['decision'],'BUY')
+
     def test_future_bars_gaps_stale_quotes_and_losing_additions_cannot_create_a_buy(self):
         c=candidate();base=deepcopy(refresh(deepcopy(c),self.account,self.rules,self.p)['trade_setups'])
         c['daily_bars'].append(dict(date='2026-11-04',high=999,low=1,close=999,volume=999999,
@@ -187,6 +217,16 @@ class OpportunitySearchTests(unittest.TestCase):
             noise['trade_setups'][0]['setup_id']='different_hash_small_tick'
             self.assertFalse(evaluate('AUTO',[noise],self.account,path,self.p,at+timedelta(hours=1))['call_model'])
 
+    def test_changed_sellable_quantity_wakes_a_position_review_without_a_price_change(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'state.json';at=datetime(2026,11,3,10,tzinfo=TAIPEI)
+            c=candidate();c['paper_position']['qty']=10;c['max_sell_qty']=0
+            record(path,[c],self.account,at)
+            self.assertFalse(evaluate('AUTO',[c],self.account,path,self.p,at+timedelta(minutes=1))['call_model'])
+            c['max_sell_qty']=10
+            self.assertEqual(evaluate('AUTO',[c],self.account,path,self.p,at+timedelta(minutes=2))['reason'],
+                             'HOLDING_CHANGED_OR_UNKNOWN_PRICE')
+
     def test_qualified_buy_survives_real_agent_validation_and_two_research_checks(self):
         self.exercise_qualified_buy(candidate())
 
@@ -209,6 +249,8 @@ class OpportunitySearchTests(unittest.TestCase):
                 status='RAW_PRICE_OBSERVATION',technical=None,limitations=['CORPORATE_ACTIONS_UNVERIFIED'],
                 history_status=dict(latest_date='2026-11-02')))
             async def runner(ctx,*args):
+                self.assertEqual(ctx.entry_research_skill['name'],'tw-entry-research')
+                self.assertIn('tw-entry-research',args[0])
                 ctx.get_portfolio();ctx.get_trade_history()
                 for role in ('researcher','reviewer'):
                     packet=ctx.support.prepare(role,c['symbol'])
@@ -226,6 +268,13 @@ class OpportunitySearchTests(unittest.TestCase):
             self.assertEqual(result['decisions'][0]['decision'],'BUY')
             self.assertEqual(response['pretrade_review']['status'],'VALID')
             self.assertEqual(len(response['support_research']['calls']),2)
+            research=response['entry_research']
+            self.assertEqual(research['skill']['name'],'tw-entry-research')
+            self.assertEqual(research['entries'][0]['decision'],'BUY')
+            self.assertEqual(len(research['entries'][0]['independent_research']),2)
+            self.assertTrue(all(row['evidence_ids'] for row in research['entries'][0]['independent_research']))
+            self.assertTrue(research['entries'][0]['pretrade_reviews'][0]['approved'])
+            self.assertTrue((Path(tmp)/'entry_research.json').is_file())
 
 
 if __name__=='__main__':unittest.main()

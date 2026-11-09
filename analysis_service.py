@@ -446,7 +446,7 @@ class AnalysisService:
             # symbols; only actual entry candidates and holdings reach the LLM.
             from opportunity_gate import evaluate
             opportunity_trigger = evaluate(manifest['trigger_type'], candidates, paper_state,
-                self.directory/'opportunity_review_state.json', search_policy)
+                self.directory/'opportunity_review_state.json', search_policy, at=at)
             save_json(directory/'opportunity_search.json', dict(search=opportunity_audit, trigger=opportunity_trigger))
         if discovery is not None:
             from market_discovery import watch_status
@@ -463,8 +463,7 @@ class AnalysisService:
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
         budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
-        has_managed_position = any((c.get('paper_position') or {}).get('qty', 0) > 0 for c in candidates)
-        if (manifest.get('read_only') or budget_ready or has_managed_position) and (
+        if (manifest.get('read_only') or budget_ready) and (
                 (manifest.get('read_only') and not self.stop.is_set()) or
                 should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
                                    stopped=self.stop.is_set(), wall=now().timestamp())) and (
@@ -486,17 +485,14 @@ class AnalysisService:
                 save_json(directory/'multi_market_snapshot.json', batch)
             else:
                 decision, response = position_analyzer.analyze(candidates, request)
-            if opportunity_active and response['validation'] == 'VALID':
-                from opportunity_gate import record
-                record(self.directory/'opportunity_review_state.json', candidates, paper_state)
         else:
             market_closed = twse_closed_reason(now().date())
             has_live_candidate = any(
                 c.get('quote_status') == 'LIVE' and not c.get('is_trial')
                 for c in candidates
             )
-            reason = ('資金總上限剩餘、券商餘額或未結委託保留不足以支持新買單，且無 AI 持股需評估；本輪不呼叫 AI。'
-                      if not budget_ready and not has_managed_position else
+            reason = ('交易額度已用盡或資金檢查尚未通過；本輪暫停所有 BUY／SELL，額度恢復後重新評估。'
+                      if not budget_ready else
                       f'證交所今日休市（{market_closed}）；目前只有歷史行情，'
                       '可買股數為 0。本輪不呼叫 AI，也不送出委託。'
                       if market_closed else
@@ -505,7 +501,7 @@ class AnalysisService:
                       'AUTO 等待盤中零股交易時段；本輪不呼叫 AI，也不送出委託。'
                       if manifest['trigger_type'] == 'AUTO' and not self.stop.is_set()
                       else '沒有可分析集合，或已要求停止。')
-            if opportunity_active and not opportunity_trigger['call_model']:
+            if budget_ready and opportunity_active and not opportunity_trigger['call_model']:
                 if batch['quotes'] and all(q.get('is_trial') for q in batch['quotes']):
                     reason = '本輪收到的行情全是零股試撮，沒有可用於交易評估的即時成交行情。'
                 else:
@@ -514,9 +510,7 @@ class AnalysisService:
                     reason = '本輪已執行獨立尋標子代理；' + reason
             manifest['display_notice'] = reason
             decision = dict(market_view=reason, decisions=[])
-            response = dict(validation='NOT_CALLED', api={
-                'error':'BUY_BUDGET_CHECK_FAILED' if not budget_ready else None,
-            }, raw_response='')
+            response = dict(validation='NOT_CALLED', api={}, raw_response='')
         if discovery is not None:
             from market_discovery import merge_usage
             merge_usage(response,directory,discovery)
@@ -535,11 +529,11 @@ class AnalysisService:
         save_json(directory/'selection_decision.json', decision)
         price_map = {q['symbol']:q['last_price'] for q in batch['quotes']}
         contexts = [position_store.context(p, price_map.get(p['symbol'])) for p in positions]
-        failures = list(dict.fromkeys(errors.values()))
+        # Per-symbol quote failures do not invalidate other symbols' verified
+        # advice. Complete connection/data failures still fail the whole cycle.
+        failures = []
         if response['validation'] == 'ERROR':
             failures.append(str(response['api'].get('error')))
-        if not budget_ready:
-            failures.append('BUY_BUDGET_CHECK_FAILED')
         if not batch['symbols_received']:
             failures.append('NO_VALID_MARKET_DATA')
         manifest.update(finished_at=now().isoformat(), request_started_at=started, request_completed_at=completed,
@@ -548,7 +542,9 @@ class AnalysisService:
                         llm_model=request.get('model'),
                         llm_request_started_at=response.get('request_started_at'),
                         llm_response_received_at=response.get('response_received_at'),
-                        status='ERROR' if failures else 'COMPLETE', error='; '.join(failures),
+                        status='ERROR' if failures else ('COMPLETE' if budget_ready else 'BLOCKED_BUDGET'),
+                        error='; '.join(failures), quote_warnings=errors,
+                        research_status=response['validation'],
                         candidates_sent=len(candidates) if response['validation']!='NOT_CALLED' else 0)
         if discovery is not None:
             # Optional scouting can fail while the seed universe still yields valid advice.
@@ -559,6 +555,7 @@ class AnalysisService:
                       pretrade_review=response.get('pretrade_review'),
                       daily_participation=response.get('daily_participation'),
                       support_research=response.get('support_research'),
+                       entry_research=response.get('entry_research'),
                       web_search=response.get('api', {}).get('web_search'),
                       paper_trade_history=paper_portfolio.trades(self.db_path))
         if opportunity_active:
@@ -601,6 +598,15 @@ class AnalysisService:
             save_json(directory/'dashboard_result.json',result)
             save_json(self.directory/'latest_dashboard.json',result)
         if execution_report is not None:
+            if execution_report.get('status') == 'BLOCKED_BUDGET':
+                manifest['status'] = 'BLOCKED_BUDGET'
+                manifest['display_notice'] = (execution_report.get('reason') or execution_report.get('block_reason')
+                                              or '交易額度不足；本輪所有交易暫停。')
+                result['execution_budget']['budget_status'] = 'BLOCKED'
+                paused = json.loads(advice_path.read_text(encoding='utf-8'))
+                paused.update(run_status='BLOCKED_BUDGET',display_notice=manifest['display_notice'],
+                              execution_budget=result['execution_budget'])
+                save_json(advice_path,paused)
             execution_report['trading_mode'] = manifest.get('trading_mode','llm')
             result['execution_report'] = execution_report
             manifest['real_order_sent'] = any(x.get('broker_order_sent') is True
@@ -632,18 +638,45 @@ class AnalysisService:
             save_json(directory/'run.json',manifest)
             save_json(directory/'dashboard_result.json',result)
             save_json(self.directory/'latest_dashboard.json',result)
+        if opportunity_active and not manifest.get('read_only') and not self.stop.is_set():
+            from opportunity_gate import record
+            # Research completion is distinct from a handled execution cycle.
+            # A new cycle must re-read broker state and obtain fresh advice;
+            # this never replays an earlier order or bypasses pending-order guards.
+            if response['validation'] in ('VALID', 'ERROR') or not budget_ready:
+                items = (execution_report or {}).get('results', [])
+                handled = (manifest['status'] == 'COMPLETE' and response['validation'] == 'VALID'
+                           and execution_report is not None
+                           and execution_report.get('status') in ('COMPLETE','NO_TRADE_ACTION')
+                           and not any(x.get('status') in ('ERROR','FAILED','UNCONFIRMED','SKIPPED_CHECK_FAILED')
+                                       for x in items))
+                record(self.directory/'opportunity_review_state.json', candidates, paper_state,
+                       at=now(), cycle_complete=handled, run_id=manifest['run_id'],
+                       execution_status=(execution_report or {}).get('status') or manifest['status'])
+        manifest['execution_status'] = (execution_report or {}).get('status') or 'NOT_DISPATCHED'
+        scan_store.update_run_manifest(self.db_path,manifest)
+        save_json(directory/'run.json', manifest)
+        save_json(directory/'dashboard_result.json', result)
+        save_json(self.directory/'latest_dashboard.json', result)
         return result
 
     def _execute_after_advice_written(self, trigger, result, directory, advice_path):
         manifest = result.get('manifest') or {}
         if manifest.get('read_only'):
             return None
+        if manifest.get('status') == 'BLOCKED_BUDGET':
+            report = dict(status='BLOCKED_BUDGET', reason=manifest.get('display_notice') or
+                          '交易額度不足；本輪所有交易暫停。', results=[],
+                          broker_order_sent=False, execution_attempted=False, automatic_retry=False)
+            save_json(directory/'execution_report.json', report)
+            return report
         if (trigger not in ('AUTO','MANUAL') or manifest.get('status') != 'COMPLETE'
                 or manifest.get('ai_validation') != 'VALID'):
             return None
 
         from execution.broker_runtime import get_broker_runtime
 
+        execution_attempted = False
         try:
             from execution.health_monitor import sync_broker_state
             fresh = sync_broker_state(ROOT)
@@ -658,8 +691,15 @@ class AnalysisService:
             save_json(advice_path, payload)
             if result.get('execution_budget') is not None:
                 result['execution_budget'].update(budget)
+            if original <= 0 or current <= 0 or fresh.get('budget_status') in ('BLOCKED', 'UNVERIFIED'):
+                report = dict(status='BLOCKED_BUDGET', reason='送單前額度不足或尚未核實；本輪所有交易暫停。',
+                              results=[], broker_order_sent=False, execution_attempted=False,
+                              automatic_retry=False)
+                save_json(directory/'execution_report.json', report)
+                return report
             # The same COM-owning broker thread handles every AUTO cycle and
             # the broker reconciliation; no duplicate Capital login.
+            execution_attempted = True
             report = get_broker_runtime(ROOT).execute(advice_path)
         except Exception as exc:
             report = {
@@ -667,6 +707,9 @@ class AnalysisService:
                 'advice_path': str(advice_path),
                 'reason': redact(f'{type(exc).__name__}: {exc}'),
                 'automatic_retry': False,
+                'execution_attempted': execution_attempted,
+                'run_id': manifest.get('run_id'),
+                'execution_origin': 'ANALYSIS_SERVICE',
             }
             latest_execution = self.directory.parent/'execution'/'latest_live_execution.json'
             save_json(latest_execution, report)

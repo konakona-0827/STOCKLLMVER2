@@ -9,6 +9,7 @@ from config import now
 
 def snapshot(candidates, account, at):
     return dict(reviewed_at=at.isoformat(),cash=account.get('available_cash_cents'),
+        budget_status=account.get('budget_status'),
         setups=sorted(s['setup_id'] for c in candidates for s in c.get('trade_setups',[])),
         plans={'|'.join((c['symbol'],s['strategy_id'],s['tier'],s['entry_basis'],s['target_kind'])):
                {key:s[key] for key in ('entry','target','invalidation','max_qty')}
@@ -19,7 +20,8 @@ def snapshot(candidates, account, at):
             for c in candidates if c.get('research_only') and
                 (c.get('market_scout') or {}).get('status')=='RESEARCH_CONDITION_MET'},
         holdings={c['symbol']:dict(qty=int((c.get('paper_position') or {}).get('qty') or 0),
-                                  price=c.get('bid') or c.get('last_price'))
+                                  price=c.get('bid') or c.get('last_price'),
+                                  max_sell_qty=c.get('max_sell_qty'))
                   for c in candidates if int((c.get('paper_position') or {}).get('qty') or 0)>0})
 
 
@@ -54,6 +56,8 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
         if age<0:raise ValueError('future review')
     except (OSError,ValueError,TypeError,KeyError):
         return {**result,'call_model':True,'reason':'INITIAL_OR_UNAVAILABLE_REVIEW_STATE'}
+    if previous.get('cycle_complete') is False:
+        return {**result,'call_model':True,'reason':'PREVIOUS_CYCLE_NOT_HANDLED'}
     # Known stop/target touches always take precedence over cost suppression.
     for c in candidates:
         if c['symbol'] not in current['holdings']:continue
@@ -63,7 +67,8 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
             if price is not None and ((plan.get('invalidation_price') is not None and price<=plan['invalidation_price'])
                                      or (plan.get('target_price') is not None and price>=plan['target_price'])):
                 return {**result,'call_model':True,'reason':'ORIGINAL_EXIT_LEVEL_TOUCHED'}
-    if previous_time.date()!=at.date() or current['cash']!=previous.get('cash'):
+    if (previous_time.date()!=at.date() or current['cash']!=previous.get('cash')
+            or current['budget_status']!=previous.get('budget_status')):
         return {**result,'call_model':True,'reason':'NEW_SESSION_OR_ACCOUNT_CHANGE'}
     old_watches=previous.get('watches',{})
     for symbol,row in current['watches'].items():
@@ -88,7 +93,8 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
         return {**result,'call_model':True,'reason':'HOLDING_CHANGED'}
     for symbol,row in current['holdings'].items():
         old=old_holdings[symbol]
-        if row['qty']!=old.get('qty') or row['price'] is None or not old.get('price'):
+        if (row['qty']!=old.get('qty') or row.get('max_sell_qty')!=old.get('max_sell_qty')
+                or row['price'] is None or not old.get('price')):
             return {**result,'call_model':True,'reason':'HOLDING_CHANGED_OR_UNKNOWN_PRICE'}
         if abs(row['price']/old['price']-1)>=policy['portfolio_price_change_fraction']:
             return {**result,'call_model':True,'reason':'POSITION_PRICE_CHANGED'}
@@ -99,7 +105,9 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
     return {**result,'reason':'UNCHANGED_OPPORTUNITIES_AND_HOLDINGS'}
 
 
-def record(path, candidates, account, at=None):
+def record(path, candidates, account, at=None, *, cycle_complete=True, run_id=None, execution_status=None):
     path=Path(path);temporary=path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(snapshot(candidates,account,at or now()),ensure_ascii=False),encoding='utf-8')
+    state = dict(snapshot(candidates,account,at or now()), cycle_complete=cycle_complete,
+                 run_id=run_id, execution_status=execution_status)
+    temporary.write_text(json.dumps(state,ensure_ascii=False),encoding='utf-8')
     temporary.replace(path)

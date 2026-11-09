@@ -244,6 +244,20 @@ def execute_advice_file(
         report["status"] = "NO_TRADE_ACTION"
         return report
 
+    # A checked, exhausted trading allowance pauses both sides. In particular,
+    # a SELL-only batch must not bypass the Dashboard's account pause.
+    allowance = payload.get('execution_budget') or {}
+    checked_cash = allowance.get('available_cash_twd')
+    if (allowance.get('budget_status') in ('BLOCKED', 'UNVERIFIED')
+            or (checked_cash is not None and Decimal(str(checked_cash)) <= 0)):
+        reason = 'Checked trading allowance is exhausted or unverified; all trades are paused'
+        report.update(status='BLOCKED_BUDGET', block_reason=reason,
+                      broker_order_sent=False, execution_attempted=False)
+        report['results'] = [dict(decision_id=x.decision_id, run_id=x.run_id, symbol=x.symbol,
+            side=x.side.value, status='SKIPPED_CHECK_FAILED', reason=reason,
+            broker_order_sent=False, crosscheck_performed=False) for x in intents]
+        return report
+
     quotes = quote_map_from_advice_payload(payload)
     store = ExecutionStore(Path(execution_db_path) if execution_db_path else
                            root / "data" / "execution" / "live_execution.sqlite3",

@@ -168,6 +168,33 @@ def _archived_fill_evidence(path: Path, attempts: list[dict]) -> dict[str, dict]
     return found
 
 
+def prior_execution_error_resolved(root, report, previous):
+    """Resolve a past failure only from definite no-send or durable broker evidence."""
+    if previous.get('execution_attempted') is False:
+        return True
+    run_id = previous.get('run_id')
+    if previous.get('execution_origin') != 'ANALYSIS_SERVICE' or not run_id:
+        return False
+    path = Path(root)/'data/execution/live_execution.sqlite3'
+    try:
+        with closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True)) as db:
+            attempts = db.execute('SELECT decision_id,status FROM execution_attempts WHERE run_id=?',(run_id,)).fetchall()
+            checks = {row.get('decision_id'):row.get('status') for row in report.get('broker_order_reconciliation') or []}
+            verified = {'FILL_MATCH','ARCHIVED_BROKER_FILL_VERIFIED','NO_FILL_CONFIRMED',
+                        'NO_FILL_YET_VERIFIED','USER_CANCEL_CONFIRMED_NO_FILL','ROD_EXPIRED',
+                        'USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED'}
+            for decision_id,status in attempts:
+                # SEND_PENDING is committed before any broker send. If it was
+                # never written, this service cycle could not submit that intent.
+                sent = db.execute("SELECT 1 FROM execution_events WHERE decision_id=? AND status IN "
+                                  "('SEND_PENDING','SUBMITTED') LIMIT 1",(decision_id,)).fetchone()
+                if (sent or status not in ('STARTED','FAILED','SKIPPED_CHECK_FAILED')) and checks.get(decision_id) not in verified:
+                    return False
+        return True
+    except (OSError,sqlite3.Error,ValueError):
+        return False
+
+
 def current_buy_block_reasons(report: dict) -> list[str]:
     """Explain why new BUY orders are paused without calling broker cash zero."""
     reasons = []
@@ -218,7 +245,7 @@ def current_buy_block_reasons(report: dict) -> list[str]:
             "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED")
            for row in checks):
         reasons.append("BROKER_FILL_UNVERIFIED")
-    if report.get("last_execution_status") == "ERROR":
+    if report.get("last_execution_status") == "ERROR" and report.get('prior_execution_error_resolved') is not True:
         reasons.append("PRIOR_EXECUTION_ERROR")
     if (not reasons and report.get("status") not in ("OK", "PENDING_ORDER")):
         reasons.append("OTHER_HEALTH_WARNING")
@@ -480,6 +507,7 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "status": report.get("status"),
             "last_scan_status": report.get("last_scan_status"),
             "last_execution_status": report.get("last_execution_status"),
+            "prior_execution_error_resolved": report.get('prior_execution_error_resolved'),
             "latest_health_write_warning": report.get("latest_health_write_warning"),
             "broker_balance_twd": report.get("broker_balance_twd"),
             "broker_one_account_balance_twd": report.get("broker_one_account_balance_twd"),
@@ -623,6 +651,7 @@ def run_health_check(project_root: str | Path, *, session=None,
     except Exception as exc:
         report["errors"].append(f"strategy budget: {type(exc).__name__}: {exc}")
     report["analysis_running"] = (analysis_dir / "runtime.lock").exists()
+    previous_execution = {}
     for path, key, nested in (
         (analysis_dir / "latest_dashboard.json", "last_scan_status", True),
         (root / "data" / "execution" / "latest_live_execution.json",
@@ -633,15 +662,13 @@ def run_health_check(project_root: str | Path, *, session=None,
                 saved = json.loads(path.read_text(encoding="utf-8"))
                 source = saved.get("manifest", {}) if nested else saved
                 report[key] = source.get("status")
+                if not nested:previous_execution=source
                 if nested:
                     report["last_scan_at"] = source.get("finished_at")
             except Exception as exc:
                 report["errors"].append(
                     f"log {path.name}: {type(exc).__name__}: {exc}"
                 )
-    if report["last_execution_status"] == "ERROR":
-        report["status"] = "WARN"
-
     try:
         from .execution_store import ExecutionStore
         store = ExecutionStore(root / "data" / "execution" / "live_execution.sqlite3",
@@ -903,6 +930,10 @@ def run_health_check(project_root: str | Path, *, session=None,
     except Exception as exc:
         report["ai_committed_capital_error"] = f"{type(exc).__name__}: {exc}"
 
+    if report['last_execution_status'] == 'ERROR':
+        report['prior_execution_error_resolved'] = prior_execution_error_resolved(root,report,previous_execution)
+        if not report['prior_execution_error_resolved'] and report['status'] in ('OK','PENDING_ORDER'):
+            report['status'] = 'WARN'
     if report["errors"]:
         report["status"] = "ERROR"
     elif report["balance_below_floor"]:

@@ -268,12 +268,34 @@ def refresh(candidate, account, rules, p=None):
                 setup['priority_score']=round(min(economics['reward_risk_ratio'],5)*10+float(net)*100+
                     {'Early':0,'Confirmed':10,'Strong':15}[tier]-float((ask-entry)/atr)*5,4)
                 candidates.append(setup);break
-        candidate['trade_setups']=sorted(candidates,key=lambda s:-s['priority_score'])[:3]
+        plans=sorted(candidates,key=lambda s:-s['priority_score'])[:3]
+        rejected=[]
+        for setup in plans:
+            # A historical floor below which the last completed session closed
+            # is not intact support merely because price recovered intraday.
+            # Today's observed low is separate, newly formed evidence.
+            stop=Decimal(str(setup['invalidation']))
+            fresh_low=stop==_number(candidate['low'])
+            if closes[-1]<stop and not fresh_low:
+                rejected.append(dict(setup_id=setup['setup_id'],
+                    reason='HISTORICAL_STOP_BROKEN_ON_LAST_COMPLETED_CLOSE',
+                    invalidation=setup['invalidation'],last_completed_close=float(closes[-1]),
+                    last_completed_date=bars[-1]['date']))
+                continue
+            setup['entry_evidence']=dict(last_completed_date=bars[-1]['date'],
+                last_completed_close=float(closes[-1]),today_open=float(candidate['open']),
+                today_low=float(candidate['low']),stop_basis='LIVE_TODAY_LOW' if fresh_low else 'COMPLETED_SUPPORT',
+                distance_from_open_atr=round(float((Decimal(str(setup['entry']))-_number(candidate['open']))/atr),4),
+                distance_from_previous_close_atr=round(float((Decimal(str(setup['entry']))-closes[-1])/atr),4),
+                target_probability=None)
+        candidate['trade_setups']=[s for s in plans if s['setup_id'] not in {r['setup_id'] for r in rejected}]
+        status['rejected_setups']=rejected
         status.update(signal=tier,atr14=float(atr),allocation_basis='STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE',
                       allocation_limit_twd=float(allocation),completed_volume_ratio=float(vol_ratio))
         status['rejection_reasons']=sorted(rejections)
         status['near_misses']=sorted(near_misses,key=lambda r:-r['net_upside_twd'])[:3]
-        if not candidates:status['blockers']=['NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH']
+        if not candidate['trade_setups']:
+            status['blockers']=['HISTORICAL_STOP_BROKEN_ON_LAST_COMPLETED_CLOSE'] if rejected else ['NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH']
     except (KeyError,ValueError,TypeError,ArithmeticError) as exc:
         status['blockers']=[str(exc)]
     if candidate.get('market_scout'):

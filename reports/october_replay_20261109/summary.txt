@@ -1,0 +1,32 @@
+October archive trial, evaluated 2026-11-09
+
+Historical decisions: gpt-5.6-luna, mixed strategy versions.
+12 archived BUY decisions; 4 have a structured target/stop/horizon and verified entry fills.
+All 4 hit invalidation before target in the regular-market daily-price proxy.
+The other 8 BUY decisions lack a complete structured plan and are not counted as successful.
+
+6 closed trades have independently verified broker prices.
+With an assumed minimum fee of TWD 1: 1/6 profitable (16.7%), net TWD -403.50.
+With an assumed minimum fee of TWD 20: 0/6 profitable, net TWD -596.50.
+These are fee scenarios, not verified actual account fees or portfolio returns.
+
+Current Agent: one real gpt-6-sol SDK replay on two frozen candidates from 2026-10-16 11:23 Taipei.
+Web search disabled; only frozen historical tools; no broker access or executor.
+Four independent specialist responses plus the original pretrade review completed.
+BUY 2881 at 164, target 178, invalidation 157: invalidation first on 2026-10-19.
+WAIT 3231, with a concrete prior support-break/volume counterargument.
+3231's current-ask plan 181.5/190.5/178 also invalidates first on 2026-10-19.
+Its alternative limit 178/190.5/173.5 would reach the target on 2026-10-20 IF entry filled.
+No preserved post-decision same-day odd-lot ask at/below 178 verifies that entry.
+The next day's 178 open cannot fill a prior-day ROD order.
+
+Current replay: 1 scored FP, 1 entry-uncertain case; quoted-price proxy precision 0/1.
+Recall and MISS rate remain undefined, not 0%; no independently confirmed positive case in this tiny cohort.
+Daily regular-market prices do not verify odd-lot exit fills or counterfactual order depth.
+One historical window does not establish current live-model accuracy or whole-market recall.
+No parameter was changed to fit these outcomes.
+
+Reproduction:
+python -m operations.replay_archived_plans --archive-root <October state root> --audit-results reports/october_replay_20261109/sources/original_trade_audit.json --candidates reports/october_replay_20261109/frozen_candidates.json --output reports/october_replay_20261109
+
+Evidence and detailed calculations: summary.json, sources/, current_agent/.

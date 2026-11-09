@@ -72,6 +72,39 @@ class SupportTradingIntegrationTests(unittest.TestCase):
         self.coordinator.fail('reviewer', '2330', TimeoutError('test timeout'))
         self.assertEqual(self.coordinator.buy_block_reasons('2330'), ['SUPPORT_INDEPENDENT_REVIEWS_REQUIRED'])
 
+    def test_specialists_receive_same_live_plan_without_each_others_opinion(self):
+        self.candidate['trade_setups']=[dict(setup_id='route',setup_family='FIRST_DAY_BREAKOUT',
+            entry=100,target=120,invalidation=95)]
+        self.read()
+        a=self.coordinator.prepare('researcher','2330')
+        b=self.coordinator.prepare('reviewer','2330')
+        self.assertEqual(a['packet_id'],b['packet_id'])
+        entry=a['core']['entry_context']
+        self.assertEqual(entry['quote']['ask'],100)
+        self.assertEqual(entry['trade_setups'][0]['invalidation'],95)
+        self.assertIn('2330:ENTRY_CONTEXT',a['core']['required_confirmation_evidence'])
+
+    def test_changed_thesis_invalidates_reviews_but_same_thesis_quote_refresh_does_not(self):
+        c=self.context.candidates['2330']
+        c['trade_setups']=[dict(strategy_id='intraday_recovery',setup_family='MULTI_SESSION_RECOVERY',
+            tier='Early',entry_basis='CURRENT_ASK',entry=100,target=120,invalidation=95,holding_days=2,max_qty=10)]
+        self.accept_pair()
+        c['quote_timestamp']=now().isoformat();c['trade_setups'][0].update(entry=100.1,max_qty=9)
+        self.assertEqual(self.coordinator.buy_block_reasons('2330'),[])
+        c['trade_setups'][0]['invalidation']=94
+        self.assertEqual(self.coordinator.buy_block_reasons('2330'),['SUPPORT_INDEPENDENT_REVIEWS_REQUIRED'])
+
+    def test_changed_daily_structure_reloads_observation_and_invalidates_review(self):
+        c=self.context.candidates['2330'];c['daily_bars']=[dict(date='2026-10-21',close=100)]
+        self.accept_pair();key=self.coordinator.state_key('2330')
+        c['daily_bars'][0]['retrieved_at']=now().isoformat()
+        self.assertEqual(self.coordinator.state_key('2330'),key)
+        c['daily_bars'][0]['close']=99
+        self.assertEqual(self.coordinator.buy_block_reasons('2330'),['SUPPORT_INDEPENDENT_REVIEWS_REQUIRED'])
+        with patch.object(self.coordinator,'loader',return_value=self.observation) as loader:
+            self.coordinator.prepare('researcher','2330')
+        loader.assert_called_once()
+
     def test_role_reject_blocks_buy(self):
         self.accept_pair('REJECT')
         self.assertEqual(self.coordinator.buy_block_reasons('2330'), ['SUPPORT_AGENT_REJECTED'])

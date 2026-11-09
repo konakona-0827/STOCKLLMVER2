@@ -18,6 +18,28 @@ from execution.execution_store import ExecutionStore
 
 
 class LiveBuyingPowerRecheckTests(unittest.TestCase):
+    def test_zero_checked_allowance_blocks_buy_and_sell_before_broker_access(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            config_path=root/'execution_live.json'
+            config_path.write_text(json.dumps({'enabled':True}),encoding='utf-8')
+            stamp=datetime.now(timezone.utc).isoformat()
+            for side in ('BUY','SELL'):
+                with self.subTest(side=side):
+                    path=root/'advice.json'
+                    path.write_text(json.dumps(dict(interface_version='1.0',generated_at=stamp,
+                        run_id='zero-allowance-'+side,run_status='READY',llm_validation='VALID',
+                        real_order_sent=False,execution_budget=dict(available_cash_twd=0,budget_status='BLOCKED'),
+                        recommendations=[dict(symbol='0050',decision=side,confidence=80,
+                            suggested_qty=1,action_ratio=1 if side=='SELL' else 0,
+                            ai_managed_qty=1 if side=='SELL' else 0,quote_status='LIVE',
+                            quote_timestamp=stamp,quote_age_seconds=0)])),encoding='utf-8')
+                    with patch('execution.auto_advice_executor.build_live_readonly_session_from_project') as connect:
+                        report=execute_advice_file(path,project_root=root,config_path=config_path)
+                    self.assertEqual(report['status'],'BLOCKED_BUDGET')
+                    self.assertFalse(report['results'][0]['broker_order_sent'])
+                    connect.assert_not_called()
+
     def test_buy_is_blocked_when_fresh_broker_balance_is_too_low(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

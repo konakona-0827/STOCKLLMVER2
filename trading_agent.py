@@ -15,7 +15,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v8-watch-and-market-opportunities'
+AGENT_VERSION = 'agent-decision-v10-entry-context-stop-evidence'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -29,19 +29,8 @@ SELL 股數與 action_ratio 必須符合目前 AI 管理持倉；不可賣出人
 daily_bars、daily_trend 與 daily_history_status 是既有日線資料，不得在重新查價後忽略。
 初始 daily_bars 僅最近五筆、market_history 僅最近三筆；coverage 標明完整筆數，並非缺資料。
 需要更早原始資料驗證結構時呼叫 get_research_data；不可從截短顯示推論歷史缺漏。
-entry_screen 是 Python 按既有成本、配置及風控算出的有限情境，非訊號或完整可行性證明。
-先看 trade_setups 的現價與回落限價情境；有數字可行路徑才優先安排支撐研究，訊號與反證仍須獨立判斷。
-trade_setups 已按當前帳戶、訊號層級、結構停損與配置驗算；先驗證其中排名最高的可交易路徑。
-market_scout 是獨立尋標代理從上市普通股完成日線挑選的初步研究理由與觀察條件；
-它在程式買進計畫篩選之前執行，沒有下單權限，觀察條件不是買進訊號或目標。
-候選有 market_scout 時應核對其反證與最新 trade_setups，不能把前一日日線當即時零股報價。
-research_only=true 代表觀察條件已觸發、尚無可執行計畫：核對完整日線與尋標反證，
-需要時使用 research_support、review_support 研究，並刷新行情重算計畫。
-trade_setups 仍為空時只能 WAIT（有持倉可 HOLD/SELL），不能把觀察觸發當成 BUY 批准。
-若數值、訊號與兩方研究未發現具體否決證據，可提出 BUY，不要求未來上漲已被證明。
-MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE 是估算目標情境，必須如實揭露 breakout_confirmation。
-FIRST_DAY_BREAKOUT 僅確認當日 LIVE 價格突破，在趨勢背景下按 Early 配置；
-不得把昨日量能或盤中零股量當成今日完整日線放量確認。
+entry_screen／trade_setups 是 Python 按現行資料、成本、配置及風控算出的有限情境，非交易批准。
+有機會候選時依本輪載入的進場研究 Skill 核對計畫與反證；觀察觸發本身不能批准 BUY。
 PLANNED_LIMIT 的進場基準是具證據的 suggested_price，不是強制按 ask 追買；
 可提出等待回落的當日限價，須說明回落後仍有效的條件，成交與獲利均不保證。
 其他模式按 ask 與建議價較高者估算。不得為通過門檻跳過近端壓力或貼近失效價。
@@ -67,7 +56,8 @@ def execution_metadata(model):
     except PackageNotFoundError:
         sdk_version = None
     digest = hashlib.sha256()
-    for name in ('trading_agent.py','token_budget.py','research_runtime.py','entry_screen.py','opportunity_engine.py','opportunity_gate.py',
+    for name in ('trading_agent.py','token_budget.py','research_runtime.py','runtime_skills.py',
+                 'skills/tw-entry-research/SKILL.md','entry_screen.py','opportunity_engine.py','opportunity_gate.py',
                  'opportunity_watch.py','opportunity_diagnostics.py',
                  'config/opportunity_search.json','config/market_discovery.json','market_discovery.py',
                  'config/execution_live.json','advice_interface.py',
@@ -87,10 +77,11 @@ def execution_metadata(model):
 class TradingTools:
     def __init__(self, candidates, rules, run_id, log_path, quote_reader, portfolio_reader,
                  history_reader, stopped=lambda:False, read_only=False, initial_input=None,
-                 live_enabled=True, search_request=None):
+                 live_enabled=True, search_request=None, quote_batch_reader=None):
         self.candidates = {c['symbol']:c for c in candidates}
         self.rules,self.run_id,self.log_path = rules,run_id,Path(log_path)
         self.quote_reader,self.portfolio_reader,self.history_reader = quote_reader,portfolio_reader,history_reader
+        self.quote_batch_reader = quote_batch_reader
         self.stopped,self.read_only,self.initial_input = stopped,read_only,initial_input
         self.calls,self.observed,self.account = [],set(),None
         self.portfolio_read = self.history_read = False
@@ -100,6 +91,7 @@ class TradingTools:
         self.support = None
         self.history = []
         self.usage_requests = []
+        self.entry_research_skill = None
 
     def _call(self, name, args, operation):
         item = dict(call_id=f'{self.run_id}:{len(self.calls)+1}',tool=name,arguments=args,
@@ -154,7 +146,6 @@ class TradingTools:
     def get_market_data(self, symbol):
         self.observed.discard(symbol)
         def read():
-            from analysis_service import apply_buy_limits
             if symbol not in self.candidates:
                 raise ValueError('SYMBOL_OUTSIDE_ANALYSIS_SET')
             if not self.portfolio_read or self.account is None:
@@ -162,16 +153,43 @@ class TradingTools:
             row = self.quote_reader(symbol,self.candidates[symbol])
             if row.get('symbol') != symbol:
                 raise ValueError('QUOTE_SYMBOL_MISMATCH')
-            self.candidates[symbol].update(row)
-            c = self.candidates[symbol]
-            if self.account is not None:
-                apply_buy_limits([c], self.account, self.rules if self.live_enabled else None)
-                if c.get('opportunity_policy'):
-                    from opportunity_engine import refresh
-                    refresh(c,self.account,self.rules)
-            self.observed.add(symbol)
-            return dict(c)
+            return self._accept_quote(symbol, row)
         return self._call('get_market_data',dict(symbol=symbol),read)
+
+    def _accept_quote(self, symbol, row):
+        from analysis_service import apply_buy_limits
+        self.candidates[symbol].update(row)
+        c = self.candidates[symbol]
+        apply_buy_limits([c], self.account, self.rules if self.live_enabled else None)
+        if c.get('opportunity_policy'):
+            from opportunity_engine import refresh
+            refresh(c,self.account,self.rules)
+        self.observed.add(symbol)
+        return dict(c)
+
+    def get_market_data_batch(self, symbols):
+        if isinstance(symbols, list):
+            self.observed.difference_update(s for s in symbols if isinstance(s,str))
+        def read():
+            if (not isinstance(symbols,list) or not 1 <= len(symbols) <= 5
+                    or any(not isinstance(s,str) for s in symbols) or len(set(symbols)) != len(symbols)):
+                raise ValueError('EXPECTED_1_TO_5_DISTINCT_SYMBOLS')
+            if any(s not in self.candidates for s in symbols):
+                raise ValueError('SYMBOL_OUTSIDE_ANALYSIS_SET')
+            if not self.portfolio_read or self.account is None:
+                raise ValueError('PORTFOLIO_MUST_BE_READ_FIRST')
+            previous = {s:self.candidates[s] for s in symbols}
+            rows = (self.quote_batch_reader(symbols, previous) if self.quote_batch_reader else
+                    {s:self.quote_reader(s, previous[s]) for s in symbols})
+            # Validate the entire handoff before accepting any replacement.
+            if (not isinstance(rows,dict) or set(rows) != set(symbols)
+                    or any(not isinstance(rows[s],dict) or rows[s].get('symbol') != s for s in symbols)):
+                raise ValueError('BATCH_QUOTE_SYMBOL_MISMATCH')
+            return [self._accept_quote(s,rows[s]) for s in symbols]
+        result = self._call('get_market_data_batch',dict(symbols=symbols),read)
+        if isinstance(result,dict) and isinstance(symbols,list):
+            self.observed.difference_update(s for s in symbols if isinstance(s,str))
+        return result
 
 
 async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
@@ -211,9 +229,8 @@ async def sdk_run(context,instructions,model,max_turns,timeout_seconds):
     @function_tool
     def get_market_data_batch(symbols:list[str])->list:
         """Refresh 1-5 distinct symbols in one turn, after research and before trading."""
-        if not 1 <= len(symbols) <= 5 or len(set(symbols)) != len(symbols):
-            return [dict(error='EXPECTED_1_TO_5_DISTINCT_SYMBOLS')]
-        rows = [context.get_market_data(symbol) for symbol in symbols]
+        rows = context.get_market_data_batch(symbols)
+        if isinstance(rows,dict):return [rows]
         return [row if 'error' in row else candidate_view(row, context.account, context.rules) for row in rows]
 
     @function_tool
@@ -376,12 +393,16 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
     model = model or agent_model()
     response = dict(request_started_at=now().isoformat(),api=execution_metadata(model),raw_response='')
     try:
+        from runtime_skills import load_entry_research
+        skill_instructions = load_entry_research(context)
+        if context.entry_research_skill is not None:
+            response['api']['research_skills'] = [context.entry_research_skill]
         turns=None
         timeout=float(os.environ['AGENT_TIMEOUT_SECONDS']) if os.getenv('AGENT_TIMEOUT_SECONDS') else None
         if timeout is not None and timeout<1:
             raise ValueError('INVALID_AGENT_LIMITS')
         decision,usage = asyncio.run((runner or sdk_run)(context,
-            AGENT_INSTRUCTIONS+'\n表格傳輸：daily_bars／market_history／price_levels 若為 {columns, rows}，每列依 columns 對應欄位。\n\n'+strategy_prompt,model,turns,timeout))
+            AGENT_INSTRUCTIONS+'\n表格傳輸：daily_bars／market_history／price_levels 若為 {columns, rows}，每列依 columns 對應欄位。\n\n'+strategy_prompt+skill_instructions,model,turns,timeout))
         response['api']['usage'] = usage
         response['raw_response'] = json.dumps(decision,ensure_ascii=False)
         if context.stopped() or not context.portfolio_read or not context.history_read:
@@ -447,5 +468,10 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
     response.update(response_received_at=now().isoformat(),tool_calls=context.calls)
     if context.support is not None:
         response['support_research'] = context.support.summary()
+    from runtime_skills import entry_research_report
+    research = entry_research_report(context,decision,response)
+    if research is not None:
+        response['entry_research'] = research
+        save_json(context.log_path.with_name('entry_research.json'),research)
     save_json(context.log_path.with_name('agent_response.json'),response)
     return decision,response

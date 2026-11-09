@@ -93,11 +93,8 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
             broker_health.update(health)
         return dict(account)
 
-    def quote(symbol, previous):
+    def enrich_quote(current, previous):
         from pretrade_policy import price_levels
-        started = now().isoformat()
-        raw, errors = get_broker_runtime(ROOT).fetch_quotes([symbol], Audit(directory), service.stop.is_set, timeout=12)
-        current = multi_snapshot([symbol], raw, errors, started, now().isoformat())['quotes'][0]
         evidence = strategy_evidence.assess(
             {**current, 'daily_bars': previous.get('daily_bars', [])},
             previous.get('market_history', []))
@@ -107,12 +104,21 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
                 'strategy_evidence':evidence, 'eligible_strategies':evidence['eligible_strategies'],
                 'metrics':metrics.get('metrics', {}), 'components':metrics.get('components', {})}
 
+    def quote_batch(symbols, previous):
+        started = now().isoformat()
+        raw, errors = get_broker_runtime(ROOT).fetch_quotes(symbols, Audit(directory), service.stop.is_set, timeout=12)
+        batch = multi_snapshot(symbols, raw, errors, started, now().isoformat())
+        return {row['symbol']:enrich_quote(row, previous[row['symbol']]) for row in batch['quotes']}
+
+    def quote(symbol, previous):
+        return quote_batch([symbol], {symbol:previous})[symbol]
+
     context = trading_agent.TradingTools(candidates, rules, manifest['run_id'], directory/'agent_tools.json',
                 quote, portfolio,
                 (lambda:execution_history(execution_db, analysis_path=service.db_path)) if live_enabled else
                 (lambda:paper_portfolio.trades(service.db_path, limit=30)),
                 service.stop.is_set, bool(manifest.get('read_only')), json.loads(request['input']),
-                live_enabled=live_enabled, search_request=request)
+                live_enabled=live_enabled, search_request=request, quote_batch_reader=quote_batch)
     from support_scout.trading import attach
     attach(context, ROOT)
     decision, response = trading_agent.analyze(context, request['instructions'],model=request['model'])

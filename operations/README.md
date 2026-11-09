@@ -1,5 +1,100 @@
 # 交易執行與健康檢查
 
+## 2026-11-09 擴大十月回放與決策反證
+
+正式 Agent 版本為 `agent-decision-v10-entry-context-stop-evidence`，機會規則為
+`opportunity-search-v4-valid-stop-evidence`。新增的檢查拒絕前一完成日收盤已跌破的歷史停損參考，
+當日 LIVE 低點另列新證據；不靠移動目標、失效價、期限或配置數字改善回放結果。
+
+獨立研究員與反證員取得同一份 `ENTRY_CONTEXT`，包含當前行情、實際路徑與 setup_family，
+不共享彼此意見。研究快取綁定目標、失效價、訊號與完成日線結構；同一假設的行情刷新可沿用，
+假設改變則重新研究。取數時間戳變更本身不重做研究。研究 Skill 升為版本 2，區分價格站回、
+完成日線確認及機率未知；`priority_score`、2R 與數字合格均不是預期勝率。
+
+交易前 `computed_checks` 直接附買進佣金、目標／失效賣出佣金與稅、取整方式。
+沿用既有佣金整元捨去後套最低額、賣出稅整元進位，避免審查員另套未取整費率造成誤擋。
+這些是設定的估算規則，實際費用仍須核對帳單；未改數值風控或自動批准被否決交易。
+
+`operations.expanded_opportunity_replay` 提供 prepare／label／run／compare 四步。
+先凍結股票、時間、資金與原路徑，再獨立計算結果；run 不讀 labels 或後續行情。
+每個案例時間都保留完整有效研究池及既有競爭候選，按正式排序選前三檔，不能只輸入新案例。
+首次合格的股票日案例用於去重的機會召回，另逐筆評估全部快照 BUY，避免漏掉其他候選錯買。
+未知成交、同日觸價順序不明與資料不足保留未知；不算成功，也不當成正確避開。
+
+```powershell
+python -m operations.expanded_opportunity_replay prepare --archive-root ARCHIVE --output REPORT
+python -m operations.expanded_opportunity_replay label --archive-root ARCHIVE --output REPORT
+python -m operations.expanded_opportunity_replay run --benchmark REPORT/benchmark.json --output REPORT/baseline --api-env API_ENV
+python -m operations.expanded_opportunity_replay compare --output REPORT
+```
+
+使用隔離程式副本、歷史唯讀行情注入及空白帳戶狀態；回放不連券商、不建立下單器。
+`--reuse-from` 只有在完整被選輸入、帳戶、時點、模型與來源程式雜湊相同時沿用既有模型觀察；
+其他競爭標的改變被選輸入時重新呼叫模型。保留原始結果及沿用證據。
+完整池版本與結果位於 `reports/october_expanded_20261109/competitive/`；根目錄的初版是
+只含新案例的診斷，不能用來判定候選競爭能力。完整報告見同目錄的 `summary.txt`。
+
+## 決策品質、選股命中與 MISS 評估
+
+自動化回歸與測試替身只驗證程式流程。真實選股能力須用固定版本、未參與調整的時間外資料與
+獨立結果標籤驗證，不能把測試通過率、已選股票的勝率或合格計畫數當作抓取市場機會的能力。
+
+本次成功標準沿用當時原計畫的入場、目標、失效價與持有期限；須有可執行入場證據，且在合法
+可退出期間內先達目標、費後達標。未成交限價不能因後來股價上漲就當成命中。新買零股不能用
+當日無法合法賣出的高價認定獲利；每日 OHLC 同時觸及目標與失效價卻無先後證據時，列為
+`AMBIGUOUS`，不得猜成交順序。未到期限或資料缺漏分別保留為 `PENDING`／`UNAVAILABLE`。
+
+`operations.evaluate_opportunities` 唯讀核對保存的研究池、候選、決策與執行結果，可另讀獨立
+標籤清單。每個標籤提供 `event_id`（`run_id|symbol`）、`status`、`plan_available_at`、
+`available_at` 與 `evidence_refs`；清單的 `criterion_id` 固定為 `original-plan-target-first-v1`。
+時間須含時區；原計畫不能晚於決策，結果必須是決策後才取得的證據。可提供 `plan_sha256`
+核對原計畫。資料列是掃描觀察，正式績效報告前須將同一機會的重複掃描去重，不混合版本。
+
+評估分研究池、候選、BUY、送單、成交五個階段，各列 TP／FP／FN／TN。判錯 FP 與漏失 FN
+都算失誤，另列 precision、recall、miss rate 與 F1。已知成功但因額度、有效否決或流程問題未
+捕捉的事件仍是 FN，原因分開列，不從分母刪除。獨立基準列出卻未進入原研究池的機會也會納入。
+合格計畫的非 BUY 決策若只有模型文字、缺乏可核對否決來源，列為
+`UNVERIFIED_QUALIFIED_NON_BUY_REASON` 流程品質錯誤，不能宣稱沒有機會；這項稽核不強制買進。
+
+```powershell
+python -m operations.evaluate_opportunities --state-root . --summary-only --output reports/opportunity_evaluation.json
+# 有獨立核對的結果標籤後再加入 --labels outcome_labels.json；可用 --agent-version 篩選同一版本。
+```
+
+無結果標籤時，命中率、召回率與 MISS 率為 `null`，並明列未評估筆數。只看已保存的候選無法
+計算全市場漏失率；全市場召回還需要獨立的完整市場機會基準。資料夾 `/data/` 目前受 Git 忽略，
+包含研究池、行情及帳本，不會隨一般 Git push 共用；應從正式交易電腦取得所需分析與結果證據。
+
+## 2026-11-09 交易暫停、流程恢復與進場研究 Skill
+
+正式分析的交易額度耗盡或資金檢查未通過時，所有 BUY／SELL 均暫停，包含既有持倉的賣出；
+狀態記為 `BLOCKED_BUDGET`，與程式錯誤分開。分析前及送單前均檢查額度，執行器也會阻擋
+帶有零額度／未核實額度的建議。額度恢復後重新取得當前行情與決策，不重送舊 advice。
+
+個別股票報價失敗保存在 `run.json.quote_warnings`，畫面顯示警告；其他股票的有效建議仍逐筆
+通過原有驗證、交易前審查與券商風控。整批行情不可用、模型驗證失敗仍停止該輪。
+`research_status` 與 `execution_status` 分別記錄，最終狀態也回存 SQLite，避免重新啟動後顯示舊狀態。
+
+`opportunity_review_state.json` 在執行結果確定後才記錄 `cycle_complete`；額度暫停、執行失敗或
+交易前拒絕不當作已處理。下輪正常掃描可因 `PREVIOUS_CYCLE_NOT_HANDLED` 重新研究；唯讀分析
+不覆寫正式研究狀態。待對帳委託、送單去重與資金保留仍照原規則處理。
+舊的 `last_execution_status=ERROR` 只有在確認未送單，或正式帳本／當前券商回報可核對時才解除；
+舊紀錄缺乏派送證據或委託結果仍不明時維持暫停。任何當前券商或帳本錯誤仍會阻擋交易。
+
+Agent 的 `get_market_data_batch` 現在由同一券商工作執行緒一次取得 1–5 檔，逐檔更新行情與計畫。
+帳戶刷新後仍須重新觀察交易標的，失敗的批次不能沿用先前成功的觀察。
+
+`skills/tw-entry-research/SKILL.md` 是正式交易 Agent 的進場研究指引，由 `runtime_skills.py`
+在已有 `trade_setups` 或 `research_only` 的機會候選上自動載入。保留原交易 JSON、唯讀工具清單、
+兩方獨立研究及交易前審查；Skill 不授予下單權限，也不更動配置、費稅或風控數值。
+每輪保存 `entry_research_skill.md` 原文、`entry_research_skill.json` 版本／SHA-256／適用標的，
+以及 `entry_research.json` 的當前計畫、行情時間、決策理由、獨立證據引用與審查結果。
+持倉退出與獨立審查沿用現行流程，本次先導入進場研究 Skill。
+
+更新程式後須正常重啟原 Dashboard，下一輪 `run.json.runtime.agent_version` 應為
+`agent-decision-v10-entry-context-stop-evidence`。驗收以隔離環境重放流程、工具呼叫與證據完整性為準；
+模型決策品質與盤中券商耗時仍需後續實際觀察。
+
 ## 2026-11-06 尋標與進場流失診斷
 
 `opportunity_diagnostics.json` 自動保存每輪即時行情、量化合格、計畫合格、觀察研究、模型候選及最終買進決策數；券商／研究失敗與本輪規則無計畫分開記錄，Dashboard 顯示相同分類。完整計畫池與排除數字保存在 `opportunity_pool_after_selection.json`，當日尋標的下一次重評會收到 `data/analysis/market_discovery/entry_feedback.json` 的排除原因。候選輪替不增加原研究批次大小或掃描頻率。

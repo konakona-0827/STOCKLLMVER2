@@ -44,6 +44,13 @@ def evaluate_buy(candidate, *, qty, limit_price, target_price, invalidation_pric
                 stop_exit_after_spread_twd=float(exit_stop), estimated_net_upside_twd=float(net_upside),
                 estimated_net_downside_twd=float(net_downside),
                 estimated_buy_cost_twd=float(gross_buy + buy_fee),
+                estimated_buy_commission_twd=float(buy_fee),
+                estimated_target_commission_twd=float(fee(gross_target)),
+                estimated_stop_commission_twd=float(fee(gross_stop)),
+                estimated_target_tax_twd=float(tax(gross_target)),
+                estimated_stop_tax_twd=float(tax(gross_stop)),
+                commission_rounding='floor_to_whole_TWD_before_minimum',
+                tax_rounding='ceiling_to_whole_TWD',
                 reward_risk_ratio=float(net_upside / net_downside) if net_downside > 0 else None,
                 tax_rate=float(tax_rate), commission_rate=float(rate),
                 minimum_commission_twd=float(minimum), exit_spread_reserve_twd=float(spread))

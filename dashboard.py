@@ -73,6 +73,7 @@ STATUS_LABELS = {
     'DAILY_HISTORY': '取得歷史日線中', 'MARKET_DISCOVERY': '子代理主動尋標中',
     'WAITING_OPENAI': '等待 AI 分析', 'PROCESSING_RESULT': '整理分析結果中', 'WARN':'研究部分受阻',
     'COMPLETE': '完成', 'ERROR': '錯誤', 'RUNNING': '執行中',
+    'BLOCKED_BUDGET': '額度不足，交易暫停',
     'PAUSED_LOW_BALANCE': '券商資金低於保留額；自動掃描已停止',
 }
 BROKER_EVENT_LABELS = {
@@ -1005,7 +1006,8 @@ class Dashboard:
                     self.last_scan = payload['manifest']['finished_at']
                     self.status = payload['manifest']['status']
                     self.last_error = payload['manifest']['error']
-                    if self.status == 'COMPLETE' and payload['manifest'].get('research_warning'):
+                    if self.status == 'COMPLETE' and (payload['manifest'].get('research_warning')
+                                                     or payload['manifest'].get('quote_warnings')):
                         self.status = 'WARN'
                     self.render()
                 elif kind == 'error':

@@ -29,6 +29,14 @@ def saved_analysis(path, run_id=None):
             ('manifest', 'request', 'response', 'decision'), row[1:])})
 
 
+def update_run_manifest(path, manifest):
+    """Keep the durable run status in sync with the final execution outcome."""
+    with closing(sqlite3.connect(path, timeout=10)) as db:
+        db.execute('UPDATE scan_runs SET manifest_json=? WHERE run_id=?',
+                   (encode(manifest),manifest['run_id']))
+        db.commit()
+
+
 def historical_dashboard(path):
     """Display-only reconstruction; never restore broker health, advice or executable orders."""
     record = saved_analysis(path)

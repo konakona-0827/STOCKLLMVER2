@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from decimal import Decimal
 
 from config import now,trading_mode
@@ -67,6 +67,54 @@ class AgentDecisionTests(unittest.TestCase):
         decision, response = analyze(self.context, '策略', runner=runner)
         self.assertEqual(response['validation'], 'ERROR')
         self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
+
+    def test_batch_reads_multiple_symbols_once_and_preserves_original_history(self):
+        second=copy.deepcopy(self.candidate);second['symbol']='1101'
+        self.candidate['daily_bars']=[dict(date='2026-10-01',close=99)]
+        self.context.candidates['1101']=second
+        self.context.quote_reader=Mock(side_effect=AssertionError('single reader must not be called'))
+        self.context.quote_batch_reader=Mock(side_effect=lambda symbols,previous:
+            {s:dict(previous[s],last_price=101,ask=101,bid=100.9) for s in symbols})
+        self.assertIn('error',self.context.get_market_data_batch(['0050','1101']))
+        self.context.quote_batch_reader.assert_not_called()
+        self.context.get_portfolio()
+        rows=self.context.get_market_data_batch(['0050','1101'])
+        self.assertEqual([r['symbol'] for r in rows],['0050','1101'])
+        self.assertTrue(all(r['last_price']==101 and r['max_buy_qty']>0 for r in rows))
+        self.context.quote_batch_reader.assert_called_once()
+        self.context.quote_reader.assert_not_called()
+        self.assertEqual(self.context.observed,{'0050','1101'})
+        self.assertEqual(rows[0]['daily_bars'],[dict(date='2026-10-01',close=99)])
+        self.context.get_portfolio()
+        self.assertFalse(self.context.observed)
+
+    def test_failed_batch_replacement_cannot_reuse_a_previous_observation(self):
+        self.context.get_portfolio();self.context.get_market_data('0050')
+        self.context.quote_batch_reader=Mock(side_effect=RuntimeError('batch outage'))
+        self.assertIn('error',self.context.get_market_data_batch(['0050']))
+        self.assertNotIn('0050',self.context.observed)
+        self.context.quote_batch_reader=Mock(return_value={'0050':dict(symbol='OTHER')})
+        self.assertIn('error',self.context.get_market_data_batch(['0050']))
+        self.assertNotIn('0050',self.context.observed)
+
+    def test_batch_rejects_invalid_or_unauthorized_requests_before_reading_quotes(self):
+        self.context.get_portfolio();self.context.quote_batch_reader=Mock()
+        for symbols in ([],['0050','0050'],['UNKNOWN'],['0050']*6):
+            with self.subTest(symbols=symbols):
+                self.assertIn('error',self.context.get_market_data_batch(symbols))
+        self.context.quote_batch_reader.assert_not_called()
+
+    def test_batch_keeps_a_healthy_symbol_when_another_quote_is_unavailable(self):
+        second=copy.deepcopy(self.candidate);second['symbol']='1101'
+        self.context.candidates['1101']=second
+        self.context.quote_batch_reader=Mock(return_value={
+            '0050':dict(self.candidate),
+            '1101':dict(second,quote_status='UNAVAILABLE',last_price=None,ask=None,bid=None)})
+        self.context.get_portfolio()
+        rows=self.context.get_market_data_batch(['0050','1101'])
+        self.assertGreater(rows[0]['max_buy_qty'],0)
+        self.assertEqual(rows[1]['max_buy_qty'],0)
+        self.assertEqual(rows[1]['quote_status'],'UNAVAILABLE')
 
     def test_existing_json_contract_validates_and_bad_budget_fails_closed(self):
         async def runner(context,*args):
