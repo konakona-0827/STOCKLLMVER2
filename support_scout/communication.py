@@ -212,6 +212,11 @@ def search_wire(packet):
         "codes": {}, "times": {},
         "feature_basis": "COMPUTED_FEATURES_NOT_FULL_DAILY_HISTORY", "candidates": []}
     mapping, reason_codes, time_codes = {}, {}, {}
+    from .search_priority import SUPPORT_EVIDENCE, support_evidence
+    if packet["core"].get("ranking_version") == SUPPORT_EVIDENCE:
+        value["ranking_version"] = SUPPORT_EVIDENCE
+        value["support_priority_if_omitted"] = {"grade": 0, "signals": [],
+            "meaning": "RESEARCH_PRIORITY_ONLY_NOT_TRADE_QUALIFICATION"}
     if "opportunity_policy" in packet["core"]:
         value["opportunity_policy"] = deepcopy(packet["core"]["opportunity_policy"])
 
@@ -266,6 +271,12 @@ def search_wire(packet):
             "counterevidence": {reverse[e["id"]]: deepcopy(e.get("values")) for e in c["evidence"] if e["kind"] in {"INVALIDATED", "EXPIRED"}}})
         if "analysis_context" in c:
             value["candidates"][-1]["analysis_context"] = deepcopy(c["analysis_context"])
+        if packet["core"].get("ranking_version") == SUPPORT_EVIDENCE:
+            hint = support_evidence(c, packet["core"]["as_of"])
+            for signal in hint["signals"]:
+                signal["evidence_ids"] = [reverse[e] for e in signal["evidence_ids"]]
+            if hint["grade"]:
+                value["candidates"][-1]["support_priority"] = hint
         if "market_quote" in c:
             value["candidates"][-1]["market_quote"]=deepcopy(c["market_quote"])
         if "support_model_boundaries" in c:
@@ -284,7 +295,47 @@ def search_wire(packet):
                     if field in source:plan[field]=source[field]
     if any(isinstance(c.get("market_quote"),dict) for c in value["candidates"]):
         factor_session_defaults(value)
+    factor_search_metrics(value)
     return value, CandidateAliases(mapping, packet["packet_id"]), wire_metrics(packet["core"], value, policy, role="search")
+
+
+def factor_search_metrics(value):
+    """Losslessly share identical short-pattern metrics, without dropping stocks.
+
+    Compare serialized values (including types), never round floats or omit
+    counterevidence. Apply only when the representation actually saves bytes.
+    """
+    layouts, proposals = {}, []
+    saved_bytes = 0
+    for c in value["candidates"]:
+        patterns = [p for p in c["patterns"] if p.get("buy_type") in {
+            "TREND_PULLBACK", "RECLAIM_BREAKOUT", "MOMENTUM_CONTINUATION"}]
+        if len(patterns) < 2:
+            continue
+        rows = [dict(zip(value["pattern_layouts"][p["id"]]["metrics"], p["metrics"])) for p in patterns]
+        common = {k: v for k, v in rows[0].items() if all(k in r and encode(r[k]) == encode(v) for r in rows)}
+        if not common:
+            continue
+        replacements = [{"shared_ref": "shared_short_metrics", "overrides": {k:v for k,v in r.items() if k not in common}} for r in rows]
+        keys = tuple(common)
+        name = layouts.get(keys, "m"+str(len(layouts)+1))
+        shared = {"layout": name, "values": list(common.values())}
+        before = len(encode([p["metrics"] for p in patterns]).encode("utf-8"))
+        after = len(encode({"shared_short_metrics": shared, "metrics": replacements}).encode("utf-8"))
+        if after >= before:
+            continue
+        layouts[keys] = name
+        saved_bytes += before-after
+        proposals.append((c, patterns, shared, replacements))
+    # Layout headers are paid once per whole packet, not once per candidate.
+    headers = {name:list(keys) for keys,name in layouts.items()}
+    if not proposals or saved_bytes <= len(encode({"shared_metric_layouts":headers}).encode("utf-8")):
+        return
+    for c, patterns, shared, replacements in proposals:
+        c["shared_short_metrics"] = deepcopy(shared)
+        for p, replacement in zip(patterns, replacements):
+            p["metrics"] = replacement
+    value["shared_metric_layouts"] = headers
 
 
 def factor_session_defaults(value):

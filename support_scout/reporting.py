@@ -183,6 +183,8 @@ def render_html(report: dict, bundle: dict) -> str:
     queue = ", ".join(report["technical_queue"]) or "本輪沒有，繼續等待"
     status = observation.get("status", "UNKNOWN")
     model = observation.get("agent_status", "NOT_RUN")
+    from .agent_health import model_health
+    health = model_health(report)
     decisions = report.get("decision_summary", {}).get("counts", {})
     decision_metrics = (f'<div>決策結論<b>可考慮 {decisions.get("CONSIDER",0)} · 等待 {decisions.get("WAIT",0)} · 不交易 {decisions.get("NO_TRADE",0)}</b>技術型態與交易資格分別檢查</div>' if japan else "")
     badge = "SYNTHETIC DEMO" if report.get("synthetic") else "OBSERVATION ONLY" if report.get("observation_only") else "DECISION RESEARCH"
@@ -267,9 +269,10 @@ def render_html(report: dict, bundle: dict) -> str:
 body{{font:15px/1.65 system-ui,sans-serif;color:#203449;background:#f4f6f8;margin:0}}main{{max-width:1500px;margin:auto;padding:30px}}h1{{margin-bottom:6px}}.sub,small{{color:#607185}}.banner{{background:#fff4d7;border-left:4px solid #b58222;padding:16px;margin:22px 0}}.metrics{{display:flex;gap:12px;flex-wrap:wrap}}.metrics div,article{{background:white;padding:18px;border:1px solid #dde4eb;border-radius:8px}}.metrics b{{display:block;font-size:20px}}.scroll{{overflow:auto;background:white;margin:24px 0}}table{{border-collapse:collapse;min-width:1000px;width:100%}}th,td{{text-align:left;padding:12px;vertical-align:top;border-bottom:1px solid #e4e9ed}}th{{background:#eaf0f5}}.notes{{font-size:13px;max-width:360px;color:#536579}}article{{margin:14px 0}}article svg{{max-width:440px;width:100%;height:130px}}a{{color:#246b9b}}input{{padding:10px;width:260px;border:1px solid #c7d1db;border-radius:4px}}.warn{{color:#9d3c29}}footer{{margin:30px 0;color:#607185}}
 {TAB_STYLE}</style><main><h1>Support Desk · {market_label}支撐決策</h1><div class="sub">快照截止 JST {escape(jst)} · 日線日期依{market_date_label} · 本地收盤觀察，非即時報價</div>
 <!--LIVE_STATUS-->
-<details class="report-notes"><summary>資料與研究說明：{escape(plain_code(status))} · {escape(plain_code(model))}</summary>
+<details class="report-notes"><summary>資料與研究說明：{escape(plain_code(status))} · {escape(health['label'])}</summary>
 <div class="banner"><b>{badge}</b>　{escape(banner)} 型態與價位皆為暫定觀察；雙 Agent 同意也不會解除缺口。分數不是勝率。</div>
-<div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(plain_code(collection.get('status','UNKNOWN')))}</b>{escape(scope_label)}</div><div>觀察執行<b>{escape(plain_code(status))}</b>模型 {escape(plain_code(model))}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div>{decision_metrics}</div>
+<div class="metrics"><div>資料最新日<b>{escape(latest)}</b>預期 {escape(expected)}</div><div>資料取得<b>{escape(plain_code(collection.get('status','UNKNOWN')))}</b>{escape(scope_label)}</div><div>觀察執行<b>{escape(plain_code(status))}</b>{escape(health['label'])}</div><div>技術候選<b>{len(report['technical_queue'])}</b>{escape(queue)}</div>{decision_metrics}</div>
+<p>{escape(health['text'])}</p>
 </details>
 {view}<footer>Run {escape(observation.get('run_id','—'))} · 規則 {escape(report['rules']['version'])} · 快照 {escape(report['snapshot_id'])}<br>本報告保存於本機；沒有訂單或帳戶執行能力。</footer>
 </main><script>{TAB_SCRIPT}</script></html>'''

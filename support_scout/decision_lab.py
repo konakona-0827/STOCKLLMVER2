@@ -122,7 +122,8 @@ def _panel(bundle, max_selected, providers):
     initial=run(bundle)
     if providers is None:return bundle,initial,{"status":"NUMERIC_ONLY","call_count":0}
     search_provider,researcher,reviewer=providers
-    sp=make_search_packet(initial,bundle["source_universe"],max_selected=max_selected)
+    # Preserve the original experiment's baseline; ranking studies are separate.
+    sp=make_search_packet(initial,bundle["source_universe"],max_selected=max_selected,ranking_version="legacy-v1")
     result=run_search(sp,search_provider)
     bundle["discovery"]={"mode":"AGENT_SEARCH","search":result,"max_total_calls":1+2*max_selected,
         "total_call_count":result["call_count"],"coverage":{"scope":"REAL_PREFIX_LAB","scanned_count":len(bundle["securities"]),"universe_count":len(bundle["securities"])}}

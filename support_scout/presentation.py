@@ -7,7 +7,7 @@ from .field_guide import VALUES
 
 def plain_code(value):
     extra={'SEARCH_FAILED':'尋標未完成','OBSERVATION_READY':'本輪資料整理完成','CONFIGURATION_REQUIRED':'模型設定尚未齊全',
-        'UNCHANGED':'本輪狀態沒有變化','FIRST_SEEN':'首次觀察','PARTIAL':'部分完成'}
+        'UNCHANGED':'本輪狀態沒有變化','FIRST_SEEN':'首次觀察','PARTIAL':'部分完成','PARTIAL_FAILURE':'部分研究未完成'}
     return extra.get(value,VALUES.get(value, '待核對，詳見技術紀錄' if isinstance(value,str) and '_' in value else str(value)))
 
 
@@ -91,7 +91,12 @@ def report_status(report):
     if search.get('status')=='FAILED':facts.append('尋標回覆未通過檢查，尚未完成三角色決策')
     elif search.get('status')=='COMPLETED':facts.append(f'尋標員提交 {len(search.get("selection",[]))} 檔深入研究')
     if errors:facts.append(f'研究／反證有 {errors} 筆回覆未完成或未通過檢查')
-    if report.get('collection',{}).get('status')=='DEGRADED':facts.append('部分行情資料仍有缺口')
+    from .agent_health import model_health
+    health=model_health(report)
+    facts.append(health['label'])
+    if health['issues']:facts.append(health['text'].rstrip('。'))
+    if report.get('collection',{}).get('status')=='DEGRADED' or any(s.get('data_status')=='REJECTED' for s in items):
+        facts.append('部分行情資料仍有缺口；資料降級與模型研究狀態分開計算')
     facts.append('排序代表本輪先看順序，不是上漲機率')
     return {'title':title,'text':'；'.join(facts)+'。','tone':'action' if buy or exit_count else 'warning' if errors or search.get('status')=='FAILED' else 'waiting'}
 

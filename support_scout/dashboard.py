@@ -21,7 +21,7 @@ from .desktop_browser import open_dashboard
 from .manual_ui import PANEL
 from .manual_desk import desk_state, save_draft, save_fill, error_message, confirmation_id, record_feedback
 
-DESK_UI_VERSION = 9
+DESK_UI_VERSION = 10
 
 LIVE_STATUS='''<section class="live-status" aria-label="程式目前狀態"><b id="live-title">正在確認程式狀態…</b><p id="live-report"></p><details><summary>本輪處理情形</summary><p id="live-detail"></p></details><button id="live-reload" hidden type="button" onclick="location.reload()">已有新報告，載入最新排序與結論</button><button id="live-update" hidden type="button"></button></section>'''
 

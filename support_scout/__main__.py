@@ -60,6 +60,12 @@ def main(argv=None) -> int:
     lab.add_argument("--out", type=Path)
     lab_replay = sub.add_parser("decision-lab-replay", help="完全離線核對多時段試驗的決策與後續結果")
     lab_replay.add_argument("directory", type=Path)
+    search_lab = sub.add_parser("search-lab", help="已保存decision-lab的SEARCH漏選歸因與離線排序比較，無API")
+    search_lab.add_argument("directory", type=Path)
+    search_lab.add_argument("--out", type=Path)
+    search_replay = sub.add_parser("search-lab-replay", help="離線重播SEARCH覆蓋比較")
+    search_replay.add_argument("directory", type=Path)
+    search_replay.add_argument("--lab-directory", type=Path, help="換機時指定原decision-lab資料位置")
     case = sub.add_parser("pattern-case", help="H-001 Advantest合成參數截點驗證；與真實行情和帳本隔離")
     case.add_argument("--case", type=Path, help="合成參數紀錄JSON；省略用Advantest H-001案例")
     case.add_argument("--agents", action="store_true", help="實際呼叫尋標、研究與反證模型")
@@ -117,6 +123,16 @@ def main(argv=None) -> int:
         command.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.command == "search-lab":
+            from .search_lab import run_comparison
+            result, target = run_comparison(args.directory, output_root=args.out)
+            print(json.dumps({"summary": result["summary"], "missed_cases": len(result["missed_cases"]),
+                "report": str((target/"comparison.html").resolve())}, ensure_ascii=False))
+            return 0
+        if args.command == "search-lab-replay":
+            from .search_lab import replay_comparison
+            print(json.dumps(replay_comparison(args.directory, lab_directory=args.lab_directory), ensure_ascii=False))
+            return 0
         if args.command=="session-scan":
             from .session_scan import run_session
             result=run_session(rerun=args.rerun)

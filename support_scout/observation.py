@@ -56,7 +56,8 @@ def _cursor_commit(path, universe_id, previous, following, *, symbols=None, univ
 
 def _agent_status(report):
     desk = report["desk"]
-    return ("FAILED" if desk["error_count"] else "NO_ELIGIBLE_PACKETS" if not desk["call_count"]
+    return (("PARTIAL_FAILURE" if any(e.get("status") == "ACCEPTED" for e in desk.get("events", [])) else "FAILED")
+        if desk["error_count"] else "NO_ELIGIBLE_PACKETS" if not desk["call_count"]
         else "PARTIAL_BUDGET" if desk["deferred_symbols"] else "COMPLETED")
 
 
@@ -270,8 +271,14 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
                 if "sizing_policy" in report:
                     from .sizing import attach_execution_plans
                     attach_execution_plans(report, report["sizing_policy"])
-            degraded = not data_ready or (agents and agent_status in {"FAILED", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}) or bool(summary.get("errors"))
+            degraded = not data_ready or (agents and agent_status in {"FAILED", "PARTIAL_FAILURE", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}) or bool(summary.get("errors"))
             report["observation"]["status"] = "DEGRADED" if degraded else "OBSERVATION_READY"
+            from .agent_health import model_health
+            report["observation"]["model_health"] = model_health(report)
+            report["observation"]["degraded_reasons"] = [reason for reason, present in (
+                ("DATA_INCOMPLETE", not data_ready),
+                ("MODEL_RESEARCH_INCOMPLETE", agents and agent_status in {"FAILED", "PARTIAL_FAILURE", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}),
+                ("LEDGER_ERRORS", bool(summary.get("errors")))) if present]
             code = 2 if rejected == len(report["securities"]) else 3 if degraded else 0
             manifest = {"run_id": run_id, "effective_as_of": report["as_of"], "rules": asdict(rules),
                 "rules_hash": digest(asdict(rules)), "universe_version": report["universe_version"],
@@ -308,7 +315,7 @@ def observe(*, symbols=None, months=8, cache_dir=None, output_root=None, db_path
             publish_run(target, files)
         report["ledger"] = record_observation(report, db_path, before_commit=publish_before_commit)
         atomic_json(target / "committed.json", {"run_id": run_id, "ledger_committed": True})
-        if (cohort_cursor is not None and agent_status not in {"FAILED", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}
+        if (cohort_cursor is not None and agent_status not in {"FAILED", "PARTIAL_FAILURE", "SEARCH_FAILED", "CONFIGURATION_REQUIRED"}
                 and any(s["data_status"] != "REJECTED" for s in report["securities"])):
             _cursor_commit(cursor_path, universe["universe_id"], cohort_cursor, coverage["next_cursor"],
                 symbols=universe["symbols"], universe_as_of=universe["as_of"], expected_revision=coverage["cursor_revision"])

@@ -96,7 +96,8 @@ def _compact_candidate(source_packet, cutoff):
     return candidate
 
 
-def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=40, max_selected=4) -> dict:
+def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=40, max_selected=4,
+                       ranking_version="support-evidence-v1-20261105") -> dict:
     """Freeze the pool before asking SEARCH; original daily bars stay downstream."""
     config = _config(max_candidates, max_selected)
     universe_id, symbols = _universe(universe)
@@ -148,13 +149,8 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
             raise DataError("SEARCH_UNEXPECTED_SOURCE_STATE")
         # The pool deliberately excludes reviews, trade_decision, and raw bars.
         candidates.append(_compact_candidate(source_packet, cutoff))
-    candidates.sort(key=lambda c: (not (c["technical"]["technical_candidate"] and not c["context_blockers"]),
-        not c["technical"]["technical_candidate"],
-        -max(({"CATALYST_CONFIRMED": 4, "CATALYST_AWAITING_PRICE": 3, "SUPPORT_STRENGTHENED": 2, "EARLY_WATCH": 1,
-            "SUPPORT_RECLAIMED": 3, "SUPPORT_HELD": 2,"SHORT_RECLAIM_READY":4,"SHORT_RECLAIM_TRIGGER":2,
-            "SHORT_PULLBACK_READY":3,"SHORT_MOMENTUM_READY":3}.get(p["stage"], 0)
-              for p in c.get("patterns", [])), default=0),
-        -(c["technical"].get("priority_score") or 0), c["symbol"]))
+    from .search_priority import rank_candidates
+    candidates = rank_candidates(candidates, version=ranking_version, cutoff=initial_report["as_of"])
     body = {"protocol": SEARCH_PROTOCOL, "task": SEARCH_TASK, "response_schema": deepcopy(SEARCH_SCHEMA),
         "core": {"snapshot_id": initial_report["snapshot_id"], "as_of": initial_report["as_of"],
             "market": "JP", "synthetic": initial_report.get("synthetic") is True,
@@ -163,6 +159,9 @@ def make_search_packet(initial_report: dict, universe: dict, *, max_candidates=4
             "universe_count": len(symbols), "config": config,
             "eligible_candidate_ids": [c["candidate_id"] for c in candidates],
             "candidates": candidates[:max_candidates]}}
+    packet = {**body, "packet_id": digest(body)}
+    # Old packets without this field remain valid and replay with their old order.
+    body["core"]["ranking_version"] = ranking_version
     packet = {**body, "packet_id": digest(body)}
     if "communication_policy" in initial_report:
         body["core"]["communication_policy"] = deepcopy(initial_report["communication_policy"])
@@ -189,6 +188,9 @@ def verify_search_packet(packet: dict) -> None:
         core = packet["core"]
         config = core["config"]
         _config(config["max_candidates"], config["max_selected"])
+        from .search_priority import LEGACY, VERSIONS
+        if core.get("ranking_version", LEGACY) not in VERSIONS:
+            raise ValueError()
         timestamp(core["as_of"])
         candidates = core["candidates"]
         eligible = core["eligible_candidate_ids"]
@@ -273,6 +275,16 @@ class OpenAISearchProvider:
                     "opportunity_reference_plans的layout指向plan_layouts欄位名稱，與values逐項配對還原原計畫。"
                     "market_quote是延遲參考價，並非即時成交價或盤中K；用來核對觸發及進場區間，"
                     "不可聲稱今日已收盤確認。報價過期或缺失只供觀察，不能支持買入提案。")
+            if any("shared_short_metrics" in c for c in view["candidates"]):
+                payload["instructions"] += ("patterns.metrics若是shared_ref物件，先取同一候選的shared_short_metrics，依shared_metric_layouts[layout]與values配對，再加overrides覆寫即可還原所有指標；"
+                    "若是陣列則仍依pattern_layouts的metrics欄位順序還原。不可跨候選借用共用指標。")
+        from .search_priority import SUPPORT_EVIDENCE
+        if packet["core"].get("ranking_version") == SUPPORT_EVIDENCE:
+            payload["instructions"] += ("本輪排序優先接近各自固定支撐且有確認證據者：目前ATR完整確認、H-002站回、H-002守住並有原始縮量，依序作研究提示。"
+                "SUPPORT_HELD的原始縮量未必經公司行動核實，不等於正式確認；不可混用ATR與百分比支撐。"
+                "support_priority省略時依support_priority_if_omitted，表示沒有這項優先提示。"
+                "有此類候選時優先考慮其研究覆蓋；若改選待觸發或動能標的，rationale說明該標的更值得研究的證據。"
+                "仍可空選，不可自動補入未選標的，不改進場或反證門檻。")
         response = self.transport(payload, key, self.timeout)
         if not isinstance(response, dict) or response.get("status") != "completed":
             raise ProviderError("SEARCH_API_RESPONSE_NOT_COMPLETED")

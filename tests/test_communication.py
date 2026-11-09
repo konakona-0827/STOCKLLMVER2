@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from support_scout.agents import make_packet
 from support_scout.communication import (bounded_schema, encode, expand_refs, expand_search,
-    load_policy, review_wire, search_wire, validate_wire_answer, wire_metrics)
+    load_policy, review_wire, search_wire, validate_wire_answer, wire_metrics, factor_search_metrics)
 from support_scout.contracts import DataError
 from support_scout.discovery import make_search_packet, OpenAISearchProvider
 from support_scout.pattern_case import build_case_bundle, load_case
@@ -27,6 +27,25 @@ def answer(refs):
 
 
 class CommunicationTests(unittest.TestCase):
+    def test_shared_search_metrics_round_trip_without_rounding_or_losing_overrides(self):
+        # Fabricated large repeated metric arrays; even almost-equal floats must remain distinct.
+        fields=['metric_'+str(i) for i in range(25)]
+        common=[.12345678901234567+i for i in range(25)]
+        rows=[list(common) for _ in range(3)]
+        rows[1][-1]+=.0000000000001
+        value={'pattern_layouts':{pid:{'metrics':fields} for pid in ('H-003','H-004','H-005')},
+            'candidates':[{'patterns':[{'id':pid,'buy_type':kind,'metrics':row} for pid,kind,row in zip(
+                ('H-003','H-004','H-005'),('TREND_PULLBACK','RECLAIM_BREAKOUT','MOMENTUM_CONTINUATION'),rows)]}]}
+        original=deepcopy(value)
+        factor_search_metrics(value)
+        c=value['candidates'][0]
+        self.assertIn('shared_short_metrics',c)
+        for p,expected in zip(c['patterns'],rows):
+            shared=c['shared_short_metrics']
+            restored={**dict(zip(value['shared_metric_layouts'][shared['layout']],shared['values'])),**p['metrics']['overrides']}
+            self.assertEqual([restored[k] for k in fields],expected)
+        self.assertLess(len(encode(value)),len(encode(original)))
+
     def test_policy_has_versioned_finite_integer_limits(self):
         for patch in ({"version": "unknown"}, {"recent_bars": True}, {"max_input_bytes": 3999},
                 {"public_source_mode": "silent_peer_chat"}, {"extra": 1}):

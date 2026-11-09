@@ -33,6 +33,8 @@ python -m support_scout notify-status
 
 ## 用量與結果
 
+0.17.0更新：資料DEGRADED與模型研究結果分開；有有效回覆但其他角色失敗時為`PARTIAL_FAILURE`，仍exit 3。頁面顯示完成份數及本地輸入限制、回覆契約、API逾時或連帶略過的原因。未完成不等於看空或反證否決；具體已保存案例見[Dashboard狀態說明](dashboard-guide.md)。SEARCH排序版本、5筆漏選歸因與零API重播見[覆蓋比較](search-coverage.md)。
+
 SEARCH只從Python資料閘門及型態候選中提案，可不選；失敗不以數值topN替代。總呼叫上限包含SEARCH，剩餘只整對研究／反證，預設無自動重試。工具次數另計，無固定每日費用保證。
 
 `config/communication.json` 預設精簡JSON、單次別名及shared_once：研究員檢索，反證員用相同事實獨立推理，不共享結論，也不冒稱再次檢索。API usage才是實際tokens；bytes減少比例另外呈現。
