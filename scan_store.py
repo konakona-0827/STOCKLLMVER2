@@ -119,6 +119,8 @@ def recent_history(path, symbol, at):
             seen.add(stamp)
             per_day[day] = per_day.get(day, 0) + 1
             result.append(dict(exchange_time=stamp, price=row.get('last_price', row.get('price')),
+                               symbol=symbol,quote_status=row.get('quote_status',row.get('data_quality','UNKNOWN')),
+                               is_trial=row.get('is_trial'),retrieval_mode=row.get('retrieval_mode'),
                                volume_shares=row.get('volume', row.get('volume_shares'))))
             if len(result) >= 15:
                 break

@@ -176,6 +176,7 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
     from support_scout.trading import SupportCoordinator
     import strategy_catalog
     import shutil
+    import time
     b=read(benchmark_path);output=Path(output);load_api_env(api_env)
     rules=LiveExecutionConfig.load(CODE_ROOT/'config/execution_live.json');p=policy()
     lookup={e['event_id']:e for e in b['events']};account=b['account']
@@ -190,7 +191,10 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
         if index%shards!=shard:continue
         dest=output/group['group_id'];result_path=dest/'result.json'
         if result_path.exists():
-            if read(result_path)['benchmark_sha256']!=b['benchmark_sha256']:raise ValueError('RESUME_BENCHMARK_MISMATCH')
+            previous_result=read(result_path)
+            if previous_result['benchmark_sha256']!=b['benchmark_sha256']:raise ValueError('RESUME_BENCHMARK_MISMATCH')
+            if previous_result['response']['api']['implementation_sha256']!=execution_metadata(agent_model())['implementation_sha256']:
+                raise ValueError('RESUME_RUNTIME_MISMATCH')
             continue
         candidates=deepcopy(group['selection_pool']) if 'selection_pool' in group else [deepcopy(lookup[e]['candidate']) for e in group['events']]
         selected,selection=select(candidates,account,rules,p)
@@ -234,6 +238,7 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
         instructions=('這是歷史凍結資訊回放，唯一決策時點為 '+group['as_of']+'。'
             '工具均只回傳此時點資料，不按今天日期判過期，不使用未來結果；外部搜尋停用，沒有下單器。'
             '以正常策略獨立判斷，不為評估而強制交易。\n'+strategy['prompt'])
+        wall_started=time.perf_counter()
         if selected:
             # Each worker is a separate process, so these historical packet
             # clocks cannot leak into other concurrent cases or live apps.
@@ -242,9 +247,11 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None):
         else:
             decision=dict(market_view='No surviving strategy plans',decisions=[])
             response=dict(validation='NOT_CALLED',api=execution_metadata(agent_model()))
+        wall_seconds=time.perf_counter()-wall_started
         save(result_path,dict(benchmark_sha256=b['benchmark_sha256'],group=group,selection=selection,
             all_candidates=candidates,selected_symbols=[c['symbol'] for c in selected],
-            decision=decision,response=response,broker_access=False,executor_available=False,orders_sent=False))
+            decision=decision,response=response,wall_elapsed_seconds=wall_seconds,
+            broker_access=False,executor_available=False,orders_sent=False))
         progress=dict(shard=shard,index=index,group=group['group_id'],selected=len(selected),validation=response['validation'])
         save(output/f'progress_{shard}.json',progress);print(json.dumps(progress),flush=True)
 

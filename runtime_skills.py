@@ -1,5 +1,6 @@
 """Load versioned, repository-owned research guidance; never grant execution rights."""
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -9,10 +10,28 @@ from main import save_json
 ENTRY_SKILL = 'tw-entry-research'
 
 
+def skill_policy(context):
+    path=CODE_ROOT/'config/research_skills.json'
+    policy=json.loads(path.read_text(encoding='utf-8-sig'))
+    if type(policy.get('entry_research_enabled')) is not bool:
+        raise ValueError('INVALID_ENTRY_RESEARCH_ENABLED')
+    override=getattr(context,'entry_skill_enabled',None)
+    if override is not None and type(override) is not bool:
+        raise ValueError('INVALID_ENTRY_SKILL_OVERRIDE')
+    return dict(version=policy['version'],enabled=policy['entry_research_enabled'] if override is None else override,
+        source='CODE_CONFIG' if override is None else 'ISOLATED_REPLAY_OVERRIDE',
+        config_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+
+
 def load_entry_research(context, *, skill_root=None):
+    context.entry_research_skill=None
+    context.entry_research_policy=skill_policy(context)
+    context.log_path.parent.mkdir(parents=True,exist_ok=True)
+    save_json(context.log_path.with_name('entry_research_policy.json'),context.entry_research_policy)
+    if not context.entry_research_policy['enabled']:
+        return ''
     symbols = [symbol for symbol,c in context.candidates.items()
                if c.get('opportunity_policy') and (c.get('trade_setups') or c.get('research_only'))]
-    context.entry_research_skill = None
     if not symbols:
         return ''
     # Only this installed skill is selectable. Market data cannot supply a path

@@ -112,6 +112,7 @@ class SupportCoordinator:
             available=account.get('available_cash_cents'), capital=account.get('capital_limit_twd'),
             thesis=thesis,daily_structure=self.structure_key(symbol),
             policy_version=(candidate.get('opportunity_policy') or {}).get('version'),
+            entry_decision_policy=candidate.get('entry_decision_policy'),
             positions=sorted((p['symbol'], p.get('qty'), p.get('cost_cents'))
                              for p in account.get('positions', []))))
 

@@ -13,7 +13,23 @@ from runtime_skills import load_entry_research, entry_research_report
 class RuntimeSkillTests(unittest.TestCase):
     def context(self, directory, candidates):
         return SimpleNamespace(candidates={c['symbol']:c for c in candidates},
-            log_path=Path(directory)/'agent_tools.json',support=None,calls=[])
+            log_path=Path(directory)/'agent_tools.json',support=None,calls=[],entry_skill_enabled=True)
+
+    def test_disabled_mode_does_not_read_missing_skill_or_change_candidates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            c=dict(symbol='X',opportunity_policy={'enabled':True},trade_setups=[dict(setup_id='p')])
+            context=self.context(tmp,[c]);context.entry_skill_enabled=False;before=deepcopy(c)
+            self.assertEqual(load_entry_research(context,skill_root=Path(tmp)/'missing'),'')
+            self.assertIsNone(context.entry_research_skill)
+            self.assertEqual(c,before)
+            self.assertFalse(context.entry_research_policy['enabled'])
+            self.assertFalse((Path(tmp)/'entry_research_skill.md').exists())
+
+    def test_text_override_cannot_silently_enable_or_disable_skill(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            context=self.context(tmp,[]);context.entry_skill_enabled='false'
+            with self.assertRaisesRegex(ValueError,'INVALID_ENTRY_SKILL_OVERRIDE'):
+                load_entry_research(context)
 
     def test_routes_entry_and_watch_candidates_and_saves_exact_skill_snapshot(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -62,7 +78,7 @@ class RuntimeSkillTests(unittest.TestCase):
                          positions=[],budget_status='READY')
             c=dict(candidate('1101'),opportunity_policy=policy(),research_only=True)
             context=TradingTools([c],rules,'missing-skill',Path(tmp)/'tools.json',
-                lambda *args:c,lambda:account,lambda:[])
+                lambda *args:c,lambda:account,lambda:[],entry_skill_enabled=True)
             with patch('runtime_skills.CODE_ROOT',Path(tmp)/'missing'), patch('trading_agent.sdk_run') as run:
                 decision,response=analyze(context,'既有策略')
             self.assertEqual(response['validation'],'ERROR')

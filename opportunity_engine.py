@@ -270,6 +270,10 @@ def refresh(candidate, account, rules, p=None):
                 candidates.append(setup);break
         plans=sorted(candidates,key=lambda s:-s['priority_score'])[:3]
         rejected=[]
+        from entry_decision import policy as entry_policy,review as review_entry
+        decision_policy=entry_policy()
+        candidate['entry_decision_policy']=decision_policy
+        status['entry_decision_policy']=decision_policy
         for setup in plans:
             # A historical floor below which the last completed session closed
             # is not intact support merely because price recovered intraday.
@@ -282,6 +286,13 @@ def refresh(candidate, account, rules, p=None):
                     invalidation=setup['invalidation'],last_completed_close=float(closes[-1]),
                     last_completed_date=bars[-1]['date']))
                 continue
+            if decision_policy['enabled']:
+                evidence=review_entry(candidate,setup,bars,decision_policy)
+                setup['decision_evidence']=evidence
+                if not evidence['approved']:
+                    rejected.append(dict(setup_id=setup['setup_id'],reason='ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED',
+                        blockers=evidence['blockers'],evidence=evidence))
+                    continue
             setup['entry_evidence']=dict(last_completed_date=bars[-1]['date'],
                 last_completed_close=float(closes[-1]),today_open=float(candidate['open']),
                 today_low=float(candidate['low']),stop_basis='LIVE_TODAY_LOW' if fresh_low else 'COMPLETED_SUPPORT',
@@ -295,7 +306,7 @@ def refresh(candidate, account, rules, p=None):
         status['rejection_reasons']=sorted(rejections)
         status['near_misses']=sorted(near_misses,key=lambda r:-r['net_upside_twd'])[:3]
         if not candidate['trade_setups']:
-            status['blockers']=['HISTORICAL_STOP_BROKEN_ON_LAST_COMPLETED_CLOSE'] if rejected else ['NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH']
+            status['blockers']=sorted({r['reason'] for r in rejected}) if rejected else ['NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH']
     except (KeyError,ValueError,TypeError,ArithmeticError) as exc:
         status['blockers']=[str(exc)]
     if candidate.get('market_scout'):

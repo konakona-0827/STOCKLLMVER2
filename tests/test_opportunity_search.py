@@ -242,7 +242,7 @@ class OpportunitySearchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             c=refresh(source,self.account,self.rules,self.p)
             context=TradingTools([c],self.rules,'test',Path(tmp)/'tools.json',lambda symbol,old:deepcopy(old),
-                lambda:{**deepcopy(self.account),'positions':[]},lambda:[])
+                lambda:{**deepcopy(self.account),'positions':[]},lambda:[],entry_skill_enabled=True)
             settings=dict(enabled=True,policy='advisory',history_bars=100,max_symbols=2,max_calls=4,
                           timeout_seconds=3,max_output_tokens=1800)
             context.support=SupportCoordinator(context,Path(tmp),settings,lambda *args:dict(
