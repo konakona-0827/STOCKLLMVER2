@@ -17,6 +17,17 @@ from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
 AGENT_VERSION = 'agent-decision-v11-entry-evidence-skill-control'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
+
+
+def api_quota_exhausted(error):
+    body=getattr(error,'body',None)
+    if isinstance(body,dict):
+        values=[body.get('code'),body.get('type')]
+        if isinstance(body.get('error'),dict):values.extend(body['error'].get(k) for k in ('code','type'))
+        if any(v in ('insufficient_quota','credit_balance_exhausted') for v in values):return True
+    return any(code in str(error) for code in ('insufficient_quota','credit_balance_exhausted'))
+
+
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
 需要更新時可呼叫 get_portfolio、get_trade_history。BUY / SELL 前必須查最新 get_market_data，
@@ -454,6 +465,7 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
         response['validation'] = 'VALID'
     except Exception as exc:
         response.update(validation='ERROR')
+        response['failure_kind']='API_QUOTA_EXHAUSTED' if api_quota_exhausted(exc) else 'MODEL_OR_TOOL_ERROR'
         response['api']['error'] = redact(f'{type(exc).__name__}: {exc}')
         decision = dict(market_view='Agent 決策失敗，本輪全部 WAIT。',decisions=[dict(
             symbol=c['symbol'],decision='WAIT',confidence=0,action_ratio=0,suggested_qty=0,

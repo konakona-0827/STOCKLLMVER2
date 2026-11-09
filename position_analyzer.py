@@ -326,6 +326,14 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
             # The response schema permits null for an absent quantity. Keep the
             # downstream advice interface's zero-quantity representation.
             d['suggested_qty'] = 0
+        if d['decision'] in ('WAIT','HOLD') and (d['strategy_id']!='NONE' or
+                any(d[key] is not None for key in ('target_price','invalidation_price','holding_days'))):
+            # Quantity/price checks above already established that this is no
+            # order. Explanatory plan metadata must not poison other symbols.
+            if not isinstance(d['warnings'],list) or any(not isinstance(w,str) for w in d['warnings']):
+                raise ValueError('INVALID_EXPLANATION')
+            d.update(strategy_id='NONE',target_price=None,invalidation_price=None,holding_days=None)
+            d['warnings'].append('非交易動作附帶的計畫欄位已清除，本輪不產生該檔委託。')
         if d['decision'] != 'BUY' and (d['strategy_id'] != 'NONE' or
                 any(d[key] is not None for key in ('target_price', 'invalidation_price', 'holding_days'))):
             raise ValueError('NON_BUY_TRADE_PLAN')

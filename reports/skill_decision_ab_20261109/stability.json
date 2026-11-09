@@ -1,0 +1,284 @@
+{
+  "scope": "Known positive original plan only, not market hit rate",
+  "user_stopped_remaining_calls": true,
+  "variants": {
+    "baseline_no_skill": {
+      "complete_repetitions": 2,
+      "captured_repetitions": 2,
+      "runs": [
+        {
+          "repetition": "main",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採刷新後仍有效的Strong趨勢回檔計畫：10/16已完成日線具量價訊號，156元為10/14及10/15的已觀察低點；今日157.5元低點未跌破156元，盤中由157.5回到159元。兩方研究均為WATCH、非REJECT。以現賣價159元計11股，計畫估計買進含佣金約1,751元、另列資金需求1,769元；目標167.5元扣預留退出價差及費稅後淨利約78元、淨報酬4.45%，失效156元的模型淨損約48.5元，報酬風險比約1.61。反證是今日已跌破前日低點160元，且10/16觸及167.5元後回落；須觀察能否重新站回160元及前收161.5元，不能視167.5元必然可達。156元失守即破壞原支撐假設；零股今日買入不能當沖，失效價也不是已掛停損，隔夜跳空可能擴大損失。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "WAIT",
+              "same_original_plan": false,
+              "failure_kind": null,
+              "reason": "兩方研究均為 WATCH。159元進場、167.5元目標、156元失效的趨勢回檔計畫雖估算費後獲利78元、風險48.5元，但現價已低於10/16低點160元及收盤161.5元；當日曾衝至167.5元後回落，突破延續仍有反證。觀察能否重新站回160至161.5元並守穩，再按當時價格重算進場與費後空間；跌破156元則原支撐依據失效。"
+            }
+          ]
+        },
+        {
+          "repetition": "r1",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採現價159的Strong趨勢回落計畫：10/16已完成日線放量、收161.5；10/14及10/15的156低點提供失效價依據，今日自157.5回到159。11股估計買入價金1749元、買進佣金2元，計畫現金需求含保留約1769元；以167.5阻力為目標、計入退出價差與雙邊費稅，估計淨利78元；跌至156的情境估計損失48.5元，報酬風險比約1.61。反證是今日已跌破10/16低點160、尚未站回其收盤161.5，且167.5曾觸及後回落；兩方研究均列觀察而非否決，故僅按現有11股上限，不上調目標。新買零股當日不可賣，156亦非已掛出的停損單。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採現行Strong趨勢回檔計畫：10/16完成日線價量確認，今日自157.5回升至LIVE賣價159；156為10/14、10/15已完成日線低點。兩方研究均為WATCH而非否決，但10/16觸167.5後回落、今日尚未重返前日低點160，是明確反證；161至161.5亦須觀察，不把167.5視為必達。以159買11股，計入估算雙邊費稅及出場價差，目標淨利約78元、失效情境淨損約48.5元，報酬風險比約1.61；計畫資金需求約1769元，未逾現金及單檔額度。若跌破156，趨勢回檔依據失效；失效價非已掛停損，今日新買零股不能當沖賣出。"
+            }
+          ]
+        },
+        {
+          "repetition": "r2",
+          "complete": false,
+          "interrupted_by_user": true,
+          "caught": null,
+          "observations": []
+        }
+      ]
+    },
+    "baseline_skill": {
+      "complete_repetitions": 2,
+      "captured_repetitions": 2,
+      "runs": [
+        {
+          "repetition": "main",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "WAIT",
+              "same_original_plan": false,
+              "failure_kind": null,
+              "reason": "159進場、167.5目標、156失效的趨勢拉回計畫雖合格，今日低點157.5卻已跌破10/16低點160，現價仍在其下；10/16觸及167.5後僅收161.5，顯示目標處有實際賣壓。兩方研究（packet 1e402773）均提示此反證。待重新站回160並收復161～161.5區域，且156支撐未失，再評估。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用仍有效的 Strong 趨勢拉回計畫 b763b194f570：10/16完整日線放量突破、收161.5；今日自157.5回升至 LIVE 賣價159，尚高於156支撐失效價。以159買11股，計畫估算含現金保留需求1,769元；目標167.5為10/16已觀測高點，費後情境淨利約78元、失效情境損失約48.5元，報酬風險比約1.61。反證是現價仍低於161.5，160－161.5附近可能遇壓，且今日回升尚無完整日線確認；兩方研究均為WATCH而非REJECT（2377:SUPPORT_DATA、2377:ENTRY_CONTEXT），公司事件與價格調整口徑未核實。156是模型失效價、非已掛停損；零股當日不能賣，隔夜跳空另有風險。"
+            }
+          ]
+        },
+        {
+          "repetition": "r1",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用仍有效的Strong趨勢回測計畫 b763b194f570：10/16完整日線收161.5、量比2.42，今日自157.5回升至LIVE賣價159，仍高於10/14及10/15的156低點。以159評估11股，計畫估計買進含費及保留資金1769元、目標扣價差與費稅淨利78元、至失效價情境淨損48.5元，淨報酬約4.45%、報酬風險比1.61。反證是今日仍低於10/16低點160及收盤161.5，且該日曾衝167.5後回落；若156支撐失守須重新檢討。兩方研究均為WATCH、未提出REJECT［2377:SUPPORT_DATA、2377:ENTRY_CONTEXT］；公司事件未核實，盤中回升不冒充今日收盤確認。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用仍有效的 Strong 趨勢拉回計畫 b763b194f570：10/14、10/15 日線低點均為 156，10/16 已完成日線量價確認；今日低至 157.5 後回到 LIVE 賣價 159，尚未觸及結構失效價 156。11 股估計買進資金需求 1,769 元；計入雙邊佣金、賣稅及退出價差後，目標淨利約 78 元、失效情境淨損約 48.5 元，報酬風險比約 1.61。反證是 10/16 自 167.5 回落收 161.5，現價仍低於當日低點 160；若無法收復 160～161.5 或逼近 156，須重新檢視。兩方研究均為 WATCH、非 REJECT；公司事件與行動未核實，不視為已排除風險。（2377:SUPPORT_DATA、2377:ENTRY_CONTEXT）"
+            }
+          ]
+        },
+        {
+          "repetition": "r2",
+          "complete": false,
+          "interrupted_by_user": true,
+          "caught": null,
+          "observations": []
+        }
+      ]
+    },
+    "revised_no_skill": {
+      "complete_repetitions": 3,
+      "captured_repetitions": 3,
+      "runs": [
+        {
+          "repetition": "main",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "WAIT",
+              "same_original_plan": false,
+              "failure_kind": null,
+              "reason": "最新券商LIVE賣價159元，與刷新後的趨勢拉回計畫一致；10/14、10/15低點156元提供失效價依據，10/16已完成日線放量反彈，今日自157.5元回升並站上MA5約158.1元。兩方研究均為WATCH、非REJECT；其反證是10/13曾跌至152元，156元並非從未失守的支撐，且10/16觸及167.5元後回落、今日尚未收盤確認。以11股、159元進場估算，目標167.5元為已觀察高點；扣除估計買賣佣金、賣出稅及0.5元退出價差，目標淨利約78元、失效情境淨損約48.5元，淨報酬約4.45%、報酬風險比約1.61；所需資金含保留額約1769元，低於可用預算。上行仍須克服前收161.5元；若跌破156元即須重新評估。模型失效價不是已掛停損，零股當日不得賣出，達標及成交均無保證。；交易前審查未通過：11股的價位、156元支撐及費稅試算均可核對：買進成本1751元；目標退出扣費稅後淨利78元，失效情境淨損48.5元，資金足夠。否決理由是Strong趨勢訊號出現重大結構反證：10/16雖放量收在161.5元，10/19截至報價時最高僅159元，已低於10/16整日低點160元；當前159元亦未守住該次突破價位。建議僅提及需克服前收及高點回落，低估了突破後隨即跌破前一完整日線低點的風險。156元尚未失守，但盤中重站MA5不足以消除這項反證。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "最新券商行情為LIVE、賣價159元，現行趨勢拉回計畫仍有效。10/16完整日線量比約2.42，今日自157.5元回升並站回五日均線158.1元；156元有先前完成日線的支撐線索。以159元買進11股、167.5元結構高點為目標、156元為失效價，含估計費稅及退出價差後，目標淨利約78元、失效情境淨損約48.5元，報酬風險比約1.61；估計買進成本1751元，低於可用資金。反證是今日已跌破前日低點160元，且159元仍低於前收161.5元；兩方研究均列觀察而非否決，不能把盤中回升視為收盤確認。若再跌破156元，原支撐假設失效；目標價與模型失效價均非保證成交或自動停損。"
+            }
+          ]
+        },
+        {
+          "repetition": "r1",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "刷新後賣價仍為159元。10/16完整日線放量收161.5元，今日自157.5元回升至159元、站回五日均線158.1元；156元有10/14及10/15的日線低點依據，故採現有趨勢拉回計畫，而非認定今日已完成突破。11股估計買入含佣金1751元，預留資金1769元；目標167.5元、失效156元，計入退出價差及費稅後，目標淨利約78元、失效淨損約48.5元，報酬風險比約1.61。兩方研究均為WATCH、未否決，但10/16衝高167.5元後回落、今日仍低於前收，目標高點壓力明確；若跌破156元須重新評估，不能假設必然以失效價退出。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "最新賣價159元，符合現有趨勢拉回計畫。10/14、10/15兩日低點均為156元，10/16收161.5元且完成日線量能約為比較基準的2.42倍；今日最低157.5元後回到159元，高於五日均線158.1元，156元支撐尚未失守。11股估計買進含佣金1,751元、資金保留需求1,769元；以167.5元已觀察高點為目標、156元為失效價，計入雙邊費稅及出場價差後，目標淨利約78元、失效情境損失約48.5元，淨報酬約4.45%、風報比約1.61。反證是10/16曾觸167.5元卻收於161.5元，今日仍低於前收；161至164元附近可能先有賣壓，不能視167.5元必然可達。兩方研究均為WATCH而非否決；若失守156元，原拉回假設即失效。"
+            }
+          ]
+        },
+        {
+          "repetition": "r2",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "最新券商 LIVE 賣價159元，符合趨勢回落計畫；10/16已完成日線放量，今日自157.5元回升至159元，重站五日均線158.1元。156元取自10/14、10/15已完成日線低點，與進場相距3元，未貼近失效價。按11股及計畫費稅、出場價差估算，買進成本1751元（含買進佣金2元）、目標淨利78元、失效情境淨損48.5元，費後報酬約4.45%、報酬風險比約1.61；資金與模型風險均在限額內。兩方研究均為WATCH、非REJECT；其具體反證是10/16觸167.5元後收161.5元，今日又跌破前日低點160元。161.5至164元一帶須觀察賣壓，不能視為已突破或保證抵達167.5元；若回升停滯，應重評目標空間，跌破156元則原計畫失效。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用刷新行情後仍有效的 Strong 趨勢回檔計畫：10/16 放量收161.5元、站上近期159元區域；今日最低157.5元後回到159元，亦高於五日均線158.1元。以賣價159元估算買進11股，買入價款及估計佣金共1,751元，低於可用現金；目標167.5元為已觀測高點，156元失效價參照10/14、10/15低點。計入雙邊佣金、賣出稅及0.5元退出價差後，目標淨利約78元、失效情境損失約48.5元，淨報酬約4.45%、報酬風險比約1.61。反證是10/16曾從167.5元高點回落，今日仍低於前收161.5元，159元能否守住尚待觀察；兩方研究均為WATCH而非批准，但未提出否決。若跌破156元，原計畫失效；零股當日不能賣，失效價也不是已掛出的停損單。"
+            }
+          ]
+        }
+      ]
+    },
+    "revised_skill": {
+      "complete_repetitions": 3,
+      "captured_repetitions": 2,
+      "runs": [
+        {
+          "repetition": "main",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": false,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "ERROR",
+              "decision": "WAIT",
+              "same_original_plan": false,
+              "failure_kind": "MODEL_OR_TOOL_ERROR",
+              "reason": "AGENT_FAILED_WAIT"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "WAIT",
+              "same_original_plan": false,
+              "failure_kind": null,
+              "reason": "刷新後LIVE賣價仍為159元。現有Strong趨勢拉回計畫以159元進場、167.5元為已觀察目標、156元失效，11股的費後目標淨利約78元、失效損失約48.5元，數字通過；兩方研究（packet 319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19）均為WATCH，並非否決。具體反證是10/16放量觸及167.5元後收在161.5元，今日價格又跌破該日低點160元；目前回升僅到159元，尚未化解突破失敗與前日價區的壓力。若重新站回160元並進一步站穩161至161.5元，且刷新後仍有費後合格計畫，再評估買進；若跌破156元，原支撐假設失效。"
+            }
+          ]
+        },
+        {
+          "repetition": "r1",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用刷新後仍有效的Strong趨勢回落計畫（b763b194f570）：10/16完整日線收161.5元、量比2.42；今日LIVE賣價159元，由157.5元回升並站上MA5約158.1元，156元有10/14、10/15已完成日線低點作失效依據。11股估計買進含佣金1,751元、含現金保留需1,769元；以167.5元結構壓力為目標，費稅及退出價差後情境淨利78元、失效損失48.5元，報酬風險比1.61。反證是10/16觸167.5元後收低，今日159元亦低於昨日低點160元，反彈可能中斷；兩方研究均為WATCH、非REJECT（2377:SUPPORT_DATA、2377:ENTRY_CONTEXT），公司事件與價格調整尚未核實。此為依現有支撐承擔回落風險，不把今日盤中站回當作完整日線確認；跌破156元須重評，目標與損失均非保證。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "刷新後券商零股報價仍為 LIVE，賣價 159 元；採現行 Strong 趨勢拉回計畫，非當日突破追價。10/16 完整日線收 161.5 元、量能比 2.42；今日自 157.5 元回至 159 元，站回 MA5 158.1 元。支撐研究與審查（2377:SUPPORT_DATA、2377:ENTRY_CONTEXT；packet 319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19）均為 WATCH、非否決：10/16 高見 167.5 元後回落，今日仍低於前日低點 160 元；因此將 167.5 元視為待挑戰的已觀察阻力，不把盤中站回當成收盤確認。依原計畫買 11 股，估計買進成本含佣金 1,751 元、所需保留資金 1,769 元；計入雙邊費稅及退出價差後，目標淨利約 78 元、失效情境淨損約 48.5 元，報酬風險比約 1.61。156 元依 10/14、10/15 已完成日線低點設定，跌破即須重評；公司事件及公司行動未核實。"
+            }
+          ]
+        },
+        {
+          "repetition": "r2",
+          "complete": true,
+          "interrupted_by_user": false,
+          "caught": true,
+          "observations": [
+            {
+              "group": "20261019T113500-gui-b4fbd193",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用刷新後仍有效的 Strong／TREND_PULLBACK 計畫（setup b763b194f570）：10/16完整日線收161.5元且量增，今日LIVE賣價159元，盤中自157.5元回升並站回MA5約158.1元。以159元買11股，目標為已觀測的167.5元高點、156元為10/15完成日線低點所據失效價；估算買進成本1751元、含保留資金需求1769元，目標費稅後淨利78元、失效情境損失48.5元，淨報酬約4.45%、報酬風險比約1.61，符合現金與單筆風險限制。反證是10/16觸及167.5元後收低，今日亦跌破其160元低點、仍低於前收；兩方研究均為WATCH而非REJECT（packet c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c），尚不能將盤中站回視為今日收盤確認。故僅按現有11股風險額度評估，不追高；跌破156元則原假設失效。"
+            },
+            {
+              "group": "20261019T120500-gui-eb1d352f",
+              "validation": "VALID",
+              "decision": "BUY",
+              "same_original_plan": true,
+              "failure_kind": null,
+              "reason": "採用刷新後仍有效的 Strong 趨勢回檔計畫：10/16完整日線放量、收161.5元，今日 LIVE 賣價159元，高於五日均線158.1元及10/14、10/15的156元支撐。以159元買11股，估計買進含佣金1,751元（計畫資金需求含保留額1,769元）；167.5元是10/16已觀測高點及阻力，非保證可達。計入賣出價差、佣金與稅後，目標淨利約78元、失效情境損失約48.5元，淨報酬約4.45%、報酬風險比約1.61。反證是10/16觸及167.5元後回落，且今日低點157.5元已跌破前日低點160元；兩方研究均為WATCH而非否決，今日完整日線及公司事件亦未核實。若跌破156元，原支撐假設失效；新買零股當日不能賣，失效價並非已掛停損，仍有隔夜風險。研究依據：2377:SUPPORT_DATA、2377:ENTRY_CONTEXT；兩方審查對應同一packet 319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19。"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

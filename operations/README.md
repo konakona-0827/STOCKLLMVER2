@@ -1,8 +1,59 @@
 # 交易執行與健康檢查
 
+## 2026-11-09 Skill 對照分支與決策證據實驗
+
+使用者已要求測試先用既有資料，暫停新 Agent API 回放。
+`config/replay_api.json.allow_model_requests=false` 會在讀 API 憑證之前停止回放；
+研究資料夾另保留 `USER_PAUSED_API` 標記，補額不會解除使用者暫停。
+目前後續驗收只做離線重放；`operations.run_offline_tests` 封鎖外部連線並移除正式憑證。
+
+`codex/planned-limit-orders` 為不載入進場研究 Skill 的主分支；
+`codex/planned-limit-orders-skill` 是從它切出的子分支，載入同一套共用程式的研究 Skill。
+由 `config/research_skills.json.entry_research_enabled` 控制，來源是程式設定，不由市場文字切換。
+每輪寫入 `entry_research_policy.json` 及 API metadata，關閉時不讀 Skill 正文；原策略指令、
+兩方獨立研究、帳戶與交易前驗證均保留。因此比較的是額外載入 Skill 的效果，不是有無風控。
+上一輪 v9 與 v10 都有 Skill，不能用上一輪差異推論 Skill 的效果。
+
+共用 Agent 版本為 `agent-decision-v11-entry-evidence-skill-control`。
+新增 `config/entry_decision.json` 的研究假設：盤中回升須有前一完成日收高紅棒與當前站回 MA5；
+首次當日突破若採估算目標，須有較早、非試撮、非快取的同日 LIVE 報價支持延續。
+`scan_store.recent_history` 保留品質與來源欄位，未知資料不冒充突破確認。
+這些是待驗證的決策規則，並非經驗成功率；不修改既有原計畫的入場、目標、失效或期限。
+研究設定預設關閉，實驗的 revised 組開啟；不得因離線過測就宣稱交易品質已改善。
+
+`operations.skill_decision_experiment` 固定四組：baseline_no_skill、baseline_skill、
+revised_no_skill、revised_skill。以同一組 21 案、17 個完整研究池快照評估 FP、首次漏接及
+同日原計畫 MISS；另核對同一決策規則下有／無 Skill 的模型輸入完全相同。
+十月資料已看過，全部列為開發診斷，不宣稱未見資料的命中率。兩個微星時點另預先指定重複測試，
+只檢驗一致性，不混入整體命中率分母。證據放在 `reports/skill_decision_ab_20261109/`。
+
+先以 `export` 建立不含帳戶綁定、資料庫或 `.env` 的程式副本；模型回放從副本執行。
+副本在 runtime-root 下的 `stockllm-ab-<variant>`，只有兩個因子設定不同，逐檔保存 SHA。
+
+```powershell
+python -m operations.skill_decision_experiment export --runtime-root RUNTIME_ROOT --output REPORT
+# 從對應的隔離副本執行，不綁定正式券商狀態：
+python -m operations.expanded_opportunity_replay run --benchmark REPORT/benchmark.json --output REPORT/VARIANT --api-env API_ENV
+python -m operations.skill_decision_experiment compare --output REPORT
+```
+
+API 的 `insufficient_quota`／`credit_balance_exhausted` 明列 `API_QUOTA_EXHAUSTED`，
+交易結果維持 ERROR／WAIT。回放另寫共用 `api_quota_stop.json`，後續 worker 停止呼叫，
+不把基礎設施失敗當成模型的實際選股命中率；流程漏失仍保留，不從分母消失。
+補額後明確執行 `resume-api-quota`，再以 `run --retry-incomplete` 續跑；先前失敗整份資料夾
+移存 `_attempts`，已成功的模型結果不重跑。解鎖本身不代表已確認餘額，若仍不足會再次停止。
+
+`operations.audit_api_usage` 依 response_id 去重所有保存的 provider usage，包含研究子代理與
+交易前審查；快取讀寫已包含於 input，推理已包含於 output，不重複加算。失敗但無 usage 的
+請求保留未知，不報成零費用。金額按註記的官方 Standard 定價估算，與帳單實際扣款分開。
+
+```powershell
+python -m operations.audit_api_usage --reports reports --date 2026-11-09 --output reports/api_usage_20261109.json
+```
+
 ## 2026-11-09 擴大十月回放與決策反證
 
-正式 Agent 版本為 `agent-decision-v10-entry-context-stop-evidence`，機會規則為
+上一輪保存的 Agent 版本為 `agent-decision-v10-entry-context-stop-evidence`，機會規則為
 `opportunity-search-v4-valid-stop-evidence`。新增的檢查拒絕前一完成日收盤已跌破的歷史停損參考，
 當日 LIVE 低點另列新證據；不靠移動目標、失效價、期限或配置數字改善回放結果。
 
@@ -92,7 +143,7 @@ Agent 的 `get_market_data_batch` 現在由同一券商工作執行緒一次取�
 持倉退出與獨立審查沿用現行流程，本次先導入進場研究 Skill。
 
 更新程式後須正常重啟原 Dashboard，下一輪 `run.json.runtime.agent_version` 應為
-`agent-decision-v10-entry-context-stop-evidence`。驗收以隔離環境重放流程、工具呼叫與證據完整性為準；
+`agent-decision-v11-entry-evidence-skill-control`。驗收以隔離環境重放流程、工具呼叫與證據完整性為準；
 模型決策品質與盤中券商耗時仍需後續實際觀察。
 
 ## 2026-11-06 尋標與進場流失診斷

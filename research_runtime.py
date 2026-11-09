@@ -2,6 +2,7 @@
 import asyncio
 import json
 import os
+from datetime import datetime,timezone
 from pathlib import Path
 
 from config import now
@@ -20,6 +21,7 @@ class ResponseRecorder:
         self.path=Path(path);self.role=role;self.rows=rows if rows is not None else []
         self.stopped=stopped;self.accounting_complete=True
         self.on_incomplete=on_incomplete
+        self.current_model=None
         self.accounting_path=self.path.with_suffix('.accounting.json')
 
     def progress(self,status):
@@ -29,7 +31,8 @@ class ResponseRecorder:
         save_json(directory/'research_activity.json',dict(pid=os.getpid(),at=now().isoformat(),
             run_id=self.path.parent.name,role=self.role,status=status))
         save_json(self.accounting_path,dict(complete=self.accounting_complete and status not in
-            ('REQUEST_STARTED','OUTPUT_TRUNCATED_RETRYING'),status=status))
+            ('REQUEST_STARTED','OUTPUT_TRUNCATED_RETRYING'),status=status,model=self.current_model,
+            observed_at_utc=datetime.now(timezone.utc).isoformat()))
 
     def install(self,client):
         create=client.responses.create
@@ -39,6 +42,7 @@ class ResponseRecorder:
                 if self.stopped():
                     self.progress('STOPPED_BEFORE_REQUEST')
                     raise RuntimeError('RESEARCH_STOPPED_BY_USER')
+                self.current_model=options.get('model')
                 self.progress('REQUEST_STARTED')
                 try:
                     response=await create(*args,**options)
@@ -55,6 +59,9 @@ class ResponseRecorder:
                         cache_write_tokens=getattr(detail,'cache_write_tokens',0) or 0,
                         reasoning_tokens=getattr(output,'reasoning_tokens',0) or 0,role=self.role,
                         response_id=response.id,response_status=response.status,
+                        model=getattr(response,'model',None) or self.current_model,
+                        service_tier=getattr(response,'service_tier',None),
+                        observed_at_utc=datetime.now(timezone.utc).isoformat(),
                         input_characters=len(json.dumps(options.get('input',''),ensure_ascii=False,default=str))))
                     save_json(self.path,self.rows)
                 self.progress('RESPONSE_RECEIVED')

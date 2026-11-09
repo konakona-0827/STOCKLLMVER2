@@ -1,0 +1,97 @@
+{
+  "request_started_at": "2026-10-20T09:35:06+08:00",
+  "api": {
+    "trading_mode": "agent",
+    "agent_version": "agent-decision-v11-entry-evidence-skill-control",
+    "sdk_version": "0.23.1",
+    "model": "gpt-6-sol",
+    "implementation_sha256": "64f87a2576edae5833e7c3952fa09d5e1cc5dd690af9967f6cede0356081138e",
+    "instructions_sha256": "9759380ab4a794baded381002859ca4a64ee848da05bda67fac35c00d96f0298",
+    "research_skill_policy": {
+      "version": "entry-research-ablation-v1",
+      "enabled": true,
+      "source": "CODE_CONFIG",
+      "config_sha256": "4fa4e5ed1ab0a2fd39efee1dd0b851c26f639a38f196075fba5c86a84961b4eb"
+    },
+    "research_skills": [
+      {
+        "name": "tw-entry-research",
+        "version": "2",
+        "sha256": "70a6e27aff109d9113fd3a15d278804302dbef34d4661ae08de888cc3cf68da0",
+        "symbols": [
+          "2303"
+        ]
+      }
+    ],
+    "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+    "usage_requests": [],
+    "usage_accounting_complete": false
+  },
+  "raw_response": "",
+  "validation": "ERROR",
+  "response_received_at": "2026-10-20T09:35:06+08:00",
+  "tool_calls": [
+    {
+      "call_id": "paired-20261020T093500-gui-4aeb1dc7:1",
+      "tool": "get_portfolio",
+      "arguments": {},
+      "started_at": "2026-10-20T09:35:06+08:00",
+      "status": "COMPLETE",
+      "result": {
+        "capital_limit_twd": 10000,
+        "available_cash_twd": 10000,
+        "available_cash_cents": 1000000,
+        "budget_status": "READY",
+        "positions": []
+      },
+      "finished_at": "2026-10-20T09:35:06+08:00"
+    },
+    {
+      "call_id": "paired-20261020T093500-gui-4aeb1dc7:2",
+      "tool": "get_trade_history",
+      "arguments": {},
+      "started_at": "2026-10-20T09:35:06+08:00",
+      "status": "COMPLETE",
+      "result": [],
+      "finished_at": "2026-10-20T09:35:06+08:00"
+    }
+  ],
+  "support_research": {
+    "enabled": true,
+    "policy": "advisory",
+    "max_calls": null,
+    "max_symbols": null,
+    "calls": [],
+    "packets": []
+  },
+  "entry_research": {
+    "skill": {
+      "name": "tw-entry-research",
+      "version": "2",
+      "sha256": "70a6e27aff109d9113fd3a15d278804302dbef34d4661ae08de888cc3cf68da0",
+      "symbols": [
+        "2303"
+      ]
+    },
+    "model_validation": "ERROR",
+    "entries": [
+      {
+        "symbol": "2303",
+        "quote_status": "LIVE",
+        "quote_timestamp": "2026-10-20T09:35:03+08:00",
+        "daily_history_status": null,
+        "setup_ids": [
+          "8a7b1e03e890",
+          "c07743adacab"
+        ],
+        "research_only": false,
+        "decision": "WAIT",
+        "reason": "AGENT_FAILED_WAIT",
+        "independent_research": [],
+        "pretrade_reviews": []
+      }
+    ],
+    "tool_calls": 2,
+    "successful_batch_quote_calls": 0
+  }
+}
