@@ -1,0 +1,45 @@
+2026-11-10 接續工作紀錄
+
+使用者最新指示
+- 若無critical修正，先停止開發；將目前進度推送遠端。
+- API正常使用並非全面禁止，但本次付費Agent批次回放保持暫停。
+- 今天先完成開發；用量巨大原因及效率檢討，明早使用者再提問時接續，不自行啟動新回放。
+
+已完成開發
+- 共用修正包含資金暫停/恢復、行情警告隔離、研究/執行狀態、真批次查價、研究證據與快取、
+  費稅取整、WAIT/HOLD多餘計畫欄位清理，以及API用量去重與使用者暫停保護。
+- 主分支codex/planned-limit-orders：不載入Skill；共用程式checkpoint 6abb109。
+- 子分支codex/planned-limit-orders-skill：Skill v3，精簡指引並釐清不同計畫的反證；checkpoint cc4c01f。
+- codex/planned-limit-orders-skill-v2保留既有v2比較版本；其他control分支保留最初對照設定。
+- 共用決策/風控程式一致；分支的有效差別是Skill開關及文案。新進場證據規則仍為研究選項，預設關閉。
+- 532項離線測試通過，外部socket封鎖、無正式憑證；Skill格式驗證通過。
+- 沒有已知尚待處理的critical修正；未部署至正式交易，也未下單。
+
+已保存資料
+- reports/skill_decision_ab_20261109/summary.txt：完整四組v2對照、指令與資料範圍。
+- comparison.json：21個首次案例/17個完整研究池時點，錯買與MISS均列入；模型輸入配對控制相同。
+- stability.json：唯一已知正例的重複測試，使用者中止後不補齊剩餘樣本。
+- non_trade_metadata_regression.json：兩份原始錯誤回覆離線重放；仍是WAIT，不洗掉漏失。
+- skill_v3_revision.json：v3文案由1575降至933字元，僅離線驗證；v2結果不是v3績效。
+- regression_offline_network_blocked.txt、regression_skill_v3_offline.txt：各532項通過。
+
+用量快照與未知
+- reports/api_usage_20261109_before_resume.json：455個唯一回覆、6,856,255 tokens，Standard估價USD7.7319562。
+- reports/api_usage_20261109_main_matrix.json：874個唯一回覆、12,486,490 tokens，Standard估價USD14.899251。
+- reports/api_usage_20261109_paused.json：1024個唯一回覆、14,683,340 tokens；按設定模型估價USD17.2394954。
+- 194份重複response_id已排除。44份缺額失敗保留；2個中止時在途請求無完整usage，實際扣款未知。
+- 暫停時有27筆已取得usage但model metadata未寫回的部分回覆，上述總金額假設同組設定gpt-6-sol；
+  嚴格估價estimated_usd仍為null，條件估價另列estimated_usd_assuming_configured_gpt6_sol。
+- 不得把快取token另加至input，也不得把reasoning另加至output；不要把未知失敗請求說成零費用。
+
+明早待檢討（先使用既有資料，不新增付費測試）
+1. 按階段/唯一response_id拆分費用：單次試跑、初版回放、補完整競爭池、四組對照、追加重複。
+2. 檢查每個假設的新增資訊：相同21案只有1個已知成功機會，反覆測試對市場能力推論的價值有限。
+3. 檢查主Agent/兩個研究角色/交易前審查的呼叫與長輸入；查資料重複傳輸及證據快取可否重用。
+4. 檢查為何有/無Skill與策略修正未在最初分開控制、何時應先用小樣本與格式驗收再擴大。
+5. 提出可估價、可停止、可審查的有限驗證方案；保持錯買、MISS、流程錯誤與實盤成交分開。
+
+API暫停狀態
+config/replay_api.json.allow_model_requests=false；研究資料夾api_quota_stop.json.kind=USER_PAUSED_API。
+停止時兩個worker已終止，沒有活躍回放API worker。補額或--retry-incomplete不解除此使用者暫停。
+先用既有回覆做離線分析；未明確要求恢復本次付費回放前，不重新呼叫模型。
