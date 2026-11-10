@@ -92,7 +92,7 @@ class LiveBuyBudgetTests(unittest.TestCase):
                  minimum_balance_reserve_twd=10000, daily_buy_remaining_twd=20000,
                  min_buy_fee_reserve_twd=20, buy_cash_buffer_rate=0.01,
                  budget_status='READY'))
-        self.assertTrue(rendered.startswith('AI 分析時間：2026-10-08T12:00:00+08:00'))
+        self.assertTrue(rendered.startswith('AI 分析時間：2026-10-08 12:00:00（台灣時間）'))
         self.assertIn('本輪可用買進預算：NT$ 500', rendered)
         self.assertNotIn('券商可買餘額', rendered)
         self.assertIn('AI BUY 估算總額（含預留）：NT$ 220', rendered)

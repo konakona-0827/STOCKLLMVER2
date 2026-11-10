@@ -294,7 +294,6 @@ class AnalysisService:
         rules = load_rules(ROOT/'config'/'scan_rules.json')
         # The GUI contract is Top 10, independent of a one-shot CLI override.
         rules['candidate_top_n'] = 10
-        positions = position_store.load(self.db_path)
         paper_state = paper_portfolio.snapshot(self.db_path)
         if paper_state is None:
             raise ValueError('請先在主畫面設定資金總上限，再開始分析')
@@ -311,6 +310,7 @@ class AnalysisService:
         if live_enabled:
             from execution.health_monitor import sync_broker_state
             broker_health, _ = sync_broker_state(ROOT, return_report=True)
+        positions = position_store.load(self.db_path)
         paper_positions = (live_ai_positions(ROOT/'data'/'execution'/'live_execution.sqlite3')
                            if live_enabled else paper_portfolio.positions(self.db_path))
         discovery = None

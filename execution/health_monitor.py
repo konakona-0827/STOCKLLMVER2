@@ -23,6 +23,11 @@ from .settlement_balance import assess_settlement_balance
 
 
 _broker_sync_lock = threading.RLock()
+VERIFIED_BROKER_ORDER_STATUSES = frozenset((
+    "FILL_MATCH", "ARCHIVED_BROKER_FILL_VERIFIED", "NO_FILL_CONFIRMED",
+    "NO_FILL_YET_VERIFIED", "USER_CANCEL_CONFIRMED_NO_FILL", "ROD_EXPIRED",
+    "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED",
+))
 
 
 def _append_csv(path: Path, fields: tuple[str, ...], row: dict) -> None:
@@ -237,13 +242,8 @@ def current_buy_block_reasons(report: dict) -> list[str]:
     checks = report.get("broker_order_reconciliation") or []
     if any(row.get("status") == "FILL_MISMATCH" for row in checks):
         reasons.append("BROKER_FILL_LEDGER_MISMATCH")
-    if any(row.get("status") not in
-           ("FILL_MATCH", "ARCHIVED_BROKER_FILL_VERIFIED", "FILL_MISMATCH",
-            "NO_FILL_CONFIRMED", "NO_FILL_YET_VERIFIED",
-            "USER_CANCEL_CONFIRMED_NO_FILL",
-            "ROD_EXPIRED",
-            "USER_FILL_CONFIRMED_REPLAY_NOT_RETURNED")
-           for row in checks):
+    if any(row.get("status") != "FILL_MISMATCH"
+           and row.get("status") not in VERIFIED_BROKER_ORDER_STATUSES for row in checks):
         reasons.append("BROKER_FILL_UNVERIFIED")
     if report.get("last_execution_status") == "ERROR" and report.get('prior_execution_error_resolved') is not True:
         reasons.append("PRIOR_EXECUTION_ERROR")
@@ -446,9 +446,10 @@ def reconcile_confirmed_buy_fills(project_root: str | Path, report: dict) -> dic
 
 def sync_broker_state(project_root: str | Path, runtime=None, *, enrich=None,
                       return_report: bool = False):
-    """Serialize broker reads, exact-event ledger updates, and saved UI snapshot."""
+    """Serialize broker reads, ledger updates, and the saved UI snapshot."""
     root = Path(project_root)
     from .broker_runtime import get_broker_runtime
+    from .position_configuration import reconcile_broker_inventory
     with _broker_sync_lock:
         broker = runtime or get_broker_runtime(root)
         health = broker.health()
@@ -458,6 +459,17 @@ def sync_broker_state(project_root: str | Path, runtime=None, *, enrich=None,
             # broker sometimes rejects an immediate repeat inventory query.
             time.sleep(2)
             health = broker.health()
+        adjusted = []
+        if not reconciliation["errors"]:
+            try:
+                adjusted = reconcile_broker_inventory(root, health)
+            except (OSError, sqlite3.Error, RuntimeError, ValueError, ArithmeticError) as exc:
+                health["errors"].append(f"inventory reconciliation: {type(exc).__name__}: {exc}")
+                health["status"] = "ERROR"
+            if adjusted:
+                time.sleep(2)
+                health = broker.health()
+        health["reconciled_positions"] = adjusted
         health["reconciled_fills"] = reconciliation["updated"]
         health["reconciliation_errors"] = reconciliation["errors"]
         if reconciliation["errors"]:
@@ -529,6 +541,7 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "execution_attempts": attempts,
             "broker_order_reconciliation": report.get("broker_order_reconciliation", []),
             "reconciled_fills": report.get("reconciled_fills", []),
+            "reconciled_positions": report.get("reconciled_positions", []),
             "reconciliation_errors": report.get("reconciliation_errors", []),
             "daily_buy_limit_twd": report.get("daily_buy_limit_twd"),
             "daily_buy_reserved_twd": report.get("daily_buy_reserved_twd"),
@@ -790,7 +803,8 @@ def run_health_check(project_root: str | Path, *, session=None,
                 seq13 = detail.get("seq13")
                 if not seq13:
                     report["broker_order_reconciliation"].append(dict(
-                        decision_id=attempt["decision_id"], status="NO_BROKER_SEQ_UNVERIFIED"))
+                        decision_id=attempt["decision_id"], symbol=attempt["symbol"],
+                        status="NO_BROKER_SEQ_UNVERIFIED"))
                     if report["status"] == "OK":
                         report["status"] = "WARN"
                     continue

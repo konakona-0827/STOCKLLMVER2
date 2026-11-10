@@ -47,6 +47,22 @@ def now():
     return datetime.now(TAIPEI)
 
 
+def format_taipei_time(value, missing='--'):
+    """Format an interface timestamp using the Taiwan offset."""
+    try:
+        if isinstance(value, datetime):
+            stamp = value
+        elif isinstance(value, (int, float)):
+            stamp = datetime.fromtimestamp(value, TAIPEI)
+        else:
+            stamp = datetime.fromisoformat(value)
+        if stamp.utcoffset() is None:
+            stamp = stamp.replace(tzinfo=TAIPEI)
+        return stamp.astimezone(TAIPEI).strftime('%Y-%m-%d %H:%M:%S')
+    except (TypeError, ValueError, OverflowError, OSError):
+        return missing
+
+
 def redact(value):
     text = str(value)
     for key in ('OPENAI_API_KEY', 'CAPITAL_USER_ID', 'CAPITAL_PASSWORD'):

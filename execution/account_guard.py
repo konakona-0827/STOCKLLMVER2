@@ -165,6 +165,10 @@ def parse_real_balance_row(raw: str) -> InventoryRow | None:
         return None
 
     try:
+        realtime_qty = _dec(p[14])
+        if (not realtime_qty.is_finite() or realtime_qty != realtime_qty.to_integral_value()
+                or (p[1].upper() == "T" and realtime_qty < 0)):
+            return None
         return InventoryRow(
             symbol=p[0].upper(),
             inventory_type=p[1].upper(),
@@ -174,7 +178,7 @@ def parse_real_balance_row(raw: str) -> InventoryRow | None:
             today_buy_fill=_int(p[9]),
             today_sell_fill=_int(p[10]),
             sellable_qty=_int(p[11]),
-            realtime_qty=_int(p[14]),
+            realtime_qty=int(realtime_qty),
             raw=text,
         )
     except (InvalidOperation, ValueError):

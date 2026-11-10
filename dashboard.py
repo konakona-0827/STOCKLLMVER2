@@ -17,7 +17,8 @@ import traceback
 import webbrowser
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
-from config import ROOT, CODE_ROOT, TAIPEI, now, redact, MAX_QUOTE_AGE_SECONDS, load_env, trading_mode
+from config import (ROOT, CODE_ROOT, TAIPEI, MAX_QUOTE_AGE_SECONDS, format_taipei_time,
+                    load_env, now, redact, trading_mode)
 from state_lock import StateLease
 from scheduler import (
     Scheduler, AUTO_INTERVAL_SECONDS, AUTO_PHASE_OFFSET_SECONDS,
@@ -123,7 +124,7 @@ def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None,
     asset_types = {c.get('symbol'): c.get('asset_type', 'UNKNOWN') for c in analysis_set}
     names = {c.get('symbol'): c.get('name') or '股票名稱未取得' for c in analysis_set}
     candidates = {c.get('symbol'): c for c in analysis_set}
-    lines = [f"AI 分析時間：{analysis_at or '未取得'}（台北時間 UTC+8）\n\n",
+    lines = [f"AI 分析時間：{format_taipei_time(analysis_at, '未取得')}（台灣時間）\n\n",
              f"市場觀察\n{decision.get('market_view', '尚無分析資料')}"]
     if opportunity_diagnostics:
         diagnosis=opportunity_diagnostics
@@ -527,7 +528,7 @@ class Dashboard:
             ['股票代號','股票名稱','券商現股','券商可賣','AI 管理股數','AI 運用','人工設定股數','AI 最近買進策略','參考價','持倉參考市值','行情時間','對帳狀態','對帳時間'],
             hint='選取股票後按「設定持倉」，或雙擊股票，設定 AI 管理股數；設為 0 即禁止 AI 買賣。')
         self.position_tree.bind('<Double-1>', lambda event: self.position_settings())
-        self.quote_tree = self.table('行情與時間（台北時間 UTC+8）', ['股票代號','股票名稱','行情狀態','最新價','資料年齡（秒）','行情時間','請求開始','資料收到','請求完成'])
+        self.quote_tree = self.table('行情與時間（UTC+08:00）', ['股票代號','股票名稱','行情狀態','最新價','資料年齡（秒）','行情時間','請求開始','資料收到','請求完成'])
         self.broker_position_tree = self.table('券商持倉對帳', ['對帳時間','股票代號','券商現股','券商可賣','正式 AI 股數','人工設定股數','差異狀態'])
         self.live_trade_tree = self.table('正式委託與成交紀錄',
             ['委託時間','股票代號','方向','已實現損益','AI 理由','委託股數','帳本成交股數','券商回報成交明細',
@@ -605,7 +606,8 @@ class Dashboard:
             '總股數': 80, '人工持有': 85, 'AI 管理': 85, 'AI 管理比例': 100, '人工平均成本': 110,
             'AI 平均成本': 105, '目前參考價': 100, '總未實現損益': 115, 'AI 未實現損益': 115,
             'AI 損益率': 90, '建議減碼比例': 110, '建議股數': 90,
-            '資料年齡（秒）': 115, '行情時間': 180, '請求開始': 180, '資料收到': 180, '請求完成': 180,
+            '資料年齡（秒）': 115, '行情時間': 195, '請求開始': 195, '資料收到': 195, '請求完成': 195,
+            '委託時間': 205, '對帳時間': 205,
             '券商回報成交明細': 235, '券商回報成交價金': 155,
             '券商事件推定': 260, '事件數': 155,
             'AI 最近買進策略': 180, '採用策略': 175, 'AI 理由': 360,
@@ -935,7 +937,7 @@ class Dashboard:
         self.refresh_button.configure(state='normal', text='重新整理並與券商對帳')
         elapsed = int(time.monotonic() - self.refresh_started_at)
         stamp = now().strftime('%H:%M:%S')
-        prefix = f'{stamp}（台北時間，耗時 {elapsed} 秒）'
+        prefix = f'{stamp}（台灣時間，耗時 {elapsed} 秒）'
         color = '#184D47'
         if error is not None:
             message, color = f'重新整理失敗：{redact(error)}', '#B71C1C'
@@ -963,11 +965,14 @@ class Dashboard:
                 if snapshot.get('position_quote_errors'):
                     warnings.append('部分持股行情更新失敗：' + str(snapshot['position_quote_errors']))
                 message = '重新整理與券商對帳完成。'
+                adjusted = snapshot.get('reconciled_positions') or []
+                if adjusted:
+                    message += f'已依券商現股更新本地帳本 {len(adjusted)} 檔。'
                 if warnings:
                     message += '需注意：' + redact('；'.join(warnings))
                     color = '#8B4513'
             if snapshot.get('checked_at'):
-                message += f" 對帳資料時間：{snapshot['checked_at']}。"
+                message += f" 對帳資料時間：{format_taipei_time(snapshot['checked_at'])}。"
         self.refresh_text.set(f'{prefix}　{message}')
         self.refresh_label.configure(foreground=color)
 
@@ -1169,8 +1174,6 @@ class Dashboard:
                 return
             self.root.after(100, self.tick)
             return
-        def stamp(ts):
-            return datetime.fromtimestamp(ts, TAIPEI).isoformat(timespec='seconds') if ts else '--'
         cooldown = self.scheduler.cooldown(mono)
         nxt = self.scheduler.next_auto
         health = self.last_health or {}
@@ -1206,9 +1209,7 @@ class Dashboard:
         broker_line = (f"券商戶頭餘額：{broker_balance if broker_balance is not None else '未確認'} 元　"
                        f"持倉核對：{'不一致 '+','.join(mismatches) if mismatches else '相符' if comparisons else '未確認'}　"
                        f"未解委託：{len(health.get('unresolved_attempts') or [])} 筆")
-        checked_at = (health.get('checked_at') or '--').replace('T', ' ')
-        if checked_at != '--':
-            checked_at = checked_at[5:19]
+        checked_at = format_taipei_time(health.get('checked_at'))
         broker_balance_label = (f'NT$ {float(broker_balance):,.0f}'
                                 if broker_balance is not None else '待確認')
         budget_label = (f'NT$ {float(current_buy_budget):,.0f}'
@@ -1218,7 +1219,7 @@ class Dashboard:
             f'倒數 {max(0, math.ceil(nxt-wall))} 秒'
             if nxt else '未啟用（倒數 --）')
         self.status_text.set(
-            f'現在時間 {now():%m/%d %H:%M:%S}（台北）　｜　'
+            f'現在時間 {now():%m/%d %H:%M:%S}（台灣時間）　｜　'
             f'自動掃描：{auto_label}　｜　'
             f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　｜　'
             f'健康：{health_label}　｜　'
@@ -1231,18 +1232,18 @@ class Dashboard:
             f'正式委託：{len(health.get("execution_attempts") or [])} 筆　｜　'
             f'持倉核對：{"不一致" if mismatches else "相符" if comparisons else "待核對"}')
         self.system_status_text.set(
-            f'現在時間：{now().isoformat(timespec="seconds")}（台北時間 UTC+8）\n'
-            f'最近完成分析：{self.last_scan or "尚無"}\n\n'
-            f'自動掃描：{("下次 " + stamp(nxt) + "　倒數 " + str(max(0, int(nxt-wall))) + " 秒") if nxt else "未啟用"}　　'
+            f'現在時間：{format_taipei_time(now())}（台灣時間）\n'
+            f'最近完成分析：{format_taipei_time(self.last_scan, "尚無")}\n\n'
+            f'自動掃描：{("下次 " + format_taipei_time(nxt) + "　倒數 " + str(max(0, int(nxt-wall))) + " 秒") if nxt else "未啟用"}　　'
             f'掃描間隔：{self.scheduler.interval // 60} 分鐘　　因分析進行中而略過的自動掃描：{self.scheduler.skipped} 次\n'
-            f'手動分析：{stamp(self.scheduler.last_manual)}　　冷卻時間：{str(cooldown)+" 秒" if cooldown else "可立即使用"}\n\n'
+            f'手動分析：{format_taipei_time(self.scheduler.last_manual)}　　冷卻時間：{str(cooldown)+" 秒" if cooldown else "可立即使用"}\n\n'
             f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　　最近錯誤：{self.last_error or "無"}\n'
             f'健康檢查：{health_label}{health_note}'
-            f'　　最近檢查：{health.get("checked_at") or "--"}\n'
+            f'　　最近檢查：{checked_at}\n'
             f'券商對帳：{"持倉已核對" if health.get("broker_inventory_verified") else "尚未完成"}'
-            f'　　對帳時間：{health.get("checked_at") or "--"}'
+            f'　　對帳時間：{checked_at}'
             f'　　餘額保護：{"已停止 AUTO" if self.balance_hold else "正常"}\n'
-            f'下次自動對帳：{stamp(self.next_health_at)}'
+            f'下次自動對帳：{format_taipei_time(self.next_health_at)}'
             f'（有未結委託每 1 分鐘，其他每 5 分鐘；APP 開啟期間）\n'
             f'{broker_line}　新買單可用預算：'
             f'{f"NT$ {float(current_buy_budget):,.0f}" if current_buy_budget is not None else "未確認"}'
@@ -1265,6 +1266,7 @@ class Dashboard:
         for tree in (self.top_tree, self.union_tree, self.position_tree, self.quote_tree):
             tree.delete(*tree.get_children())
         health = self.last_health or {}
+        checked_at = format_taipei_time(health.get('checked_at'))
         verified = bool(health.get('broker_inventory_verified'))
         live_ai_positions = health.get('ai_positions')
         current_holdings_ready = (verified and isinstance(live_ai_positions, dict)
@@ -1303,7 +1305,7 @@ class Dashboard:
                     symbol, c.get('name') or '股票名稱未取得',
                     SOURCE_LABELS.get(c['analysis_source'], c['analysis_source']),
                     value(c['quant_rank']), ai_qty, holding_status,
-                    health.get('checked_at') or '--',
+                    checked_at,
                     DECISION_LABELS.get(d.get('decision'), d.get('decision', '--')),
                     value(d.get('confidence'), True)])
             strategy = r['manifest'].get('strategy') or {}
@@ -1332,13 +1334,13 @@ class Dashboard:
                      QUALITY_LABELS.get(status, status))
             self.quote_tree.insert('', 'end', values=[
                 q['symbol'], q.get('name') or '股票名稱未取得', label,
-                value(q.get('last_price')), age, q.get('quote_timestamp') or '--',
-                q.get('request_started_at') or '--', q.get('received_at') or '--',
-                q.get('request_completed_at') or '--'])
+                value(q.get('last_price')), age, format_taipei_time(q.get('quote_timestamp')),
+                format_taipei_time(q.get('request_started_at')), format_taipei_time(q.get('received_at')),
+                format_taipei_time(q.get('request_completed_at'))])
         self.broker_position_tree.delete(*self.broker_position_tree.get_children())
         for row in health.get('inventory_comparison') or []:
             self.broker_position_tree.insert('', 'end', values=[
-                health.get('checked_at') or '--', row.get('symbol'), row.get('broker_cash_qty'),
+                checked_at, row.get('symbol'), row.get('broker_cash_qty'),
                 row.get('broker_sellable_qty', '--') if verified else '--',
                 row.get('ai_qty'), row.get('configured_user_qty'),
                 row.get('status') if verified else '券商查詢未完整驗證'])
@@ -1404,7 +1406,7 @@ class Dashboard:
             else:
                 ledger_label = ORDER_LEDGER_LABELS.get(ledger_status, ledger_status)
             self.live_trade_tree.insert('', 'end', tags=pnl_tag, values=[
-                attempt.get('started_at'), attempt.get('symbol'), attempt.get('side'),
+                format_taipei_time(attempt.get('started_at')), attempt.get('symbol'), attempt.get('side'),
                 pnl_text, ai_reason,
                 detail.get('quantity', '--'), detail.get('filled_quantity', '--'),
                 '；'.join(fill_parts) if fill_parts else '--', gross_text,
@@ -1458,7 +1460,7 @@ class Dashboard:
         self.spend_text.set(
             f'正式 AI 委託已核實買進成交價金：{buy_fill_text}　'
             f'賣出成交價金：{sell_fill_text}\n'
-            f'成交核對時間：{health.get("checked_at") or "--"}'
+            f'成交核對時間：{checked_at}'
             f'{fill_scope}。本次快照最多涵蓋最近 100 筆正式委託；'
             '以上為跨日成交價金合計，未含實際費稅，並非交割款。\n'
             f'當日 BUY 風控額度占用（含已成交與未結委託，非交割款）：{reserved_text}')
@@ -1502,13 +1504,13 @@ class Dashboard:
             item = balance_evidence.get(due_day.isoformat()) or {}
             status = item.get('status')
             if status == 'BALANCE_MATCH':
-                return (f'截至 {item.get("observed_at") or "--"} 一戶通餘額 '
+                return (f'截至 {format_taipei_time(item.get("observed_at"))} 一戶通餘額 '
                         f'{money(item.get("baseline_balance_twd"))} → '
                         f'{money(item.get("observed_balance_twd"))}，'
                         f'變化 {money(item.get("observed_delta_twd"))}；'
                         '與當日淨額吻合，仍非交割完成證明')
             if status == 'BALANCE_DIFFERENT':
-                return (f'截至 {item.get("observed_at") or "--"} 一戶通餘額變化 '
+                return (f'截至 {format_taipei_time(item.get("observed_at"))} 一戶通餘額變化 '
                         f'{money(item.get("observed_delta_twd"))}；'
                         '與當日淨額不符，可能另有收支')
             if status == 'MULTIPLE_DUE_DATES':
@@ -1622,7 +1624,7 @@ class Dashboard:
                     self.settlement_text.set(
                         '券商交割資料已逾時\n請重新整理；暫不顯示當前應收付')
                 self.system_settlement_text.set(
-                    f'券商查詢時間：{health.get("checked_at") or "--"}；'
+                    f'券商查詢時間：{checked_at}；'
                     f'未到期將扣 {money(future["payable"])}、將收 {money(future["receivable"])}；'
                     f'今日交割待核實：應付 {money(today_dues["payable"])}、'
                     f'應收 {money(today_dues["receivable"])}；'
@@ -1634,7 +1636,7 @@ class Dashboard:
                 today_balance_text = (f'{balance_note(current_time.date())}。'
                                       if any(today_dues.values()) else '')
                 self.settlement_status_text.set(
-                    f'券商查詢時間：{health.get("checked_at") or "--"}'
+                    f'券商查詢時間：{checked_at}'
                     + ('（資料逾時，請重新整理）' if not settlement_current else '')
                     + '\n'
                     f'未到期將扣：{money(future["payable"])}　'
@@ -1686,7 +1688,7 @@ class Dashboard:
             f'總上限剩餘：{money(health.get("strategy_remaining_twd"))}　'
             f'可供新買：{buy_budget}　持倉參考市值：{market_value}')
         self.system_budget_text.set(self.system_budget_text.get()
-            + f'\n持股行情查詢時間：{health.get("position_quotes_checked_at") or "尚未查詢"}'
+            + f'\n持股行情查詢時間：{format_taipei_time(health.get("position_quotes_checked_at"), "尚未查詢")}'
             + ('；部分行情未更新，請查看行情與時間。'
                if health.get('position_quote_errors') else ''))
         self.finance_text.set(
@@ -1696,7 +1698,7 @@ class Dashboard:
         self.system_finance_text.set(
             f'券商一戶通餘額：{money(health.get("broker_one_account_balance_twd"))}　'
             f'可出金：{money(health.get("broker_withdrawable_twd"))}　'
-            f'查詢時間：{health.get("checked_at") or "--"}\n'
+            f'查詢時間：{checked_at}\n'
             f'本次交易以資金總上限剩餘 {money(health.get("strategy_remaining_twd"))} 為累計額度；'
             f'本輪可新買 {buy_budget}。券商戶頭餘額須至少達到資金總上限，'
             f'送單後券商資金仍須保留至少 '
@@ -1725,9 +1727,9 @@ class Dashboard:
                 ai_usage,
                 row.get('configured_user_qty') if verified else '--',
                 latest_buy_strategy.get(symbol, ('','--'))[1] if verified and int(row.get('ai_qty') or 0)>0 else '--',
-                reference, value_twd, quote[0].isoformat(timespec='seconds') if quote else '--',
+                reference, value_twd, format_taipei_time(quote[0] if quote else None),
                 row.get('status') if verified else '待券商對帳',
-                health.get('checked_at') or '--'])
+                checked_at])
 
     def open_folder(self):
         if self.result:

@@ -12,13 +12,15 @@ from unittest.mock import patch
 from config import TAIPEI
 import position_store
 from analysis_service import build_union
-from execution.account_guard import BuyingPower
+from execution.account_guard import BuyingPower, InventoryRow
 from execution.account_snapshot import ExecutionAccountSnapshot
 from execution.auto_advice_executor import execute_advice_file, LiveExecutionConfig
 from execution.execution_store import ExecutionStore
-from execution.health_monitor import (_ai_committed_capital, persist_refresh_snapshot, run_health_check)
+from execution.health_monitor import (_ai_committed_capital, persist_refresh_snapshot,
+                                      run_health_check, sync_broker_state)
 from execution.models import Side
-from execution.position_configuration import save_ai_holding_configuration
+from execution.position_configuration import (reconcile_broker_inventory,
+                                              save_ai_holding_configuration)
 
 
 class RodAndConfigurationTests(unittest.TestCase):
@@ -168,6 +170,62 @@ class RodAndConfigurationTests(unittest.TestCase):
         self.assertEqual(0,self.store.get_ai_qty('0050'))
         self.assertFalse(self.store.ai_trading_enabled('0050'))
         self.assertEqual(Decimal('0'),_ai_committed_capital(self.root,LiveExecutionConfig.load(self.config_path))[0])
+
+    def test_refresh_reconciles_manual_inventory_and_rechecks_buy_budget(self):
+        power = BuyingPower(True, True, Decimal('30000'), Decimal('30000'),
+                            Decimal('30000'), 'raw')
+        inventory = InventoryRow('0050', 'T', 0, 10, 0, 10, 0, 0, 10, 'raw')
+        session = SimpleNamespace(ensure_ready=lambda: SimpleNamespace(action='REUSE'))
+        runtime = SimpleNamespace(health=lambda: run_health_check(self.root, session=session))
+        with (patch('execution.health_monitor.query_buying_power', return_value=power),
+              patch('execution.health_monitor.query_inventory', return_value=[inventory]),
+              patch('execution.health_monitor.query_settlement_dues', return_value=[]),
+              patch('execution.health_monitor.time.sleep')):
+            snapshot = sync_broker_state(self.root, runtime=runtime)
+            repeat = sync_broker_state(self.root, runtime=runtime)
+        self.assertEqual('READY', snapshot['budget_status'])
+        self.assertEqual('MATCH', snapshot['inventory_comparison'][0]['status'])
+        self.assertEqual(10, snapshot['reconciled_positions'][0]['user_qty'])
+        self.assertEqual([], repeat['reconciled_positions'])
+        self.assertIsNone(self.store.get_ai_qty('0050'))
+        self.assertTrue(self.store.ai_trading_enabled('0050'))
+        with closing(sqlite3.connect(self.analysis)) as con:
+            (event, evidence), = con.execute(
+                'SELECT event_type,after_json FROM position_events').fetchall()
+        self.assertEqual('BROKER_INVENTORY_RECONCILIATION', event)
+        self.assertEqual(10, json.loads(evidence)['broker_cash_qty'])
+        self.assertIsNone(position_store.load(self.analysis)[0]['user_average_cost'])
+
+    def test_short_inventory_reserves_manual_shares_and_reduces_ai_cost(self):
+        self.configure(10, unit_cost_twd='100',
+                       snapshot=self.snapshot(at=datetime.now(TAIPEI)-timedelta(seconds=10)),
+                       at=datetime.now(TAIPEI)-timedelta(seconds=5))
+        report = self.snapshot(qty=10, broker_qty=12, cost='1020')
+        report['inventory_checked'] = True
+        report['inventory_comparison'][0].update(
+            configured_user_qty=10, status='CONFIGURED_EXCEEDS_BROKER')
+        result = reconcile_broker_inventory(self.root, report)
+        self.assertEqual((10, 2), (result[0]['user_qty'], result[0]['ai_qty']))
+        self.assertEqual(2, self.store.get_ai_qty('0050'))
+        self.assertEqual(Decimal('204'), _ai_committed_capital(
+            self.root, LiveExecutionConfig.load(self.config_path))[0])
+        self.assertEqual([], reconcile_broker_inventory(self.root, report))
+
+    def test_inventory_update_waits_for_fresh_evidence_and_no_unresolved_order(self):
+        report = self.snapshot(broker_qty=10)
+        report['inventory_checked'] = True
+        report['inventory_comparison'][0].update(
+            configured_user_qty=None, status='BROKER_EXCESS_UNATTRIBUTED')
+        stale = (datetime.now(TAIPEI)-timedelta(seconds=121)).isoformat()
+        for blocked in (
+                {**report, 'inventory_checked': False},
+                {**report, 'checked_at': stale},
+                {**report, 'broker_order_reconciliation': [
+                    dict(symbol='0050', status='FILL_MISMATCH')]}):
+            self.assertEqual([], reconcile_broker_inventory(self.root, blocked))
+        self.order()
+        self.assertEqual([], reconcile_broker_inventory(self.root, report))
+        self.assertEqual([], position_store.load(self.analysis))
 
     def test_invalid_or_stale_configuration_does_not_change_either_ledger(self):
         for qty, snapshot, kwargs in [

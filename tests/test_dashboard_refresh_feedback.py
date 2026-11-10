@@ -59,10 +59,10 @@ class RefreshFeedbackTests(unittest.TestCase):
         self.app.refresh(sync_broker=True)
         self.assertEqual(1, self.worker.call_count)
         text = self.finish(dict(status='OK', errors=[], broker_inventory_verified=True,
-                                checked_at='2026-10-13T18:20:20+08:00'))
+                                checked_at='2026-10-13T10:20:20Z'))
         self.service.assert_called_once_with(sync_broker=True)
         self.assertIn('重新整理與券商對帳完成', text)
-        self.assertIn('2026-10-13T18:20:20+08:00', text)
+        self.assertIn('2026-10-13 18:20:20', text)
         self.assertIn('耗時 5 秒', text)
 
     def test_returned_broker_error_is_failure_and_retry_can_succeed(self):

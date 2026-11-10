@@ -7,7 +7,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
-from config import ROOT, now, redact
+from config import ROOT, format_taipei_time, now, redact
 from scheduler import Scheduler, AUTO_INTERVAL_SECONDS, is_twse_oddlot_market_window
 from strategy_experiment import ExperimentService, ExperimentStore
 from execution.auto_advice_executor import LiveExecutionConfig
@@ -86,7 +86,7 @@ class SimulationWindow:
         self.table = ttk.Treeview(table_frame,show='headings',height=5,
             columns=('策略','狀態','開始時間','版本','資金上限','資產淨值','報酬率','勝率','最大回撤',
                      'Profit Factor','交易次數'))
-        widths = {'策略':155,'狀態':65,'開始時間':180,'版本':100,'資金上限':125,
+        widths = {'策略':155,'狀態':65,'開始時間':205,'版本':100,'資金上限':125,
                   '資產淨值':130,'報酬率':90,
                   '勝率':80,'最大回撤':100,'Profit Factor':105,'交易次數':80}
         for col in self.table['columns']:
@@ -281,7 +281,7 @@ class SimulationWindow:
                     self.status.set('模擬中：'+payload)
                 elif kind=='result':
                     self.last_result = payload
-                    self.status.set(f"最近模擬：{payload['manifest']['finished_at']}；"
+                    self.status.set(f"最近模擬：{format_taipei_time(payload['manifest']['finished_at'])}；"
                                     '共用行情、獨立帳戶，未送券商委託。')
                     self.render()
                 elif kind=='error':
@@ -325,7 +325,7 @@ class SimulationWindow:
                               columns=('時間','標的','方向','股數','價格','手續費','已實現損益','策略版本','理由'))
         for col in trades['columns']:
             trades.heading(col,text=col)
-            trades.column(col,width=140 if col not in ('理由','時間') else 460 if col=='理由' else 190)
+            trades.column(col,width=140 if col not in ('理由','時間') else 460 if col=='理由' else 205)
         trades_y = ttk.Scrollbar(trade_frame,orient='vertical',command=trades.yview)
         trades_x = ttk.Scrollbar(trade_frame,orient='horizontal',command=trades.xview)
         trades.configure(yscrollcommand=trades_y.set,xscrollcommand=trades_x.set)
@@ -340,7 +340,7 @@ class SimulationWindow:
                                columns=('時間','標的','方向','建議股數','成交股數','狀態','AI 理由'))
         for col in orders['columns']:
             orders.heading(col,text=col)
-            orders.column(col,width=430 if col=='AI 理由' else 150)
+            orders.column(col,width={'AI 理由': 430, '時間': 205}.get(col, 150))
         orders_y = ttk.Scrollbar(order_frame,orient='vertical',command=orders.yview)
         orders_x = ttk.Scrollbar(order_frame,orient='horizontal',command=orders.xview)
         orders.configure(yscrollcommand=orders_y.set,xscrollcommand=orders_x.set)
@@ -380,7 +380,7 @@ class SimulationWindow:
             m = self.store.summary(s['id'])
             pf = '∞' if m['profit_factor_infinite'] else '--' if m['profit_factor'] is None else f"{m['profit_factor']:.2f}"
             self.table.insert('', 'end',iid=s['id'],values=(
-                m['name']+' ('+m['kind']+')','啟用' if m['active'] else '停用',m['started_at'],m['version'],
+                m['name']+' ('+m['kind']+')','啟用' if m['active'] else '停用',format_taipei_time(m['started_at']),m['version'],
                 money(m['capital_limit_twd']),money(m['equity_twd']),
                 '--' if m['return_pct'] is None else f"{m['return_pct']:+.2f}%",
                 '--' if m['win_rate'] is None else f"{m['win_rate']:.1%}",
@@ -406,7 +406,7 @@ class SimulationWindow:
         if not s:
             return
         m = self.store.summary(sid)
-        detail.insert('end',f"策略：{s['name']}　版本：{s['version']}　前向開始：{s['started_at']}\n")
+        detail.insert('end',f"策略：{s['name']}　版本：{s['version']}　前向開始：{format_taipei_time(s['started_at'])}\n")
         detail.insert('end',f"檔案：{s['source_path']}\n模型：{s['model'] or os.getenv('OPENAI_MODEL','gpt-5.6-luna') if s['kind']=='AI' else '固定規則／不呼叫 AI'}\n")
         detail.insert('end',f"現金：{money(m['cash_twd'])}　資產淨值：{money(m['equity_twd'])}\n")
         detail.insert('end',f"初始資金：{money(m['initial_capital_twd'])}　目前資金上限：{money(m['capital_limit_twd'])}\n")
@@ -414,7 +414,7 @@ class SimulationWindow:
             detail.insert('end','以下持倉缺少可用估價，暫不計算資產淨值：'+', '.join(m['unpriced'])+'\n')
         detail.insert('end','\n資金投入紀錄\n')
         for event in self.store.capital_history(sid):
-            detail.insert('end',f"{event['at']}　{event['event_type']}　"
+            detail.insert('end',f"{format_taipei_time(event['at'])}　{event['event_type']}　"
                           f"增加 {money(event['delta_cents']/100)}；上限 {money(event['capital_limit_cents']/100)}\n")
         detail.insert('end','\n目前持倉\n')
         for p in m['positions']:
@@ -427,12 +427,12 @@ class SimulationWindow:
             for item in d.get('decisions',[]):
                 detail.insert('end',f"{item['symbol']} {item.get('decision','--')}：{item.get('reason','')}\n")
         for t in self.store.recent_trades(sid):
-            trades.insert('', 'end',values=(t['at'],t['symbol'],t['side'],t['qty'],
+            trades.insert('', 'end',values=(format_taipei_time(t['at']),t['symbol'],t['side'],t['qty'],
                 money(t['price_cents']/100),money(t['fee_cents']/100),
                 money(t['realized_cents']/100) if t['side']=='SELL' else '--',
                 t['strategy_version'],t['reason']))
         for order in self.store.recent_orders(sid):
-            orders.insert('', 'end',values=(order['at'],order['symbol'],order['side'],
+            orders.insert('', 'end',values=(format_taipei_time(order['at']),order['symbol'],order['side'],
                 order['proposed_qty'],order['filled_qty'],order['status'],order['reason']))
 
     def draw_chart(self):

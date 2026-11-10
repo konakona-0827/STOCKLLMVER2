@@ -48,7 +48,7 @@ class DashboardTradeDisplayTests(unittest.TestCase):
                 'configured_user_qty': 40, 'status': 'MATCH',
             }],
             'execution_attempts': [{
-                'decision_id': 'sell-1', 'started_at': '2026-10-21T09:10:00+08:00',
+                'decision_id': 'sell-1', 'started_at': '2026-10-20T23:10:00.125+00:00',
                 'symbol': '1101', 'side': 'SELL', 'status': 'FILLED',
                 'run_id': 'run-1',
                 'detail': {'quantity': 5, 'filled_quantity': 5,
@@ -73,7 +73,9 @@ class DashboardTradeDisplayTests(unittest.TestCase):
         broker = self.row(self.app.broker_position_tree)
         self.assertEqual(broker['券商可賣'], '25')
         self.assertEqual(broker['正式 AI 股數'], '60')
+        self.assertEqual(broker['對帳時間'], '2026-10-21 09:30:00')
         trade = self.row(self.app.live_trade_tree)
+        self.assertEqual(trade['委託時間'], '2026-10-21 07:10:00')
         self.assertEqual(trade['已實現損益'], '約 0')
         self.assertEqual(trade['AI 理由'], '完整 AI 理由')
         self.assertEqual(trade['採用策略'], '策略 v1')
@@ -103,7 +105,8 @@ class DashboardTradeDisplayTests(unittest.TestCase):
         self.app.result = None
         self.app.last_health = {'position_quotes': [
             dict(symbol='1101', last_price=20, quote_status='LIVE',
-                 quote_timestamp=at.isoformat()),
+                 quote_timestamp=at.isoformat(),
+                 received_at='2026-11-02T11:00:00+09:00'),
             dict(symbol='2449', last_price=100, quote_status='LIVE', is_trial=True,
                  quote_timestamp=at.isoformat()),
             dict(symbol='2891', last_price=30, quote_status='LIVE',
@@ -115,6 +118,9 @@ class DashboardTradeDisplayTests(unittest.TestCase):
                 for item in self.app.quote_tree.get_children()]
         self.assertEqual(['即時行情', '試撮（不可交易）', '最近行情'],
                          [row['行情狀態'] for row in rows])
+        self.assertEqual(rows[0]['行情時間'], '2026-11-02 10:00:00')
+        self.assertEqual(rows[0]['資料收到'], '2026-11-02 10:00:00')
+        self.assertEqual(rows[0]['請求開始'], '--')
 
 
 if __name__ == '__main__':
