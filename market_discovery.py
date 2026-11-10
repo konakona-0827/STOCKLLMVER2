@@ -209,7 +209,7 @@ async def _sdk_scout(packet, model, p, usage_path, stopped=lambda:False):
 
 
 def discover(root, directory, account, opportunity_policy, *, at=None, stopped=lambda:False,
-             runner=None, fetcher=None, excluded=()):
+             runner=None, fetcher=None, excluded=(), reconsider=False):
     """One automatically dispatched scout, cached intraday; never calls the broker."""
     from scheduler import is_twse_oddlot_market_window, twse_oddlot_first_match
     from trading_agent import agent_model
@@ -249,7 +249,7 @@ def discover(root, directory, account, opportunity_policy, *, at=None, stopped=l
         if age<0:raise ValueError('SCOUT_STATE_FROM_FUTURE')
         failed=state.get('last_attempt_status')=='FAILED'
         daily_limited=p.get('max_daily_calls') is not None and calls>=p['max_daily_calls']
-        cached=daily_limited or (not failed and age<p['minimum_review_gap_seconds'])
+        cached=daily_limited or (not reconsider and not failed and age<p['minimum_review_gap_seconds'])
         rotation=state.get('screen_rotation',0) if cached else at.date().toordinal()+calls
         screened,eligible=screen(rows,account,opportunity_policy,p,excluded,rotation=rotation)
         result.update(market_count=len(rows),eligible_count=eligible,screen_count=len(screened),
@@ -309,7 +309,7 @@ def discover(root, directory, account, opportunity_policy, *, at=None, stopped=l
         return result
 
 
-def record_entry_feedback(root, candidates, at):
+def record_entry_feedback(root, candidates, at, decisions=()):
     directory=Path(root)/'data/analysis/market_discovery'
     directory.mkdir(parents=True,exist_ok=True)
     rows=[dict(symbol=c['symbol'],quote_timestamp=c.get('quote_timestamp'),
@@ -318,7 +318,29 @@ def record_entry_feedback(root, candidates, at):
         rejection_reasons=(c.get('opportunity_status') or {}).get('rejection_reasons',[]),
         near_misses=(c.get('opportunity_status') or {}).get('near_misses',[]))
         for c in candidates if c.get('market_scout')]
+    by_symbol={d['symbol']:d for d in decisions}
+    for row in rows:
+        if row['symbol'] in by_symbol:
+            decision=by_symbol[row['symbol']]
+            row['final_decision']=decision['decision']
+            row['decision_reason']=decision.get('reason')
     save_json(directory/'entry_feedback.json',dict(session=at.date().isoformat(),as_of=at.isoformat(),candidates=rows))
+
+
+def merge_discovery(target, update):
+    """Retain the provenance and usage of every same-cycle replacement scout."""
+    target.setdefault('replacement_searches',[]).append({k:v for k,v in update.items()
+        if k not in ('usage_requests','watchlist')})
+    target['symbols']=list(dict.fromkeys(target.get('symbols',[])+update.get('symbols',[])))
+    watches={w['symbol']:w for w in target.get('watchlist',[])}
+    watches.update({w['symbol']:w for w in update.get('watchlist',[])})
+    target['watchlist']=list(watches.values())
+    target['model_called']=target.get('model_called',False) or update.get('model_called',False)
+    target['usage_requests']=target.get('usage_requests',[])+update.get('usage_requests',[])
+    target['usage_accounting_complete']=target.get('usage_accounting_complete',True) and update.get('usage_accounting_complete',True)
+    if update.get('error'):
+        target['replacement_error']=update['error']
+        target['error']=update['error']
 
 
 def watch_status(watchlist, quotes):

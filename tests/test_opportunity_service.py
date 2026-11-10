@@ -75,6 +75,9 @@ class OpportunityServiceTests(unittest.TestCase):
     def test_read_only_review_does_not_overwrite_live_review_state(self):
         self.exercise_service(scenario='read_only')
 
+    def test_real_service_continues_through_seed_rejections_to_a_new_scout_symbol(self):
+        self.exercise_service(scenario='replacement_search')
+
     def exercise_service(self,with_scout=False,watch_only=False,scout_unavailable=False,scenario=None):
         from opportunity_engine import policy
         search_policy=policy()
@@ -103,6 +106,12 @@ class OpportunityServiceTests(unittest.TestCase):
             runtime=SimpleNamespace(fetch_quotes=Mock(return_value=({s:dict(symbol=s,source='CAPITAL_SKCOM',
                 exchange_time=at.isoformat(),price=125,ask=125,bid=124.9,open=110 if s=='9999' else 123,high=126,low=110 if s=='9999' else 120,
                 volume_shares=100000,is_trial=False) for s in quote_symbols},{})))
+            replacement_search = scenario == 'replacement_search'
+            if replacement_search:
+                all_raw = deepcopy(runtime.fetch_quotes.return_value[0])
+                all_raw['9999'] = dict(all_raw['0001'], symbol='9999')
+                runtime.fetch_quotes.side_effect = lambda requested, *args, **kwargs: (
+                    {s:deepcopy(all_raw[s]) for s in requested}, {})
             if scenario == 'partial_quote':
                 raw,errors=runtime.fetch_quotes.return_value
                 raw.pop('0020');errors['0020']='ONE_SYMBOL_QUOTE_TIMEOUT'
@@ -123,7 +132,8 @@ class OpportunityServiceTests(unittest.TestCase):
                         missing_20d_trading_dates=[],coverage='SUFFICIENT_FOR_20D_COMPARISON')
                 return cs
             def model(service,directory,manifest,request,cs,account,*args,**kwargs):
-                self.assertEqual(len(cs),1 if watch_only else 3)
+                if replacement_search:self.assertTrue(1 <= len(cs) <= 3)
+                else:self.assertEqual(len(cs),1 if watch_only else 3)
                 if watch_only:
                     self.assertTrue(cs[0]['research_only'])
                     self.assertEqual(cs[0]['trade_setups'],[])
@@ -135,7 +145,7 @@ class OpportunityServiceTests(unittest.TestCase):
                     confidence=0,action_ratio=0,suggested_qty=0,reference_price=125,suggested_price=None,
                     strategy_id='NONE',target_price=None,invalidation_price=None,holding_days=None,
                     reason='測試等待事件確認',data_quality='LIVE',warnings=[]) for c in cs]
-                if scout_unavailable:
+                if scout_unavailable or (replacement_search and cs[0]['symbol'] == '9999'):
                     setup = cs[0]['trade_setups'][0]
                     decisions[0].update(decision='BUY', confidence=0.6, suggested_qty=setup['max_qty'],
                         suggested_price=setup['entry'], strategy_id=setup['strategy_id'],
@@ -147,8 +157,8 @@ class OpportunityServiceTests(unittest.TestCase):
             def execute(path):
                 advice = json.loads(path.read_text(encoding='utf-8'))
                 intents = build_advice_intents(advice)
-                self.assertEqual(len(intents), int(scout_unavailable))
-                if scout_unavailable:
+                self.assertEqual(len(intents), int(scout_unavailable or replacement_search))
+                if scout_unavailable or replacement_search:
                     self.assertEqual(intents[0].side.value, 'BUY')
                 if runtime.execute.call_count == 1:
                     if scenario == 'execution_error':raise RuntimeError('SYNTHETIC_EXECUTION_FAILURE')
@@ -167,18 +177,37 @@ class OpportunityServiceTests(unittest.TestCase):
 
             strategy=strategy_catalog.read_strategy(CODE_ROOT/'strategies'/
                 ('strategy_opportunity_v2.md' if with_scout else 'strategy_opportunity_v1.md'))
+            replacement = dict(status='COMPLETE', symbols=['9999'], watchlist=[dict(
+                symbol='9999', trigger_kind='BREAK_ABOVE_HIGH', condition_price=120,
+                rationale='替代研究', counter_evidence_to_check='核對結構', expires_session='2026-11-03')],
+                model_called=False, usage_accounting_complete=True)
+            discovery_mock = Mock(side_effect=[deepcopy(scout), replacement]) if replacement_search else Mock(return_value=scout)
             with (patch.dict(os.environ,{'TRADING_MODE':'agent'}),patch('analysis_service.load_env'),
                   patch('analysis_service.ROOT',root),patch('position_analyzer.ROOT',root),
                   patch('analysis_service.now',return_value=at),patch('capital_multi_quote.now',return_value=at),
                   patch('strategy_catalog.live_selection',return_value=strategy),
                   patch('opportunity_engine.policy',return_value=search_policy),
-                  patch('market_discovery.discover',return_value=scout),
+                  patch('market_discovery.discover',side_effect=discovery_mock),
                   patch('daily_history.enrich_candidates',side_effect=enrich),
                   patch('execution.broker_runtime.get_broker_runtime',return_value=runtime),
                   patch('execution.health_monitor.sync_broker_state',side_effect=sync),
-                  patch('agent_decision.analyze_existing',side_effect=model) as model_call):
+                  patch('agent_decision._analyze_batch' if replacement_search else 'agent_decision.analyze_existing',side_effect=model) as model_call):
                 first=service.run('AUTO')
                 review_path=service.directory/'opportunity_review_state.json'
+                if replacement_search:
+                    self.assertEqual(first['manifest']['status'], 'COMPLETE')
+                    self.assertEqual(first['manifest']['universe_count'], 21)
+                    self.assertEqual(len(first['analysis_set']), 21)
+                    self.assertEqual(model_call.call_count, 8)
+                    self.assertEqual(first['decision']['decisions'][-1]['symbol'], '9999')
+                    self.assertEqual(first['decision']['decisions'][-1]['decision'], 'BUY')
+                    self.assertEqual(first['opportunity_search']['search']['candidate_search']['stop_reason'],
+                                     'REVIEWED_TRADE_INTENT_PRODUCED')
+                    self.assertEqual(len(first['batch']['quotes']), 21)
+                    runtime.execute.assert_called_once()
+                    self.assertTrue(discovery_mock.call_args.kwargs['reconsider'])
+                    self.assertTrue(set(symbols).issubset(discovery_mock.call_args.kwargs['excluded']))
+                    return
                 if scenario == 'quote_outage':
                     self.assertEqual(first['manifest']['status'],'ERROR')
                     self.assertIn('NO_VALID_MARKET_DATA',first['manifest']['error'])

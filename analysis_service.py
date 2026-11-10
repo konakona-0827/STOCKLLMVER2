@@ -458,21 +458,84 @@ class AnalysisService:
             import trading_agent
         request = position_analyzer.build_request(candidates, paper_state, strategy_prompt=strategy['prompt'],
                             model=trading_agent.agent_model() if agent_mode else None)
+        expansion_count = 0
+
+        def expand_candidates(known_symbols, decisions):
+            nonlocal expansion_count
+            from market_discovery import discover, record_entry_feedback, merge_discovery
+            from execution.broker_runtime import get_broker_runtime
+            expansion_count += 1
+            destination = directory/'search_expansions'/f'{expansion_count:03d}'
+            destination.mkdir(parents=True, exist_ok=True)
+            phase('SEARCHING_ALTERNATIVES')
+            record_entry_feedback(ROOT, opportunity_pool, now(), decisions)
+            disabled = {symbol for symbol, setting in (broker_health or {}).get('ai_position_settings', {}).items()
+                        if setting.get('enabled') is False}
+            replacement = discover(ROOT, destination, paper_state, search_policy,
+                stopped=self.stop.is_set, excluded=disabled | set(symbols) | set(known_symbols), reconsider=True)
+            merge_discovery(discovery, replacement)
+            save_json(directory/'market_discovery.json', discovery)
+            fresh_symbols = [s for s in replacement.get('symbols', []) if s not in symbols and s not in known_symbols]
+            result = dict(status=replacement['status'], observed_symbols=fresh_symbols, candidates=[])
+            if not fresh_symbols or self.stop.is_set():
+                return result
+            # Every newly discovered name follows the same broker, liquidity,
+            # complete-history, ownership, budget and plan checks as the seed pool.
+            symbols.extend(fresh_symbols)
+            universe['symbols'].extend(fresh_symbols)
+            universe['discovery_symbols'] = list(dict.fromkeys(universe.get('discovery_symbols', []) + fresh_symbols))
+            started_extra = now().isoformat()
+            extra_raw, extra_errors = get_broker_runtime(ROOT).fetch_quotes(
+                fresh_symbols, Audit(destination), self.stop.is_set, timeout=12)
+            extra = multi_snapshot(fresh_symbols, extra_raw, extra_errors, started_extra, now().isoformat())
+            save_json(destination/'multi_market_snapshot.json', extra)
+            errors.update(extra_errors)
+            extra_scanned, extra_ranked, _ = scan_and_rank(extra['quotes'], rules, now())
+            additions = build_union(extra_ranked, extra_ranked, extra['quotes'],
+                [p for p in positions if p['symbol'] in fresh_symbols], self.db_path,
+                started_extra, extra_scanned, universe.get('etf_symbols', []),
+                [p for p in paper_positions if p['symbol'] in fresh_symbols],
+                live_managed=live_enabled, ai_settings=(broker_health or {}).get('ai_position_settings'))
+            extra_map = {q['symbol']:q for q in extra['quotes']}
+            daily_history.enrich_candidates(additions, extra_map, now().date(), self.directory/'daily_history')
+            if live_enabled:
+                apply_live_position_context(additions, broker_health, ROOT/'data/execution/live_execution.sqlite3', Audit(destination))
+            apply_buy_limits(additions, paper_state, live_config if live_enabled else None)
+            for candidate in additions:
+                candidate['opportunity_buy_eligible'] = True
+                candidate['pending_execution'] = candidate['symbol'] in pending_symbols
+                candidate['market_scout'] = next(w for w in replacement['watchlist'] if w['symbol'] == candidate['symbol'])
+            save_json(destination/'opportunity_pool_before_selection.json', additions)
+            batch['quotes'].extend(extra['quotes'])
+            batch['symbols_received'] += extra['symbols_received']
+            batch['symbols_unavailable'] += extra['symbols_unavailable']
+            quote_map.update(extra_map)
+            ranked.extend(extra_ranked)
+            save_json(directory/'universe_snapshot.json', universe)
+            result['candidates'] = additions
+            return result
+
         if agent_mode:
             manifest['runtime'] = trading_agent.execution_metadata(request['model'])
         save_json(directory/'openai_request.json', request)
         phase('WAITING_OPENAI')
         budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
+        search_empty_pool = (agent_mode and opportunity_active and discovery is not None and not candidates
+            and batch['symbols_received'] > 0 and not manifest.get('read_only') and not self.stop.is_set())
         if (manifest.get('read_only') or budget_ready) and (
                 (manifest.get('read_only') and not self.stop.is_set()) or
                 should_call_openai(trigger=manifest['trigger_type'], candidates=candidates,
-                                   stopped=self.stop.is_set(), wall=now().timestamp())) and (
-                    not opportunity_active or opportunity_trigger['call_model']):
+                                   stopped=self.stop.is_set(), wall=now().timestamp()) or
+                search_empty_pool) and (
+                    not opportunity_active or opportunity_trigger['call_model'] or
+                    search_empty_pool):
             if agent_mode:
                 from agent_decision import analyze_existing
                 decision, response = analyze_existing(self, directory, manifest, request, candidates,
                                                        paper_state, live_config, live_enabled, rules,
-                                                       broker_health=broker_health)
+                                                       broker_health=broker_health,
+                                                       opportunity_pool=opportunity_pool if opportunity_active else None,
+                                                       expand_candidates=expand_candidates if discovery is not None else None)
                 budget_ready = not live_enabled or paper_state.get('budget_status') == 'READY'
                 paper_positions = paper_state.get('positions', paper_positions)
                 save_json(directory/'paper_account_snapshot.json', paper_state)
@@ -483,6 +546,16 @@ class AnalysisService:
                 batch['symbols_received'] = len(batch['quotes'])-batch['symbols_unavailable']
                 save_json(directory/'analysis_set.json', candidates)
                 save_json(directory/'multi_market_snapshot.json', batch)
+                if opportunity_active:
+                    # The final audit includes later research and replacements,
+                    # rather than continuing to display the opening shortlist.
+                    opportunity_audit['research_symbols'] = [c['symbol'] for c in candidates]
+                    opportunity_audit['watch_research_symbols'] = [c['symbol'] for c in candidates if c.get('research_only')]
+                    opportunity_audit['qualified_symbols'] = [c['symbol'] for c in opportunity_pool if c.get('trade_setups')]
+                    opportunity_audit['pool_count'] = len(opportunity_pool)
+                    opportunity_audit['candidate_search'] = response.get('candidate_search')
+                    save_json(directory/'opportunity_pool_after_selection.json', opportunity_pool)
+                    save_json(directory/'opportunity_search.json', dict(search=opportunity_audit, trigger=opportunity_trigger))
             else:
                 decision, response = position_analyzer.analyze(candidates, request)
         else:
@@ -549,7 +622,9 @@ class AnalysisService:
         if discovery is not None:
             # Optional scouting can fail while the seed universe still yields valid advice.
             manifest['discovery_status']=discovery['status']
-            manifest['research_warning']=discovery.get('error')
+            expansion_errors = [r['error'] for r in (response.get('candidate_search') or {}).get('expansions', [])
+                                if r.get('error')]
+            manifest['research_warning']=discovery.get('error') or '；'.join(expansion_errors) or None
         result = dict(manifest=manifest, batch=batch, top=top, analysis_set=candidates, positions=contexts,
                       decision=decision, paper_simulation=simulation,
                       pretrade_review=response.get('pretrade_review'),

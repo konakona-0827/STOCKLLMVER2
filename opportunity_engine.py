@@ -8,6 +8,7 @@ import json
 from config import CODE_ROOT
 from pretrade_policy import buy_block, MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
 from trade_economics import evaluate_buy,estimate_sell
+from entry_structure import resistance_levels, target_evidence, stop_evidence, VERSION as STRUCTURE_VERSION
 
 
 def policy():
@@ -95,6 +96,7 @@ def refresh(candidate, account, rules, p=None):
     candidate['opportunity_policy'] = p
     candidate['trade_setups'] = []
     candidate['research_only'] = False
+    candidate.pop('entry_structure',None)
     candidate['opportunity_status'] = dict(blockers=[], signal=None)
     status = candidate['opportunity_status']
     try:
@@ -175,6 +177,13 @@ def refresh(candidate, account, rules, p=None):
             if row['id'].startswith('low_') or row['id']=='today_low':supports.append(_number(row['price']))
             if row['id'].startswith('high_'):resistances.append(_number(row['price']))
         candidate['price_levels']=levels+extra
+        barriers=resistance_levels(bars,candidate['price_levels'],recovery=not trend)
+        candidate['entry_structure']=dict(version=STRUCTURE_VERSION,
+            setup_family=('FIRST_DAY_BREAKOUT' if first_day_breakout else
+                          'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY'),
+            resistance_levels=barriers,
+            confirmation_scope='COMPLETED_HISTORY_AND_CURRENT_LIVE_QUOTE',
+            requires_today_completed_bar=False)
         # The completed breakout/recovery bar's actual low is a concrete
         # invalidation reference; it is not moved to improve the ratio.
         supports.append(_number(bars[-1]['low']))
@@ -202,14 +211,16 @@ def refresh(candidate, account, rules, p=None):
                 continue
             _round_price(entry,candidate['asset_type'])  # Reject non-legal entries below via evaluate_buy.
             stops=[s for s in supports if 0<s<entry and s<last and entry-s>=max(
-                atr*Decimal(str(p['minimum_stop_atr'])),(ask-bid)*2)]
+                atr*Decimal(str(p['minimum_stop_atr'])),(ask-bid)*2)
+                and not stop_evidence(bars,s,candidate['low'],session).get('broken_on')]
             if not stops:
                 rejections.add('NO_OBSERVED_STOP_WITH_MINIMUM_ATR_DISTANCE');continue
             stop=max(stops)
             existing_risk=existing_position_risk(candidate,stop,rules)
-            targets=[r for r in resistances if r>entry]
+            barrier=target_evidence(barriers,entry)
             kind='OBSERVED_SWING_RESISTANCE'
-            if targets:target=min(targets)
+            if barrier:
+                target=_number(barrier['price']);kind=barrier['kind']
             elif daily_breakout or first_day_breakout:
                 target=_round_price(entry+min((entry-stop)*Decimal(str(p['breakout_target_r_multiple'])),
                     atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
@@ -259,6 +270,9 @@ def refresh(candidate, account, rules, p=None):
                 setup['breakout_confirmation']=('COMPLETED_DAILY_PRICE_AND_VOLUME' if daily_breakout else
                     'LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION' if first_day_breakout else None)
                 setup['breakout_reference_price']=float(breakout_level) if first_day_breakout else None
+                setup['target_evidence']=deepcopy(barrier) if barrier else dict(
+                    kind=kind,source='BOUNDED_R_MODEL' if 'MODELED' in kind else 'LIVE_INTRADAY_HIGH',
+                    date=session)
                 setup['existing_modeled_risk_twd']=float(existing_risk)
                 setup['combined_modeled_risk_twd']=float(existing_risk+Decimal(str(economics['estimated_net_downside_twd'])))
                 setup['analysis_cost_budget_twd']=p['analysis_cost_budget_twd']
@@ -298,7 +312,10 @@ def refresh(candidate, account, rules, p=None):
                 today_low=float(candidate['low']),stop_basis='LIVE_TODAY_LOW' if fresh_low else 'COMPLETED_SUPPORT',
                 distance_from_open_atr=round(float((Decimal(str(setup['entry']))-_number(candidate['open']))/atr),4),
                 distance_from_previous_close_atr=round(float((Decimal(str(setup['entry']))-closes[-1])/atr),4),
-                target_probability=None)
+                target_probability=None,
+                stop_origin=stop_evidence(bars,stop,candidate['low'],session),
+                confirmation_scope='CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT',
+                requires_today_completed_bar=False)
         candidate['trade_setups']=[s for s in plans if s['setup_id'] not in {r['setup_id'] for r in rejected}]
         status['rejected_setups']=rejected
         status.update(signal=tier,atr14=float(atr),allocation_basis='STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE',
@@ -340,7 +357,9 @@ def select(candidates, account, rules, p):
     # Missing data, pending orders and account/ownership blocks remain excluded.
     watch_candidates=[c for c in candidates if c['research_only']]
     watch_candidates.sort(key=lambda c:(c.get('quant_rank') or 999,c['symbol']))
-    selected += watch_candidates[:max(0,p['max_research_candidates']-len(selected))]
+    # Triggered research has its own lane. It cannot authorize an order, and
+    # must not wait hours behind numerically attractive plans later vetoed.
+    selected += watch_candidates[:p['max_research_candidates']]
     selected_symbols={c['symbol'] for c in selected}
     selected += [c for c in candidates if int((c.get('paper_position') or {}).get('qty') or 0)>0
                  and c['symbol'] not in selected_symbols]

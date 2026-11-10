@@ -1,5 +1,33 @@
 # 交易執行與健康檢查
 
+## 2026-11-10 共用結構判準與同輪候選續查
+
+Agent 版本為 `agent-decision-v12-shared-structure-search`，計畫版本為
+`opportunity-search-v5-shared-structure-search`。`entry_structure.py` 保存阻力與支撐形成日期：
+兩日回升先處理前一完成日高點及形成後被完成日收盤跌破的波段支撐；長期趨勢保留波段判準，
+不將每筆歷史日高當成硬退出。已被後續完成日收盤跌破的舊停損參考，不因價格稍後站回便自動恢復。
+當日新低點與後來新形成的完成日低點另列來源，不用成立前的跌破否定新支撐。
+計畫的 `target_evidence`、`entry_evidence.stop_origin` 與共用 `entry_structure` 同時交給
+主 Agent、兩方研究與交易前審查。Early 不要求當日完整日線，但仍須處理具體反證。
+
+每批最多三檔數字合格計畫，另有最多三檔已觸發觀察名額；觀察研究仍不能直接買進。
+本批全數 WAIT/HOLD 或被審查否決時，`opportunity_search_cycle.py` 續查本輪未研究標的，
+現有池耗盡後由尋標代理比較其他股票。重選帶入先前排除原因，排除本輪已觀測名稱，
+不重問同一股票來取得不同答案；每檔新標的仍取得真實券商報價、完整日線並通過全部原有檢查。
+出現有效 BUY/SELL 意圖後結束續查，避免分批重複使用同一筆未保留現金；最終送單仍在原執行器。
+帳戶未就緒、人工停止、模型錯誤及完整行情中斷保留原阻擋。尋標/券商失敗明列搜尋未完成。
+
+例行重選間隔改為 60 分鐘；同輪候選耗盡可提前重選，既有資金、風險、費後報酬及股數門檻不變。
+`candidate_search.json` 保存各批研究、排除與續查停止原因，`search_rounds/` 及 `search_expansions/`
+保存各自輸入、模型/研究結果與新增行情；API 用量總表納入各批及尋標紀錄。
+
+歷史驗證：`python -m operations.validate_search_revision prepare --output 全新輸出目錄` 凍結既有十月基準與程式雜湊；
+`run` 只用凍結時點的資料及本分支 Codex CLI，不讀結果標籤、不連券商或下單器；
+`score` 才獨立讀取後續日線及保存的零股賣價，三個指令使用同一輸出目錄。
+本次最終結果位於 `reports/opportunity_quality_20261110/final/`，完整說明為其父目錄的 `summary.txt`。
+原來二十一個案例與成功機會分母保留，另列新計畫 BUY 的錯買、未知入場及原計畫漏失。
+這批資料已用於開發檢討，沒有完整市場尋標快照，不得宣稱為未見資料或全市場實盤能力驗證。
+
 ## 2026-11-09 擴大十月回放與決策反證
 
 正式 Agent 版本為 `agent-decision-v10-entry-context-stop-evidence`，機會規則為

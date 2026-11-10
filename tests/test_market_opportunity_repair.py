@@ -80,7 +80,7 @@ class MarketOpportunityRepairTests(unittest.TestCase):
         plans=[s for s in c['trade_setups'] if s['entry_basis']=='CURRENT_ASK']
         self.assertTrue(plans,c['opportunity_status'])
         self.assertEqual(plans[0]['target'],110)
-        self.assertEqual(plans[0]['target_kind'],'OBSERVED_SWING_RESISTANCE')
+        self.assertEqual(plans[0]['target_kind'],'OBSERVED_RECENT_SESSION_HIGH')
         self.assertEqual(plans[0]['holding_days'],2)
         self.assertEqual(plans[0]['tier'],'Early')
 
@@ -158,10 +158,10 @@ class MarketOpportunityRepairTests(unittest.TestCase):
             self.assertEqual(first['status'],'COMPLETE',first)
             c=refresh(declining(first['symbols'][0]),self.account,self.rules,self.p)
             record_entry_feedback(root,[c],at)
-            cached=discover(root,run,self.account,self.p,at=at+timedelta(hours=1),runner=runner,fetcher=fetch)
+            cached=discover(root,run,self.account,self.p,at=at+timedelta(minutes=30),runner=runner,fetcher=fetch)
             self.assertEqual(cached['screen_rotation'],first['screen_rotation'])
             self.assertEqual(cached['symbols'],first['symbols'])
-            second=discover(root,run,self.account,self.p,at=at+timedelta(hours=3),runner=runner,fetcher=fetch)
+            second=discover(root,run,self.account,self.p,at=at+timedelta(hours=1),runner=runner,fetcher=fetch)
             self.assertEqual(second['status'],'COMPLETE',second)
             packet=runner.call_args.args[0]
             self.assertEqual(packet['recent_entry_feedback'][0]['symbol'],c['symbol'])

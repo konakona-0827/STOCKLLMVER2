@@ -44,7 +44,49 @@ def execution_history(path, limit=30, analysis_path=None):
 
 
 def analyze_existing(service, directory, manifest, request, candidates, account, rules, live_enabled, scan_rules,
-                     broker_health=None):
+                     broker_health=None, opportunity_pool=None, expand_candidates=None):
+    if opportunity_pool is None or manifest.get('read_only'):
+        return _analyze_batch(service, directory, manifest, request, candidates, account, rules,
+                              live_enabled, scan_rules, broker_health)
+    from copy import deepcopy
+    from opportunity_search_cycle import run
+    from main import save_json
+    views = []
+
+    def analyze_batch(batch, index):
+        destination = directory if index == 0 else directory/'search_rounds'/f'{index+1:03d}'
+        destination.mkdir(parents=True, exist_ok=True)
+        batch_request = deepcopy(request)
+        payload = json.loads(batch_request['input'])
+        payload['previous_candidate_rejections'] = deepcopy(rejections)
+        payload['analysis_set'] = batch
+        batch_request['input'] = json.dumps(payload, ensure_ascii=False)
+        for c in batch:
+            c.setdefault('position', dict(ai_managed_qty=int((c.get('paper_position') or {}).get('qty') or 0)))
+        batch_manifest = dict(manifest, run_id=manifest['run_id'] + (f':search{index+1}' if index else ''))
+        decision, response = _analyze_batch(service, destination, batch_manifest, batch_request, batch, account,
+                                           rules, live_enabled, scan_rules, broker_health)
+        views.append(decision['market_view'])
+        rejections.extend(dict(symbol=d['symbol'], reason=d['reason'])
+                          for d in decision['decisions'] if d['decision'] in ('WAIT', 'HOLD'))
+        save_json(destination/'selection_decision.json', decision)
+        return decision, response
+
+    rejections = []
+    from opportunity_engine import policy
+    decision, response, handoff = run(opportunity_pool, candidates, account, rules, policy(), analyze_batch,
+        expand=expand_candidates, stopped=service.stop.is_set)
+    decision['market_view'] = '；'.join(views) or '目前可觀測候選未形成合格交易；詳見搜尋紀錄。'
+    candidates[:] = handoff
+    response['raw_response'] = json.dumps(decision, ensure_ascii=False)
+    save_json(directory/'candidate_search.json', response['candidate_search'])
+    save_json(directory/'agent_response.json', response)
+    save_json(directory/'api_usage_requests.json', response.get('api', {}).get('usage_requests', []))
+    return decision, response
+
+
+def _analyze_batch(service, directory, manifest, request, candidates, account, rules, live_enabled, scan_rules,
+                   broker_health=None):
     from analysis_service import apply_live_position_context, live_ai_positions, live_buy_budget
     from execution.broker_runtime import get_broker_runtime
     execution_db = ROOT/'data'/'execution'/'live_execution.sqlite3'

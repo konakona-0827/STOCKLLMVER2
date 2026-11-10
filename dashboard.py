@@ -72,6 +72,7 @@ QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED':
 STATUS_LABELS = {
     'IDLE': '閒置', 'SCANNING_QUOTES': '取得行情中', 'QUANT_ANALYSIS': '量化分析中',
     'DAILY_HISTORY': '取得歷史日線中', 'MARKET_DISCOVERY': '子代理主動尋標中',
+    'SEARCHING_ALTERNATIVES': '候選未通過，繼續尋找標的',
     'WAITING_OPENAI': '等待 AI 分析', 'PROCESSING_RESULT': '整理分析結果中', 'WARN':'研究部分受阻',
     'COMPLETE': '完成', 'ERROR': '錯誤', 'RUNNING': '執行中',
     'BLOCKED_BUDGET': '額度不足，交易暫停',

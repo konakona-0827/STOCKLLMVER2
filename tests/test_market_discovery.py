@@ -86,15 +86,15 @@ class MarketDiscoveryTests(unittest.TestCase):
             first=m.discover(root,run,self.account,self.op,at=self.at,runner=runner,fetcher=self.fetch)
             self.assertEqual(first['status'],'COMPLETE');self.assertTrue(first['symbols'])
             self.assertTrue(first['model_called']);self.assertEqual(first['market_count'],50)
-            second=m.discover(root,run,self.account,self.op,at=self.at+timedelta(hours=1),runner=runner,fetcher=self.fetch)
+            second=m.discover(root,run,self.account,self.op,at=self.at+timedelta(minutes=30),runner=runner,fetcher=self.fetch)
             self.assertEqual(second['symbols'],first['symbols']);self.assertFalse(second['model_called'])
             self.assertEqual(runner.call_count,1);self.assertEqual(self.fetch.call_count,2)
-            m.discover(root,run,self.account,self.op,at=self.at+timedelta(hours=3),runner=runner,fetcher=self.fetch)
+            m.discover(root,run,self.account,self.op,at=self.at+timedelta(hours=1),runner=runner,fetcher=self.fetch)
             self.assertEqual(runner.call_count,2)
             # Successful unchanged packets remain cached rather than repeated.
             p={**self.p,'minimum_review_gap_seconds':3600}
             with patch('market_discovery.settings',return_value=p):
-                third=m.discover(root,run,self.account,self.op,at=self.at+timedelta(hours=3,minutes=5),runner=runner,fetcher=self.fetch)
+                third=m.discover(root,run,self.account,self.op,at=self.at+timedelta(hours=1,minutes=5),runner=runner,fetcher=self.fetch)
             self.assertFalse(third['model_called'])
 
     def test_failure_is_accounted_and_next_scan_can_retry_without_daily_quota(self):

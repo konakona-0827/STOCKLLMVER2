@@ -15,7 +15,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v11-codex-cli'
+AGENT_VERSION = 'agent-decision-v12-shared-structure-search'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -31,6 +31,12 @@ daily_bars、daily_trend 與 daily_history_status 是既有日線資料，不得
 需要更早原始資料驗證結構時呼叫 get_research_data；不可從截短顯示推論歷史缺漏。
 entry_screen／trade_setups 是 Python 按現行資料、成本、配置及風控算出的有限情境，非交易批准。
 有機會候選時核對目前計畫與反證；觀察觸發本身不能批准 BUY。
+entry_structure、trade_setups.target_evidence 與 entry_evidence.stop_origin 是引擎與研究共用的結構依據。
+兩日回升已把前一完整日高點與已跌破波段支撐列為近端阻力；較長趨勢計畫不把每筆日高當硬上限。
+對通過計畫選 WAIT 時，提出該計畫尚未涵蓋的具體反證、來源日期與重新評估條件；不得把數字合格當批准。
+失效價須核對形成日期；形成前的低價不能當成形成後已失效。過期舊支撐不等於當前新支撐。
+Early 情境不要求尚未存在的今日完整日線；可描述未確認風險，不把另一策略的確認條件自動套用。
+previous_candidate_rejections 是本輪已研究並否決的其他標的；不要重試舊判斷來湊交易，繼續比較當前新候選。
 PLANNED_LIMIT 的進場基準是具證據的 suggested_price，不是強制按 ask 追買；
 可提出等待回落的當日限價，須說明回落後仍有效的條件，成交與獲利均不保證。
 其他模式按 ask 與建議價較高者估算。不得為通過門檻跳過近端壓力或貼近失效價。
@@ -61,7 +67,7 @@ def execution_metadata(model):
                  'skills/tw-entry-research/SKILL.md','config/research_skills.json',
                  'trade_economics.py','pretrade_policy.py','strategies/strategy_opportunity_v2.md',
                  'entry_decision.py','config/entry_decision.json',
-                 'entry_screen.py','opportunity_engine.py','opportunity_gate.py',
+                 'entry_screen.py','entry_structure.py','opportunity_engine.py','opportunity_search_cycle.py','opportunity_gate.py',
                  'opportunity_watch.py','opportunity_diagnostics.py',
                  'config/opportunity_search.json','config/market_discovery.json','market_discovery.py',
                  'config/execution_live.json','advice_interface.py',

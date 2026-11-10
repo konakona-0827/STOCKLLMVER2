@@ -18,6 +18,9 @@ def summarize(batch, ranked, pool, selected, search, discovery, response, decisi
     elif not counts['live_non_trial']:outcome='LIVE_MARKET_DATA_UNAVAILABLE'
     elif response.get('validation')=='ERROR':outcome='DECISION_RESEARCH_FAILED'
     elif buys:outcome='BUY_DECISION_PRODUCED'
+    elif (response.get('candidate_search') or {}).get('stop_reason') in (
+            'ALTERNATIVE_SEARCH_FAILED','UNAVAILABLE','SCOUT_RETRY_DEFERRED','CACHED_AFTER_FAILURE'):
+        outcome='MARKET_DISCOVERY_INCOMPLETE'
     elif (discovery or {}).get('status') in ('UNAVAILABLE','SCOUT_RETRY_DEFERRED','CACHED_AFTER_FAILURE'):
         outcome='MARKET_DISCOVERY_INCOMPLETE'
     elif not counts['qualified_entries'] and not counts['watch_research']:
@@ -27,6 +30,7 @@ def summarize(batch, ranked, pool, selected, search, discovery, response, decisi
     result=dict(scope='OBSERVED_RESEARCH_POOL_ONLY_NOT_WHOLE_MARKET',outcome=outcome,
         counts=counts,entry_blockers=dict(reasons),discovery_status=(discovery or {}).get('status'),
         model_validation=response.get('validation'),
+        candidate_search=response.get('candidate_search'),
         decision_warnings=dict(Counter(w for d in decision.get('decisions',[]) for w in d.get('warnings',[]))))
     if execution is not None:
         result['execution_status']=execution.get('status')
