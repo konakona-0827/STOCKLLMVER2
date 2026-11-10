@@ -1,0 +1,574 @@
+{
+  "input": {
+    "analysis_set": [
+      {
+        "symbol": "2891",
+        "name": "中信金",
+        "asset_type": "STOCK",
+        "source": "CAPITAL_SKCOM",
+        "data_quality": "LIVE",
+        "exchange_time": "2026-10-22T11:05:05+08:00",
+        "fetched_at": "2026-10-22T11:05:05.998016+08:00",
+        "price": 75.4,
+        "bid": 75.3,
+        "ask": 75.4,
+        "volume_shares": 171951,
+        "warnings": [],
+        "received_at": "2026-10-22T11:05:05.998016+08:00",
+        "callback_received_at": "2026-10-22T11:05:05.887622+08:00",
+        "quote_basis": "capital_intraday_odd_lot",
+        "is_trial": false,
+        "retrieval_method": "BATCH_CALLBACK",
+        "data_age_seconds": 10.039,
+        "quote_status": "LIVE",
+        "last_price": 75.4,
+        "quote_timestamp": "2026-10-22T11:05:05+08:00",
+        "open": 74.3,
+        "high": 75.5,
+        "low": 74.3,
+        "volume": 171951,
+        "volume_unit": "shares",
+        "request_started_at": "2026-10-22T11:05:01.508304+08:00",
+        "request_completed_at": "2026-10-22T11:05:15.038464+08:00",
+        "retrieval_mode": "BROKER",
+        "daily_bars": {
+          "columns": [
+            "date",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "turnover",
+            "source_url",
+            "complete",
+            "source"
+          ],
+          "rows": [
+            [
+              "2026-10-15",
+              72.0,
+              73.6,
+              70.7,
+              72.9,
+              77882506.0,
+              5664024688.0,
+              "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2891",
+              true,
+              "TWSE_DAILY"
+            ],
+            [
+              "2026-10-16",
+              72.6,
+              75.3,
+              72.6,
+              73.6,
+              52048231.0,
+              3860315862.0,
+              "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2891",
+              true,
+              "TWSE_DAILY"
+            ],
+            [
+              "2026-10-19",
+              74.8,
+              74.8,
+              72.8,
+              73.4,
+              35305334.0,
+              2598161504.0,
+              "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2891",
+              true,
+              "TWSE_DAILY"
+            ],
+            [
+              "2026-10-20",
+              72.0,
+              72.9,
+              71.5,
+              71.6,
+              28956227.0,
+              2082295083.0,
+              "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2891",
+              true,
+              "TWSE_DAILY"
+            ],
+            [
+              "2026-10-21",
+              73.0,
+              74.9,
+              71.8,
+              74.8,
+              44237923.0,
+              3270913050.0,
+              "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20261001&stockNo=2891",
+              true,
+              "TWSE_DAILY"
+            ]
+          ]
+        },
+        "market_history": {
+          "columns": [
+            "exchange_time",
+            "price",
+            "volume_shares"
+          ],
+          "rows": [
+            [
+              "2026-10-22T09:35:03+08:00",
+              74.9,
+              37532
+            ],
+            [
+              "2026-10-22T10:05:03+08:00",
+              74.9,
+              73362
+            ],
+            [
+              "2026-10-22T10:35:02+08:00",
+              74.9,
+              100241
+            ]
+          ]
+        },
+        "position": {
+          "ai_managed_qty": 0
+        },
+        "paper_position": {
+          "symbol": "2891",
+          "qty": 0,
+          "cost_cents": 0
+        },
+        "pricing_policy": "PLANNED_LIMIT",
+        "opportunity_buy_eligible": true,
+        "max_sell_qty": 0,
+        "quant_rank": 2,
+        "metrics": {
+          "intraday_return": 0.014804845222072816,
+          "range_position": 0.9166666666666716,
+          "spread": 0.10000000000000853,
+          "spread_pct": 0.001326259946949715,
+          "volume": 171951,
+          "freshness_seconds": 0.0,
+          "liquidity_proxy_twd": 12965105.4,
+          "liquidity_proxy_definition": "last_price * cumulative_odd_lot_volume_not_actual_turnover",
+          "history_status": "INTRADAY_SNAPSHOTS_ONLY"
+        },
+        "strategy_evidence": {
+          "eligible_strategies": [
+            "intraday_recovery",
+            "short_term_reversal",
+            "breakout",
+            "multi_day_trend"
+          ],
+          "strategies": {
+            "intraday_recovery": {
+              "eligible": true,
+              "missing": [],
+              "observed": {
+                "range_position": 0.9166666666666716,
+                "price_vs_open": 0.014804845222072816
+              }
+            },
+            "short_term_reversal": {
+              "eligible": true,
+              "missing": [],
+              "observed": {
+                "prior_session_count": 3,
+                "latest_prior_sample_price": 74.3
+              }
+            },
+            "breakout": {
+              "eligible": true,
+              "missing": [],
+              "observed": {
+                "prior_intraday_samples": 3,
+                "prior_sample_high": 74.9
+              }
+            },
+            "multi_day_trend": {
+              "eligible": true,
+              "missing": [],
+              "observed": {
+                "complete_daily_sessions": 22
+              }
+            }
+          },
+          "history_kind": "TWSE_DAILY_AND_INTRADAY_SAMPLES"
+        },
+        "eligible_strategies": [
+          "intraday_recovery",
+          "short_term_reversal",
+          "breakout",
+          "multi_day_trend"
+        ],
+        "price_levels": {
+          "columns": [
+            "id",
+            "price",
+            "basis"
+          ],
+          "rows": [
+            [
+              "previous_close",
+              74.8,
+              "2026-10-21"
+            ],
+            [
+              "high_5d",
+              75.3,
+              "2026-10-15..2026-10-21"
+            ],
+            [
+              "low_5d",
+              70.7,
+              "2026-10-15..2026-10-21"
+            ],
+            [
+              "high_10d",
+              75.3,
+              "2026-10-07..2026-10-21"
+            ],
+            [
+              "low_10d",
+              67.3,
+              "2026-10-07..2026-10-21"
+            ],
+            [
+              "high_20d",
+              75.3,
+              "2026-09-21..2026-10-21"
+            ],
+            [
+              "low_20d",
+              67.1,
+              "2026-09-21..2026-10-21"
+            ],
+            [
+              "today_open",
+              74.3,
+              "2026-10-22"
+            ],
+            [
+              "today_high",
+              75.5,
+              "2026-10-22"
+            ],
+            [
+              "today_low",
+              74.3,
+              "2026-10-22"
+            ],
+            [
+              "swing_low_2026-09-18",
+              68.9,
+              "2026-09-18"
+            ],
+            [
+              "swing_high_2026-09-18",
+              72.0,
+              "2026-09-18"
+            ],
+            [
+              "swing_high_2026-09-22",
+              71.0,
+              "2026-09-22"
+            ],
+            [
+              "swing_low_2026-09-29",
+              67.3,
+              "2026-09-29"
+            ],
+            [
+              "swing_high_2026-09-29",
+              69.7,
+              "2026-09-29"
+            ],
+            [
+              "swing_low_2026-10-01",
+              67.1,
+              "2026-10-01"
+            ],
+            [
+              "swing_low_2026-10-05",
+              67.3,
+              "2026-10-05"
+            ],
+            [
+              "swing_high_2026-10-07",
+              69.5,
+              "2026-10-07"
+            ],
+            [
+              "swing_low_2026-10-08",
+              67.3,
+              "2026-10-08"
+            ],
+            [
+              "swing_high_2026-10-13",
+              72.0,
+              "2026-10-13"
+            ],
+            [
+              "swing_high_2026-10-16",
+              75.3,
+              "2026-10-16"
+            ],
+            [
+              "swing_low_2026-10-20",
+              71.5,
+              "2026-10-20"
+            ],
+            [
+              "last_completed_low",
+              71.8,
+              "2026-10-21"
+            ]
+          ]
+        },
+        "max_buy_qty": 131,
+        "budget_price": 75.4,
+        "opportunity_policy": {
+          "enabled": true,
+          "version": "opportunity-search-v5-shared-structure-search",
+          "max_research_candidates": 3,
+          "allocation_capital_fractions": {
+            "Early": 0.35,
+            "Confirmed": 0.45,
+            "Strong": 0.5
+          },
+          "minimum_stop_atr": 0.6,
+          "maximum_pullback_atr": 1.0,
+          "maximum_pullback_fraction": 0.03,
+          "breakout_volume_ratio": 1.2,
+          "breakout_target_r_multiple": 2.0,
+          "maximum_modeled_target_atr": 4.0,
+          "minimum_target_net_profit_twd": 50,
+          "analysis_cost_budget_twd": 10,
+          "minimum_target_profit_to_analysis_cost": 5,
+          "max_portfolio_review_gap_seconds": 14400,
+          "unchanged_opportunity_review_seconds": 7200,
+          "entry_price_change_fraction": 0.003,
+          "portfolio_price_change_fraction": 0.005
+        },
+        "trade_setups": [
+          {
+            "strategy_id": "multi_day_trend",
+            "tier": "Early",
+            "entry": 75.4,
+            "entry_basis": "CURRENT_ASK",
+            "target": 82.6,
+            "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+            "invalidation": 71.8,
+            "holding_days": 10,
+            "max_qty": 12,
+            "allocation_limit_twd": 3500.0,
+            "funding_required_twd": 924.8,
+            "net_return": 0.08854051667034665,
+            "atr14": 1.9785714285714286,
+            "completed_volume_ratio": 0.973066061710251,
+            "daily_breakout_confirmed": false,
+            "entry_twd": 75.4,
+            "target_exit_after_spread_twd": 82.5,
+            "stop_exit_after_spread_twd": 71.7,
+            "estimated_net_upside_twd": 80.2,
+            "estimated_net_downside_twd": 49.4,
+            "estimated_buy_cost_twd": 905.8,
+            "estimated_buy_commission_twd": 1.0,
+            "estimated_target_commission_twd": 1.0,
+            "estimated_stop_commission_twd": 1.0,
+            "estimated_target_tax_twd": 3.0,
+            "estimated_stop_tax_twd": 3.0,
+            "commission_rounding": "floor_to_whole_TWD_before_minimum",
+            "tax_rounding": "ceiling_to_whole_TWD",
+            "reward_risk_ratio": 1.6234817813765183,
+            "tax_rate": 0.003,
+            "commission_rate": 0.001425,
+            "minimum_commission_twd": 1.0,
+            "exit_spread_reserve_twd": 0.1,
+            "setup_family": "FIRST_DAY_BREAKOUT",
+            "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+            "breakout_reference_price": 75.3,
+            "target_evidence": {
+              "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+              "source": "BOUNDED_R_MODEL",
+              "date": "2026-10-22"
+            },
+            "existing_modeled_risk_twd": 0.0,
+            "combined_modeled_risk_twd": 49.4,
+            "analysis_cost_budget_twd": 10,
+            "target_profit_to_analysis_budget": 8.02,
+            "setup_id": "e917f0efe502",
+            "priority_score": 25.0889,
+            "entry_evidence": {
+              "last_completed_date": "2026-10-21",
+              "last_completed_close": 74.8,
+              "today_open": 74.3,
+              "today_low": 74.3,
+              "stop_basis": "COMPLETED_SUPPORT",
+              "distance_from_open_atr": 0.556,
+              "distance_from_previous_close_atr": 0.3032,
+              "target_probability": null,
+              "stop_origin": {
+                "kind": "COMPLETED_SUPPORT",
+                "formed_on": "2026-10-21",
+                "broken_on": null
+              },
+              "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+              "requires_today_completed_bar": false
+            }
+          }
+        ],
+        "research_only": false,
+        "opportunity_status": {
+          "blockers": [],
+          "signal": "Early",
+          "entry_decision_policy": {
+            "version": "entry-decision-evidence-v1",
+            "enabled": false,
+            "recovery_requires_completed_rebound": true,
+            "modeled_breakout_requires_observed_continuation": true
+          },
+          "rejected_setups": [],
+          "atr14": 1.9785714285714286,
+          "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+          "allocation_limit_twd": 3500.0,
+          "completed_volume_ratio": 0.973066061710251,
+          "rejection_reasons": [
+            "ENTRY_BELOW_BREAKOUT_REFERENCE"
+          ],
+          "near_misses": []
+        },
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v1",
+          "enabled": false,
+          "recovery_requires_completed_rebound": true,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "analysis_source": "OPPORTUNITY_SEARCH",
+        "entry_structure": {
+          "version": "entry-structure-v1",
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "resistance_levels": [
+            {
+              "price": 68.9,
+              "kind": "OBSERVED_BROKEN_SUPPORT_RESISTANCE",
+              "source": "broken_swing_low",
+              "date": "2026-09-18",
+              "broken_on": "2026-09-24"
+            },
+            {
+              "price": 69.5,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "swing_high_2026-10-07",
+              "date": "2026-10-07"
+            },
+            {
+              "price": 69.7,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "swing_high_2026-09-29",
+              "date": "2026-09-29"
+            },
+            {
+              "price": 71.0,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "swing_high_2026-09-22",
+              "date": "2026-09-22"
+            },
+            {
+              "price": 72.0,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "swing_high_2026-09-18",
+              "date": "2026-09-18"
+            },
+            {
+              "price": 72.0,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "swing_high_2026-10-13",
+              "date": "2026-10-13"
+            },
+            {
+              "price": 75.3,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "high_5d",
+              "date": "2026-10-15..2026-10-21"
+            },
+            {
+              "price": 75.3,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "high_10d",
+              "date": "2026-10-07..2026-10-21"
+            },
+            {
+              "price": 75.3,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "high_20d",
+              "date": "2026-09-21..2026-10-21"
+            },
+            {
+              "price": 75.3,
+              "kind": "OBSERVED_SWING_RESISTANCE",
+              "source": "swing_high_2026-10-16",
+              "date": "2026-10-16"
+            }
+          ],
+          "confirmation_scope": "COMPLETED_HISTORY_AND_CURRENT_LIVE_QUOTE",
+          "requires_today_completed_bar": false
+        },
+        "daily_bars_coverage": {
+          "total_rows": 22,
+          "shown_rows": 5,
+          "truncated": true,
+          "full_data_tool": "get_research_data"
+        },
+        "market_history_coverage": {
+          "total_rows": 22,
+          "shown_rows": 3,
+          "truncated": true,
+          "full_data_tool": "get_research_data"
+        },
+        "entry_screen": {
+          "status": "SCENARIOS_AVAILABLE",
+          "scenarios": [
+            {
+              "setup_id": "e917f0efe502",
+              "tier": "Early",
+              "entry": 75.4,
+              "max_qty": 12
+            }
+          ],
+          "blockers": [],
+          "scope": "ACCOUNT_SIZED_SIGNAL_AND_STRUCTURE_SCENARIOS_REQUIRING_INDEPENDENT_REVIEW"
+        }
+      }
+    ],
+    "paper_account": {
+      "capital_limit_twd": 10000,
+      "available_cash_twd": 10000,
+      "available_cash_cents": 1000000,
+      "budget_status": "READY",
+      "positions": []
+    },
+    "daily_participation": {
+      "policy": {
+        "enabled": false
+      }
+    },
+    "previous_candidate_rejections": [],
+    "evaluation": {
+      "as_of": "2026-10-22T11:05:05+08:00",
+      "external_search": false,
+      "executor_available": false
+    },
+    "available_buy_budget_twd": 10000,
+    "recent_trade_history": {
+      "recent": [],
+      "sampled_attempts": 0,
+      "status_counts": {},
+      "full_data_tool": "get_trade_history",
+      "note": "嘗試次數不代表成交；持倉原計畫以各檔 buy_plans 的剩餘批次為準。"
+    },
+    "account_and_history_preloaded": true
+  },
+  "read_only": false
+}

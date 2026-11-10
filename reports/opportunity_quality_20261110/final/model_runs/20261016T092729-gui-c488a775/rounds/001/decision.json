@@ -1,0 +1,42 @@
+{
+  "market_view": "回放時點兩檔皆為 LIVE、無既有持倉。台泥符合盤中首次突破的 Early 情境；中信金現價仍停在前一交易日高點，先觀察能否突破並延續。",
+  "decisions": [
+    {
+      "symbol": "2891",
+      "decision": "WAIT",
+      "confidence": 0.68,
+      "action_ratio": 0.0,
+      "suggested_qty": 0,
+      "reference_price": 73.6,
+      "suggested_price": null,
+      "strategy_id": "NONE",
+      "target_price": null,
+      "invalidation_price": null,
+      "holding_days": null,
+      "reason": "10/15 高點為 73.6，當日收盤回落至 72.9；10/16 最新價再次觸及 73.6，尚未越過這個進場處的阻力。雖有放量的多日趨勢計畫，79.4 仍是模型目標。若後續 LIVE 報價突破 73.6 並維持其上，且重新計算的計畫仍合格，再評估進場。",
+      "data_quality": "LIVE",
+      "warnings": []
+    },
+    {
+      "symbol": "1101",
+      "decision": "BUY",
+      "confidence": 0.56,
+      "action_ratio": 0.0,
+      "suggested_qty": 41,
+      "reference_price": 27.55,
+      "suggested_price": 27.6,
+      "strategy_id": "multi_day_trend",
+      "target_price": 29.6,
+      "invalidation_price": 26.6,
+      "holding_days": 10,
+      "reason": "10/16 LIVE 價 27.55 高於 10/14 的 20 日高點 27.4，賣價 27.6 符合 Early 首日突破計畫。以 27.6 買 41 股，估計含現金保留需求 1,151.6 元；29.6 模型目標的費後獲利約 73.95 元，26.6 失效情境損失約 49.05 元，報酬風險比約 1.51。10/15 形成的 26.6 支撐尚未在形成後跌破。反證風險是今日高點 27.65 後最新價回至 27.55，突破延續及當日量能尚未確認；若跌回 27.4 下方須重評，跌破 26.6 則計畫失效。兩方研究均為 WATCH，未提出 REJECT。",
+      "data_quality": "LIVE",
+      "warnings": [
+        "29.6 為模型估算目標，非已觀察價位；成交及達標均無保證。",
+        "新買零股當日不可賣；失效價不是已掛出的停損單。",
+        "預算：本輪可用買進上限 NT$ 10000；實際委託仍由券商資金風控重查。",
+        "目標情境淨利估算 NT$ 73.95；失效情境淨損估算 NT$ 49.05；未含無法驗證的未來成交滑價，實際報酬不保證。"
+      ]
+    }
+  ]
+}

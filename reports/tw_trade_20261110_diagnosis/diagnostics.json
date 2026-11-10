@@ -1,0 +1,824 @@
+{
+  "scope": "OFFLINE_ARCHIVED_EVIDENCE_ONLY_NO_MODEL_NO_BROKER",
+  "source_snapshot": "reports\\tw_trade_20261110_until_112203_Taipei",
+  "captured_until": "2026-11-10T11:22:03+08:00",
+  "runtime_commit": "1d9113b58fc7c6bc33ab01671f33471f8b7666dd",
+  "verified_snapshot_hashes": {
+    "README.md": true,
+    "broker_health.json": true,
+    "execution_ledger.json": true,
+    "policies.json": true,
+    "runs/20261110T091100-gui-ccd92776/candidates.json": true,
+    "runs/20261110T091100-gui-ccd92776/decisions.json": true,
+    "runs/20261110T091100-gui-ccd92776/market.json": true,
+    "runs/20261110T091100-gui-ccd92776/run.json": true,
+    "runs/20261110T100500-gui-17146e09/candidates.json": true,
+    "runs/20261110T100500-gui-17146e09/decisions.json": true,
+    "runs/20261110T100500-gui-17146e09/market.json": true,
+    "runs/20261110T100500-gui-17146e09/run.json": true,
+    "runs/20261110T110500-gui-d0f65f55/candidates.json": true,
+    "runs/20261110T110500-gui-d0f65f55/decisions.json": true,
+    "runs/20261110T110500-gui-d0f65f55/market.json": true,
+    "runs/20261110T110500-gui-d0f65f55/run.json": true,
+    "strategy_f479b8737d27.md": true
+  },
+  "reproduced_candidate_checks": 75,
+  "reproduced_setup_arithmetic_checks": 17,
+  "unique_researched_symbols": [
+    "2376",
+    "2377",
+    "2464",
+    "2609",
+    "3034",
+    "3036"
+  ],
+  "runs": [
+    {
+      "run": "20261110T091100-gui-ccd92776",
+      "counts": {
+        "quoted": 27,
+        "live_non_trial": 27,
+        "quant_eligible": 25,
+        "entry_pool": 25,
+        "qualified_entries": 3,
+        "watch_research": 0,
+        "model_candidates": 3,
+        "final_buy_decisions": 0
+      },
+      "scout": {
+        "status": "COMPLETE",
+        "model_called": true,
+        "symbols": [
+          "6269",
+          "2486",
+          "2464",
+          "6451",
+          "3034",
+          "3036"
+        ],
+        "market_count": 1091,
+        "eligible_count": 309,
+        "screen_count": 40
+      },
+      "watches": [
+        {
+          "symbol": "6269",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 71.5,
+          "observed_price": 77.2,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "2486",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 159.5,
+          "observed_price": 171.0,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "2464",
+          "trigger_kind": "BREAK_ABOVE_HIGH",
+          "condition_price": 148.5,
+          "observed_price": 158.5,
+          "status": "RESEARCH_CONDITION_MET"
+        },
+        {
+          "symbol": "6451",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 267.0,
+          "observed_price": 287.5,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "3034",
+          "trigger_kind": "BREAK_ABOVE_HIGH",
+          "condition_price": 498.0,
+          "observed_price": 492.0,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "3036",
+          "trigger_kind": "RECLAIM_OPEN",
+          "condition_price": 188.0,
+          "observed_price": 192.5,
+          "status": "RESEARCH_CONDITION_MET"
+        }
+      ],
+      "qualified": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "researched": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "historical_trend_passes": [
+        "2891"
+      ],
+      "blockers_in_initial_pool": {
+        "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH": 7,
+        "NO_TREND_OR_RECOVERY_SETUP": 15
+      },
+      "quote_exclusions": [
+        {
+          "symbol": "2308",
+          "name": "台達電",
+          "price": 1275.0,
+          "bid": 1275.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2449",
+          "name": "京元電子",
+          "price": 219.5,
+          "bid": 219.0,
+          "ask": 219.5,
+          "scan_exclusions": [],
+          "note": "2449 is a configured manual holding outside the buy universe"
+        }
+      ],
+      "support_verdicts": {
+        "WATCH": 6
+      },
+      "final_reasons": [
+        {
+          "symbol": "3034",
+          "reason": "刷新後盤中高點495.5元、現價492元，回升力道轉弱，原三個回落進場情境已不在最新 trade_setups；五日與二十日均線仍高於現價。觀察能否突破11月9日高點498元並維持，再依新行情重算計畫。"
+        },
+        {
+          "symbol": "2377",
+          "reason": "144元回落計畫的費後數字雖過門檻，但11月9日曾觸及149.5元後收在143元，近端賣壓仍是兩日內上看157元的具體反證；最新145元方案亦未通過報酬風險門檻。若價格重新站穩149.5元，或回測144元仍守住139元，須刷新行情並重新核對目標與風險。"
+        },
+        {
+          "symbol": "2376",
+          "reason": "313.5元計畫的費後估算雖過門檻，但11月9日高點319元後收309.5元，319元及其上方近期價格區形成近端賣壓，削弱兩日內上看337.5元的依據。觀察能否站穩319元並重算進場風險；跌破原計畫失效價304元則回升假設失效。"
+        }
+      ]
+    },
+    {
+      "run": "20261110T100500-gui-17146e09",
+      "counts": {
+        "quoted": 27,
+        "live_non_trial": 27,
+        "quant_eligible": 21,
+        "entry_pool": 21,
+        "qualified_entries": 2,
+        "watch_research": 1,
+        "model_candidates": 3,
+        "final_buy_decisions": 0
+      },
+      "scout": {
+        "status": "CACHED_UNCHANGED",
+        "model_called": false,
+        "symbols": [
+          "6269",
+          "2486",
+          "2464",
+          "6451",
+          "3034",
+          "3036"
+        ],
+        "market_count": 1091,
+        "eligible_count": 309,
+        "screen_count": 40
+      },
+      "watches": [
+        {
+          "symbol": "6269",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 71.5,
+          "observed_price": 78.6,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "2486",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 159.5,
+          "observed_price": 174.5,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "2464",
+          "trigger_kind": "BREAK_ABOVE_HIGH",
+          "condition_price": 148.5,
+          "observed_price": 158.0,
+          "status": "RESEARCH_CONDITION_MET"
+        },
+        {
+          "symbol": "6451",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 267.0,
+          "observed_price": 293.5,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "3034",
+          "trigger_kind": "BREAK_ABOVE_HIGH",
+          "condition_price": 498.0,
+          "observed_price": 487.5,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "3036",
+          "trigger_kind": "RECLAIM_OPEN",
+          "condition_price": 188.0,
+          "observed_price": 194.5,
+          "status": "RESEARCH_CONDITION_MET"
+        }
+      ],
+      "qualified": [
+        "2609",
+        "2377"
+      ],
+      "researched": [
+        "2609",
+        "2377",
+        "3036"
+      ],
+      "historical_trend_passes": [
+        "2891"
+      ],
+      "blockers_in_initial_pool": {
+        "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH": 7,
+        "NO_TREND_OR_RECOVERY_SETUP": 12
+      },
+      "quote_exclusions": [
+        {
+          "symbol": "3017",
+          "name": "奇鋐",
+          "price": 2790.0,
+          "bid": 2790.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2308",
+          "name": "台達電",
+          "price": 1275.0,
+          "bid": 1275.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2345",
+          "name": "智邦",
+          "price": 1545.0,
+          "bid": 1545.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "6269",
+          "name": "台郡",
+          "price": 78.6,
+          "bid": 78.6,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "6451",
+          "name": "訊芯-KY",
+          "price": 293.5,
+          "bid": 293.5,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2449",
+          "name": "京元電子",
+          "price": 230.0,
+          "bid": 230.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": "2449 is a configured manual holding outside the buy universe"
+        }
+      ],
+      "support_verdicts": {
+        "WATCH": 4
+      },
+      "final_reasons": [
+        {
+          "symbol": "2609",
+          "reason": "58.2元回落計畫以63.4元為目標，但61.2至61.6元的先前波段低點形成近端壓力；若先以61.2元估算，費後空間不足以支持原計畫的報酬風險比。兩方研究均為WATCH，且11月6日曾跌至54.9元，回升仍有反證。現價59.2元不追入；待有效站回61.6元並刷新計畫，或回測58.2元守穩且重新確認近端目標後再評估。"
+        },
+        {
+          "symbol": "2377",
+          "reason": "144至144.5元的Early計畫以157元為目標，但11月9日高點149.5元及其上方先前低點是較近壓力；以149.5元先行退出，費後空間不足以支撐原計畫風險。兩方研究亦指出11月6日曾跌破139元失效參考，今日站回尚未消除急跌反證。待守住139元並有效突破149.5元、重新形成合格計畫再評估。"
+        },
+        {
+          "symbol": "3036",
+          "reason": "已觸發188元觀察條件，但刷新後仍為NO_TREND_OR_RECOVERY_SETUP，沒有可採用的進場、目標及失效組合。11月9日收181.5元、近五日跌幅約11.2%；待守住今日低點190.5元並重新站上今日高點198元，且刷新後形成合格計畫再評估。"
+        }
+      ]
+    },
+    {
+      "run": "20261110T110500-gui-d0f65f55",
+      "counts": {
+        "quoted": 27,
+        "live_non_trial": 27,
+        "quant_eligible": 21,
+        "entry_pool": 21,
+        "qualified_entries": 0,
+        "watch_research": 2,
+        "model_candidates": 2,
+        "final_buy_decisions": 0
+      },
+      "scout": {
+        "status": "CACHED_UNCHANGED",
+        "model_called": false,
+        "symbols": [
+          "6269",
+          "2486",
+          "2464",
+          "6451",
+          "3034",
+          "3036"
+        ],
+        "market_count": 1091,
+        "eligible_count": 309,
+        "screen_count": 40
+      },
+      "watches": [
+        {
+          "symbol": "6269",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 71.5,
+          "observed_price": 78.6,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "2486",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 159.5,
+          "observed_price": 169.0,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "2464",
+          "trigger_kind": "BREAK_ABOVE_HIGH",
+          "condition_price": 148.5,
+          "observed_price": 155.0,
+          "status": "RESEARCH_CONDITION_MET"
+        },
+        {
+          "symbol": "6451",
+          "trigger_kind": "PULLBACK_TO_CLOSE",
+          "condition_price": 267.0,
+          "observed_price": 293.5,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "3034",
+          "trigger_kind": "BREAK_ABOVE_HIGH",
+          "condition_price": 498.0,
+          "observed_price": 481.0,
+          "status": "WAITING_FOR_CONDITION"
+        },
+        {
+          "symbol": "3036",
+          "trigger_kind": "RECLAIM_OPEN",
+          "condition_price": 188.0,
+          "observed_price": 191.5,
+          "status": "RESEARCH_CONDITION_MET"
+        }
+      ],
+      "qualified": [],
+      "researched": [
+        "3036",
+        "2464"
+      ],
+      "historical_trend_passes": [
+        "2891"
+      ],
+      "blockers_in_initial_pool": {
+        "NO_TREND_OR_RECOVERY_SETUP": 20,
+        "NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH": 1
+      },
+      "quote_exclusions": [
+        {
+          "symbol": "3017",
+          "name": "奇鋐",
+          "price": 2790.0,
+          "bid": 2790.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2308",
+          "name": "台達電",
+          "price": 1275.0,
+          "bid": 1275.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2345",
+          "name": "智邦",
+          "price": 1545.0,
+          "bid": 1545.0,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "6269",
+          "name": "台郡",
+          "price": 78.6,
+          "bid": 78.6,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "6451",
+          "name": "訊芯-KY",
+          "price": 293.5,
+          "bid": 293.5,
+          "ask": null,
+          "scan_exclusions": [
+            "INVALID_BID_ASK"
+          ],
+          "note": null
+        },
+        {
+          "symbol": "2449",
+          "name": "京元電子",
+          "price": 225.5,
+          "bid": 225.0,
+          "ask": 225.5,
+          "scan_exclusions": [],
+          "note": "2449 is a configured manual holding outside the buy universe"
+        }
+      ],
+      "support_verdicts": {},
+      "final_reasons": [
+        {
+          "symbol": "3036",
+          "reason": "現價191.5元接近今日低點190.5元，低於盤中先前的194元；近5日及20日走勢下行，entry_screen 尚無合格情境。若重新站穩194元並形成具有效停損及費後空間的 trade_setups，再評估。"
+        },
+        {
+          "symbol": "2464",
+          "reason": "現價155元低於今日開盤160元，接近今日低點154.5元；近20日趨勢下行，entry_screen 尚無合格情境。若重新站穩160元並形成具有效停損及費後空間的 trade_setups，再評估。"
+        }
+      ]
+    }
+  ],
+  "nearer_target_sensitivity": [
+    {
+      "run": "20261110T091100-gui-ccd92776",
+      "symbol": "2377",
+      "entry": 144.0,
+      "qty": 8,
+      "stop": 139.0,
+      "original_target": 157.0,
+      "original_rr": 1.88,
+      "alternative_observed_level": 149.5,
+      "level_sources": [
+        {
+          "date": "2026-11-09",
+          "field": "high"
+        }
+      ],
+      "alternative_rr": 0.68,
+      "alternative_upside_twd": 34.0,
+      "interpretation": "NEARER_BARRIER_SENSITIVITY_NOT_AN_ASSERTION_EVERY_HIGH_IS_A_HARD_EXIT"
+    },
+    {
+      "run": "20261110T091100-gui-ccd92776",
+      "symbol": "2376",
+      "entry": 313.5,
+      "qty": 4,
+      "stop": 304.0,
+      "original_target": 337.5,
+      "original_rr": 1.891304347826087,
+      "alternative_observed_level": 319.0,
+      "level_sources": [
+        {
+          "date": "2026-11-09",
+          "field": "high"
+        }
+      ],
+      "alternative_rr": 0.30434782608695654,
+      "alternative_upside_twd": 14.0,
+      "interpretation": "NEARER_BARRIER_SENSITIVITY_NOT_AN_ASSERTION_EVERY_HIGH_IS_A_HARD_EXIT"
+    },
+    {
+      "run": "20261110T100500-gui-17146e09",
+      "symbol": "2609",
+      "entry": 58.2,
+      "qty": 23,
+      "stop": 56.6,
+      "original_target": 63.4,
+      "original_rr": 2.257383966244726,
+      "alternative_observed_level": 61.2,
+      "level_sources": [
+        {
+          "date": "2026-10-21",
+          "field": "low"
+        }
+      ],
+      "alternative_rr": 1.2109704641350212,
+      "alternative_upside_twd": 57.4,
+      "interpretation": "NEARER_BARRIER_SENSITIVITY_NOT_AN_ASSERTION_EVERY_HIGH_IS_A_HARD_EXIT"
+    },
+    {
+      "run": "20261110T100500-gui-17146e09",
+      "symbol": "2377",
+      "entry": 144.0,
+      "qty": 8,
+      "stop": 139.0,
+      "original_target": 157.0,
+      "original_rr": 1.88,
+      "alternative_observed_level": 149.5,
+      "level_sources": [
+        {
+          "date": "2026-11-09",
+          "field": "high"
+        }
+      ],
+      "alternative_rr": 0.68,
+      "alternative_upside_twd": 34.0,
+      "interpretation": "NEARER_BARRIER_SENSITIVITY_NOT_AN_ASSERTION_EVERY_HIGH_IS_A_HARD_EXIT"
+    }
+  ],
+  "screening_sensitivity": [
+    {
+      "run": "20261110T091100-gui-ccd92776",
+      "scenario": "archived_policy",
+      "qualified": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "researched": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "watches": []
+    },
+    {
+      "run": "20261110T091100-gui-ccd92776",
+      "scenario": "profit_hurdle_1_twd",
+      "qualified": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "researched": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "watches": []
+    },
+    {
+      "run": "20261110T091100-gui-ccd92776",
+      "scenario": "five_research_slots",
+      "qualified": [
+        "3034",
+        "2377",
+        "2376"
+      ],
+      "researched": [
+        "3034",
+        "2377",
+        "2376",
+        "3036",
+        "2464"
+      ],
+      "watches": [
+        "3036",
+        "2464"
+      ]
+    },
+    {
+      "run": "20261110T100500-gui-17146e09",
+      "scenario": "archived_policy",
+      "qualified": [
+        "2609",
+        "2377"
+      ],
+      "researched": [
+        "2609",
+        "2377",
+        "3036"
+      ],
+      "watches": [
+        "3036"
+      ]
+    },
+    {
+      "run": "20261110T100500-gui-17146e09",
+      "scenario": "profit_hurdle_1_twd",
+      "qualified": [
+        "2609",
+        "2377"
+      ],
+      "researched": [
+        "2609",
+        "2377",
+        "3036"
+      ],
+      "watches": [
+        "3036"
+      ]
+    },
+    {
+      "run": "20261110T100500-gui-17146e09",
+      "scenario": "five_research_slots",
+      "qualified": [
+        "2609",
+        "2377"
+      ],
+      "researched": [
+        "2609",
+        "2377",
+        "3036",
+        "2464"
+      ],
+      "watches": [
+        "3036",
+        "2464"
+      ]
+    },
+    {
+      "run": "20261110T110500-gui-d0f65f55",
+      "scenario": "archived_policy",
+      "qualified": [],
+      "researched": [
+        "3036",
+        "2464"
+      ],
+      "watches": [
+        "3036",
+        "2464"
+      ]
+    },
+    {
+      "run": "20261110T110500-gui-d0f65f55",
+      "scenario": "profit_hurdle_1_twd",
+      "qualified": [],
+      "researched": [
+        "3036",
+        "2464"
+      ],
+      "watches": [
+        "3036",
+        "2464"
+      ]
+    },
+    {
+      "run": "20261110T110500-gui-d0f65f55",
+      "scenario": "five_research_slots",
+      "qualified": [],
+      "researched": [
+        "3036",
+        "2464"
+      ],
+      "watches": [
+        "3036",
+        "2464"
+      ]
+    }
+  ],
+  "historical_evidence": {
+    "reference_outcomes": {
+      "UNAVAILABLE": 3,
+      "FAILURE": 17,
+      "SUCCESS": 1
+    },
+    "reference_failures": {
+      "TARGET_NOT_REACHED_WITHIN_ORIGINAL_HORIZON": 7,
+      "INVALIDATION_BEFORE_TARGET": 8,
+      "OPEN_AT_OR_BELOW_INVALIDATION": 2
+    },
+    "families": {
+      "FIRST_DAY_BREAKOUT": {
+        "FAILURE": 4
+      },
+      "MULTI_SESSION_RECOVERY": {
+        "UNAVAILABLE": 3,
+        "FAILURE": 12
+      },
+      "TREND_PULLBACK": {
+        "FAILURE": 1,
+        "SUCCESS": 1
+      }
+    },
+    "all_snapshot_buys": {
+      "baseline": {
+        "count": 6,
+        "successful": 0,
+        "wrong": 6,
+        "unscored": 0,
+        "precision": 0.0,
+        "outside_first_episode_cohort": 1,
+        "scope": "ALL_FINAL_BUYS_IN_INDEPENDENT_SNAPSHOTS_REPEATED_SYMBOLS_ARE_NOT_PORTFOLIO_TRADES"
+      },
+      "revised": {
+        "count": 11,
+        "successful": 1,
+        "wrong": 10,
+        "unscored": 0,
+        "precision": 0.09090909090909091,
+        "outside_first_episode_cohort": 4,
+        "scope": "ALL_FINAL_BUYS_IN_INDEPENDENT_SNAPSHOTS_REPEATED_SYMBOLS_ARE_NOT_PORTFOLIO_TRADES"
+      }
+    },
+    "scope": {
+      "version": "october-paired-v2-full-competitive-pool",
+      "created_at": "2026-11-09T07:53:09.283991+00:00",
+      "universe": [
+        "0050",
+        "2330",
+        "2454",
+        "2317",
+        "2382",
+        "3231",
+        "3017",
+        "2891",
+        "2881",
+        "2882",
+        "2303",
+        "2308",
+        "2345",
+        "2357",
+        "2376",
+        "2356",
+        "2377",
+        "2603",
+        "2609",
+        "1101"
+      ],
+      "universe_scope": "TWENTY_ARCHIVED_SEED_SYMBOLS_NOT_WHOLE_MARKET",
+      "development_dates": [
+        "2026-10-08",
+        "2026-10-12",
+        "2026-10-13",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16"
+      ],
+      "validation_dates": [
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-21",
+        "2026-10-22"
+      ],
+      "episode_unit": "FIRST_BASELINE_QUALIFIED_SYMBOL_PER_TRADING_DAY",
+      "capital_twd": 10000,
+      "labels": "FROZEN_ENTRY_TARGET_INVALIDATION_AND_HORIZON_FROM_BASELINE",
+      "miss_policy": "ALL_POSITIVE_BENCHMARK_EVENTS_NOT_BOUGHT_COUNT_AS_FN_INCLUDING_POLICY_REJECTIONS",
+      "uncertainty": "UNCONFIRMED_ENTRY_AND_AMBIGUOUS_BARRIERS_REMAIN_UNSCORED_AND_VISIBLE",
+      "proxy_scope": "QUOTED_ASK_ENTRY_AND_REGULAR_MARKET_DAILY_BARRIERS_NOT_ACTUAL_FILL_PERFORMANCE",
+      "replay_scope": "INDEPENDENT_SNAPSHOT_DECISIONS_NOT_A_SETTLED_PORTFOLIO_SIMULATION",
+      "no_future_features": true,
+      "external_model_search": false,
+      "broker_access": false,
+      "caveat": "October was previously inspected during development; later dates are a chronological check, not a truly unseen market sample.",
+      "selection": "All valid archived universe quotes at each fixed episode time, including earlier qualified competing symbols",
+      "all_buys": "Also score every final BUY, including candidates outside first-episode cohort"
+    }
+  },
+  "source_code_sha256": {
+    "opportunity_engine.py": "070fbfaf016f93c6be3012ebe9cc2df3157cbfaf3222867134d940a66162239d",
+    "trade_economics.py": "c389994cc9857f46635d136b2fd8104cadece5b99877f0766e71b9ad32cbb433",
+    "market_discovery.py": "901a6e12ebb45bb0048343770d5b34976f65418db089779da23c24a3f5c51c5a",
+    "scheduler.py": "f76b737e274bf1419876ff0d722ec8a8d2eafc54b7935323bed6d28c641b4768",
+    "config/market_discovery.json": "0e535da1c6c116e2bf0b63824a2ce4c20a0bc2abe769fcb0349677e9f210149f"
+  }
+}

@@ -1,0 +1,33 @@
+...............................................................................................................................................................................................................................................................................................F...............................................................................................................................................................................................................................................................
+======================================================================
+FAIL: test_complete_quote_outage_never_becomes_actionable (test_opportunity_service.OpportunityServiceTests.test_complete_quote_outage_never_becomes_actionable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\ho.chouchuan\Documents\HO\project\personalmono\STOCKLLM-plannedlimit-codex\tests\test_opportunity_service.py", line 73, in test_complete_quote_outage_never_becomes_actionable
+    self.exercise_service(scenario='quote_outage')
+  File "C:\Users\ho.chouchuan\Documents\HO\project\personalmono\STOCKLLM-plannedlimit-codex\tests\test_opportunity_service.py", line 180, in exercise_service
+    first=service.run('AUTO')
+          ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ho.chouchuan\Documents\HO\project\personalmono\STOCKLLM-plannedlimit-codex\analysis_service.py", line 273, in run
+    return self._run(directory, manifest, tracked_phase, strategy)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ho.chouchuan\Documents\HO\project\personalmono\STOCKLLM-plannedlimit-codex\analysis_service.py", line 533, in _run
+    decision, response = analyze_existing(self, directory, manifest, request, candidates,
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ho.chouchuan\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ho.chouchuan\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ho.chouchuan\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1199, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ho.chouchuan\Documents\HO\project\personalmono\STOCKLLM-plannedlimit-codex\tests\test_opportunity_service.py", line 126, in model
+    self.assertEqual(len(cs),1 if watch_only else 3)
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 543 tests in 240.242s
+
+FAILED (failures=1)
