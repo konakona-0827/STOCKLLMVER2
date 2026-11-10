@@ -127,12 +127,17 @@ class SupportTradingIntegrationTests(unittest.TestCase):
             self.coordinator.accept('reviewer', '2330', dict(verdict='RESEARCH', evidence_ids=['invented'],
                 summary='不能捏造證據', risks=[], missing_data=[]))
 
-    def model(self, invalid_reviewer=False, researcher_reject=False):
+    def model(self, invalid_reviewer=False, researcher_reject=False,batch=False,repeat_batch=False,batch_symbols=None,child_quota=False):
         from agents import Model, ModelResponse, Usage
         from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
         actions = [('get_portfolio', {}), ('get_trade_history', {}),
                    ('research_support', {'symbol': '2330'}), ('review_support', {'symbol': '2330'}),
                    ('get_market_data', {'symbol': '2330'})]
+        if batch:
+            research=('research_support_batch',dict(symbols=batch_symbols or ['2330']))
+            actions=[('get_portfolio',{}),('get_trade_history',{}),research]
+            if repeat_batch:actions.append(research)
+            actions.append(('get_market_data',{'symbol':'2330'}))
         final = deepcopy(self.decision)
 
         def packet_in(value):
@@ -160,6 +165,8 @@ class SupportTradingIntegrationTests(unittest.TestCase):
                 self.parent_calls = 0
                 self.child_inputs = []
                 self.child_roles = []
+                self.active_children=0;self.max_active_children=0
+                self.child_barrier=asyncio.Event()
 
             async def get_response(self, *args, **kwargs):
                 instructions = kwargs.get('system_instructions') or ''
@@ -170,6 +177,13 @@ class SupportTradingIntegrationTests(unittest.TestCase):
                     assert packet is not None, kwargs
                     self.child_inputs.append(deepcopy(packet))
                     self.child_roles.append(role)
+                    if child_quota and role=='researcher':raise RuntimeError('credit_balance_exhausted')
+                    self.active_children+=1;self.max_active_children=max(self.max_active_children,self.active_children)
+                    if batch:
+                        if self.active_children>=2:self.child_barrier.set()
+                        await asyncio.wait_for(self.child_barrier.wait(),5)
+                    await asyncio.sleep(0)
+                    self.active_children-=1
                     answer = dict(verdict='REJECT' if researcher_reject and role=='researcher' else 'WATCH',
                         evidence_ids=['invented'] if invalid_reviewer and role=='reviewer'
                                      else packet['core']['required_confirmation_evidence'],

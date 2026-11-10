@@ -5,7 +5,7 @@ from .contracts import DataError, digest, timestamp
 
 ROLES = {"researcher", "reviewer"}
 VERDICTS = {"RESEARCH", "WATCH", "REJECT"}
-AGENT_POLICY_VERSION = "independent-evidence-review-v2-entry-context"
+AGENT_POLICY_VERSION = "independent-evidence-review-v3-lossless-transport"
 
 
 def make_packet(core: dict) -> dict:

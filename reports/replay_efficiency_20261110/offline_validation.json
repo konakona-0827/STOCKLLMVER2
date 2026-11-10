@@ -1,0 +1,56 @@
+{
+  "generated_at_utc": "2026-11-10T04:51:45.697949+00:00",
+  "agent_version": "agent-decision-v12-batched-research-lossless-transport",
+  "full_regression": {
+    "tests": 548,
+    "seconds": 156.48,
+    "result": "OK",
+    "external_sockets_blocked": true,
+    "credentials_removed": true,
+    "snapshot": "C:/Users/ho.chouchuan/.codex/tmp/stockllm-efficiency-offline-20261110",
+    "command": "python -m operations.run_offline_tests --code-root C:/Users/ho.chouchuan/.codex/tmp/stockllm-efficiency-offline-20261110",
+    "log": "regression_network_blocked.txt"
+  },
+  "modified_python_sha256": {
+    "operations/audit_api_usage.py": "80d1970443e157f973eccebdf959f5d2e73fff6cf91daaba60c218f0ec26828e",
+    "operations/expanded_opportunity_replay.py": "62591988bb8c0033904adaa88af2e99f8e177b21d5b69662e6938b63c30d0469",
+    "operations/replay_efficiency_audit.py": "1af68c4f86fbe00a041a2c4c293d705fb1d1a011b1b3b2d6bd16bd1ce4b6a91d",
+    "operations/revalidate_saved_decisions.py": "68f7e65ed15308e43bcb8d5a6f6f1a6cbbb92619a3e9451950dc9b30b5b045d6",
+    "research_runtime.py": "be79c1358ee5ae8c3228fc5d7a56ca11c5feff33eebabbc002d9b6dc06e07e2e",
+    "support_scout/agents.py": "7fda8d31a562e2e354404a300ae543a77267e257962507177c506ac3072dcaf3",
+    "support_scout/trading.py": "c54005a181720914c22ce240a836d8de78c069aabf6408a952816ddd00583950",
+    "support_scout/transport.py": "d7e838abf235d364158335d1b118ac78e4f3a200dbd2b904b0cd8bdc0c2164ef",
+    "tests/test_provider_usage_observation.py": "3c955eaf84ad89bd7e89c11aa5c8f417c25bf14e4034b8b8c69bccec753b0aa1",
+    "tests/test_replay_efficiency_controls.py": "1a9a74aab2160742c1882286db61846958f75d671798c61178302f855f26bc32",
+    "tests/test_support_efficiency.py": "ae0896b366529f1ed3fc8e15289ef4e163ab29a596285402b179ec830778864a",
+    "tests/test_support_trading_integration.py": "dd8a13371c9a8ef84d13c27e17759b52272a5a6cfd794d02a1b8d1f05ac8cbc8",
+    "trading_agent.py": "166501a55f19633a66879249fbcf56d671646b77db2e5dea8e8ed49d8cf92d8e"
+  },
+  "ledger_unique_response_ids_unchanged": true,
+  "ledger_total_tokens": 14683340,
+  "new_agent_api_calls": 0,
+  "exact_transport_roundtrips": 166,
+  "saved_result_records_revalidated": 68,
+  "live_execution_authorized": false,
+  "limits": "Offline verification only; no measured new-model accuracy, token savings or real execution performance.",
+  "parent_branch_verification": {
+    "branch": "codex/planned-limit-orders",
+    "entry_research_enabled": false,
+    "external_sockets_blocked": true,
+    "tests": [
+      {
+        "pattern": "test_runtime_skills.py",
+        "tests": 6,
+        "result": "OK",
+        "log": "parent_skill_disabled_tests.txt"
+      },
+      {
+        "pattern": "test*efficiency*.py",
+        "tests": 15,
+        "result": "OK",
+        "log": "parent_efficiency_tests.txt"
+      }
+    ]
+  },
+  "common_python_matches_tested_snapshot": true
+}

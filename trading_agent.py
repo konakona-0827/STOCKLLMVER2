@@ -15,7 +15,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v11-entry-evidence-skill-control'
+AGENT_VERSION = 'agent-decision-v12-batched-research-lossless-transport'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 
 
@@ -78,7 +78,7 @@ def execution_metadata(model):
                  'daily_history.py','agent_decision.py','analysis_service.py',
                  'position_analyzer.py','trade_plan_context.py','execution/auto_advice_executor.py',
                  'execution/broker_runtime.py','execution/capital_reply_session.py',
-                 'support_scout/trading.py', 'support_scout/market_sessions.py',
+                 'support_scout/trading.py','support_scout/transport.py', 'support_scout/market_sessions.py',
                  'support_scout/agents.py', 'support_scout/support.py',
                  'config/support_agents.json', 'daily_participation.py',
                  'config/daily_participation.json'):
