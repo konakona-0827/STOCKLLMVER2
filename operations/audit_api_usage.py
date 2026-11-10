@@ -48,6 +48,7 @@ def audit(root,day='2026-11-09'):
                 unique[identity]['sources'].append(source);copies+=1
             else:
                 unique[identity]=dict(response_id=identity,**values,role=record.get('role'),model=record_model,
+                    actor=record.get('actor'),symbol=record.get('symbol'),
                     response_status=record.get('response_status'),sources=[source])
                 roles[record.get('role')]+=1;models[record_model]+=1
     totals={key:sum(r[key] for r in unique.values()) for key in KEYS}
@@ -64,7 +65,8 @@ def audit(root,day='2026-11-09'):
     return dict(date=day,cutoff_utc=datetime.now(timezone.utc).isoformat(),
         scope='Task reports named with execution date; historical as_of clocks are not billing dates. Excludes other projects, live trading machine and Codex subscription usage.',
         totals=totals,unique_response_ids=len(unique),duplicate_copies_excluded=copies,
-        by_role=dict(roles),by_model=dict(models),failed_or_cancelled_files=len(unknown),in_flight_files=len(inflight),
+        by_role=dict(roles),by_model=dict(models),by_actor=dict(Counter(r.get('actor') or 'LEGACY_UNCLASSIFIED' for r in unique.values())),
+        failed_or_cancelled_files=len(unknown),in_flight_files=len(inflight),
         failed_or_cancelled_evidence=unknown,
         estimated_usd=estimate_standard_sol(list(unique.values())) if set(models)=={'gpt-6-sol'} else None,
         estimated_usd_assuming_configured_gpt6_sol=estimate_standard_sol(list(unique.values())),

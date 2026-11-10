@@ -3,6 +3,8 @@ import asyncio
 import json
 import os
 from datetime import datetime,timezone
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 from config import now
@@ -10,6 +12,14 @@ from main import save_json
 
 USAGE_KEYS=('input_tokens','output_tokens','requests','cached_input_tokens',
             'cache_write_tokens','reasoning_tokens')
+_USAGE_ACTOR=ContextVar('research_usage_actor',default=None)
+
+
+@contextmanager
+def usage_actor(actor,symbol=None):
+    token=_USAGE_ACTOR.set((actor,symbol))
+    try:yield
+    finally:_USAGE_ACTOR.reset(token)
 
 
 def totals(rows):
@@ -43,6 +53,7 @@ class ResponseRecorder:
                     self.progress('STOPPED_BEFORE_REQUEST')
                     raise RuntimeError('RESEARCH_STOPPED_BY_USER')
                 self.current_model=options.get('model')
+                actor,symbol=_USAGE_ACTOR.get() or ('trading_decision' if self.role=='trading_and_support' else self.role,None)
                 self.progress('REQUEST_STARTED')
                 try:
                     response=await create(*args,**options)
@@ -60,6 +71,7 @@ class ResponseRecorder:
                         reasoning_tokens=getattr(output,'reasoning_tokens',0) or 0,role=self.role,
                         response_id=response.id,response_status=response.status,
                         model=getattr(response,'model',None) or self.current_model,
+                        actor=actor,symbol=symbol,
                         service_tier=getattr(response,'service_tier',None),
                         observed_at_utc=datetime.now(timezone.utc).isoformat(),
                         input_characters=len(json.dumps(options.get('input',''),ensure_ascii=False,default=str))))

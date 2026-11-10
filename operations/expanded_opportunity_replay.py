@@ -190,6 +190,32 @@ def archive_incomplete(directory,output):
     return archive
 
 
+def prior_candidate_pool(benchmark,group_id):
+    group=next((g for g in benchmark['groups'] if g['group_id']==group_id),None)
+    if group is None:return None
+    if 'selection_pool' in group:return deepcopy(group['selection_pool'])
+    lookup={e['event_id']:e for e in benchmark['events']}
+    return [deepcopy(lookup[e]['candidate']) for e in group['events']]
+
+
+def inference_manifest(manifest):
+    # Test/report edits do not change model evidence. Preserve app, replay tool,
+    # strategy, Skill and dependency identities for conservative exact reuse.
+    return {name:sha for name,sha in manifest.items() if not name.startswith('tests/') and (
+        name.endswith('.py') or name.startswith(('config/','strategies/','skills/'))
+        or name in ('requirements.txt','pyproject.toml'))}
+
+
+def retryable_infrastructure_result(result):
+    response=result['response']
+    if response['validation']=='NOT_CALLED':return True
+    if response['validation']!='ERROR':return False
+    error=response.get('api',{}).get('error','')
+    return (response.get('failure_kind')=='API_QUOTA_EXHAUSTED'
+        or any(code in error for code in ('insufficient_quota','credit_balance_exhausted'))
+        or error.startswith(('APIConnectionError:','APITimeoutError:','RateLimitError:','AuthenticationError:')))
+
+
 def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None,retry_incomplete=False):
     # This mode deliberately never opens labels.json or outcome price files.
     permission_path=Path(__file__).resolve().parent.parent/'config/replay_api.json'
@@ -214,9 +240,8 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None,retry
     lookup={e['event_id']:e for e in b['events']};account=b['account']
     strategy=strategy_catalog.read_strategy(CODE_ROOT/'strategies/strategy_opportunity_v2.md')
     prior=read(Path(reuse_from).parent/'benchmark.json') if reuse_from else None
-    prior_lookup={e['event_id']:e for e in prior['events']} if prior else {}
     source_manifest=Path(reuse_from).parent/(Path(reuse_from).name+'_source_manifest.json') if reuse_from else None
-    manifest=read(source_manifest) if source_manifest and source_manifest.exists() else {}
+    manifest=inference_manifest(read(source_manifest)) if source_manifest and source_manifest.exists() else {}
     runtime_identical=bool(manifest) and all((CODE_ROOT/name).is_file() and
         hashlib.sha256((CODE_ROOT/name).read_bytes()).hexdigest()==sha for name,sha in manifest.items())
     for index,group in enumerate(b['groups']):
@@ -229,6 +254,8 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None,retry
             previous_result=read(result_path)
             if previous_result['benchmark_sha256']!=b['benchmark_sha256']:raise ValueError('RESUME_BENCHMARK_MISMATCH')
             if retry_incomplete and previous_result['response']['validation']!='VALID':
+                if not retryable_infrastructure_result(previous_result):
+                    raise ValueError('DECISION_FAILURE_REQUIRES_OFFLINE_SAVED_RESPONSE_REVALIDATION')
                 archive_incomplete(dest,output)
             else:
                 if previous_result['response']['api']['implementation_sha256']!=execution_metadata(agent_model())['implementation_sha256']:
@@ -242,11 +269,14 @@ def run(benchmark_path, output, api_env, shard=0, shards=1,reuse_from=None,retry
         previous=Path(reuse_from)/group['group_id']/'result.json' if reuse_from else None
         if previous and previous.exists():
             old=read(previous)
-            old_candidates=[deepcopy(prior_lookup[e]['candidate']) for e in group['events']]
+            old_candidates=prior_candidate_pool(prior,group['group_id'])
+            if old_candidates is None:raise ValueError('SOURCE_REPLAY_GROUP_MISSING')
             old_selected,_=select(old_candidates,prior['account'],rules,p)
-            if (runtime_identical and selected==old_selected and account==prior['account'] and group['as_of']==old['group']['as_of']
+            if (old['response']['validation']=='VALID' and runtime_identical and selected==old_selected
+                    and account==prior['account'] and group['as_of']==old['group']['as_of']
                     and old['benchmark_sha256']==prior['benchmark_sha256']
                     and old['response']['api']['model']==agent_model()
+                    and old['response']['api'].get('sdk_version')==execution_metadata(agent_model()).get('sdk_version')
                     and old['response']['api']['instructions_sha256']==execution_metadata(agent_model())['instructions_sha256']
                     and old['response']['api']['implementation_sha256']==execution_metadata(agent_model())['implementation_sha256']):
                 shutil.copytree(previous.parent,dest,dirs_exist_ok=True)

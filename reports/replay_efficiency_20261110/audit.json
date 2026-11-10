@@ -1,0 +1,1313 @@
+{
+  "scope": "Saved 2026-11-09 task replies only; no new inference or orders",
+  "totals": {
+    "requests": 1024,
+    "input_tokens": 14181808,
+    "output_tokens": 501532,
+    "reasoning_tokens_included_in_output": 225403,
+    "estimated_usd_at_saved_standard_rates": "17.2394954"
+  },
+  "phases": {
+    "initial_expanded_replay": {
+      "requests": 287,
+      "input_tokens": 3785204,
+      "output_tokens": 118222,
+      "reasoning_tokens_included_in_output": 52794,
+      "estimated_usd_at_saved_standard_rates": "4.8603041"
+    },
+    "competitive_pool_correction": {
+      "requests": 155,
+      "input_tokens": 2708612,
+      "output_tokens": 77082,
+      "reasoning_tokens_included_in_output": 34311,
+      "estimated_usd_at_saved_standard_rates": "2.6936117"
+    },
+    "single_case_pilot": {
+      "requests": 13,
+      "input_tokens": 162317,
+      "output_tokens": 4818,
+      "reasoning_tokens_included_in_output": 2018,
+      "estimated_usd_at_saved_standard_rates": "0.1780404"
+    },
+    "factorial_matrix": {
+      "requests": 419,
+      "input_tokens": 5407366,
+      "output_tokens": 222869,
+      "reasoning_tokens_included_in_output": 101020,
+      "estimated_usd_at_saved_standard_rates": "7.1672948"
+    },
+    "stability_repeats": {
+      "requests": 150,
+      "input_tokens": 2118309,
+      "output_tokens": 78541,
+      "reasoning_tokens_included_in_output": 35260,
+      "estimated_usd_at_saved_standard_rates": "2.3402444"
+    }
+  },
+  "actors": {
+    "main_or_unmatched_sdk": {
+      "requests": 633,
+      "input_tokens": 11649620,
+      "output_tokens": 139069,
+      "reasoning_tokens_included_in_output": 65928,
+      "estimated_usd_at_saved_standard_rates": "9.2457434"
+    },
+    "support_researcher": {
+      "requests": 166,
+      "input_tokens": 1030210,
+      "output_tokens": 170254,
+      "reasoning_tokens_included_in_output": 73038,
+      "estimated_usd_at_saved_standard_rates": "3.305054"
+    },
+    "support_reviewer": {
+      "requests": 166,
+      "input_tokens": 1030376,
+      "output_tokens": 154738,
+      "reasoning_tokens_included_in_output": 64731,
+      "estimated_usd_at_saved_standard_rates": "3.1350715"
+    },
+    "pretrade_review": {
+      "requests": 59,
+      "input_tokens": 471602,
+      "output_tokens": 37471,
+      "reasoning_tokens_included_in_output": 21706,
+      "estimated_usd_at_saved_standard_rates": "1.5536265"
+    }
+  },
+  "actor_attribution": {
+    "method": "Unique input/output token match against saved specialist call usage; remainder stays unclassified main/SDK",
+    "matched_specialist_requests": 332,
+    "ambiguous_matches": 0
+  },
+  "unique_paid_analysis_contexts": 103,
+  "specialist_verdicts": {
+    "WATCH": 332
+  },
+  "main_tool_calls": {
+    "get_portfolio": 103,
+    "get_trade_history": 103,
+    "get_research_data": 101,
+    "get_market_data": 61,
+    "get_market_data_batch": 38
+  },
+  "parent_sdk_tool_calls": {
+    "get_research_data": 98,
+    "research_support": 160,
+    "review_support": 160,
+    "get_market_data": 61,
+    "get_market_data_batch": 38
+  },
+  "repeated_same_tool_arguments_within_context": {
+    "get_portfolio": 0,
+    "get_trade_history": 0,
+    "get_research_data": 0,
+    "get_market_data": 0,
+    "get_market_data_batch": 0
+  },
+  "initial_replay_requests_not_reused_after_pool_correction": {
+    "requests": 93,
+    "input_tokens": 1338121,
+    "output_tokens": 38677,
+    "reasoning_tokens_included_in_output": 17608,
+    "estimated_usd_at_saved_standard_rates": "1.6009232"
+  },
+  "grouping_opportunity": {
+    "specialist_calls": 332,
+    "contexts_with_specialist_calls": 102,
+    "note": "Batching can reduce parent round trips; specialist calls themselves remain independent and are not removed."
+  },
+  "recorded_group_durations": {
+    "factorial_matrix": {
+      "timed_paid_contexts": 44,
+      "sum_worker_seconds": 2578.710495600011,
+      "median_seconds": 58.157422700023744,
+      "max_seconds": 92.87972369999625
+    },
+    "stability_repeats": {
+      "timed_paid_contexts": 12,
+      "sum_worker_seconds": 770.3659292999655,
+      "median_seconds": 55.71095494995825,
+      "max_seconds": 109.62306789995637
+    }
+  },
+  "transport": {
+    "packets": 166,
+    "old_characters": 2499924,
+    "new_characters": 1848254,
+    "duplicated_entry_and_task_characters": 560094,
+    "reduction_fraction": 0.2606759245481063,
+    "all_roundtrips_equal": true,
+    "note": "Character reduction measured offline; not a measured token/cost or behavior improvement.",
+    "packets_detail": [
+      {
+        "source": "october_expanded_20261109/baseline/20261012T130844-gui-90eeb1eb",
+        "packet_id": "0f981d14d254e14cd387e1d010597f3182f4ae8bdab84dbe11894ac16d2aefe2",
+        "old_characters": 9281,
+        "duplicated_characters": 395,
+        "new_characters": 8468
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261013T100500-gui-22f967e4",
+        "packet_id": "cf8d8dba134ccd1b8ccfb46019328eb3865fb06b0c31ab7e08474d347d715508",
+        "old_characters": 9262,
+        "duplicated_characters": 395,
+        "new_characters": 8451
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261013T110500-gui-1fc3b50f",
+        "packet_id": "b83a4051abfe9d700b9eaf5f980ffd1f0449ec9273fab73a8fa0c676991aa084",
+        "old_characters": 9252,
+        "duplicated_characters": 395,
+        "new_characters": 8441
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261014T111954-gui-8a0e0dcc",
+        "packet_id": "ea39280eb621b56b2cb21b71da58ee8d1eab663555daeb2e45b13868ded73899",
+        "old_characters": 9152,
+        "duplicated_characters": 395,
+        "new_characters": 8343
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261016T091829-gui-eb0852fc",
+        "packet_id": "a5ea7213f54e7a76d00dcfa8b94421af00c9450e9e8bfe354915b6422d063974",
+        "old_characters": 9017,
+        "duplicated_characters": 395,
+        "new_characters": 8212
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261016T092729-gui-c488a775",
+        "packet_id": "1a841d9eeeaf274be6551252bd5784f2416ce6620f94ab943a51a1dd1d4891eb",
+        "old_characters": 8980,
+        "duplicated_characters": 395,
+        "new_characters": 8175
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261016T092729-gui-c488a775",
+        "packet_id": "55e35ae0ba8e84cb489ff37af72f211abbb458e5d6a5421a3774c9af0ab1e3b1",
+        "old_characters": 9129,
+        "duplicated_characters": 395,
+        "new_characters": 8324
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261016T103500-gui-e2daf237",
+        "packet_id": "dcf3331f6dbe242c2218c388c2bbc7daa339d80a321fe6d26549fb6ff2c66d14",
+        "old_characters": 9070,
+        "duplicated_characters": 395,
+        "new_characters": 8265
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261019T093648-gui-e6153822",
+        "packet_id": "09f39e30e852d544752f41ee0488d1eb5fed0eda6101ffd6366465ad850b81b2",
+        "old_characters": 9103,
+        "duplicated_characters": 395,
+        "new_characters": 8300
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261019T110500-gui-4df86edc",
+        "packet_id": "db69f87adfa80e70dc2eb35aac8a84d1d89ef2256a863ba68269494105e48170",
+        "old_characters": 9064,
+        "duplicated_characters": 395,
+        "new_characters": 8261
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261019T113500-gui-b4fbd193",
+        "packet_id": "79badcfc3eb3d16580737db034f41ea8f4fe8c97f29bc21ac58f913aa01424d1",
+        "old_characters": 9003,
+        "duplicated_characters": 395,
+        "new_characters": 8200
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261019T113500-gui-b4fbd193",
+        "packet_id": "25e05df7e3799abe2c2d8be63dbdc17bf0297f9ae87dc67f6b890a0338f47228",
+        "old_characters": 8973,
+        "duplicated_characters": 395,
+        "new_characters": 8170
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261019T120500-gui-eb1d352f",
+        "packet_id": "988a36b78ecd3b8cf50eefb77d022fe0d07eddcce54926039e83eb442bcb4c16",
+        "old_characters": 9031,
+        "duplicated_characters": 395,
+        "new_characters": 8228
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261020T093500-gui-4aeb1dc7",
+        "packet_id": "fbe65b2855fd522f93d43cd397a1ade7ea905ed8b0d4a897b28b6907b38b7ace",
+        "old_characters": 8965,
+        "duplicated_characters": 395,
+        "new_characters": 8164
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261020T103500-gui-9e28d977",
+        "packet_id": "76410750fcc115799362df046a27dce45c1de3cffdcfa719b9d177346c328bca",
+        "old_characters": 8999,
+        "duplicated_characters": 395,
+        "new_characters": 8198
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261020T103500-gui-9e28d977",
+        "packet_id": "07f30ea3586ed2f2769e44d1cf189d80cd197ffd576b6e6f6364cdf4fed194f8",
+        "old_characters": 9037,
+        "duplicated_characters": 395,
+        "new_characters": 8236
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "5bb647000cab8be85591ead59ccb295452052bd83d7bbb6fb0824267934c14b3",
+        "old_characters": 8898,
+        "duplicated_characters": 395,
+        "new_characters": 8099
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "744b586d9ad8d220d94043296adcfa1f6eab1ffc84ccde137884765f9bd88734",
+        "old_characters": 8933,
+        "duplicated_characters": 395,
+        "new_characters": 8134
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261021T100500-gui-e862a010",
+        "packet_id": "66e8a8084db1558853583d36f7ef50a044aace34c4e2492c7fc3c8370f0a6dfa",
+        "old_characters": 8971,
+        "duplicated_characters": 395,
+        "new_characters": 8172
+      },
+      {
+        "source": "october_expanded_20261109/baseline/20261022T110500-gui-a9fef16d",
+        "packet_id": "82010c2ea3496b5c4ca2c86425634fb8dce14726b963b40243875b27b6ace3c5",
+        "old_characters": 8712,
+        "duplicated_characters": 395,
+        "new_characters": 7915
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261016T092729-gui-c488a775",
+        "packet_id": "1a841d9eeeaf274be6551252bd5784f2416ce6620f94ab943a51a1dd1d4891eb",
+        "old_characters": 8980,
+        "duplicated_characters": 395,
+        "new_characters": 8175
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261016T092729-gui-c488a775",
+        "packet_id": "55e35ae0ba8e84cb489ff37af72f211abbb458e5d6a5421a3774c9af0ab1e3b1",
+        "old_characters": 9129,
+        "duplicated_characters": 395,
+        "new_characters": 8324
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261016T092729-gui-c488a775",
+        "packet_id": "3e3357fbffac56ab31188ffdaa69445c1d8d87047f23f0d2d9477bb905c940fc",
+        "old_characters": 9017,
+        "duplicated_characters": 395,
+        "new_characters": 8212
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261016T103500-gui-e2daf237",
+        "packet_id": "8c533a06d6d2f0a41d72b56983569fa7672bc57ff3d9d5e80854185e6edd1fce",
+        "old_characters": 9017,
+        "duplicated_characters": 395,
+        "new_characters": 8212
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261016T103500-gui-e2daf237",
+        "packet_id": "dcf3331f6dbe242c2218c388c2bbc7daa339d80a321fe6d26549fb6ff2c66d14",
+        "old_characters": 9070,
+        "duplicated_characters": 395,
+        "new_characters": 8265
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261016T103500-gui-e2daf237",
+        "packet_id": "457185605d7bb3ae780cdda5ae1d27c86467d7590fd6fc209d09a09bed42da8b",
+        "old_characters": 9129,
+        "duplicated_characters": 395,
+        "new_characters": 8324
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261019T113500-gui-b4fbd193",
+        "packet_id": "5bc1a6a721820cb1b28075da985653d54e57de1db1158afd16b05eb76bbfe8d5",
+        "old_characters": 9064,
+        "duplicated_characters": 395,
+        "new_characters": 8261
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261019T113500-gui-b4fbd193",
+        "packet_id": "79badcfc3eb3d16580737db034f41ea8f4fe8c97f29bc21ac58f913aa01424d1",
+        "old_characters": 9003,
+        "duplicated_characters": 395,
+        "new_characters": 8200
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261019T113500-gui-b4fbd193",
+        "packet_id": "25e05df7e3799abe2c2d8be63dbdc17bf0297f9ae87dc67f6b890a0338f47228",
+        "old_characters": 8973,
+        "duplicated_characters": 395,
+        "new_characters": 8170
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261019T120500-gui-eb1d352f",
+        "packet_id": "d64b9af0375aa7d9dc2883dc8e71882fea73cc1bd479cd09a4fa4f73cacea0a9",
+        "old_characters": 8973,
+        "duplicated_characters": 395,
+        "new_characters": 8170
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261021T100500-gui-e862a010",
+        "packet_id": "846726ce9872b6152859fca2fd25413c7f06758bb76ea6317eaf9fdec4b7421f",
+        "old_characters": 8898,
+        "duplicated_characters": 395,
+        "new_characters": 8099
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261021T100500-gui-e862a010",
+        "packet_id": "a0c0edb8a79e9f14e2e612f893f7a7c37d85fdec46ce8d7f5e5c0f735aa2aa30",
+        "old_characters": 8933,
+        "duplicated_characters": 395,
+        "new_characters": 8134
+      },
+      {
+        "source": "october_expanded_20261109/competitive/baseline/20261021T100500-gui-e862a010",
+        "packet_id": "66e8a8084db1558853583d36f7ef50a044aace34c4e2492c7fc3c8370f0a6dfa",
+        "old_characters": 8971,
+        "duplicated_characters": 395,
+        "new_characters": 8172
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261016T092729-gui-c488a775",
+        "packet_id": "a5a5dd597c0de2cd59b21ff82b92a123b9546c3aef9f8002c080aa22246a9417",
+        "old_characters": 15456,
+        "duplicated_characters": 3572,
+        "new_characters": 11342
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261016T092729-gui-c488a775",
+        "packet_id": "74fcba5f0bb9d3b8a453922a534e60d54b1f7c64a8070fa6d988e6554c04d6e6",
+        "old_characters": 15627,
+        "duplicated_characters": 3583,
+        "new_characters": 11502
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261016T092729-gui-c488a775",
+        "packet_id": "8a26ebb6f67c33c061575c44ee32bebeb146c6b39176fc73e6ec7e7203999bfc",
+        "old_characters": 14465,
+        "duplicated_characters": 3058,
+        "new_characters": 10905
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261016T103500-gui-e2daf237",
+        "packet_id": "5c2a207103d3da473c4a9002ee73a6244fc1c3c95f8be1898fc5202f5082be99",
+        "old_characters": 14465,
+        "duplicated_characters": 3058,
+        "new_characters": 10905
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261016T103500-gui-e2daf237",
+        "packet_id": "d158b1898e316f468611bf681a3c8b04e544ea18cd04226e9e20219fcf5c834f",
+        "old_characters": 15600,
+        "duplicated_characters": 3599,
+        "new_characters": 11458
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261016T103500-gui-e2daf237",
+        "packet_id": "e2fcdc1cf735bfeeda7e3b8f5c986395b275665d95d9f65dec51731de5059fcd",
+        "old_characters": 15623,
+        "duplicated_characters": 3581,
+        "new_characters": 11500
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261019T113500-gui-b4fbd193",
+        "packet_id": "1c1a57e64d6fca38ab21930165287f0986e2abee61a01987739960388889dab6",
+        "old_characters": 20396,
+        "duplicated_characters": 6000,
+        "new_characters": 13714
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261019T113500-gui-b4fbd193",
+        "packet_id": "7474c24a7013d175f6f4c23da7305c3653d7c21339421bcb348003adef6f107b",
+        "old_characters": 20831,
+        "duplicated_characters": 6248,
+        "new_characters": 13880
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261019T113500-gui-b4fbd193",
+        "packet_id": "d6fe0fb1682d6c4d35c76e14cabf169025481ae963de355470dfbb8716a17e26",
+        "old_characters": 15497,
+        "duplicated_characters": 3596,
+        "new_characters": 11361
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261019T120500-gui-eb1d352f",
+        "packet_id": "8a428e0c2c05a6537e7fdce74ac2861fc95b4870c6475312547c34827a0fcfa7",
+        "old_characters": 20426,
+        "duplicated_characters": 6015,
+        "new_characters": 13729
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261019T120500-gui-eb1d352f",
+        "packet_id": "2fca5e156c2800dfa3035a52ead819042f1dd14e4c9d945cac5366fc9bb49900",
+        "old_characters": 13779,
+        "duplicated_characters": 2708,
+        "new_characters": 10590
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261019T120500-gui-eb1d352f",
+        "packet_id": "3b349e2cba6d6df05f574f5a8f678f7fdcefbc61b27dae99a28ff719d9abaa33",
+        "old_characters": 15497,
+        "duplicated_characters": 3596,
+        "new_characters": 11361
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261021T100500-gui-e862a010",
+        "packet_id": "5e2002b84380d5dba756582180da53fadc41d46580fcdf85da5772eb434970e0",
+        "old_characters": 20739,
+        "duplicated_characters": 6237,
+        "new_characters": 13805
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261021T100500-gui-e862a010",
+        "packet_id": "0e7f823650e521d1cab1fb0d1ca06a100d82aa42334cd25a2dab01d99b1491f6",
+        "old_characters": 13566,
+        "duplicated_characters": 2668,
+        "new_characters": 10422
+      },
+      {
+        "source": "october_expanded_20261109/competitive/revised/20261021T100500-gui-e862a010",
+        "packet_id": "e8e21d4b7a6874f2fce4658c630bd197bc29f0667621e66c40c8a4fe6cd22dbe",
+        "old_characters": 14477,
+        "duplicated_characters": 3087,
+        "new_characters": 10893
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261008T112432-gui-4bead3fd",
+        "packet_id": "aac137e6576adf526c3c1292feb2b10769da8a36a453ed6fb40a283c25aef640",
+        "old_characters": 15784,
+        "duplicated_characters": 3511,
+        "new_characters": 11722
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261012T130844-gui-90eeb1eb",
+        "packet_id": "64ee75200869b74ded74dbe43ac813b2d54713df02e43f5973f84d5623d6c163",
+        "old_characters": 14053,
+        "duplicated_characters": 2720,
+        "new_characters": 10843
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261013T100500-gui-22f967e4",
+        "packet_id": "ff7227e82664af08e0990d2bf254a75e6781778865047f6008a1ee98fa44ab12",
+        "old_characters": 13914,
+        "duplicated_characters": 2660,
+        "new_characters": 10767
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261013T110500-gui-1fc3b50f",
+        "packet_id": "5295fee8d05523a0436cf5a60568af9caa1d33fb8b36ac5d23bf74fdc48c4422",
+        "old_characters": 14536,
+        "duplicated_characters": 2976,
+        "new_characters": 11053
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261014T111954-gui-8a0e0dcc",
+        "packet_id": "8deaab40ed0e46e712f8f07a12b4999e086d26d9b525355edbb5c31c9f8313e3",
+        "old_characters": 13962,
+        "duplicated_characters": 2739,
+        "new_characters": 10737
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261016T091829-gui-eb0852fc",
+        "packet_id": "324351f40ff4c2f67f2d6115fe7ffad57076d77482371294c7ead4668d6f4e0d",
+        "old_characters": 14439,
+        "duplicated_characters": 3045,
+        "new_characters": 10893
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261016T092729-gui-c488a775",
+        "packet_id": "a5a5dd597c0de2cd59b21ff82b92a123b9546c3aef9f8002c080aa22246a9417",
+        "old_characters": 15456,
+        "duplicated_characters": 3572,
+        "new_characters": 11342
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261016T092729-gui-c488a775",
+        "packet_id": "74fcba5f0bb9d3b8a453922a534e60d54b1f7c64a8070fa6d988e6554c04d6e6",
+        "old_characters": 15627,
+        "duplicated_characters": 3583,
+        "new_characters": 11502
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261016T103500-gui-e2daf237",
+        "packet_id": "d158b1898e316f468611bf681a3c8b04e544ea18cd04226e9e20219fcf5c834f",
+        "old_characters": 15600,
+        "duplicated_characters": 3599,
+        "new_characters": 11458
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261019T093648-gui-e6153822",
+        "packet_id": "5a00ca6f96bd8f07d1df84e6b6707cc140e3a77ef9417c8ee6f56de44f81c189",
+        "old_characters": 14461,
+        "duplicated_characters": 3013,
+        "new_characters": 10949
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261019T110500-gui-4df86edc",
+        "packet_id": "ef572b001da0ec9bc9f74cdce6630bd143eff41888caedf3b3b6234ef63e8074",
+        "old_characters": 20452,
+        "duplicated_characters": 6028,
+        "new_characters": 13742
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261019T113500-gui-b4fbd193",
+        "packet_id": "d6fe0fb1682d6c4d35c76e14cabf169025481ae963de355470dfbb8716a17e26",
+        "old_characters": 15497,
+        "duplicated_characters": 3596,
+        "new_characters": 11361
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261019T113500-gui-b4fbd193",
+        "packet_id": "7474c24a7013d175f6f4c23da7305c3653d7c21339421bcb348003adef6f107b",
+        "old_characters": 20831,
+        "duplicated_characters": 6248,
+        "new_characters": 13880
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261019T120500-gui-eb1d352f",
+        "packet_id": "2fca5e156c2800dfa3035a52ead819042f1dd14e4c9d945cac5366fc9bb49900",
+        "old_characters": 13779,
+        "duplicated_characters": 2708,
+        "new_characters": 10590
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261020T093500-gui-4aeb1dc7",
+        "packet_id": "5088e32dfb65afc2dc2787ab8c5b2c71948cc098220cc91d59fcae34523ed7ac",
+        "old_characters": 16929,
+        "duplicated_characters": 4316,
+        "new_characters": 12034
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261020T103500-gui-9e28d977",
+        "packet_id": "0a97ecb13ce463ae8c9ec18fd5012e8ce4bd83148ce213454bdf07731d5391ce",
+        "old_characters": 20423,
+        "duplicated_characters": 6046,
+        "new_characters": 13696
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261020T103500-gui-9e28d977",
+        "packet_id": "eb49530433dbf68282e7c1a8871dc501193bfef92c1687c4694e934330a9b503",
+        "old_characters": 17213,
+        "duplicated_characters": 4422,
+        "new_characters": 12210
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "b3765e7ccbaf94f90033b2b7a5e8d1963a0e8774d223b1c5126dbe10638595f4",
+        "old_characters": 13566,
+        "duplicated_characters": 2668,
+        "new_characters": 10422
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "c68c26a514d63239b94d30065d9453dcd251d43b2b5f0febf371e165cff8b81e",
+        "old_characters": 20735,
+        "duplicated_characters": 6235,
+        "new_characters": 13803
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261021T100500-gui-e862a010",
+        "packet_id": "e8e21d4b7a6874f2fce4658c630bd197bc29f0667621e66c40c8a4fe6cd22dbe",
+        "old_characters": 14477,
+        "duplicated_characters": 3087,
+        "new_characters": 10893
+      },
+      {
+        "source": "october_expanded_20261109/revised/20261022T110500-gui-a9fef16d",
+        "packet_id": "fac273320c6018980f035f674c731419f82330b64f4427aa85be9713587ab122",
+        "old_characters": 13464,
+        "duplicated_characters": 2710,
+        "new_characters": 10280
+      },
+      {
+        "source": "october_replay_20261109/current_agent",
+        "packet_id": "b74e384fe066695f8762af989b54bb87aeb6b69d42d209c3b854004611ddc91d",
+        "old_characters": 6357,
+        "duplicated_characters": 395,
+        "new_characters": 4329
+      },
+      {
+        "source": "october_replay_20261109/current_agent",
+        "packet_id": "afbc48b3216412843c4f3f2b7e799122072b156fde662ee121f3764ccca2ddd2",
+        "old_characters": 6358,
+        "duplicated_characters": 395,
+        "new_characters": 4330
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261008T112432-gui-4bead3fd",
+        "packet_id": "8d12bfdf93271be559cec59a499770ea94ee6ea4f074aa3c2e2aa8433d0040df",
+        "old_characters": 16160,
+        "duplicated_characters": 3699,
+        "new_characters": 11901
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261012T130844-gui-90eeb1eb",
+        "packet_id": "ee69906311ed54b67949f5850b1a40652b9253168a53968deb26891288739b39",
+        "old_characters": 14429,
+        "duplicated_characters": 2908,
+        "new_characters": 11022
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261013T100500-gui-22f967e4",
+        "packet_id": "16f6f4677300e136945317bd65f56da2accc098a5cc6fcfab07ef58bbe490354",
+        "old_characters": 14290,
+        "duplicated_characters": 2848,
+        "new_characters": 10946
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261013T110500-gui-1fc3b50f",
+        "packet_id": "59d0af1c802dd784563faf12bfcf96836504acb6247d8ab6b5458d4b326e1696",
+        "old_characters": 14912,
+        "duplicated_characters": 3164,
+        "new_characters": 11232
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261014T111954-gui-8a0e0dcc",
+        "packet_id": "b0127f0d29c5ef7410df512a7c84058dd8115c503ea2ce6bbb0649f98db6dd2c",
+        "old_characters": 14338,
+        "duplicated_characters": 2927,
+        "new_characters": 10916
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261016T091829-gui-eb0852fc",
+        "packet_id": "1e82b82a72eaebc3f48da8cfb70d7c8fc5fadbcbee2770ecdac2644a4ef4f0a5",
+        "old_characters": 14815,
+        "duplicated_characters": 3233,
+        "new_characters": 11072
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261016T092729-gui-c488a775",
+        "packet_id": "5ae3af2be456add4615137ff816c61e46e2845ff890e5de9191504f5572e752c",
+        "old_characters": 15832,
+        "duplicated_characters": 3760,
+        "new_characters": 11521
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261016T092729-gui-c488a775",
+        "packet_id": "3f4dac530f7f61e55ecb1192dc85e8cd5480c3192b33d4431bd39953a87a0182",
+        "old_characters": 16003,
+        "duplicated_characters": 3771,
+        "new_characters": 11681
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261016T092729-gui-c488a775",
+        "packet_id": "5791890854f1da460915f819353fe4026ab243414a2f8943ab9e31709521bb2d",
+        "old_characters": 14841,
+        "duplicated_characters": 3246,
+        "new_characters": 11084
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261016T103500-gui-e2daf237",
+        "packet_id": "661be286d300f8b94c786f871f22f362c8ae46bdc6a911491e5a49ac07d31316",
+        "old_characters": 14841,
+        "duplicated_characters": 3246,
+        "new_characters": 11084
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261016T103500-gui-e2daf237",
+        "packet_id": "b70edbbf7a1ff140210bf00fc7a72840d8a734da2cd5359bc17b80535c80946a",
+        "old_characters": 15999,
+        "duplicated_characters": 3769,
+        "new_characters": 11679
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T093648-gui-e6153822",
+        "packet_id": "4e8c5f5d8b4bfbf6cc0943d88a3067b92f35a884d0beb5f98c689fe89d981e9e",
+        "old_characters": 14837,
+        "duplicated_characters": 3201,
+        "new_characters": 11128
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T110500-gui-4df86edc",
+        "packet_id": "10a0108913e2e3e8fe0da661130ec158a82bc79f443707fb7db1fe31f2f96da5",
+        "old_characters": 20828,
+        "duplicated_characters": 6216,
+        "new_characters": 13921
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "a3ff80a8af310fd8d8516abd1aad2eb7478c1fbb2f641e33d2dba8d235b5634a",
+        "old_characters": 20772,
+        "duplicated_characters": 6188,
+        "new_characters": 13893
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "f9a5face55a2802479a540b766a9b2a49aa794debbc1aeea6a8709bde4f9d512",
+        "old_characters": 21207,
+        "duplicated_characters": 6436,
+        "new_characters": 14059
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "1e402773bae1fc16f9638fa96f08088b0cf05f89dd8a751676373d42df831321",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "d7af7be0d5bec3fcab414a05c2a3c49b817b157eee11dc1f10ef5171709797c3",
+        "old_characters": 20802,
+        "duplicated_characters": 6203,
+        "new_characters": 13908
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "e323b065680b49bf06139b6a04b35d5352c1d9e92ca7e061cc1b66b2f7b4a593",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "55da2777d4976953e93dbb5026352ed2f217ed216d8ee8f6bf4aa94306772e94",
+        "old_characters": 14155,
+        "duplicated_characters": 2896,
+        "new_characters": 10769
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261020T093500-gui-4aeb1dc7",
+        "packet_id": "30a49d39bdab030c4f287c18f754fd08b1589b5b8abce5e4481da1e2f4b2666a",
+        "old_characters": 17305,
+        "duplicated_characters": 4504,
+        "new_characters": 12213
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261020T103500-gui-9e28d977",
+        "packet_id": "973036ee7c7ba804aa80f13090b88c521e907c56cf19d6c6f59932ddb8a519d5",
+        "old_characters": 20799,
+        "duplicated_characters": 6234,
+        "new_characters": 13875
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261020T103500-gui-9e28d977",
+        "packet_id": "2a515674a23c9c8a4d0247df85dbdc4d170aa61014779b26c1dc165a8b5eb3a9",
+        "old_characters": 17589,
+        "duplicated_characters": 4610,
+        "new_characters": 12389
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "b784130d4da22e5e677d5b0e42dc7889487f85000475a554382e857f07b0ba6b",
+        "old_characters": 13942,
+        "duplicated_characters": 2856,
+        "new_characters": 10601
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "8167e877919082a1d2f9406f526996af09f85476b83aa83b9480a6519a58693a",
+        "old_characters": 21111,
+        "duplicated_characters": 6423,
+        "new_characters": 13982
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261021T100500-gui-e862a010",
+        "packet_id": "742c9dda88797c6650cded017f1b42910561b3e959d6a1b62b9f5297f11b092e",
+        "old_characters": 21115,
+        "duplicated_characters": 6425,
+        "new_characters": 13984
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261021T100500-gui-e862a010",
+        "packet_id": "4ef76a4c15e23add8e545a97d190f21bab96a63c6d4653e60ffde79859792f7c",
+        "old_characters": 13942,
+        "duplicated_characters": 2856,
+        "new_characters": 10601
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261021T100500-gui-e862a010",
+        "packet_id": "b84875269862258f220c6e49648d267f6c9d29d0e540673eaaec1cc1d1d7d13e",
+        "old_characters": 14853,
+        "duplicated_characters": 3275,
+        "new_characters": 11072
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_no_skill/20261022T110500-gui-a9fef16d",
+        "packet_id": "aea0a7f52be0080cbfea4b8fa3c9ea1df903c8ead623217ed9e717362cc817bd",
+        "old_characters": 13840,
+        "duplicated_characters": 2898,
+        "new_characters": 10459
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261008T112432-gui-4bead3fd",
+        "packet_id": "8d12bfdf93271be559cec59a499770ea94ee6ea4f074aa3c2e2aa8433d0040df",
+        "old_characters": 16160,
+        "duplicated_characters": 3699,
+        "new_characters": 11901
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261012T130844-gui-90eeb1eb",
+        "packet_id": "ee69906311ed54b67949f5850b1a40652b9253168a53968deb26891288739b39",
+        "old_characters": 14429,
+        "duplicated_characters": 2908,
+        "new_characters": 11022
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261013T100500-gui-22f967e4",
+        "packet_id": "16f6f4677300e136945317bd65f56da2accc098a5cc6fcfab07ef58bbe490354",
+        "old_characters": 14290,
+        "duplicated_characters": 2848,
+        "new_characters": 10946
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261013T110500-gui-1fc3b50f",
+        "packet_id": "59d0af1c802dd784563faf12bfcf96836504acb6247d8ab6b5458d4b326e1696",
+        "old_characters": 14912,
+        "duplicated_characters": 3164,
+        "new_characters": 11232
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261014T111954-gui-8a0e0dcc",
+        "packet_id": "b0127f0d29c5ef7410df512a7c84058dd8115c503ea2ce6bbb0649f98db6dd2c",
+        "old_characters": 14338,
+        "duplicated_characters": 2927,
+        "new_characters": 10916
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T091829-gui-eb0852fc",
+        "packet_id": "1e82b82a72eaebc3f48da8cfb70d7c8fc5fadbcbee2770ecdac2644a4ef4f0a5",
+        "old_characters": 14815,
+        "duplicated_characters": 3233,
+        "new_characters": 11072
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T092729-gui-c488a775",
+        "packet_id": "5ae3af2be456add4615137ff816c61e46e2845ff890e5de9191504f5572e752c",
+        "old_characters": 15832,
+        "duplicated_characters": 3760,
+        "new_characters": 11521
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T092729-gui-c488a775",
+        "packet_id": "3f4dac530f7f61e55ecb1192dc85e8cd5480c3192b33d4431bd39953a87a0182",
+        "old_characters": 16003,
+        "duplicated_characters": 3771,
+        "new_characters": 11681
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T092729-gui-c488a775",
+        "packet_id": "5791890854f1da460915f819353fe4026ab243414a2f8943ab9e31709521bb2d",
+        "old_characters": 14841,
+        "duplicated_characters": 3246,
+        "new_characters": 11084
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T103500-gui-e2daf237",
+        "packet_id": "661be286d300f8b94c786f871f22f362c8ae46bdc6a911491e5a49ac07d31316",
+        "old_characters": 14841,
+        "duplicated_characters": 3246,
+        "new_characters": 11084
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T103500-gui-e2daf237",
+        "packet_id": "b70edbbf7a1ff140210bf00fc7a72840d8a734da2cd5359bc17b80535c80946a",
+        "old_characters": 15999,
+        "duplicated_characters": 3769,
+        "new_characters": 11679
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261016T103500-gui-e2daf237",
+        "packet_id": "9d4a5c4d5b59994a0cd01bdadcb9b9dfa46138747bd5988c821d0efae562d2ff",
+        "old_characters": 15976,
+        "duplicated_characters": 3787,
+        "new_characters": 11637
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T093648-gui-e6153822",
+        "packet_id": "4e8c5f5d8b4bfbf6cc0943d88a3067b92f35a884d0beb5f98c689fe89d981e9e",
+        "old_characters": 14837,
+        "duplicated_characters": 3201,
+        "new_characters": 11128
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T110500-gui-4df86edc",
+        "packet_id": "10a0108913e2e3e8fe0da661130ec158a82bc79f443707fb7db1fe31f2f96da5",
+        "old_characters": 20828,
+        "duplicated_characters": 6216,
+        "new_characters": 13921
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "1e402773bae1fc16f9638fa96f08088b0cf05f89dd8a751676373d42df831321",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "a3ff80a8af310fd8d8516abd1aad2eb7478c1fbb2f641e33d2dba8d235b5634a",
+        "old_characters": 20772,
+        "duplicated_characters": 6188,
+        "new_characters": 13893
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "f9a5face55a2802479a540b766a9b2a49aa794debbc1aeea6a8709bde4f9d512",
+        "old_characters": 21207,
+        "duplicated_characters": 6436,
+        "new_characters": 14059
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "e323b065680b49bf06139b6a04b35d5352c1d9e92ca7e061cc1b66b2f7b4a593",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "d7af7be0d5bec3fcab414a05c2a3c49b817b157eee11dc1f10ef5171709797c3",
+        "old_characters": 20802,
+        "duplicated_characters": 6203,
+        "new_characters": 13908
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "55da2777d4976953e93dbb5026352ed2f217ed216d8ee8f6bf4aa94306772e94",
+        "old_characters": 14155,
+        "duplicated_characters": 2896,
+        "new_characters": 10769
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261020T093500-gui-4aeb1dc7",
+        "packet_id": "30a49d39bdab030c4f287c18f754fd08b1589b5b8abce5e4481da1e2f4b2666a",
+        "old_characters": 17305,
+        "duplicated_characters": 4504,
+        "new_characters": 12213
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261020T103500-gui-9e28d977",
+        "packet_id": "973036ee7c7ba804aa80f13090b88c521e907c56cf19d6c6f59932ddb8a519d5",
+        "old_characters": 20799,
+        "duplicated_characters": 6234,
+        "new_characters": 13875
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261020T103500-gui-9e28d977",
+        "packet_id": "2a515674a23c9c8a4d0247df85dbdc4d170aa61014779b26c1dc165a8b5eb3a9",
+        "old_characters": 17589,
+        "duplicated_characters": 4610,
+        "new_characters": 12389
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "b784130d4da22e5e677d5b0e42dc7889487f85000475a554382e857f07b0ba6b",
+        "old_characters": 13942,
+        "duplicated_characters": 2856,
+        "new_characters": 10601
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261021T093500-gui-e9bb5fb2",
+        "packet_id": "8167e877919082a1d2f9406f526996af09f85476b83aa83b9480a6519a58693a",
+        "old_characters": 21111,
+        "duplicated_characters": 6423,
+        "new_characters": 13982
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261021T100500-gui-e862a010",
+        "packet_id": "4ef76a4c15e23add8e545a97d190f21bab96a63c6d4653e60ffde79859792f7c",
+        "old_characters": 13942,
+        "duplicated_characters": 2856,
+        "new_characters": 10601
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261021T100500-gui-e862a010",
+        "packet_id": "742c9dda88797c6650cded017f1b42910561b3e959d6a1b62b9f5297f11b092e",
+        "old_characters": 21115,
+        "duplicated_characters": 6425,
+        "new_characters": 13984
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261021T100500-gui-e862a010",
+        "packet_id": "b84875269862258f220c6e49648d267f6c9d29d0e540673eaaec1cc1d1d7d13e",
+        "old_characters": 14853,
+        "duplicated_characters": 3275,
+        "new_characters": 11072
+      },
+      {
+        "source": "skill_decision_ab_20261109/baseline_skill/20261022T110500-gui-a9fef16d",
+        "packet_id": "aea0a7f52be0080cbfea4b8fa3c9ea1df903c8ead623217ed9e717362cc817bd",
+        "old_characters": 13840,
+        "duplicated_characters": 2898,
+        "new_characters": 10459
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "1e402773bae1fc16f9638fa96f08088b0cf05f89dd8a751676373d42df831321",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "a3ff80a8af310fd8d8516abd1aad2eb7478c1fbb2f641e33d2dba8d235b5634a",
+        "old_characters": 20772,
+        "duplicated_characters": 6188,
+        "new_characters": 13893
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "f9a5face55a2802479a540b766a9b2a49aa794debbc1aeea6a8709bde4f9d512",
+        "old_characters": 21207,
+        "duplicated_characters": 6436,
+        "new_characters": 14059
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "e323b065680b49bf06139b6a04b35d5352c1d9e92ca7e061cc1b66b2f7b4a593",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "d7af7be0d5bec3fcab414a05c2a3c49b817b157eee11dc1f10ef5171709797c3",
+        "old_characters": 20802,
+        "duplicated_characters": 6203,
+        "new_characters": 13908
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "55da2777d4976953e93dbb5026352ed2f217ed216d8ee8f6bf4aa94306772e94",
+        "old_characters": 14155,
+        "duplicated_characters": 2896,
+        "new_characters": 10769
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "1e402773bae1fc16f9638fa96f08088b0cf05f89dd8a751676373d42df831321",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "a3ff80a8af310fd8d8516abd1aad2eb7478c1fbb2f641e33d2dba8d235b5634a",
+        "old_characters": 20772,
+        "duplicated_characters": 6188,
+        "new_characters": 13893
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "f9a5face55a2802479a540b766a9b2a49aa794debbc1aeea6a8709bde4f9d512",
+        "old_characters": 21207,
+        "duplicated_characters": 6436,
+        "new_characters": 14059
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "d7af7be0d5bec3fcab414a05c2a3c49b817b157eee11dc1f10ef5171709797c3",
+        "old_characters": 20802,
+        "duplicated_characters": 6203,
+        "new_characters": 13908
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "e323b065680b49bf06139b6a04b35d5352c1d9e92ca7e061cc1b66b2f7b4a593",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/baseline_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "55da2777d4976953e93dbb5026352ed2f217ed216d8ee8f6bf4aa94306772e94",
+        "old_characters": 14155,
+        "duplicated_characters": 2896,
+        "new_characters": 10769
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/revised_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/revised_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/revised_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r1/revised_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "1e402773bae1fc16f9638fa96f08088b0cf05f89dd8a751676373d42df831321",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "a3ff80a8af310fd8d8516abd1aad2eb7478c1fbb2f641e33d2dba8d235b5634a",
+        "old_characters": 20772,
+        "duplicated_characters": 6188,
+        "new_characters": 13893
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/baseline_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "f9a5face55a2802479a540b766a9b2a49aa794debbc1aeea6a8709bde4f9d512",
+        "old_characters": 21207,
+        "duplicated_characters": 6436,
+        "new_characters": 14059
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "a3ff80a8af310fd8d8516abd1aad2eb7478c1fbb2f641e33d2dba8d235b5634a",
+        "old_characters": 20772,
+        "duplicated_characters": 6188,
+        "new_characters": 13893
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "1e402773bae1fc16f9638fa96f08088b0cf05f89dd8a751676373d42df831321",
+        "old_characters": 15873,
+        "duplicated_characters": 3784,
+        "new_characters": 11540
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/baseline_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "f9a5face55a2802479a540b766a9b2a49aa794debbc1aeea6a8709bde4f9d512",
+        "old_characters": 21207,
+        "duplicated_characters": 6436,
+        "new_characters": 14059
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/revised_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/revised_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/revised_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/replications/r2/revised_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_no_skill/20261012T130844-gui-90eeb1eb",
+        "packet_id": "a33ce1016cc177edb260ae28963956306ab27326e1d7ab17a63c99d7b767fe39",
+        "old_characters": 15525,
+        "duplicated_characters": 3456,
+        "new_characters": 11537
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_no_skill/20261013T110500-gui-1fc3b50f",
+        "packet_id": "f7cb1f285341399dae7d71ff9079946b409f9c396d3d9f47d2b8f1f512077d2b",
+        "old_characters": 15720,
+        "duplicated_characters": 3568,
+        "new_characters": 11612
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_no_skill/20261016T092729-gui-c488a775",
+        "packet_id": "c2f0b86b6c61171d141264cc96d06fa629f5e119cfc49364d9abc6fb612c4b32",
+        "old_characters": 16638,
+        "duplicated_characters": 4163,
+        "new_characters": 11900
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_no_skill/20261016T092729-gui-c488a775",
+        "packet_id": "3c801137e64c9db819473e898d3acc64a0f71073b5565f84be9e9f36d2a081a0",
+        "old_characters": 15971,
+        "duplicated_characters": 3811,
+        "new_characters": 11616
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_no_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_no_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_skill/20261012T130844-gui-90eeb1eb",
+        "packet_id": "a33ce1016cc177edb260ae28963956306ab27326e1d7ab17a63c99d7b767fe39",
+        "old_characters": 15525,
+        "duplicated_characters": 3456,
+        "new_characters": 11537
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_skill/20261013T110500-gui-1fc3b50f",
+        "packet_id": "f7cb1f285341399dae7d71ff9079946b409f9c396d3d9f47d2b8f1f512077d2b",
+        "old_characters": 15720,
+        "duplicated_characters": 3568,
+        "new_characters": 11612
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_skill/20261016T092729-gui-c488a775",
+        "packet_id": "c2f0b86b6c61171d141264cc96d06fa629f5e119cfc49364d9abc6fb612c4b32",
+        "old_characters": 16638,
+        "duplicated_characters": 4163,
+        "new_characters": 11900
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_skill/20261016T092729-gui-c488a775",
+        "packet_id": "3c801137e64c9db819473e898d3acc64a0f71073b5565f84be9e9f36d2a081a0",
+        "old_characters": 15971,
+        "duplicated_characters": 3811,
+        "new_characters": 11616
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_skill/20261019T113500-gui-b4fbd193",
+        "packet_id": "c52196706034041c7f8b39b5371464d4d1f78a2b4aefc414927ab5eae240788c",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      },
+      {
+        "source": "skill_decision_ab_20261109/revised_skill/20261019T120500-gui-eb1d352f",
+        "packet_id": "319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19",
+        "old_characters": 16685,
+        "duplicated_characters": 4190,
+        "new_characters": 11922
+      }
+    ]
+  },
+  "limits": [
+    "Role attribution for old logs is inferred; new logs record task-local actors explicitly.",
+    "Historical clocks hide role wall time; this does not rank roles by measured latency.",
+    "Group wall durations exist for only some completed runs; summed worker durations overlap under parallel execution.",
+    "Cost uses yesterday's saved Standard assumptions, not account invoices.",
+    "WATCH summaries may contain useful counterevidence; a repeated verdict alone does not prove uselessness."
+  ]
+}

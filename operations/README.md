@@ -1,5 +1,31 @@
 # 交易執行與健康檢查
 
+## 2026-11-10 回放效率與離線重驗
+
+本次依使用者指示只使用既有資料；付費回放保持暫停。完整檢討見
+[效率檢討](../reports/replay_efficiency_20261110/summary.txt)，可重算的統計在同目錄 `audit.json`。
+Agent 共用版本為 `agent-decision-v12-batched-research-lossless-transport`。
+
+`research_support_batch(symbols)` 在一個父工具回合取得 1–5 檔所需的兩方獨立研究，
+並行子研究仍只讀同一份固定證據，互不讀取意見；單方工具保留供補查。
+同輪有效結果可沿用，帳戶或計畫結構變動會失效；REJECT 及所有交易前檢查保留。
+`support_research.json.cache_hits` 記錄零新增模型請求的沿用，完整原證據包不變；
+`support_scout.transport` 只改模型傳輸格式，可無損還原。新 usage 列直接記 `actor`、`symbol`。
+
+回放的精確沿用使用完整 `selection_pool`，檢查模型／SDK／執行程式及實際輸入；
+只修改 tests 或說明不再使推論快取失效。`--retry-incomplete` 不會重抽模型格式／決策錯誤；
+此類結果要先離線重驗保存的 raw reply。重驗不能產生新研究、消除原否決或批准新交易：
+
+```powershell
+# CODE_SNAPSHOT 必須是不含 .git、.env、.trading-state.json 的隔離程式副本。
+python -m operations.revalidate_saved_decisions --code-root CODE_SNAPSHOT --benchmark REPORT/benchmark.json --results REPORT/baseline_no_skill --output REPORT/revalidated_baseline_no_skill.json
+python -m operations.replay_efficiency_audit --ledger reports/api_usage_20261109_paused.json --output reports/replay_efficiency_20261110/audit.json
+```
+
+166 份保存證據包均可無損還原，傳輸字元減少 26.07%；這不等於已實測的 token 或費用降幅。
+四組 68 份結果已離線重驗（44 份有原回覆、24 份未呼叫），原交易否決及動作保留；
+548 項封鎖外部連線測試通過。新版本沒有付費模型績效或實盤驗證。
+
 ## 2026-11-09 Skill 對照分支與決策證據實驗
 
 使用者已要求測試先用既有資料，暫停新 Agent API 回放。

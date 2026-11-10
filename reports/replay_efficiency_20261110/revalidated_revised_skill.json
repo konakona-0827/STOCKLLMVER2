@@ -1,0 +1,305 @@
+{
+  "source": "C:\\Users\\ho.chouchuan\\Documents\\HO\\project\\personalmono\\STOCKLLM-agent\\reports\\skill_decision_ab_20261109\\revised_skill",
+  "records": [
+    {
+      "group": "20261008T112432-gui-4bead3fd",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261012T130844-gui-90eeb1eb",
+      "original_validation": "VALID",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "raw_response_sha256": "80908a4eb7a4ad325a0246c0cc145e15d0c58774c859683cc605f48dcdca9420",
+      "status": "VALID_SAVED_REPLY",
+      "decision": {
+        "market_view": "截至 2026-10-12 13:08:49，台泥盤中站上前20個完整交易日高點26.7元，屬首次突破的 Early 訊號；今日收盤與完整日線量能尚未確認。",
+        "decisions": [
+          {
+            "symbol": "1101",
+            "decision": "BUY",
+            "confidence": 0.63,
+            "action_ratio": 0.0,
+            "suggested_qty": 44,
+            "reference_price": 27.1,
+            "suggested_price": 27.15,
+            "strategy_id": "multi_day_trend",
+            "target_price": 29.05,
+            "invalidation_price": 26.2,
+            "holding_days": 10,
+            "reason": "採用刷新後仍有效的 FIRST_DAY_BREAKOUT 計畫（038c87ba25a5）：LIVE 27.1元高於9/30結構高點26.7元，亦高於12:34抽樣價26.9元；27.15元為目前賣價，非等待回落的假設價格。44股估計含買進成本1,195.6元、資金需求1,214.6元，未逾預算；按目標29.05元、今日低點所據失效價26.2元及退出價差與費稅估算，目標淨利75.4元、失效損失50元，淨報酬6.31%、報酬風險比1.508。完整日線顯示9/30觸及26.7元後於10/1回落，故須防假突破；今日量能與收盤突破均未確認，29.05元是2R模型目標而非已觀測阻力。兩方研究均為WATCH、非REJECT（packet a33ce1016cc177edb260ae28963956306ab27326e1d7ab17a63c99d7b767fe39）；公司行動與事件未核實，未見可據以否定此計畫的具體事件。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "首次盤中突破僅有LIVE價格證據，沒有今日完整日線或量能確認；模型目標不代表達標機率。",
+              "26.2元是模型失效價，並非已掛停損單；新買盤中零股當日不可賣，須承受掃描間隔及隔夜跳空風險。",
+              "預算：本輪可用買進上限 NT$ 10000；實際委託仍由券商資金風控重查。",
+              "目標情境淨利估算 NT$ 75.40；失效情境淨損估算 NT$ 50.00；未含無法驗證的未來成交滑價，實際報酬不保證。"
+            ]
+          }
+        ]
+      },
+      "preserved_vetoes": [],
+      "action_changes": []
+    },
+    {
+      "group": "20261013T100500-gui-22f967e4",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261013T110500-gui-1fc3b50f",
+      "original_validation": "VALID",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "raw_response_sha256": "6795cc30e691877f171d414124f657c00b68c042678f282d02f9f0e5d4e1b158",
+      "status": "VALID_SAVED_REPLY",
+      "decision": {
+        "market_view": "截至2026-10-13 11:05:06，長榮前一完整交易日放量收於255.5元，盤中報價站上此前20日高點；以Early訊號評估，不將今日盤中表現視為已完成日線。",
+        "decisions": [
+          {
+            "symbol": "2603",
+            "decision": "BUY",
+            "confidence": 0.61,
+            "action_ratio": 0.0,
+            "suggested_qty": 3,
+            "reference_price": 260.5,
+            "suggested_price": 261.0,
+            "strategy_id": "intraday_recovery",
+            "target_price": 283.0,
+            "invalidation_price": 250.0,
+            "holding_days": 2,
+            "reason": "採用刷新後仍有效的Early回升計畫（setup 1b6f2d85eaf6）：10/12完整日線收255.5元、放量反彈；今日曾跌至250元，現價260.5元站回且高於此前20日高點255.5元。按賣價261元評估3股，估計買進成本784元、含現金保留需求803元；283元是模型目標而非已觀察阻力，扣估計雙邊費稅及退出價差後淨利59.5元；以今日低點250元為失效價，估計損失39.5元，淨報酬風險比1.506。完整日線查核未見261至283元間更高的已完成結構阻力。兩方研究（2603:SUPPORT_DATA、2603:ENTRY_CONTEXT）均為WATCH、非REJECT：指出今日曾跌破255.5元、尚無突破後完整日線回測；故僅按Early股數，不把盤中站回當成收盤確認。公司事件及公司行動未核實，模型目標亦無達標機率保證。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "今日盤中曾跌至250元；進場後若再觸及失效價須重評，零股當日不得賣出。",
+              "283元為估算目標；隔夜跳空與掃描間隔可能使實際退出損失超過模型估計。",
+              "預算：本輪可用買進上限 NT$ 10000；實際委託仍由券商資金風控重查。",
+              "目標情境淨利估算 NT$ 59.50；失效情境淨損估算 NT$ 39.50；未含無法驗證的未來成交滑價，實際報酬不保證。"
+            ]
+          }
+        ]
+      },
+      "preserved_vetoes": [],
+      "action_changes": []
+    },
+    {
+      "group": "20261014T111954-gui-8a0e0dcc",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261016T091829-gui-eb0852fc",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261016T092729-gui-c488a775",
+      "original_validation": "VALID",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "raw_response_sha256": "16f5f4bec61a7e54d1905cd79d0a71617dcd281f1d3ff33f5c4b97b478030d55",
+      "status": "VALID_SAVED_REPLY",
+      "decision": {
+        "market_view": "以2026-10-16 09:27:48（臺灣時間）的凍結資料判斷；兩檔刷新後均為LIVE、非試撮，且各有仍有效的買進情境。以下僅為決策建議，並非委託或成交。",
+        "decisions": [
+          {
+            "symbol": "2891",
+            "decision": "BUY",
+            "confidence": 0.7,
+            "action_ratio": 0.0,
+            "suggested_qty": 14,
+            "reference_price": 73.6,
+            "suggested_price": 73.6,
+            "strategy_id": "multi_day_trend",
+            "target_price": 79.4,
+            "invalidation_price": 70.7,
+            "holding_days": 10,
+            "reason": "採刷新後仍有效的Strong趨勢計畫：10/15完成日線收72.9、量比2.16，今日賣價73.6；完整日線可見10/14低點70.6、10/15低點70.7，但70.7並非牢不可破的支撐。以73.6買14股，含預留資金約1,050.4元；按計畫費稅及退出價差估算，目標79.4的淨利約73.8元，失效70.7的淨損約47元，淨報酬風險比1.57。79.4為模型目標而非已觀察價位或達標機率；若跌破70.7，原假設失效。兩方研究均WATCH、無REJECT；公司事件未核實，且今日尚無完成日線（2891:SUPPORT_DATA、2891:ENTRY_CONTEXT；packet c2f0b86b6c61171d141264cc96d06fa629f5e119cfc49364d9abc6fb612c4b32）。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "模型失效價不是已掛停損；新買盤中零股當日不可賣，並有隔夜跳空風險。",
+              "公司行動與相關事件未核實；模型目標不保證實現。",
+              "預算：本輪可用買進上限 NT$ 10000；實際委託仍由券商資金風控重查。",
+              "目標情境淨利估算 NT$ 73.80；失效情境淨損估算 NT$ 47.00；未含無法驗證的未來成交滑價，實際報酬不保證。"
+            ]
+          },
+          {
+            "symbol": "1101",
+            "decision": "BUY",
+            "confidence": 0.58,
+            "action_ratio": 0.0,
+            "suggested_qty": 41,
+            "reference_price": 27.55,
+            "suggested_price": 27.6,
+            "strategy_id": "multi_day_trend",
+            "target_price": 29.6,
+            "invalidation_price": 26.6,
+            "holding_days": 10,
+            "reason": "採刷新後仍有效的Early首次突破計畫：今日開盤27.45、現價27.55均高於前20日高點27.4，賣價27.6；這只有LIVE價格延續，昨日完成量比0.654，不能稱今日完整日線放量確認。以27.6買41股，含預留資金約1,151.6元；按計畫費稅及退出價差估算，模型目標29.6的淨利約73.95元、失效26.6的淨損約49.05元，淨報酬風險比1.51。10/13曾跌破26.6，支撐有反證；若無法守住27.4，突破論點轉弱，跌破26.6則計畫失效。兩方研究均WATCH、無REJECT；不把未回測27.4當成首次突破的必要前提，公司事件仍未知（1101:SUPPORT_DATA、1101:ENTRY_CONTEXT；packet 3c801137e64c9db819473e898d3acc64a0f71073b5565f84be9e9f36d2a081a0）。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "29.6是模型目標，今日完整日線及量能尚未確認；費後風險比僅略高於門檻。",
+              "模型失效價不是已掛停損；新買盤中零股當日不可賣，並有隔夜跳空風險。",
+              "公司行動與相關事件未核實。",
+              "預算：本輪可用買進上限 NT$ 10000；實際委託仍由券商資金風控重查。",
+              "目標情境淨利估算 NT$ 73.95；失效情境淨損估算 NT$ 49.05；未含無法驗證的未來成交滑價，實際報酬不保證。"
+            ]
+          }
+        ]
+      },
+      "preserved_vetoes": [],
+      "action_changes": []
+    },
+    {
+      "group": "20261016T103500-gui-e2daf237",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261019T093648-gui-e6153822",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261019T110500-gui-4df86edc",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261019T113500-gui-b4fbd193",
+      "original_validation": "ERROR",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "raw_response_sha256": "63612535cf0374803667d69302fa3406681b23bb5387a0ed345fde01b66ee34f",
+      "status": "VALID_SAVED_REPLY",
+      "decision": {
+        "market_view": "微星有量增後的趨勢拉回計畫，但前一交易日的突破漲幅已在今日盤中回吐；本輪先觀望。",
+        "decisions": [
+          {
+            "symbol": "2377",
+            "decision": "WAIT",
+            "confidence": 0.7,
+            "action_ratio": 0.0,
+            "suggested_qty": 0,
+            "reference_price": 159.0,
+            "suggested_price": null,
+            "strategy_id": "NONE",
+            "target_price": null,
+            "invalidation_price": null,
+            "holding_days": null,
+            "reason": "刷新後 LIVE 賣價仍為159元；Strong 趨勢拉回計畫以159元進場、167.5元為已觀測阻力目標、156元為失效價，11股估計費後獲利78元、失效損失48.5元，數字達標。惟10/16放量觸及167.5元後收161.5元，今日最高僅159元，且已跌破該日低點160元；突破後的延續力出現具體反證，雖然156元支撐尚未失效，仍不在此刻進場。兩方研究均為WATCH而非否決（2377:ENTRY_CONTEXT、2377:SUPPORT_DATA）；今日收盤量價及公司事件尚未核實。若重新站回160至161.5元，或回測156元後守穩反彈，再依新行情及仍有效的費後計畫重評。",
+            "data_quality": "LIVE",
+            "warnings": [
+              "156元為模型失效參考，並非已掛停損；零股當日不能賣出，隔夜跳空仍有風險。",
+              "非交易動作附帶的計畫欄位已清除，本輪不產生該檔委託。"
+            ]
+          }
+        ]
+      },
+      "preserved_vetoes": [],
+      "action_changes": []
+    },
+    {
+      "group": "20261019T120500-gui-eb1d352f",
+      "original_validation": "VALID",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "raw_response_sha256": "8b29554ef36acd86783f9900dc20d6c118b6ef9c8afba8e654c6cc7041aeb469",
+      "status": "VALID_SAVED_REPLY",
+      "decision": {
+        "market_view": "微星前一完整交易日放量收高，但留下長上影；今日盤中回升至159元，仍未站回前日低點160元。先觀察突破後拉回能否重新站穩。",
+        "decisions": [
+          {
+            "symbol": "2377",
+            "decision": "WAIT",
+            "confidence": 0.74,
+            "action_ratio": 0.0,
+            "suggested_qty": 0,
+            "reference_price": 159.0,
+            "suggested_price": null,
+            "strategy_id": "NONE",
+            "target_price": null,
+            "invalidation_price": null,
+            "holding_days": null,
+            "reason": "刷新後LIVE賣價仍為159元。現有Strong趨勢拉回計畫以159元進場、167.5元為已觀察目標、156元失效，11股的費後目標淨利約78元、失效損失約48.5元，數字通過；兩方研究（packet 319648eb7a331adb7a2e0fcf925c6d9d1cb00e17ce350e813f4b13acd331cf19）均為WATCH，並非否決。具體反證是10/16放量觸及167.5元後收在161.5元，今日價格又跌破該日低點160元；目前回升僅到159元，尚未化解突破失敗與前日價區的壓力。若重新站回160元並進一步站穩161至161.5元，且刷新後仍有費後合格計畫，再評估買進；若跌破156元，原支撐假設失效。",
+            "data_quality": "LIVE",
+            "warnings": []
+          }
+        ]
+      },
+      "preserved_vetoes": [],
+      "action_changes": []
+    },
+    {
+      "group": "20261020T093500-gui-4aeb1dc7",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261020T103500-gui-9e28d977",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261021T093500-gui-e9bb5fb2",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261021T100500-gui-e862a010",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    },
+    {
+      "group": "20261022T110500-gui-a9fef16d",
+      "original_validation": "NOT_CALLED",
+      "api_calls": 0,
+      "orders_sent": false,
+      "scope": "CURRENT_VALIDATOR_WITH_SAVED_QUOTES_AND_CANDIDATES; NO_NEW_RESEARCH_OR_EXECUTION_APPROVAL",
+      "status": "NO_SAVED_MODEL_REPLY"
+    }
+  ],
+  "api_calls": 0,
+  "orders_sent": false,
+  "live_execution_authorized": false,
+  "new_model_decisions_generated": false
+}

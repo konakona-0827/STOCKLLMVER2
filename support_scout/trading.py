@@ -76,13 +76,15 @@ class SupportCoordinator:
         self.started_at = now().isoformat()
         self.calls, self.observations, self.packets, self.accepted, self.active = [], {}, {}, {}, {}
         self.observation_keys = {}
+        self.cache_hits=[]
         self.lock = RLock()
 
     def instructions(self):
         return ('\n\n本分支啟用 Support Scout 子代理。主 Agent 仍負責最終 BUY/HOLD/SELL/WAIT。'
                 f'目前研究政策為 {self.config["policy"]}。'
                 '程式已預讀帳戶與交易歷史；先看 entry_screen 與實際證據，'
-                '有值得驗證的交易情境才依序呼叫 research_support(symbol)、review_support(symbol)。'
+                '有值得驗證的交易情境才研究；優先用 research_support_batch(symbols) 一次取得所需標的的兩方獨立意見，'
+                '單方補查可用 research_support(symbol) 或 review_support(symbol)。'
                 'research_only=true 的當日觀察觸發可先核對完整結構與反證，尚無計畫不等於禁止研究；'
                 '研究後必須刷新行情重算 trade_setups，仍無有效計畫不得 BUY。'
                 '全數不具數字可行性時可以零次子研究，直接說明 WAIT 條件；'
@@ -94,6 +96,17 @@ class SupportCoordinator:
                 '任何子代理 REJECT 則該檔本輪不 BUY；SELL 不因研究缺口被封鎖。'
                 'confirmed_support 模式另須支撐與兩方研究均通過，不能略過未知的公司行動或事件。'
                 '所有模式均遵守既有資金、成本、可賣量及正式交易前審查。')
+
+    def cached_review(self,role,symbol):
+        with self.lock:
+            if (self.context.stopped() or not self.context.portfolio_read or not self.context.history_read
+                    or symbol not in self.context.candidates):return None
+            key=self.state_key(symbol);entry=self.accepted.get((role,symbol))
+            if entry is None or entry[0]!=key:return None
+            self.cache_hits.append(dict(role=role,symbol=symbol,packet_id=entry[1]['packet_id'],
+                state_key=key,at=now().isoformat(),new_model_requests=0))
+            self.save()
+            return dict(deepcopy(entry[1]),reused_current_snapshot=True)
 
     def structure_key(self,symbol):
         fields=('date','open','high','low','close','volume','complete','source')
@@ -214,14 +227,17 @@ class SupportCoordinator:
     def summary(self):
         return dict(enabled=True, policy=self.config['policy'],
                     max_calls=self.config['max_calls'], max_symbols=self.config['max_symbols'],
-                    calls=deepcopy(self.calls), packets=[deepcopy(p) for p in self.packets.values()])
+                    calls=deepcopy(self.calls),cache_hits=deepcopy(self.cache_hits),
+                    packets=[deepcopy(p) for p in self.packets.values()])
 
     def save(self):
         save_json(self.path, self.summary())
 
     def sdk_tools(self, provider):
-        from agents import Agent, ModelSettings, RunConfig
+        from agents import Agent, ModelSettings, RunConfig, Runner, function_tool
         from pydantic import BaseModel, ConfigDict
+        from research_runtime import usage_actor
+        from .transport import model_packet
 
         class SymbolInput(BaseModel):
             model_config = ConfigDict(extra='forbid')
@@ -235,12 +251,12 @@ class SupportCoordinator:
             risks: list[str]
             missing_data: list[str]
 
-        tools = []
+        tools = [];specialists={}
         for role, name in [('researcher', 'research_support'), ('reviewer', 'review_support')]:
             def build(role):
                 async def input_builder(data):
                     packet = await asyncio.to_thread(self.prepare, role, data['params']['symbol'])
-                    return json.dumps(packet, ensure_ascii=False, allow_nan=False)
+                    return json.dumps(model_packet(packet), ensure_ascii=False, allow_nan=False,separators=(',',':'))
 
                 async def extract(result):
                     arguments = json.loads(result.agent_tool_invocation.tool_arguments)
@@ -259,12 +275,17 @@ class SupportCoordinator:
                 '歷史跌破與當日站回分別描述；當日價格站回不等於完整日線確認，也不可說未提供當前價格。'
                 'FIRST_DAY_BREAKOUT 評估突破本身，不要求它先滿足另一套支撐回測策略；'
                 '估算 2R 只代表情境報酬，不代表達標機率；反證須指出哪個目前計畫受影響。'
+                '只寫影響本計畫的觀察、重大反證與未解缺口；不要重抄帳戶、成本算式及整段歷史，'
+                '但不可為精簡省略關鍵風險或把未知事項說成已核實。'
                 '未核實公司行動、事件或資料時明列 missing_data 並用 WATCH；有具體否決證據才 REJECT。'
                 'RESEARCH 不是買進批准，需引用所有 required_confirmation_evidence 且沒有資料缺口。'
+                '輸入 _transport 標明無損壓縮：columns/rows 每列依 columns 對應；'
+                '$ref 是同份輸入內的 JSON 路徑，完整資料已在對應欄位，不是缺資料或外部連結。'
                 '以繁體中文回覆指定 JSON，不自行編造身分、時間、packet_id 或勝率。')
             specialist = Agent(name='Support '+role, instructions=instructions, model=provider,
                 output_type=ReviewAnswer, tools=[], model_settings=ModelSettings(
                     store=False, max_tokens=self.config['max_output_tokens']))
+            specialists[role]=specialist
             tool = specialist.as_tool(name, '獨立'+role+'研究指定候選的支撐資料；只填 symbol。',
                 parameters=SymbolInput, input_builder=builder, custom_output_extractor=extractor,
                 max_turns=1, run_config=RunConfig(tracing_disabled=True), failure_error_function=None)
@@ -276,16 +297,71 @@ class SupportCoordinator:
                     try:
                         selected = json.loads(arguments).get('symbol', '?')
                         symbol = selected if isinstance(selected, str) else '?'
-                        return await original(ctx, arguments)
+                        cached=self.cached_review(role,symbol)
+                        if cached is not None:return json.dumps(cached,ensure_ascii=False)
+                        with usage_actor('support_'+role,symbol):
+                            return await original(ctx, arguments)
                     except asyncio.CancelledError as exc:
                         self.fail(role, symbol, exc)
                         raise
                     except Exception as exc:
-                        return json.dumps(self.fail(role, symbol, exc), ensure_ascii=False)
+                        failure=self.fail(role,symbol,exc)
+                        from trading_agent import api_quota_exhausted
+                        if api_quota_exhausted(exc):raise
+                        return json.dumps(failure, ensure_ascii=False)
                 return invoke
 
             tool.on_invoke_tool = bounded(role, original)
             tools.append(tool)
+
+        @function_tool(failure_error_function=None)
+        async def research_support_batch(symbols:list[str])->dict:
+            """Obtain both independent evidence reviews for 1-5 distinct selected symbols in one parent turn."""
+            # Validate the complete batch before starting any model request.
+            if (not 1<=len(symbols)<=5 or len(set(symbols))!=len(symbols)
+                    or any(s not in self.context.candidates for s in symbols)):
+                return dict(error='INVALID_SUPPORT_BATCH_SYMBOLS')
+            if self.context.stopped() or not self.context.portfolio_read or not self.context.history_read:
+                return dict(error='SUPPORT_REQUIRES_CURRENT_ACCOUNT_AND_HISTORY')
+            roles=('researcher','reviewer');results={};pending=[]
+            for symbol in symbols:
+                for role in roles:
+                    cached=self.cached_review(role,symbol)
+                    if cached is None:pending.append((role,symbol))
+                    else:results[role,symbol]=cached
+            with self.lock:
+                if self.config['max_calls'] is not None and len(self.calls)+len(pending)>self.config['max_calls']:
+                    return dict(error='SUPPORT_CALL_BUDGET_EXHAUSTED')
+                unseen={symbol for role,symbol in pending if symbol not in self.observations}
+                if self.config['max_symbols'] is not None and len(self.observations)+len(unseen)>self.config['max_symbols']:
+                    return dict(error='SUPPORT_SYMBOL_BUDGET_EXHAUSTED')
+            async def one(role,symbol):
+                try:
+                    packet=await asyncio.to_thread(self.prepare,role,symbol)
+                    with usage_actor('support_'+role,symbol):
+                        result=await Runner.run(specialists[role],json.dumps(model_packet(packet),ensure_ascii=False,
+                            allow_nan=False,separators=(',',':')),max_turns=1,run_config=RunConfig(tracing_disabled=True))
+                    own=[r.usage for r in result.raw_responses]
+                    return self.accept(role,symbol,result.final_output.model_dump(),
+                        {name:sum(getattr(u,name) for u in own) for name in ('input_tokens','output_tokens','total_tokens')})
+                except asyncio.CancelledError as exc:
+                    self.fail(role,symbol,exc);raise
+                except Exception as exc:
+                    failure=self.fail(role,symbol,exc)
+                    from trading_agent import api_quota_exhausted
+                    if api_quota_exhausted(exc):raise
+                    return failure
+            tasks=[asyncio.create_task(one(role,symbol)) for role,symbol in pending]
+            try:answers=await asyncio.gather(*tasks)
+            except BaseException:
+                for task in tasks:
+                    if not task.done():task.cancel()
+                await asyncio.gather(*tasks,return_exceptions=True)
+                raise
+            results.update(zip(pending,answers,strict=True))
+            return dict(reviews=[dict(symbol=symbol,researcher=results['researcher',symbol],
+                reviewer=results['reviewer',symbol]) for symbol in symbols])
+        tools.append(research_support_batch)
         return tools
 
 
