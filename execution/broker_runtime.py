@@ -36,6 +36,9 @@ class BrokerRuntime:
     def fetch_quotes(self, symbols, audit, stopped, timeout=12):
         return self._submit("quotes", tuple(symbols), audit, stopped, timeout)
 
+    def cancel_exit(self,decision_id,stopped=lambda:False):
+        return self._submit('cancel_exit',decision_id,stopped)
+
     def shutdown(self):
         if not self._thread.is_alive():
             return {"status": "ALREADY_STOPPED"}
@@ -117,6 +120,11 @@ class BrokerRuntime:
                                 args[0], project_root=self.project_root,
                                 session=session,
                             )
+                        elif kind == 'cancel_exit':
+                            if session is None:
+                                raise RuntimeError(connection_error)
+                            from .exit_cancel import request_cancel
+                            result=request_cancel(self.project_root,session,args[0],args[1])
                         elif kind == "health":
                             from .health_monitor import run_health_check
                             result = run_health_check(

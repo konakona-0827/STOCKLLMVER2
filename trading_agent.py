@@ -16,7 +16,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v17-corroborated-target-and-route-fallback'
+AGENT_VERSION = 'agent-decision-v18-corroborated-positive-net-position-manager'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -54,7 +54,7 @@ PLANNED_LIMIT 的進場基準是具證據的 suggested_price，不是強制按 a
 可提出等待回落的當日限價，須說明回落後仍有效的條件，成交與獲利均不保證。
 其他模式按 ask 與建議價較高者估算。不得為通過門檻跳過近端壓力或貼近失效價。
 WAIT/HOLD 的 reason 簡述主要未通過條件，以及可重新評估的具體價位/事件；
-有持倉先評估原計畫與退出風險，不為沒有數字可行性的候選反覆研究。
+有持倉先評估 exit_context 與原計畫；費後已有獲利且有具體轉弱/近端壓力證據可提前 SELL，不必等原目標，不為沒有數字可行性的候選反覆研究。
 每檔 reason 精簡重複歷史、預算與策略條文；BUY/SELL 保留必要計算與反證，不為縮短篇幅省略關鍵依據。
 BUY 須遵守 eligible_strategies，填目標價、失效價與持有天數，所有 BUY 合計含費用不得超過預算。
 只讀、非 LIVE、試撮合或過期行情只回傳 HOLD / WAIT。
@@ -87,6 +87,8 @@ def execution_metadata(model):
                  'config/execution_live.json','advice_interface.py',
                  'daily_history.py','agent_decision.py','analysis_service.py',
                  'position_analyzer.py','trade_plan_context.py','execution/auto_advice_executor.py',
+                 'profit_exit.py','position_manager.py','market_venue.py','tpex_history.py',
+                 'execution/planned_exit.py','execution/exit_cancel.py','config/profit_exit.json','config/position_manager.json',
                  'execution/broker_runtime.py','execution/capital_reply_session.py',
                  'support_scout/trading.py', 'support_scout/market_sessions.py',
                  'support_scout/agents.py', 'support_scout/support.py',

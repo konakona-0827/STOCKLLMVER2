@@ -23,10 +23,14 @@ class MultiCapitalMarket(CapitalMarket):
         ordered_symbols = tuple(dict.fromkeys(symbols))
         if not ordered_symbols:
             return {}, {}
-        groups = [ordered_symbols[i:i + MAX_ODDLOT_QUOTE_SYMBOLS]
-                  for i in range(0, len(ordered_symbols), MAX_ODDLOT_QUOTE_SYMBOLS)]
+        from market_venue import oddlot_market
+        groups=[]
+        for market_no in (5,6):
+            names=tuple(s for s in ordered_symbols if oddlot_market(s)==market_no)
+            groups.extend(names[i:i+MAX_ODDLOT_QUOTE_SYMBOLS] for i in range(0,len(names),MAX_ODDLOT_QUOTE_SYMBOLS))
         quotes, errors = {}, {}
         for group_index, group in enumerate(groups, start=1):
+            self.oddlot_market_no=oddlot_market(group[0])
             if group_index > 1:
                 # Empirical account probe: LeaveMonitor=0 then re-entering the
                 # same SKQuoteLib object allowed the next odd-lot batch.
@@ -61,7 +65,7 @@ class MultiCapitalMarket(CapitalMarket):
             if (status.get('return_code') == 0 and status.get('over_limit') is True):
                 raise RuntimeError('BROKER_QUOTE_CONNECTION_LIMIT')
             rc = unpack(quote.SKQuoteLib_RequestStocksWithMarketNo(
-                1, 5, ','.join(ordered_symbols)
+                1, getattr(self,'oddlot_market_no',5), ','.join(ordered_symbols)
             ))
             self.event('BATCH_SUBSCRIBE', {
                 'return_code': rc,
@@ -107,6 +111,7 @@ class MultiCapitalMarket(CapitalMarket):
                     q['callback_received_at'] = self.callback_times.get((market, index))
                     q['retrieval_method'] = 'BATCH_CALLBACK'
                     if q['symbol'] in wanted:
+                        q['venue']='TPEx' if int(market)==6 else 'TWSE'
                         quotes[q['symbol']] = q
                 except Exception as exc:
                     self.event('BATCH_CALLBACK_ERROR', error_info(exc))
@@ -115,12 +120,14 @@ class MultiCapitalMarket(CapitalMarket):
                 continue
             try:
                 stock = self.sk.SKSTOCKLONG()
-                stock = read_stock(quote.SKQuoteLib_GetStockByMarketAndNo(5, symbol, stock), stock)
+                market_no=getattr(self,'oddlot_market_no',5)
+                stock = read_stock(quote.SKQuoteLib_GetStockByMarketAndNo(market_no, symbol, stock), stock)
                 q = normalize_stock(stock, now())
                 if q['symbol'] != symbol:
                     raise ValueError('RETURNED_SYMBOL_MISMATCH')
                 q['callback_received_at'] = None
                 q['retrieval_method'] = 'BATCH_SUBSCRIBED_SYMBOL_LOOKUP'
+                q['venue']='TPEx' if market_no==6 else 'TWSE'
                 quotes[symbol] = q
             except Exception as exc:
                 errors[symbol] = type(exc).__name__ + ':' + str(error_info(exc))

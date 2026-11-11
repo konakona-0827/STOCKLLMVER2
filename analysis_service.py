@@ -325,9 +325,13 @@ class AnalysisService:
                                      budget_status=scout_budget['status'])
                 excluded = [symbol for symbol,setting in (broker_health.get('ai_position_settings') or {}).items()
                             if setting.get('enabled') is False]
+                if getattr(self,'position_manager_active',False):
+                    excluded.extend(p['symbol'] for p in paper_positions if p['qty']>0)
                 discovery = discover(ROOT, directory, scout_account, search_policy,
                                      stopped=self.stop.is_set, excluded=excluded,
                                      include_weekly_recovery=True)
+                from market_venue import recovery_watchlist
+                recovery_watchlist(discovery,now().date().isoformat())
             except (OSError,sqlite3.Error,ValueError,TypeError) as exc:
                 discovery = dict(status='UNAVAILABLE',symbols=[],watchlist=[],model_called=False,error=redact(exc))
             # Persist the fixed seed list and the independent scout's additions.
@@ -426,6 +430,9 @@ class AnalysisService:
                 candidate['buy_plans'] = context.get('buy_plans',
                     {'available': False, 'lots': []})
         apply_buy_limits(candidates, paper_state, live_config if live_enabled else None)
+        if getattr(self,'position_manager_active',False) and not manifest.get('read_only'):
+            # The independently scheduled agent owns held symbols, including adds.
+            candidates=[c for c in candidates if int((c.get('paper_position') or {}).get('qty') or 0)==0]
         opportunity_audit = None
         opportunity_trigger = None
         if opportunity_active:
@@ -772,7 +779,8 @@ class AnalysisService:
             save_json(advice_path, payload)
             if result.get('execution_budget') is not None:
                 result['execution_budget'].update(budget)
-            if original <= 0 or current <= 0 or fresh.get('budget_status') in ('BLOCKED', 'UNVERIFIED'):
+            has_buy=any(r.get('decision')=='BUY' for r in payload.get('recommendations',[]))
+            if has_buy and (original <= 0 or current <= 0 or fresh.get('budget_status') in ('BLOCKED', 'UNVERIFIED')):
                 report = dict(status='BLOCKED_BUDGET', reason='送單前額度不足或尚未核實；本輪所有交易暫停。',
                               results=[], broker_order_sent=False, execution_attempted=False,
                               automatic_retry=False)

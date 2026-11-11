@@ -119,6 +119,8 @@ def discover_weekly_recovery(root, account, opportunity_policy, scout_policy, at
                                _bars(prior_payload, prior, companies))
             save_json(cache, dict(schema=2, source_urls=urls, candidates=rows))
         eligible = affordable_rows(rows, account, opportunity_policy, scout_policy, excluded)
+        from market_venue import record_tpex
+        record_tpex(root,rows,session.isoformat())
         eligible.sort(key=lambda row: (-row['turnover'], -row['return_1d'], row['symbol']))
         return dict(result, status='COMPLETE', eligible_count=len(eligible),
                     candidates=eligible[:scout_policy['max_screen_candidates']])

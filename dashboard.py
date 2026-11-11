@@ -402,6 +402,11 @@ class Dashboard:
         self.last_health = None
         self.balance_hold = False
         self.events = queue.Queue()
+        from position_manager import PositionSupervisor, review_position
+        self.position_manager = PositionSupervisor(self.service.directory/'position_manager',
+            lambda symbol,previous,observations,stopped: review_position(
+                self.service,symbol,previous,observations,stopped))
+        self.service.position_manager_active = False
         self.result = None
         self.positions = []
         self.status = 'IDLE'
@@ -777,6 +782,9 @@ class Dashboard:
             messagebox.showwarning('餘額下限', '券商資金低於設定的保留額，已停止自動掃描。請確認餘額並等待下一次健康檢查。')
             return
         self.scheduler.start_auto(time.time())
+        self.position_manager.set_active(True)
+        self.service.position_manager_active = self.position_manager.active
+        self.next_health_at = time.time()
 
     def health_delay(self):
         """Refresh held-stock quotes each market minute without another LLM call."""
@@ -804,6 +812,8 @@ class Dashboard:
 
     def stop_auto(self):
         self.scheduler.stop_auto()
+        self.position_manager.set_active(False)
+        self.service.position_manager_active = False
 
     def manual(self):
         if paper_portfolio.account(self.service.db_path) is None:
@@ -1119,6 +1129,7 @@ class Dashboard:
                 elif kind == 'health':
                     self.health_running = False
                     self.last_health = payload
+                    self.position_manager.observe(payload)
                     self.next_health_at = time.time() + self.health_delay()
                     self.balance_hold = bool(payload.get('balance_below_floor'))
                     if self.balance_hold:
@@ -1157,7 +1168,7 @@ class Dashboard:
                                  last_error=self.last_error)
         if (not self.closing and wall >= self.next_health_at
                 and not self.health_running and not self.refresh_pending
-                and not self.scheduler.scan_lock.locked()):
+                and (self.service.position_manager_active or not self.scheduler.scan_lock.locked())):
             self.next_health_at = wall + self.health_delay()
             self.launch_health()
         if not self.closing and self.scheduler.tick(wall):
@@ -1166,7 +1177,7 @@ class Dashboard:
                 and not self.refresh_pending and not self.scheduler.scan_lock.locked()):
             self.render()
         if (self.closing and not self.scheduler.scan_lock.locked()
-                and not self.health_running):
+                and not self.health_running and not self.position_manager.busy):
             if not self.broker_shutdown_started:
                 self.broker_shutdown_started = True
                 def shutdown_broker():
@@ -1238,6 +1249,7 @@ class Dashboard:
             f'自動掃描：{auto_label}　｜　'
             f'目前狀態：{STATUS_LABELS.get(self.status, self.status)}　｜　'
             f'健康：{health_label}　｜　'
+            f'持倉子代理：{self.position_manager.summary()}　｜　'
             f'券商對帳：{checked_at}　｜　'
             f'資料驗證：{"券商庫存已查詢" if health.get("broker_inventory_verified") else "未完成"}\n'
             f'券商餘額：{broker_balance_label}　｜　'
@@ -1826,6 +1838,8 @@ class Dashboard:
         if self.closing:
             return
         self.closing = True
+        self.position_manager.set_active(False)
+        self.service.position_manager_active = False
         if self.lifecycle:
             self.lifecycle.event('CLOSE_REQUESTED', status=self.status,
                                  analysis_running=self.scheduler.scan_lock.locked(),

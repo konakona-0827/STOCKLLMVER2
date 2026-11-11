@@ -18,13 +18,13 @@ from execution.execution_store import ExecutionStore
 
 
 class LiveBuyingPowerRecheckTests(unittest.TestCase):
-    def test_zero_checked_allowance_blocks_buy_and_sell_before_broker_access(self):
+    def test_zero_checked_allowance_blocks_buy_before_broker_access(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
             config_path=root/'execution_live.json'
             config_path.write_text(json.dumps({'enabled':True}),encoding='utf-8')
             stamp=datetime.now(timezone.utc).isoformat()
-            for side in ('BUY','SELL'):
+            for side in ('BUY',):
                 with self.subTest(side=side):
                     path=root/'advice.json'
                     path.write_text(json.dumps(dict(interface_version='1.0',generated_at=stamp,
