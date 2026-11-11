@@ -108,6 +108,34 @@ class TargetReachabilityTests(unittest.TestCase):
         self.assertEqual(very_far['anchor_close'],historical['anchor_close'])
         self.assertGreater(very_far['required_excursion_from_anchor_atr'],assessment['required_excursion_from_anchor_atr'])
 
+    def test_required_target_needs_replicated_ranges_but_observed_target_retains_its_evidence(self):
+        from entry_decision import review,policy as entry_policy
+        c=refresh(self.c,self.account,self.rules,policy());s=deepcopy(c['trade_setups'][0])
+        evidence=s['target_evidence']['payoff_assessment']
+        for count in (0,1,2):
+            evidence['past_range_support_windows']=count
+            result=review(c,s,c['daily_bars'][-22:],entry_policy())
+            self.assertEqual(result['approved'],count>=2)
+        s['target_kind']='OBSERVED_SWING_RESISTANCE';evidence['past_range_support_windows']=0
+        self.assertTrue(review(c,s,c['daily_bars'][-22:],entry_policy())['approved'])
+
+    def test_lower_ranked_feasible_route_survives_three_prior_vetoes(self):
+        c=self.c;c['low']=118
+        c['price_levels']=[dict(id='high_test',price=155,basis='completed'),
+            dict(id='low_test',price=122,basis='completed'),dict(id='low_other',price=121,basis='completed'),
+            dict(id='today_low',price=118,basis='LIVE'),dict(id='previous_close',price=124,basis='completed'),
+            dict(id='today_open',price=123,basis='LIVE')]
+        calls=[]
+        def review(candidate,setup,bars,p):
+            calls.append(setup['entry']);approved=len(calls)>3
+            return dict(approved=approved,blockers=[] if approved else ['INDEPENDENT_ROUTE_NOT_CONFIRMED'])
+        with patch('entry_decision.review',side_effect=review):
+            result=refresh(c,self.account,self.rules,policy())
+        self.assertGreaterEqual(len(calls),4)
+        self.assertTrue(result['trade_setups'],result['opportunity_status'])
+        self.assertNotIn(result['trade_setups'][0]['entry'],calls[:3])
+        self.assertLessEqual(len(result['pending_entry_setups']),3)
+
     def pending(self):
         self.c['daily_bars'][-1].update(open=121,high=124,low=120,close=121,volume=1000)
         self.c['market_history']=[]

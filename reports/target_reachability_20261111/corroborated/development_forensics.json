@@ -1,0 +1,3742 @@
+{
+  "scope": "DEVELOPMENT_ONLY_NOT_HOLDOUT_VALIDATION",
+  "baseline_commit": "9fdcd2b",
+  "cases": [
+    {
+      "as_of": "2026-10-12T13:08:49+08:00",
+      "symbol": "1101",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Early",
+        "entry": 27.15,
+        "entry_basis": "CURRENT_ASK",
+        "target": 29.05,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 26.2,
+        "holding_days": 10,
+        "max_qty": 44,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 1214.6,
+        "net_return": 0.06306457009033122,
+        "atr14": 0.6892857142857143,
+        "completed_volume_ratio": 0.9865582414136352,
+        "daily_breakout_confirmed": false,
+        "entry_twd": 27.15,
+        "target_exit_after_spread_twd": 29.0,
+        "stop_exit_after_spread_twd": 26.15,
+        "estimated_net_upside_twd": 75.4,
+        "estimated_net_downside_twd": 50.0,
+        "estimated_buy_cost_twd": 1195.6,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 4.0,
+        "estimated_stop_tax_twd": 4.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.508,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.05,
+        "setup_family": "FIRST_DAY_BREAKOUT",
+        "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+        "breakout_reference_price": 26.7,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-12"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 50.0,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 7.540000000000001,
+        "setup_id": "038c87ba25a5",
+        "priority_score": 21.3865,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-08",
+          "last_completed_close": 25.7,
+          "today_open": 26.25,
+          "today_low": 26.2,
+          "stop_basis": "LIVE_TODAY_LOW",
+          "distance_from_open_atr": 1.3057,
+          "distance_from_previous_close_atr": 2.1036,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "LIVE_TODAY_LOW",
+            "formed_on": "2026-10-12"
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Early",
+          "entry": 27.15,
+          "entry_basis": "CURRENT_ASK",
+          "target": 29.05,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 26.2,
+          "holding_days": 10,
+          "max_qty": 44,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 1214.6,
+          "net_return": 0.06306457009033122,
+          "atr14": 0.6892857142857143,
+          "completed_volume_ratio": 0.9865582414136352,
+          "daily_breakout_confirmed": false,
+          "entry_twd": 27.15,
+          "target_exit_after_spread_twd": 29.0,
+          "stop_exit_after_spread_twd": 26.15,
+          "estimated_net_upside_twd": 75.4,
+          "estimated_net_downside_twd": 50.0,
+          "estimated_buy_cost_twd": 1195.6,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 4.0,
+          "estimated_stop_tax_twd": 4.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.508,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.05,
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+          "breakout_reference_price": 26.7,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-12",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 13,
+              "matching_completed_breakout_windows": 4,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-08",
+              "anchor_close": 25.7,
+              "favorable_excursion_atr": 0.8860759493670888,
+              "current_atr14": 0.6892857142857144,
+              "price_ceiling": 26.310759493670886
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 27.15,
+              "required_exit": 29.05,
+              "invalidation": 26.2,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-08",
+              "anchor_close": 25.7,
+              "required_excursion_from_anchor_atr": 4.8601036269430065,
+              "entry_extension_from_anchor_atr": 2.10362694300518,
+              "historical_median_reference": 26.310759493670886,
+              "past_range_support_windows": 1,
+              "sample_windows": 13,
+              "descriptive_reach_fraction": 0.07692307692307693,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 50.0,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 7.540000000000001,
+          "setup_id": "038c87ba25a5",
+          "priority_score": 21.3865,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-08",
+              "ma5": 25.35,
+              "completed_rebound": true,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 2.756476683937827,
+              "target_distance_per_holding_day_atr": 0.2756476683937827,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 1,
+                "sample_windows": 13,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              },
+              "breakout_continuation": {
+                "confirmed": true,
+                "breakout_reference": 26.7,
+                "confirmation_kind": "HELD_ABOVE_BREAKOUT_AND_NONDECLINING_DISTINCT_LIVE_OBSERVATION",
+                "prior_quote_time": "2026-10-12T12:34:20+08:00",
+                "prior_price": 26.9
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "1101",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 26.7,
+        "expires_session": "2026-10-12",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "038c87ba25a5",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-08",
+                "ma5": 25.35,
+                "completed_rebound": true,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 2.756476683937827,
+                "target_distance_per_holding_day_atr": 0.2756476683937827,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 1,
+                  "sample_windows": 13,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                },
+                "breakout_continuation": {
+                  "confirmed": true,
+                  "breakout_reference": 26.7,
+                  "confirmation_kind": "HELD_ABOVE_BREAKOUT_AND_NONDECLINING_DISTINCT_LIVE_OBSERVATION",
+                  "prior_quote_time": "2026-10-12T12:34:20+08:00",
+                  "prior_price": 26.9
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 0.6892857142857143,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 0.9865582414136352,
+        "rejection_reasons": [
+          "ENTRY_BELOW_BREAKOUT_REFERENCE"
+        ],
+        "near_misses": []
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 221,
+            "anchor_date": "2026-09-10",
+            "end_date": "2026-09-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.2608695652173942
+          },
+          {
+            "anchor": 209,
+            "anchor_date": "2026-08-25",
+            "end_date": "2026-09-08",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.7814569536423837
+          },
+          {
+            "anchor": 199,
+            "anchor_date": "2026-08-11",
+            "end_date": "2026-08-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.860759493670886
+          },
+          {
+            "anchor": 189,
+            "anchor_date": "2026-07-28",
+            "end_date": "2026-08-11",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 0.4374999999999998
+          },
+          {
+            "anchor": 167,
+            "anchor_date": "2026-06-25",
+            "end_date": "2026-07-09",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.28378378378378116
+          },
+          {
+            "anchor": 135,
+            "anchor_date": "2026-05-11",
+            "end_date": "2026-05-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.18543046357616155
+          },
+          {
+            "anchor": 117,
+            "anchor_date": "2026-04-14",
+            "end_date": "2026-04-28",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.209999999999998
+          },
+          {
+            "anchor": 87,
+            "anchor_date": "2026-02-26",
+            "end_date": "2026-03-13",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.19047619047619327
+          },
+          {
+            "anchor": 75,
+            "anchor_date": "2026-01-30",
+            "end_date": "2026-02-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.12121212121212296
+          },
+          {
+            "anchor": 65,
+            "anchor_date": "2026-01-16",
+            "end_date": "2026-01-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.0674157303370793
+          },
+          {
+            "anchor": 54,
+            "anchor_date": "2025-12-31",
+            "end_date": "2026-01-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 5.515151515151526
+          },
+          {
+            "anchor": 43,
+            "anchor_date": "2025-12-15",
+            "end_date": "2025-12-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.4640522875816937
+          },
+          {
+            "anchor": 33,
+            "anchor_date": "2025-12-01",
+            "end_date": "2025-12-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8860759493670888
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 13,
+        "matching_completed_breakout_windows": 4,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-08",
+        "anchor_close": 25.7,
+        "favorable_excursion_atr": 0.8860759493670888,
+        "current_atr14": 0.6892857142857144,
+        "price_ceiling": 26.310759493670886
+      },
+      "verified_prior_observations": 11,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-13T11:05:06+08:00",
+      "symbol": "2603",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "intraday_recovery",
+        "tier": "Early",
+        "entry": 261.0,
+        "entry_basis": "CURRENT_ASK",
+        "target": 283.0,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 250.0,
+        "holding_days": 2,
+        "max_qty": 3,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 803.0,
+        "net_return": 0.07589285714285714,
+        "atr14": 6.357142857142857,
+        "completed_volume_ratio": 5.845262109202955,
+        "daily_breakout_confirmed": true,
+        "entry_twd": 261.0,
+        "target_exit_after_spread_twd": 282.5,
+        "stop_exit_after_spread_twd": 249.5,
+        "estimated_net_upside_twd": 59.5,
+        "estimated_net_downside_twd": 39.5,
+        "estimated_buy_cost_twd": 784.0,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 3.0,
+        "estimated_stop_tax_twd": 3.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.5063291139240507,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.5,
+        "setup_family": "MULTI_SESSION_RECOVERY",
+        "breakout_confirmation": "COMPLETED_DAILY_PRICE_AND_VOLUME",
+        "breakout_reference_price": null,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-13"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 39.5,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 5.95,
+        "setup_id": "1b6f2d85eaf6",
+        "priority_score": 22.6526,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-12",
+          "last_completed_close": 255.5,
+          "today_open": 251.0,
+          "today_low": 250.0,
+          "stop_basis": "LIVE_TODAY_LOW",
+          "distance_from_open_atr": 1.573,
+          "distance_from_previous_close_atr": 0.8652,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "LIVE_TODAY_LOW",
+            "formed_on": "2026-10-13"
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "intraday_recovery",
+          "tier": "Early",
+          "entry": 261.0,
+          "entry_basis": "CURRENT_ASK",
+          "target": 283.0,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 250.0,
+          "holding_days": 2,
+          "max_qty": 3,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 803.0,
+          "net_return": 0.07589285714285714,
+          "atr14": 6.357142857142857,
+          "completed_volume_ratio": 5.845262109202955,
+          "daily_breakout_confirmed": true,
+          "entry_twd": 261.0,
+          "target_exit_after_spread_twd": 282.5,
+          "stop_exit_after_spread_twd": 249.5,
+          "estimated_net_upside_twd": 59.5,
+          "estimated_net_downside_twd": 39.5,
+          "estimated_buy_cost_twd": 784.0,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 3.0,
+          "estimated_stop_tax_twd": 3.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.5063291139240507,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.5,
+          "setup_family": "MULTI_SESSION_RECOVERY",
+          "breakout_confirmation": "COMPLETED_DAILY_PRICE_AND_VOLUME",
+          "breakout_reference_price": null,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-13",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 2,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 109,
+              "matching_regime_windows": 79,
+              "matching_completed_breakout_windows": 0,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-12",
+              "anchor_close": 255.5,
+              "favorable_excursion_atr": 0.7526881720430108,
+              "current_atr14": 6.357142857142857,
+              "price_ceiling": 260.28494623655916
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 261.0,
+              "required_exit": 283.0,
+              "invalidation": 250.0,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-12",
+              "anchor_close": 255.5,
+              "required_excursion_from_anchor_atr": 4.325842696629214,
+              "entry_extension_from_anchor_atr": 0.8651685393258427,
+              "historical_median_reference": 260.28494623655916,
+              "past_range_support_windows": 0,
+              "sample_windows": 79,
+              "descriptive_reach_fraction": 0.0,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 39.5,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 5.95,
+          "setup_id": "1b6f2d85eaf6",
+          "priority_score": 22.6526,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-12",
+              "ma5": 238.3,
+              "completed_rebound": true,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 3.460674157303371,
+              "target_distance_per_holding_day_atr": 1.7303370786516854,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 0,
+                "sample_windows": 79,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "2603",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 260.5,
+        "expires_session": "2026-10-13",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "1b6f2d85eaf6",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-12",
+                "ma5": 238.3,
+                "completed_rebound": true,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 3.460674157303371,
+                "target_distance_per_holding_day_atr": 1.7303370786516854,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 0,
+                  "sample_windows": 79,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 6.357142857142857,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 5.845262109202955,
+        "rejection_reasons": [
+          "ENTRY_OUTSIDE_REACH",
+          "REWARD_RISK_BELOW_MINIMUM"
+        ],
+        "near_misses": [
+          {
+            "entry": 255.5,
+            "target": 266.5,
+            "invalidation": 250.0,
+            "qty": 6,
+            "net_upside_twd": 54.0,
+            "combined_stop_risk_twd": 45.0,
+            "net_return": 0.03517915309446254,
+            "reward_risk_ratio": 1.2,
+            "rejection": "REWARD_RISK_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          }
+        ]
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 2,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 237,
+            "anchor_date": "2026-10-07",
+            "end_date": "2026-10-12",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 4.264900662251655
+          },
+          {
+            "anchor": 235,
+            "anchor_date": "2026-10-05",
+            "end_date": "2026-10-07",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.6447368421052632
+          },
+          {
+            "anchor": 233,
+            "anchor_date": "2026-10-01",
+            "end_date": "2026-10-05",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.440251572327044
+          },
+          {
+            "anchor": 231,
+            "anchor_date": "2026-09-29",
+            "end_date": "2026-10-01",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.5
+          },
+          {
+            "anchor": 224,
+            "anchor_date": "2026-09-16",
+            "end_date": "2026-09-18",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9837837837837838
+          },
+          {
+            "anchor": 222,
+            "anchor_date": "2026-09-14",
+            "end_date": "2026-09-16",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.5358851674641149
+          },
+          {
+            "anchor": 220,
+            "anchor_date": "2026-09-10",
+            "end_date": "2026-09-14",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.767123287671233
+          },
+          {
+            "anchor": 218,
+            "anchor_date": "2026-09-08",
+            "end_date": "2026-09-10",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.75
+          },
+          {
+            "anchor": 216,
+            "anchor_date": "2026-09-04",
+            "end_date": "2026-09-08",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.22580645161290322
+          },
+          {
+            "anchor": 213,
+            "anchor_date": "2026-09-01",
+            "end_date": "2026-09-03",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.23045267489711935
+          },
+          {
+            "anchor": 211,
+            "anchor_date": "2026-08-28",
+            "end_date": "2026-09-01",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8677685950413223
+          },
+          {
+            "anchor": 209,
+            "anchor_date": "2026-08-26",
+            "end_date": "2026-08-28",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.23529411764705882
+          },
+          {
+            "anchor": 195,
+            "anchor_date": "2026-08-06",
+            "end_date": "2026-08-10",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.3333333333333335
+          },
+          {
+            "anchor": 191,
+            "anchor_date": "2026-07-31",
+            "end_date": "2026-08-04",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8
+          },
+          {
+            "anchor": 189,
+            "anchor_date": "2026-07-29",
+            "end_date": "2026-07-31",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.6901408450704226
+          },
+          {
+            "anchor": 187,
+            "anchor_date": "2026-07-27",
+            "end_date": "2026-07-29",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3684210526315789
+          },
+          {
+            "anchor": 182,
+            "anchor_date": "2026-07-20",
+            "end_date": "2026-07-22",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.302631578947368
+          },
+          {
+            "anchor": 178,
+            "anchor_date": "2026-07-14",
+            "end_date": "2026-07-16",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.2638888888888888
+          },
+          {
+            "anchor": 176,
+            "anchor_date": "2026-07-09",
+            "end_date": "2026-07-14",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.60431654676259
+          },
+          {
+            "anchor": 174,
+            "anchor_date": "2026-07-07",
+            "end_date": "2026-07-09",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.3222222222222222
+          },
+          {
+            "anchor": 172,
+            "anchor_date": "2026-07-03",
+            "end_date": "2026-07-07",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.547486033519553
+          },
+          {
+            "anchor": 170,
+            "anchor_date": "2026-07-01",
+            "end_date": "2026-07-03",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.9649122807017545
+          },
+          {
+            "anchor": 168,
+            "anchor_date": "2026-06-29",
+            "end_date": "2026-07-01",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.5384615384615384
+          },
+          {
+            "anchor": 166,
+            "anchor_date": "2026-06-25",
+            "end_date": "2026-06-29",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.13930348258706468
+          },
+          {
+            "anchor": 164,
+            "anchor_date": "2026-06-23",
+            "end_date": "2026-06-25",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.0
+          },
+          {
+            "anchor": 162,
+            "anchor_date": "2026-06-18",
+            "end_date": "2026-06-23",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.1590909090909091
+          },
+          {
+            "anchor": 160,
+            "anchor_date": "2026-06-16",
+            "end_date": "2026-06-18",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": -2.8636363636363638
+          },
+          {
+            "anchor": 158,
+            "anchor_date": "2026-06-12",
+            "end_date": "2026-06-16",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3125
+          },
+          {
+            "anchor": 156,
+            "anchor_date": "2026-06-10",
+            "end_date": "2026-06-12",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.0909090909090908
+          },
+          {
+            "anchor": 154,
+            "anchor_date": "2026-06-08",
+            "end_date": "2026-06-10",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.4392156862745098
+          },
+          {
+            "anchor": 148,
+            "anchor_date": "2026-05-29",
+            "end_date": "2026-06-02",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.625
+          },
+          {
+            "anchor": 146,
+            "anchor_date": "2026-05-27",
+            "end_date": "2026-05-29",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.7526881720430108
+          },
+          {
+            "anchor": 142,
+            "anchor_date": "2026-05-21",
+            "end_date": "2026-05-25",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.647058823529412
+          },
+          {
+            "anchor": 140,
+            "anchor_date": "2026-05-19",
+            "end_date": "2026-05-21",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 4.044444444444444
+          },
+          {
+            "anchor": 138,
+            "anchor_date": "2026-05-15",
+            "end_date": "2026-05-19",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.0
+          },
+          {
+            "anchor": 136,
+            "anchor_date": "2026-05-13",
+            "end_date": "2026-05-15",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.75
+          },
+          {
+            "anchor": 128,
+            "anchor_date": "2026-04-30",
+            "end_date": "2026-05-05",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.739130434782609
+          },
+          {
+            "anchor": 126,
+            "anchor_date": "2026-04-28",
+            "end_date": "2026-04-30",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9230769230769231
+          },
+          {
+            "anchor": 124,
+            "anchor_date": "2026-04-24",
+            "end_date": "2026-04-28",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.15384615384615385
+          },
+          {
+            "anchor": 122,
+            "anchor_date": "2026-04-22",
+            "end_date": "2026-04-24",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.7526881720430108
+          },
+          {
+            "anchor": 120,
+            "anchor_date": "2026-04-20",
+            "end_date": "2026-04-22",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.6
+          },
+          {
+            "anchor": 118,
+            "anchor_date": "2026-04-16",
+            "end_date": "2026-04-20",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.0
+          },
+          {
+            "anchor": 116,
+            "anchor_date": "2026-04-14",
+            "end_date": "2026-04-16",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9074074074074074
+          },
+          {
+            "anchor": 114,
+            "anchor_date": "2026-04-10",
+            "end_date": "2026-04-14",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.10606060606060606
+          },
+          {
+            "anchor": 112,
+            "anchor_date": "2026-04-08",
+            "end_date": "2026-04-10",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.4087591240875912
+          },
+          {
+            "anchor": 110,
+            "anchor_date": "2026-04-02",
+            "end_date": "2026-04-08",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3522012578616352
+          },
+          {
+            "anchor": 108,
+            "anchor_date": "2026-03-31",
+            "end_date": "2026-04-02",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9746835443037974
+          },
+          {
+            "anchor": 106,
+            "anchor_date": "2026-03-27",
+            "end_date": "2026-03-31",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8641975308641976
+          },
+          {
+            "anchor": 104,
+            "anchor_date": "2026-03-25",
+            "end_date": "2026-03-27",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.07777777777777778
+          },
+          {
+            "anchor": 102,
+            "anchor_date": "2026-03-23",
+            "end_date": "2026-03-25",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.24242424242424243
+          },
+          {
+            "anchor": 96,
+            "anchor_date": "2026-03-13",
+            "end_date": "2026-03-17",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.435897435897436
+          },
+          {
+            "anchor": 93,
+            "anchor_date": "2026-03-10",
+            "end_date": "2026-03-12",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9859154929577465
+          },
+          {
+            "anchor": 91,
+            "anchor_date": "2026-03-06",
+            "end_date": "2026-03-10",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8191489361702128
+          },
+          {
+            "anchor": 84,
+            "anchor_date": "2026-02-24",
+            "end_date": "2026-02-26",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.041666666666667
+          },
+          {
+            "anchor": 82,
+            "anchor_date": "2026-02-11",
+            "end_date": "2026-02-24",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.8461538461538463
+          },
+          {
+            "anchor": 80,
+            "anchor_date": "2026-02-09",
+            "end_date": "2026-02-11",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.42857142857142855
+          },
+          {
+            "anchor": 78,
+            "anchor_date": "2026-02-05",
+            "end_date": "2026-02-09",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3925233644859813
+          },
+          {
+            "anchor": 76,
+            "anchor_date": "2026-02-03",
+            "end_date": "2026-02-05",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.0275229357798166
+          },
+          {
+            "anchor": 74,
+            "anchor_date": "2026-01-30",
+            "end_date": "2026-02-03",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.39622641509433965
+          },
+          {
+            "anchor": 72,
+            "anchor_date": "2026-01-28",
+            "end_date": "2026-01-30",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.2857142857142857
+          },
+          {
+            "anchor": 70,
+            "anchor_date": "2026-01-26",
+            "end_date": "2026-01-28",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9423076923076923
+          },
+          {
+            "anchor": 68,
+            "anchor_date": "2026-01-22",
+            "end_date": "2026-01-26",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.0
+          },
+          {
+            "anchor": 66,
+            "anchor_date": "2026-01-20",
+            "end_date": "2026-01-22",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9514563106796117
+          },
+          {
+            "anchor": 64,
+            "anchor_date": "2026-01-16",
+            "end_date": "2026-01-20",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.065217391304348
+          },
+          {
+            "anchor": 62,
+            "anchor_date": "2026-01-14",
+            "end_date": "2026-01-16",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.6021505376344086
+          },
+          {
+            "anchor": 56,
+            "anchor_date": "2026-01-06",
+            "end_date": "2026-01-08",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.5925925925925926
+          },
+          {
+            "anchor": 53,
+            "anchor_date": "2025-12-31",
+            "end_date": "2026-01-05",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.726027397260274
+          },
+          {
+            "anchor": 45,
+            "anchor_date": "2025-12-18",
+            "end_date": "2025-12-22",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.4202898550724636
+          },
+          {
+            "anchor": 42,
+            "anchor_date": "2025-12-15",
+            "end_date": "2025-12-17",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.5833333333333333
+          },
+          {
+            "anchor": 40,
+            "anchor_date": "2025-12-11",
+            "end_date": "2025-12-15",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.5342465753424657
+          },
+          {
+            "anchor": 38,
+            "anchor_date": "2025-12-09",
+            "end_date": "2025-12-11",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8433734939759036
+          },
+          {
+            "anchor": 35,
+            "anchor_date": "2025-12-04",
+            "end_date": "2025-12-08",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.15384615384615385
+          },
+          {
+            "anchor": 33,
+            "anchor_date": "2025-12-02",
+            "end_date": "2025-12-04",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.98
+          },
+          {
+            "anchor": 31,
+            "anchor_date": "2025-11-28",
+            "end_date": "2025-12-02",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.875
+          },
+          {
+            "anchor": 29,
+            "anchor_date": "2025-11-26",
+            "end_date": "2025-11-28",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3559322033898305
+          },
+          {
+            "anchor": 27,
+            "anchor_date": "2025-11-24",
+            "end_date": "2025-11-26",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.2833333333333334
+          },
+          {
+            "anchor": 25,
+            "anchor_date": "2025-11-20",
+            "end_date": "2025-11-24",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.10687022900763359
+          },
+          {
+            "anchor": 23,
+            "anchor_date": "2025-11-18",
+            "end_date": "2025-11-20",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.0845070422535212
+          },
+          {
+            "anchor": 21,
+            "anchor_date": "2025-11-14",
+            "end_date": "2025-11-18",
+            "trend": false,
+            "completed_breakout": false,
+            "favorable_excursion_atr": -0.10071942446043165
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 109,
+        "matching_regime_windows": 79,
+        "matching_completed_breakout_windows": 0,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-12",
+        "anchor_close": 255.5,
+        "favorable_excursion_atr": 0.7526881720430108,
+        "current_atr14": 6.357142857142857,
+        "price_ceiling": 260.28494623655916
+      },
+      "verified_prior_observations": 15,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-14T11:20:00+08:00",
+      "symbol": "1101",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Early",
+        "entry": 27.25,
+        "entry_basis": "CURRENT_ASK",
+        "target": 29.25,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 26.25,
+        "holding_days": 10,
+        "max_qty": 41,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 1137.25,
+        "net_return": 0.06613011401743796,
+        "atr14": 0.7821428571428571,
+        "completed_volume_ratio": 1.106039184087522,
+        "daily_breakout_confirmed": false,
+        "entry_twd": 27.25,
+        "target_exit_after_spread_twd": 29.2,
+        "stop_exit_after_spread_twd": 26.2,
+        "estimated_net_upside_twd": 73.95,
+        "estimated_net_downside_twd": 49.05,
+        "estimated_buy_cost_twd": 1118.25,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 4.0,
+        "estimated_stop_tax_twd": 4.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.507645259938838,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.05,
+        "setup_family": "FIRST_DAY_BREAKOUT",
+        "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+        "breakout_reference_price": 27.2,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-14"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 49.05,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 7.3950000000000005,
+        "setup_id": "1e2df84fce11",
+        "priority_score": 21.6895,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-13",
+          "last_completed_close": 26.35,
+          "today_open": 26.8,
+          "today_low": 26.8,
+          "stop_basis": "COMPLETED_SUPPORT",
+          "distance_from_open_atr": 0.5753,
+          "distance_from_previous_close_atr": 1.1507,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "COMPLETED_SUPPORT",
+            "formed_on": "2026-10-13",
+            "broken_on": null
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Early",
+          "entry": 27.25,
+          "entry_basis": "CURRENT_ASK",
+          "target": 29.25,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 26.25,
+          "holding_days": 10,
+          "max_qty": 41,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 1137.25,
+          "net_return": 0.06613011401743796,
+          "atr14": 0.7821428571428571,
+          "completed_volume_ratio": 1.106039184087522,
+          "daily_breakout_confirmed": false,
+          "entry_twd": 27.25,
+          "target_exit_after_spread_twd": 29.2,
+          "stop_exit_after_spread_twd": 26.2,
+          "estimated_net_upside_twd": 73.95,
+          "estimated_net_downside_twd": 49.05,
+          "estimated_buy_cost_twd": 1118.25,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 4.0,
+          "estimated_stop_tax_twd": 4.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.507645259938838,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.05,
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+          "breakout_reference_price": 27.2,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-14",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 14,
+              "matching_completed_breakout_windows": 4,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-13",
+              "anchor_close": 26.35,
+              "favorable_excursion_atr": 1.1750641184743913,
+              "current_atr14": 0.7821428571428571,
+              "price_ceiling": 27.269068006949613
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 27.25,
+              "required_exit": 29.25,
+              "invalidation": 26.25,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-13",
+              "anchor_close": 26.35,
+              "required_excursion_from_anchor_atr": 3.707762557077624,
+              "entry_extension_from_anchor_atr": 1.1506849315068475,
+              "historical_median_reference": 27.269068006949613,
+              "past_range_support_windows": 2,
+              "sample_windows": 14,
+              "descriptive_reach_fraction": 0.14285714285714285,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 49.05,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 7.3950000000000005,
+          "setup_id": "1e2df84fce11",
+          "priority_score": 21.6895,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-13",
+              "ma5": 25.95,
+              "completed_rebound": false,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 2.557077625570776,
+              "target_distance_per_holding_day_atr": 0.2557077625570776,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 2,
+                "sample_windows": 14,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              },
+              "breakout_continuation": {
+                "confirmed": false,
+                "breakout_reference": 27.2,
+                "confirmation_kind": null,
+                "prior_quote_time": "2026-10-14T10:05:03+08:00",
+                "prior_price": 27.25
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "1101",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 27.2,
+        "expires_session": "2026-10-14",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "1e2df84fce11",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-13",
+                "ma5": 25.95,
+                "completed_rebound": false,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 2.557077625570776,
+                "target_distance_per_holding_day_atr": 0.2557077625570776,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 2,
+                  "sample_windows": 14,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                },
+                "breakout_continuation": {
+                  "confirmed": false,
+                  "breakout_reference": 27.2,
+                  "confirmation_kind": null,
+                  "prior_quote_time": "2026-10-14T10:05:03+08:00",
+                  "prior_price": 27.25
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 0.7821428571428571,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 1.106039184087522,
+        "rejection_reasons": [
+          "ENTRY_BELOW_BREAKOUT_REFERENCE"
+        ],
+        "near_misses": []
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 229,
+            "anchor_date": "2026-09-24",
+            "end_date": "2026-10-13",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.765517241379307
+          },
+          {
+            "anchor": 219,
+            "anchor_date": "2026-09-10",
+            "end_date": "2026-09-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.2608695652173942
+          },
+          {
+            "anchor": 207,
+            "anchor_date": "2026-08-25",
+            "end_date": "2026-09-08",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.7814569536423837
+          },
+          {
+            "anchor": 197,
+            "anchor_date": "2026-08-11",
+            "end_date": "2026-08-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.860759493670886
+          },
+          {
+            "anchor": 187,
+            "anchor_date": "2026-07-28",
+            "end_date": "2026-08-11",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 0.4374999999999998
+          },
+          {
+            "anchor": 165,
+            "anchor_date": "2026-06-25",
+            "end_date": "2026-07-09",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.28378378378378116
+          },
+          {
+            "anchor": 133,
+            "anchor_date": "2026-05-11",
+            "end_date": "2026-05-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.18543046357616155
+          },
+          {
+            "anchor": 115,
+            "anchor_date": "2026-04-14",
+            "end_date": "2026-04-28",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.209999999999998
+          },
+          {
+            "anchor": 85,
+            "anchor_date": "2026-02-26",
+            "end_date": "2026-03-13",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.19047619047619327
+          },
+          {
+            "anchor": 73,
+            "anchor_date": "2026-01-30",
+            "end_date": "2026-02-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.12121212121212296
+          },
+          {
+            "anchor": 63,
+            "anchor_date": "2026-01-16",
+            "end_date": "2026-01-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.0674157303370793
+          },
+          {
+            "anchor": 52,
+            "anchor_date": "2025-12-31",
+            "end_date": "2026-01-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 5.515151515151526
+          },
+          {
+            "anchor": 41,
+            "anchor_date": "2025-12-15",
+            "end_date": "2025-12-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.4640522875816937
+          },
+          {
+            "anchor": 31,
+            "anchor_date": "2025-12-01",
+            "end_date": "2025-12-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8860759493670888
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 14,
+        "matching_completed_breakout_windows": 4,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-13",
+        "anchor_close": 26.35,
+        "favorable_excursion_atr": 1.1750641184743913,
+        "current_atr14": 0.7821428571428571,
+        "price_ceiling": 27.269068006949613
+      },
+      "verified_prior_observations": 26,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-16T09:18:36+08:00",
+      "symbol": "1101",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Early",
+        "entry": 27.6,
+        "entry_basis": "CURRENT_ASK",
+        "target": 29.6,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 26.6,
+        "holding_days": 10,
+        "max_qty": 41,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 1151.6,
+        "net_return": 0.06529224792512803,
+        "atr14": 0.8214285714285714,
+        "completed_volume_ratio": 0.6544734480650997,
+        "daily_breakout_confirmed": false,
+        "entry_twd": 27.6,
+        "target_exit_after_spread_twd": 29.55,
+        "stop_exit_after_spread_twd": 26.55,
+        "estimated_net_upside_twd": 73.95,
+        "estimated_net_downside_twd": 49.05,
+        "estimated_buy_cost_twd": 1132.6,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 4.0,
+        "estimated_stop_tax_twd": 4.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.507645259938838,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.05,
+        "setup_family": "FIRST_DAY_BREAKOUT",
+        "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+        "breakout_reference_price": 27.4,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-16"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 49.05,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 7.3950000000000005,
+        "setup_id": "dbbed0804710",
+        "priority_score": 21.6057,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-15",
+          "last_completed_close": 26.8,
+          "today_open": 27.45,
+          "today_low": 27.45,
+          "stop_basis": "COMPLETED_SUPPORT",
+          "distance_from_open_atr": 0.1826,
+          "distance_from_previous_close_atr": 0.9739,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "COMPLETED_SUPPORT",
+            "formed_on": "2026-10-15",
+            "broken_on": null
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Early",
+          "entry": 27.6,
+          "entry_basis": "CURRENT_ASK",
+          "target": 29.6,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 26.6,
+          "holding_days": 10,
+          "max_qty": 41,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 1151.6,
+          "net_return": 0.06529224792512803,
+          "atr14": 0.8214285714285714,
+          "completed_volume_ratio": 0.6544734480650997,
+          "daily_breakout_confirmed": false,
+          "entry_twd": 27.6,
+          "target_exit_after_spread_twd": 29.55,
+          "stop_exit_after_spread_twd": 26.55,
+          "estimated_net_upside_twd": 73.95,
+          "estimated_net_downside_twd": 49.05,
+          "estimated_buy_cost_twd": 1132.6,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 4.0,
+          "estimated_stop_tax_twd": 4.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.507645259938838,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.05,
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+          "breakout_reference_price": 27.4,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-16",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 14,
+              "matching_completed_breakout_windows": 5,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-15",
+              "anchor_close": 26.8,
+              "favorable_excursion_atr": 1.1750641184743913,
+              "current_atr14": 0.821428571428571,
+              "price_ceiling": 27.765231240175392
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 27.6,
+              "required_exit": 29.6,
+              "invalidation": 26.6,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-15",
+              "anchor_close": 26.8,
+              "required_excursion_from_anchor_atr": 3.408695652173916,
+              "entry_extension_from_anchor_atr": 0.9739130434782624,
+              "historical_median_reference": 27.765231240175392,
+              "past_range_support_windows": 1,
+              "sample_windows": 14,
+              "descriptive_reach_fraction": 0.07142857142857142,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 49.05,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 7.3950000000000005,
+          "setup_id": "dbbed0804710",
+          "priority_score": 21.6057,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS",
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-15",
+              "ma5": 26.580000000000002,
+              "completed_rebound": false,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 2.4347826086956523,
+              "target_distance_per_holding_day_atr": 0.24347826086956523,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 1,
+                "sample_windows": 14,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              },
+              "breakout_continuation": {
+                "confirmed": false,
+                "breakout_reference": 27.4,
+                "confirmation_kind": null,
+                "prior_quote_time": null,
+                "prior_price": null
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "1101",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 27.4,
+        "expires_session": "2026-10-16",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "dbbed0804710",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS",
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS",
+                "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-15",
+                "ma5": 26.580000000000002,
+                "completed_rebound": false,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 2.4347826086956523,
+                "target_distance_per_holding_day_atr": 0.24347826086956523,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 1,
+                  "sample_windows": 14,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                },
+                "breakout_continuation": {
+                  "confirmed": false,
+                  "breakout_reference": 27.4,
+                  "confirmation_kind": null,
+                  "prior_quote_time": null,
+                  "prior_price": null
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 0.8214285714285714,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 0.6544734480650997,
+        "rejection_reasons": [
+          "ENTRY_BELOW_BREAKOUT_REFERENCE",
+          "REWARD_RISK_BELOW_MINIMUM"
+        ],
+        "near_misses": [
+          {
+            "entry": 27.45,
+            "target": 29.15,
+            "invalidation": 26.6,
+            "qty": 48,
+            "net_upside_twd": 72.2,
+            "combined_stop_risk_twd": 49.2,
+            "net_return": 0.05475504322766571,
+            "reward_risk_ratio": 1.467479674796748,
+            "rejection": "REWARD_RISK_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          }
+        ]
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 229,
+            "anchor_date": "2026-09-30",
+            "end_date": "2026-10-15",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 1.7803468208092441
+          },
+          {
+            "anchor": 217,
+            "anchor_date": "2026-09-10",
+            "end_date": "2026-09-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.2608695652173942
+          },
+          {
+            "anchor": 205,
+            "anchor_date": "2026-08-25",
+            "end_date": "2026-09-08",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.7814569536423837
+          },
+          {
+            "anchor": 195,
+            "anchor_date": "2026-08-11",
+            "end_date": "2026-08-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.860759493670886
+          },
+          {
+            "anchor": 185,
+            "anchor_date": "2026-07-28",
+            "end_date": "2026-08-11",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 0.4374999999999998
+          },
+          {
+            "anchor": 163,
+            "anchor_date": "2026-06-25",
+            "end_date": "2026-07-09",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.28378378378378116
+          },
+          {
+            "anchor": 131,
+            "anchor_date": "2026-05-11",
+            "end_date": "2026-05-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.18543046357616155
+          },
+          {
+            "anchor": 113,
+            "anchor_date": "2026-04-14",
+            "end_date": "2026-04-28",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.209999999999998
+          },
+          {
+            "anchor": 83,
+            "anchor_date": "2026-02-26",
+            "end_date": "2026-03-13",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.19047619047619327
+          },
+          {
+            "anchor": 71,
+            "anchor_date": "2026-01-30",
+            "end_date": "2026-02-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.12121212121212296
+          },
+          {
+            "anchor": 61,
+            "anchor_date": "2026-01-16",
+            "end_date": "2026-01-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.0674157303370793
+          },
+          {
+            "anchor": 50,
+            "anchor_date": "2025-12-31",
+            "end_date": "2026-01-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 5.515151515151526
+          },
+          {
+            "anchor": 39,
+            "anchor_date": "2025-12-15",
+            "end_date": "2025-12-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.4640522875816937
+          },
+          {
+            "anchor": 29,
+            "anchor_date": "2025-12-01",
+            "end_date": "2025-12-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8860759493670888
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 14,
+        "matching_completed_breakout_windows": 5,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-15",
+        "anchor_close": 26.8,
+        "favorable_excursion_atr": 1.1750641184743913,
+        "current_atr14": 0.821428571428571,
+        "price_ceiling": 27.765231240175392
+      },
+      "verified_prior_observations": 39,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-16T09:27:48+08:00",
+      "symbol": "1101",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Early",
+        "entry": 27.6,
+        "entry_basis": "CURRENT_ASK",
+        "target": 29.6,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 26.6,
+        "holding_days": 10,
+        "max_qty": 41,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 1151.6,
+        "net_return": 0.06529224792512803,
+        "atr14": 0.8214285714285714,
+        "completed_volume_ratio": 0.6544734480650997,
+        "daily_breakout_confirmed": false,
+        "entry_twd": 27.6,
+        "target_exit_after_spread_twd": 29.55,
+        "stop_exit_after_spread_twd": 26.55,
+        "estimated_net_upside_twd": 73.95,
+        "estimated_net_downside_twd": 49.05,
+        "estimated_buy_cost_twd": 1132.6,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 4.0,
+        "estimated_stop_tax_twd": 4.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.507645259938838,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.05,
+        "setup_family": "FIRST_DAY_BREAKOUT",
+        "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+        "breakout_reference_price": 27.4,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-16"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 49.05,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 7.3950000000000005,
+        "setup_id": "dbbed0804710",
+        "priority_score": 21.6057,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-15",
+          "last_completed_close": 26.8,
+          "today_open": 27.45,
+          "today_low": 27.45,
+          "stop_basis": "COMPLETED_SUPPORT",
+          "distance_from_open_atr": 0.1826,
+          "distance_from_previous_close_atr": 0.9739,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "COMPLETED_SUPPORT",
+            "formed_on": "2026-10-15",
+            "broken_on": null
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Early",
+          "entry": 27.6,
+          "entry_basis": "CURRENT_ASK",
+          "target": 29.6,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 26.6,
+          "holding_days": 10,
+          "max_qty": 41,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 1151.6,
+          "net_return": 0.06529224792512803,
+          "atr14": 0.8214285714285714,
+          "completed_volume_ratio": 0.6544734480650997,
+          "daily_breakout_confirmed": false,
+          "entry_twd": 27.6,
+          "target_exit_after_spread_twd": 29.55,
+          "stop_exit_after_spread_twd": 26.55,
+          "estimated_net_upside_twd": 73.95,
+          "estimated_net_downside_twd": 49.05,
+          "estimated_buy_cost_twd": 1132.6,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 4.0,
+          "estimated_stop_tax_twd": 4.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.507645259938838,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.05,
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+          "breakout_reference_price": 27.4,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-16",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 14,
+              "matching_completed_breakout_windows": 5,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-15",
+              "anchor_close": 26.8,
+              "favorable_excursion_atr": 1.1750641184743913,
+              "current_atr14": 0.821428571428571,
+              "price_ceiling": 27.765231240175392
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 27.6,
+              "required_exit": 29.6,
+              "invalidation": 26.6,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-15",
+              "anchor_close": 26.8,
+              "required_excursion_from_anchor_atr": 3.408695652173916,
+              "entry_extension_from_anchor_atr": 0.9739130434782624,
+              "historical_median_reference": 27.765231240175392,
+              "past_range_support_windows": 1,
+              "sample_windows": 14,
+              "descriptive_reach_fraction": 0.07142857142857142,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 49.05,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 7.3950000000000005,
+          "setup_id": "dbbed0804710",
+          "priority_score": 21.6057,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-15",
+              "ma5": 26.580000000000002,
+              "completed_rebound": false,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 2.4347826086956523,
+              "target_distance_per_holding_day_atr": 0.24347826086956523,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 1,
+                "sample_windows": 14,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              },
+              "breakout_continuation": {
+                "confirmed": true,
+                "breakout_reference": 27.4,
+                "confirmation_kind": "HELD_ABOVE_BREAKOUT_AND_NONDECLINING_DISTINCT_LIVE_OBSERVATION",
+                "prior_quote_time": "2026-10-16T09:20:18+08:00",
+                "prior_price": 27.55
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "1101",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 27.4,
+        "expires_session": "2026-10-16",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "dbbed0804710",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-15",
+                "ma5": 26.580000000000002,
+                "completed_rebound": false,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 2.4347826086956523,
+                "target_distance_per_holding_day_atr": 0.24347826086956523,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 1,
+                  "sample_windows": 14,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                },
+                "breakout_continuation": {
+                  "confirmed": true,
+                  "breakout_reference": 27.4,
+                  "confirmation_kind": "HELD_ABOVE_BREAKOUT_AND_NONDECLINING_DISTINCT_LIVE_OBSERVATION",
+                  "prior_quote_time": "2026-10-16T09:20:18+08:00",
+                  "prior_price": 27.55
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 0.8214285714285714,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 0.6544734480650997,
+        "rejection_reasons": [
+          "ENTRY_BELOW_BREAKOUT_REFERENCE",
+          "REWARD_RISK_BELOW_MINIMUM"
+        ],
+        "near_misses": [
+          {
+            "entry": 27.45,
+            "target": 29.15,
+            "invalidation": 26.6,
+            "qty": 48,
+            "net_upside_twd": 72.2,
+            "combined_stop_risk_twd": 49.2,
+            "net_return": 0.05475504322766571,
+            "reward_risk_ratio": 1.467479674796748,
+            "rejection": "REWARD_RISK_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          }
+        ]
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 229,
+            "anchor_date": "2026-09-30",
+            "end_date": "2026-10-15",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 1.7803468208092441
+          },
+          {
+            "anchor": 217,
+            "anchor_date": "2026-09-10",
+            "end_date": "2026-09-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.2608695652173942
+          },
+          {
+            "anchor": 205,
+            "anchor_date": "2026-08-25",
+            "end_date": "2026-09-08",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.7814569536423837
+          },
+          {
+            "anchor": 195,
+            "anchor_date": "2026-08-11",
+            "end_date": "2026-08-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.860759493670886
+          },
+          {
+            "anchor": 185,
+            "anchor_date": "2026-07-28",
+            "end_date": "2026-08-11",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 0.4374999999999998
+          },
+          {
+            "anchor": 163,
+            "anchor_date": "2026-06-25",
+            "end_date": "2026-07-09",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.28378378378378116
+          },
+          {
+            "anchor": 131,
+            "anchor_date": "2026-05-11",
+            "end_date": "2026-05-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.18543046357616155
+          },
+          {
+            "anchor": 113,
+            "anchor_date": "2026-04-14",
+            "end_date": "2026-04-28",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.209999999999998
+          },
+          {
+            "anchor": 83,
+            "anchor_date": "2026-02-26",
+            "end_date": "2026-03-13",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.19047619047619327
+          },
+          {
+            "anchor": 71,
+            "anchor_date": "2026-01-30",
+            "end_date": "2026-02-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.12121212121212296
+          },
+          {
+            "anchor": 61,
+            "anchor_date": "2026-01-16",
+            "end_date": "2026-01-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.0674157303370793
+          },
+          {
+            "anchor": 50,
+            "anchor_date": "2025-12-31",
+            "end_date": "2026-01-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 5.515151515151526
+          },
+          {
+            "anchor": 39,
+            "anchor_date": "2025-12-15",
+            "end_date": "2025-12-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.4640522875816937
+          },
+          {
+            "anchor": 29,
+            "anchor_date": "2025-12-01",
+            "end_date": "2025-12-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8860759493670888
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 14,
+        "matching_completed_breakout_windows": 5,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-15",
+        "anchor_close": 26.8,
+        "favorable_excursion_atr": 1.1750641184743913,
+        "current_atr14": 0.821428571428571,
+        "price_ceiling": 27.765231240175392
+      },
+      "verified_prior_observations": 41,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-16T10:35:05+08:00",
+      "symbol": "1101",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Early",
+        "entry": 27.6,
+        "entry_basis": "CURRENT_ASK",
+        "target": 29.6,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 26.6,
+        "holding_days": 10,
+        "max_qty": 41,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 1151.6,
+        "net_return": 0.06529224792512803,
+        "atr14": 0.8214285714285714,
+        "completed_volume_ratio": 0.6544734480650997,
+        "daily_breakout_confirmed": false,
+        "entry_twd": 27.6,
+        "target_exit_after_spread_twd": 29.55,
+        "stop_exit_after_spread_twd": 26.55,
+        "estimated_net_upside_twd": 73.95,
+        "estimated_net_downside_twd": 49.05,
+        "estimated_buy_cost_twd": 1132.6,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 4.0,
+        "estimated_stop_tax_twd": 4.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.507645259938838,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.05,
+        "setup_family": "FIRST_DAY_BREAKOUT",
+        "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+        "breakout_reference_price": 27.4,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-16"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 49.05,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 7.3950000000000005,
+        "setup_id": "dbbed0804710",
+        "priority_score": 21.6057,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-15",
+          "last_completed_close": 26.8,
+          "today_open": 27.45,
+          "today_low": 27.35,
+          "stop_basis": "COMPLETED_SUPPORT",
+          "distance_from_open_atr": 0.1826,
+          "distance_from_previous_close_atr": 0.9739,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "COMPLETED_SUPPORT",
+            "formed_on": "2026-10-15",
+            "broken_on": null
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Early",
+          "entry": 27.6,
+          "entry_basis": "CURRENT_ASK",
+          "target": 29.6,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 26.6,
+          "holding_days": 10,
+          "max_qty": 41,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 1151.6,
+          "net_return": 0.06529224792512803,
+          "atr14": 0.8214285714285714,
+          "completed_volume_ratio": 0.6544734480650997,
+          "daily_breakout_confirmed": false,
+          "entry_twd": 27.6,
+          "target_exit_after_spread_twd": 29.55,
+          "stop_exit_after_spread_twd": 26.55,
+          "estimated_net_upside_twd": 73.95,
+          "estimated_net_downside_twd": 49.05,
+          "estimated_buy_cost_twd": 1132.6,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 4.0,
+          "estimated_stop_tax_twd": 4.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.507645259938838,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.05,
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+          "breakout_reference_price": 27.4,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-16",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 14,
+              "matching_completed_breakout_windows": 5,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-15",
+              "anchor_close": 26.8,
+              "favorable_excursion_atr": 1.1750641184743913,
+              "current_atr14": 0.821428571428571,
+              "price_ceiling": 27.765231240175392
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 27.6,
+              "required_exit": 29.6,
+              "invalidation": 26.6,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-15",
+              "anchor_close": 26.8,
+              "required_excursion_from_anchor_atr": 3.408695652173916,
+              "entry_extension_from_anchor_atr": 0.9739130434782624,
+              "historical_median_reference": 27.765231240175392,
+              "past_range_support_windows": 1,
+              "sample_windows": 14,
+              "descriptive_reach_fraction": 0.07142857142857142,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 49.05,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 7.3950000000000005,
+          "setup_id": "dbbed0804710",
+          "priority_score": 21.6057,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS",
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-15",
+              "ma5": 26.580000000000002,
+              "completed_rebound": false,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 2.4347826086956523,
+              "target_distance_per_holding_day_atr": 0.24347826086956523,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 1,
+                "sample_windows": 14,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              },
+              "breakout_continuation": {
+                "confirmed": false,
+                "breakout_reference": 27.4,
+                "confirmation_kind": null,
+                "prior_quote_time": "2026-10-16T10:29:52+08:00",
+                "prior_price": 27.6
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "1101",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 27.4,
+        "expires_session": "2026-10-16",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "dbbed0804710",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS",
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS",
+                "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-15",
+                "ma5": 26.580000000000002,
+                "completed_rebound": false,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 2.4347826086956523,
+                "target_distance_per_holding_day_atr": 0.24347826086956523,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 1,
+                  "sample_windows": 14,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                },
+                "breakout_continuation": {
+                  "confirmed": false,
+                  "breakout_reference": 27.4,
+                  "confirmation_kind": null,
+                  "prior_quote_time": "2026-10-16T10:29:52+08:00",
+                  "prior_price": 27.6
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 0.8214285714285714,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 0.6544734480650997,
+        "rejection_reasons": [
+          "ENTRY_BELOW_BREAKOUT_REFERENCE",
+          "REWARD_RISK_BELOW_MINIMUM"
+        ],
+        "near_misses": [
+          {
+            "entry": 27.45,
+            "target": 29.15,
+            "invalidation": 26.6,
+            "qty": 48,
+            "net_upside_twd": 72.2,
+            "combined_stop_risk_twd": 49.2,
+            "net_return": 0.05475504322766571,
+            "reward_risk_ratio": 1.467479674796748,
+            "rejection": "REWARD_RISK_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          }
+        ]
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 229,
+            "anchor_date": "2026-09-30",
+            "end_date": "2026-10-15",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 1.7803468208092441
+          },
+          {
+            "anchor": 217,
+            "anchor_date": "2026-09-10",
+            "end_date": "2026-09-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.2608695652173942
+          },
+          {
+            "anchor": 205,
+            "anchor_date": "2026-08-25",
+            "end_date": "2026-09-08",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.7814569536423837
+          },
+          {
+            "anchor": 195,
+            "anchor_date": "2026-08-11",
+            "end_date": "2026-08-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.860759493670886
+          },
+          {
+            "anchor": 185,
+            "anchor_date": "2026-07-28",
+            "end_date": "2026-08-11",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 0.4374999999999998
+          },
+          {
+            "anchor": 163,
+            "anchor_date": "2026-06-25",
+            "end_date": "2026-07-09",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.28378378378378116
+          },
+          {
+            "anchor": 131,
+            "anchor_date": "2026-05-11",
+            "end_date": "2026-05-25",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.18543046357616155
+          },
+          {
+            "anchor": 113,
+            "anchor_date": "2026-04-14",
+            "end_date": "2026-04-28",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.209999999999998
+          },
+          {
+            "anchor": 83,
+            "anchor_date": "2026-02-26",
+            "end_date": "2026-03-13",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.19047619047619327
+          },
+          {
+            "anchor": 71,
+            "anchor_date": "2026-01-30",
+            "end_date": "2026-02-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.12121212121212296
+          },
+          {
+            "anchor": 61,
+            "anchor_date": "2026-01-16",
+            "end_date": "2026-01-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.0674157303370793
+          },
+          {
+            "anchor": 50,
+            "anchor_date": "2025-12-31",
+            "end_date": "2026-01-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 5.515151515151526
+          },
+          {
+            "anchor": 39,
+            "anchor_date": "2025-12-15",
+            "end_date": "2025-12-30",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.4640522875816937
+          },
+          {
+            "anchor": 29,
+            "anchor_date": "2025-12-01",
+            "end_date": "2025-12-15",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8860759493670888
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 14,
+        "matching_completed_breakout_windows": 5,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-15",
+        "anchor_close": 26.8,
+        "favorable_excursion_atr": 1.1750641184743913,
+        "current_atr14": 0.821428571428571,
+        "price_ceiling": 27.765231240175392
+      },
+      "verified_prior_observations": 46,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-19T11:35:05+08:00",
+      "symbol": "2377",
+      "old_outcome": "SUCCESS",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Strong",
+        "entry": 159.0,
+        "entry_basis": "CURRENT_ASK",
+        "target": 167.5,
+        "target_kind": "OBSERVED_SWING_RESISTANCE",
+        "invalidation": 156.0,
+        "holding_days": 10,
+        "max_qty": 11,
+        "allocation_limit_twd": 5000.0,
+        "funding_required_twd": 1769.0,
+        "net_return": 0.04454597372929754,
+        "atr14": 3.8214285714285716,
+        "completed_volume_ratio": 2.4218375302014548,
+        "daily_breakout_confirmed": true,
+        "entry_twd": 159.0,
+        "target_exit_after_spread_twd": 167.0,
+        "stop_exit_after_spread_twd": 155.5,
+        "estimated_net_upside_twd": 78.0,
+        "estimated_net_downside_twd": 48.5,
+        "estimated_buy_cost_twd": 1751.0,
+        "estimated_buy_commission_twd": 2.0,
+        "estimated_target_commission_twd": 2.0,
+        "estimated_stop_commission_twd": 2.0,
+        "estimated_target_tax_twd": 6.0,
+        "estimated_stop_tax_twd": 6.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.6082474226804124,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.5,
+        "setup_family": "TREND_PULLBACK",
+        "breakout_confirmation": "COMPLETED_DAILY_PRICE_AND_VOLUME",
+        "breakout_reference_price": null,
+        "target_evidence": {
+          "price": 167.5,
+          "kind": "OBSERVED_SWING_RESISTANCE",
+          "source": "high_5d",
+          "date": "2026-10-12..2026-10-16"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 48.5,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 7.8,
+        "setup_id": "b763b194f570",
+        "priority_score": 35.5371,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-16",
+          "last_completed_close": 161.5,
+          "today_open": 159.0,
+          "today_low": 157.5,
+          "stop_basis": "COMPLETED_SUPPORT",
+          "distance_from_open_atr": 0.0,
+          "distance_from_previous_close_atr": -0.6542,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "COMPLETED_SUPPORT",
+            "formed_on": "2026-10-15",
+            "broken_on": null
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Strong",
+          "entry": 159.0,
+          "entry_basis": "CURRENT_ASK",
+          "target": 167.5,
+          "target_kind": "OBSERVED_SWING_RESISTANCE",
+          "invalidation": 156.0,
+          "holding_days": 10,
+          "max_qty": 11,
+          "allocation_limit_twd": 5000.0,
+          "funding_required_twd": 1769.0,
+          "net_return": 0.04454597372929754,
+          "atr14": 3.8214285714285716,
+          "completed_volume_ratio": 2.4218375302014548,
+          "daily_breakout_confirmed": true,
+          "entry_twd": 159.0,
+          "target_exit_after_spread_twd": 167.0,
+          "stop_exit_after_spread_twd": 155.5,
+          "estimated_net_upside_twd": 78.0,
+          "estimated_net_downside_twd": 48.5,
+          "estimated_buy_cost_twd": 1751.0,
+          "estimated_buy_commission_twd": 2.0,
+          "estimated_target_commission_twd": 2.0,
+          "estimated_stop_commission_twd": 2.0,
+          "estimated_target_tax_twd": 6.0,
+          "estimated_stop_tax_twd": 6.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.6082474226804124,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.5,
+          "setup_family": "TREND_PULLBACK",
+          "breakout_confirmation": "COMPLETED_DAILY_PRICE_AND_VOLUME",
+          "breakout_reference_price": null,
+          "target_evidence": {
+            "price": 167.5,
+            "kind": "OBSERVED_SWING_RESISTANCE",
+            "source": "high_5d",
+            "date": "2026-10-12..2026-10-16",
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 13,
+              "matching_completed_breakout_windows": 5,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-16",
+              "anchor_close": 161.5,
+              "favorable_excursion_atr": 0.3620689655172413,
+              "current_atr14": 3.8214285714285716,
+              "price_ceiling": 162.88362068965517
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 159.0,
+              "required_exit": 167.5,
+              "invalidation": 156.0,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-16",
+              "anchor_close": 161.5,
+              "required_excursion_from_anchor_atr": 1.5700934579439252,
+              "entry_extension_from_anchor_atr": -0.6542056074766355,
+              "historical_median_reference": 162.88362068965517,
+              "past_range_support_windows": 3,
+              "sample_windows": 13,
+              "descriptive_reach_fraction": 0.23076923076923078,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 48.5,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 7.8,
+          "setup_id": "b763b194f570",
+          "priority_score": 35.5371,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": true,
+            "blockers": [],
+            "facts": {
+              "last_completed_date": "2026-10-16",
+              "ma5": 158.1,
+              "completed_rebound": true,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 2.2242990654205608,
+              "target_distance_per_holding_day_atr": 0.22242990654205608,
+              "target_probability": null
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          },
+          "entry_evidence": {
+            "last_completed_date": "2026-10-16",
+            "last_completed_close": 161.5,
+            "today_open": 159.0,
+            "today_low": 157.5,
+            "stop_basis": "COMPLETED_SUPPORT",
+            "distance_from_open_atr": 0.0,
+            "distance_from_previous_close_atr": -0.6542,
+            "target_probability": null,
+            "stop_origin": {
+              "kind": "COMPLETED_SUPPORT",
+              "formed_on": "2026-10-15",
+              "broken_on": null
+            },
+            "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+            "requires_today_completed_bar": false
+          }
+        }
+      ],
+      "pending_entry_setups": [],
+      "entry_watch": null,
+      "status": {
+        "blockers": [],
+        "signal": "Strong",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [],
+        "atr14": 3.8214285714285716,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 5000.0,
+        "completed_volume_ratio": 2.4218375302014548,
+        "rejection_reasons": [
+          "ENTRY_OUTSIDE_REACH",
+          "NET_RETURN_BELOW_MINIMUM"
+        ],
+        "near_misses": [
+          {
+            "entry": 157.5,
+            "target": 159.0,
+            "invalidation": 154.5,
+            "qty": 11,
+            "net_upside_twd": 1.0,
+            "combined_stop_risk_twd": 48.5,
+            "net_return": 0.0005765350245027386,
+            "reward_risk_ratio": 0.020618556701030927,
+            "rejection": "NET_RETURN_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          },
+          {
+            "entry": 158.0,
+            "target": 159.0,
+            "invalidation": 154.5,
+            "qty": 10,
+            "net_upside_twd": -4.0,
+            "combined_stop_risk_twd": 49.0,
+            "net_return": -0.0025284450063211127,
+            "reward_risk_ratio": -0.08163265306122448,
+            "rejection": "NET_RETURN_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          },
+          {
+            "entry": 156.0,
+            "target": 156.5,
+            "invalidation": 153.5,
+            "qty": 13,
+            "net_upside_twd": -11.0,
+            "combined_stop_risk_twd": 49.0,
+            "net_return": -0.00541871921182266,
+            "reward_risk_ratio": -0.22448979591836735,
+            "rejection": "NET_RETURN_BELOW_MINIMUM",
+            "purpose": "DIAGNOSTIC_ONLY_NOT_ORDER_APPROVAL"
+          }
+        ]
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 223,
+            "anchor_date": "2026-09-21",
+            "end_date": "2026-10-07",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.9545454545454546
+          },
+          {
+            "anchor": 213,
+            "anchor_date": "2026-09-07",
+            "end_date": "2026-09-21",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": -0.08641975308641975
+          },
+          {
+            "anchor": 196,
+            "anchor_date": "2026-08-13",
+            "end_date": "2026-08-27",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3620689655172413
+          },
+          {
+            "anchor": 181,
+            "anchor_date": "2026-07-23",
+            "end_date": "2026-08-06",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.8235294117647058
+          },
+          {
+            "anchor": 167,
+            "anchor_date": "2026-07-02",
+            "end_date": "2026-07-17",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.7391304347826086
+          },
+          {
+            "anchor": 157,
+            "anchor_date": "2026-06-17",
+            "end_date": "2026-07-02",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.206896551724138
+          },
+          {
+            "anchor": 147,
+            "anchor_date": "2026-06-03",
+            "end_date": "2026-06-17",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.12962962962962962
+          },
+          {
+            "anchor": 135,
+            "anchor_date": "2026-05-18",
+            "end_date": "2026-06-01",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 4.492753623188405
+          },
+          {
+            "anchor": 123,
+            "anchor_date": "2026-04-29",
+            "end_date": "2026-05-14",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 6.640316205533593
+          },
+          {
+            "anchor": 95,
+            "anchor_date": "2026-03-18",
+            "end_date": "2026-04-01",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.0
+          },
+          {
+            "anchor": 84,
+            "anchor_date": "2026-03-03",
+            "end_date": "2026-03-17",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.31674208144796356
+          },
+          {
+            "anchor": 65,
+            "anchor_date": "2026-01-23",
+            "end_date": "2026-02-06",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.16867469879518066
+          },
+          {
+            "anchor": 27,
+            "anchor_date": "2025-11-28",
+            "end_date": "2025-12-12",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": -0.2880658436213992
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 13,
+        "matching_completed_breakout_windows": 5,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-16",
+        "anchor_close": 161.5,
+        "favorable_excursion_atr": 0.3620689655172413,
+        "current_atr14": 3.8214285714285716,
+        "price_ceiling": 162.88362068965517
+      },
+      "verified_prior_observations": 57,
+      "source_revisions": []
+    },
+    {
+      "as_of": "2026-10-22T11:05:05+08:00",
+      "symbol": "2891",
+      "old_outcome": "FAILURE",
+      "old_setup": {
+        "strategy_id": "multi_day_trend",
+        "tier": "Early",
+        "entry": 75.4,
+        "entry_basis": "CURRENT_ASK",
+        "target": 82.6,
+        "target_kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+        "invalidation": 71.8,
+        "holding_days": 10,
+        "max_qty": 12,
+        "allocation_limit_twd": 3500.0,
+        "funding_required_twd": 924.8,
+        "net_return": 0.08854051667034665,
+        "atr14": 1.9785714285714286,
+        "completed_volume_ratio": 0.973066061710251,
+        "daily_breakout_confirmed": false,
+        "entry_twd": 75.4,
+        "target_exit_after_spread_twd": 82.5,
+        "stop_exit_after_spread_twd": 71.7,
+        "estimated_net_upside_twd": 80.2,
+        "estimated_net_downside_twd": 49.4,
+        "estimated_buy_cost_twd": 905.8,
+        "estimated_buy_commission_twd": 1.0,
+        "estimated_target_commission_twd": 1.0,
+        "estimated_stop_commission_twd": 1.0,
+        "estimated_target_tax_twd": 3.0,
+        "estimated_stop_tax_twd": 3.0,
+        "commission_rounding": "floor_to_whole_TWD_before_minimum",
+        "tax_rounding": "ceiling_to_whole_TWD",
+        "reward_risk_ratio": 1.6234817813765183,
+        "tax_rate": 0.003,
+        "commission_rate": 0.001425,
+        "minimum_commission_twd": 1.0,
+        "exit_spread_reserve_twd": 0.1,
+        "setup_family": "FIRST_DAY_BREAKOUT",
+        "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+        "breakout_reference_price": 75.3,
+        "target_evidence": {
+          "kind": "MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE",
+          "source": "BOUNDED_R_MODEL",
+          "date": "2026-10-22"
+        },
+        "existing_modeled_risk_twd": 0.0,
+        "combined_modeled_risk_twd": 49.4,
+        "analysis_cost_budget_twd": 10,
+        "target_profit_to_analysis_budget": 8.02,
+        "setup_id": "e917f0efe502",
+        "priority_score": 25.0889,
+        "entry_evidence": {
+          "last_completed_date": "2026-10-21",
+          "last_completed_close": 74.8,
+          "today_open": 74.3,
+          "today_low": 74.3,
+          "stop_basis": "COMPLETED_SUPPORT",
+          "distance_from_open_atr": 0.556,
+          "distance_from_previous_close_atr": 0.3032,
+          "target_probability": null,
+          "stop_origin": {
+            "kind": "COMPLETED_SUPPORT",
+            "formed_on": "2026-10-21",
+            "broken_on": null
+          },
+          "confirmation_scope": "CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT",
+          "requires_today_completed_bar": false
+        }
+      },
+      "new_setups": [],
+      "pending_entry_setups": [
+        {
+          "strategy_id": "multi_day_trend",
+          "tier": "Early",
+          "entry": 75.4,
+          "entry_basis": "CURRENT_ASK",
+          "target": 82.6,
+          "target_kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+          "invalidation": 71.8,
+          "holding_days": 10,
+          "max_qty": 12,
+          "allocation_limit_twd": 3500.0,
+          "funding_required_twd": 924.8,
+          "net_return": 0.08854051667034665,
+          "atr14": 1.9785714285714286,
+          "completed_volume_ratio": 0.973066061710251,
+          "daily_breakout_confirmed": false,
+          "entry_twd": 75.4,
+          "target_exit_after_spread_twd": 82.5,
+          "stop_exit_after_spread_twd": 71.7,
+          "estimated_net_upside_twd": 80.2,
+          "estimated_net_downside_twd": 49.4,
+          "estimated_buy_cost_twd": 905.8,
+          "estimated_buy_commission_twd": 1.0,
+          "estimated_target_commission_twd": 1.0,
+          "estimated_stop_commission_twd": 1.0,
+          "estimated_target_tax_twd": 3.0,
+          "estimated_stop_tax_twd": 3.0,
+          "commission_rounding": "floor_to_whole_TWD_before_minimum",
+          "tax_rounding": "ceiling_to_whole_TWD",
+          "reward_risk_ratio": 1.6234817813765183,
+          "tax_rate": 0.003,
+          "commission_rate": 0.001425,
+          "minimum_commission_twd": 1.0,
+          "exit_spread_reserve_twd": 0.1,
+          "setup_family": "FIRST_DAY_BREAKOUT",
+          "breakout_confirmation": "LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION",
+          "breakout_reference_price": 75.3,
+          "target_evidence": {
+            "kind": "REQUIRED_PAYOFF_NOT_OBSERVED_PRICE",
+            "source": "REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST",
+            "date": "2026-10-22",
+            "nearest_observed_resistance": null,
+            "reachability": {
+              "version": "past-horizon-evidence-v3-no-median-veto",
+              "status": "AVAILABLE",
+              "empirical_target_enabled": false,
+              "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+              "holding_days": 10,
+              "completed_bars": 240,
+              "minimum_windows": 8,
+              "target_probability": null,
+              "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+              "available_windows": 21,
+              "matching_regime_windows": 15,
+              "matching_completed_breakout_windows": 7,
+              "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+              "anchor_date": "2026-10-21",
+              "anchor_close": 74.8,
+              "favorable_excursion_atr": 0.943005181347147,
+              "current_atr14": 1.9785714285714329,
+              "price_ceiling": 76.66580310880829
+            },
+            "payoff_assessment": {
+              "status": "AVAILABLE",
+              "scope": "PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY",
+              "target_probability": null,
+              "entry": 75.4,
+              "required_exit": 82.6,
+              "invalidation": 71.8,
+              "mandatory_median_veto": false,
+              "anchor_date": "2026-10-21",
+              "anchor_close": 74.8,
+              "required_excursion_from_anchor_atr": 3.9422382671480043,
+              "entry_extension_from_anchor_atr": 0.30324909747292783,
+              "historical_median_reference": 76.66580310880829,
+              "past_range_support_windows": 2,
+              "sample_windows": 15,
+              "descriptive_reach_fraction": 0.13333333333333333,
+              "warning": "REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER"
+            }
+          },
+          "existing_modeled_risk_twd": 0.0,
+          "combined_modeled_risk_twd": 49.4,
+          "analysis_cost_budget_twd": 10,
+          "target_profit_to_analysis_budget": 8.02,
+          "setup_id": "e917f0efe502",
+          "priority_score": 25.0889,
+          "decision_evidence": {
+            "version": "entry-decision-evidence-v3-replicated-target-support",
+            "approved": false,
+            "blockers": [
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "facts": {
+              "last_completed_date": "2026-10-21",
+              "ma5": 73.26,
+              "completed_rebound": true,
+              "live_ma5_reclaimed": true,
+              "target_distance_atr": 3.6389891696750842,
+              "target_distance_per_holding_day_atr": 0.3638989169675084,
+              "target_probability": null,
+              "target_range_support": {
+                "status": "AVAILABLE",
+                "supporting_windows": 2,
+                "sample_windows": 15,
+                "minimum_replicated_windows": 2,
+                "target_probability": null
+              },
+              "breakout_continuation": {
+                "confirmed": false,
+                "breakout_reference": 75.3,
+                "confirmation_kind": null,
+                "prior_quote_time": null,
+                "prior_price": null
+              }
+            },
+            "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+          }
+        }
+      ],
+      "entry_watch": {
+        "symbol": "2891",
+        "trigger_kind": "ENTRY_CONFIRMATION_PENDING",
+        "condition_price": 75.3,
+        "expires_session": "2026-10-22",
+        "status": "RESEARCH_CONDITION_MET",
+        "purpose": "RESEARCH_ONLY_NOT_ORDER_APPROVAL"
+      },
+      "status": {
+        "blockers": [
+          "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED"
+        ],
+        "signal": "Early",
+        "entry_decision_policy": {
+          "version": "entry-decision-evidence-v3-replicated-target-support",
+          "minimum_target_support_windows": 2,
+          "enabled": true,
+          "recovery_requires_completed_rebound": false,
+          "modeled_breakout_requires_observed_continuation": true
+        },
+        "rejected_setups": [
+          {
+            "setup_id": "e917f0efe502",
+            "reason": "ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED",
+            "blockers": [
+              "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+            ],
+            "evidence": {
+              "version": "entry-decision-evidence-v3-replicated-target-support",
+              "approved": false,
+              "blockers": [
+                "PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED"
+              ],
+              "facts": {
+                "last_completed_date": "2026-10-21",
+                "ma5": 73.26,
+                "completed_rebound": true,
+                "live_ma5_reclaimed": true,
+                "target_distance_atr": 3.6389891696750842,
+                "target_distance_per_holding_day_atr": 0.3638989169675084,
+                "target_probability": null,
+                "target_range_support": {
+                  "status": "AVAILABLE",
+                  "supporting_windows": 2,
+                  "sample_windows": 15,
+                  "minimum_replicated_windows": 2,
+                  "target_probability": null
+                },
+                "breakout_continuation": {
+                  "confirmed": false,
+                  "breakout_reference": 75.3,
+                  "confirmation_kind": null,
+                  "prior_quote_time": null,
+                  "prior_price": null
+                }
+              },
+              "scope": "AS_OF_OBSERVATIONS_NOT_ESTIMATED_WIN_PROBABILITY"
+            }
+          }
+        ],
+        "atr14": 1.9785714285714286,
+        "allocation_basis": "STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE",
+        "allocation_limit_twd": 3500.0,
+        "completed_volume_ratio": 0.973066061710251,
+        "rejection_reasons": [
+          "ENTRY_BELOW_BREAKOUT_REFERENCE"
+        ],
+        "near_misses": []
+      },
+      "reachability": {
+        "version": "past-horizon-evidence-v3-no-median-veto",
+        "status": "AVAILABLE",
+        "empirical_target_enabled": false,
+        "scope": "PAST_COMPLETED_NON_OVERLAPPING_WINDOWS_NOT_WIN_PROBABILITY",
+        "holding_days": 10,
+        "completed_bars": 240,
+        "minimum_windows": 8,
+        "target_probability": null,
+        "windows": [
+          {
+            "anchor": 220,
+            "anchor_date": "2026-09-21",
+            "end_date": "2026-10-07",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.3471074380165254
+          },
+          {
+            "anchor": 210,
+            "anchor_date": "2026-09-07",
+            "end_date": "2026-09-21",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.5759999999999983
+          },
+          {
+            "anchor": 193,
+            "anchor_date": "2026-08-13",
+            "end_date": "2026-08-27",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.42241379310344956
+          },
+          {
+            "anchor": 168,
+            "anchor_date": "2026-07-08",
+            "end_date": "2026-07-23",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.21132075471698403
+          },
+          {
+            "anchor": 157,
+            "anchor_date": "2026-06-23",
+            "end_date": "2026-07-07",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": -0.06481481481481569
+          },
+          {
+            "anchor": 146,
+            "anchor_date": "2026-06-05",
+            "end_date": "2026-06-22",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.5191740412979367
+          },
+          {
+            "anchor": 136,
+            "anchor_date": "2026-05-22",
+            "end_date": "2026-06-05",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 8.20909090909091
+          },
+          {
+            "anchor": 126,
+            "anchor_date": "2026-05-08",
+            "end_date": "2026-05-22",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 1.925000000000004
+          },
+          {
+            "anchor": 105,
+            "anchor_date": "2026-04-08",
+            "end_date": "2026-04-22",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": -0.4097560975609764
+          },
+          {
+            "anchor": 79,
+            "anchor_date": "2026-02-26",
+            "end_date": "2026-03-13",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": -0.5474860335195499
+          },
+          {
+            "anchor": 66,
+            "anchor_date": "2026-01-29",
+            "end_date": "2026-02-23",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 3.1472868217054235
+          },
+          {
+            "anchor": 53,
+            "anchor_date": "2026-01-12",
+            "end_date": "2026-01-26",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 2.6291079812206593
+          },
+          {
+            "anchor": 42,
+            "anchor_date": "2025-12-24",
+            "end_date": "2026-01-09",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 0.7313432835820922
+          },
+          {
+            "anchor": 32,
+            "anchor_date": "2025-12-10",
+            "end_date": "2025-12-24",
+            "trend": true,
+            "completed_breakout": false,
+            "favorable_excursion_atr": 9.988304093567224
+          },
+          {
+            "anchor": 20,
+            "anchor_date": "2025-11-24",
+            "end_date": "2025-12-08",
+            "trend": true,
+            "completed_breakout": true,
+            "favorable_excursion_atr": 0.943005181347147
+          }
+        ],
+        "calendar_validation": "TWSE_ACTUAL_SESSIONS",
+        "available_windows": 21,
+        "matching_regime_windows": 15,
+        "matching_completed_breakout_windows": 7,
+        "conditioning": "SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED",
+        "anchor_date": "2026-10-21",
+        "anchor_close": 74.8,
+        "favorable_excursion_atr": 0.943005181347147,
+        "current_atr14": 1.9785714285714329,
+        "price_ceiling": 76.66580310880829
+      },
+      "verified_prior_observations": 80,
+      "source_revisions": []
+    }
+  ],
+  "known_failures_with_remaining_plans": 0,
+  "known_positive_with_remaining_plan": 1
+}

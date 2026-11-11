@@ -7,7 +7,7 @@ from entry_decision import review,policy
 
 class EntryDecisionTests(unittest.TestCase):
     def setUp(self):
-        self.p=dict(policy(),enabled=True,recovery_requires_completed_rebound=True)
+        self.p=dict(policy(),enabled=True,recovery_requires_completed_rebound=True,minimum_target_support_windows=0)
         self.c=dict(symbol='X',last_price=105,quote_timestamp='2026-11-03T10:00:00+08:00',market_history=[])
         self.bars=[dict(date='2026-10-'+str(20+i),open=99,close=100) for i in range(5)]
         self.bars[-1].update(open=100,close=102)

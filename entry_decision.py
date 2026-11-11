@@ -9,6 +9,9 @@ def policy():
     result=json.loads((CODE_ROOT/'config/entry_decision.json').read_text(encoding='utf-8-sig'))
     for key in ('enabled','recovery_requires_completed_rebound','modeled_breakout_requires_observed_continuation'):
         if type(result.get(key)) is not bool:raise ValueError('INVALID_ENTRY_DECISION_POLICY:'+key)
+    minimum=result.get('minimum_target_support_windows')
+    if type(minimum) is not int or not 2<=minimum<=8:
+        raise ValueError('INVALID_ENTRY_DECISION_POLICY:minimum_target_support_windows')
     return result
 
 
@@ -26,12 +29,23 @@ def review(candidate,setup,bars,p):
         target_distance_atr=(setup['target']-setup['entry'])/setup['atr14'],
         target_distance_per_holding_day_atr=(setup['target']-setup['entry'])/setup['atr14']/setup['holding_days'],
         target_probability=None)
+    estimated=setup['target_kind'] in ('MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE',
+        'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE','REQUIRED_PAYOFF_NOT_OBSERVED_PRICE')
+    minimum=p.get('minimum_target_support_windows',0)  # Frozen legacy comparisons predate this rule.
+    if estimated and minimum:
+        evidence=(setup.get('target_evidence') or {}).get('payoff_assessment') or {}
+        facts['target_range_support']=dict(status=evidence.get('status'),
+            supporting_windows=evidence.get('past_range_support_windows'),
+            sample_windows=evidence.get('sample_windows'),minimum_replicated_windows=minimum,
+            target_probability=None)
+        if evidence.get('status')!='AVAILABLE':
+            blockers.append('TARGET_REACHABILITY_EVIDENCE_REQUIRED')
+        elif evidence.get('past_range_support_windows',0)<minimum:
+            blockers.append('TARGET_RANGE_NOT_REPLICATED_IN_PAST_WINDOWS')
     if setup['setup_family']=='MULTI_SESSION_RECOVERY' and p['recovery_requires_completed_rebound']:
         if not facts['completed_rebound']:blockers.append('COMPLETED_DAILY_REBOUND_NOT_OBSERVED')
         if not facts['live_ma5_reclaimed']:blockers.append('RECOVERY_MA5_NOT_RECLAIMED')
-    if (setup['setup_family']=='FIRST_DAY_BREAKOUT' and
-            setup['target_kind'] in ('MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE','EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE',
-                                    'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE') and
+    if (setup['setup_family']=='FIRST_DAY_BREAKOUT' and estimated and
             p['modeled_breakout_requires_observed_continuation']):
         at=datetime.fromisoformat(candidate['quote_timestamp']);history=[]
         level=setup['breakout_reference_price']

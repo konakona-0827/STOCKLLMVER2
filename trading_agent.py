@@ -16,7 +16,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v16-payoff-evidence-and-confirmation'
+AGENT_VERSION = 'agent-decision-v17-corroborated-target-and-route-fallback'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -41,6 +41,8 @@ REQUIRED_PAYOFF_NOT_OBSERVED_PRICE 是沿用財務門檻的報酬情境，不是
 必須核對 payoff_assessment 的前收錨定空間、歷史支持樣本數與當前獨立證據。
 不能以2R或數字合格當作潛力證據，也不能把歷史中位數當成一律否決的硬上限。
 歷史支持為零或稀少時明列反證；BUY 仍須兩位獨立研究引用所選計畫及可達性依據。
+估算報酬情境至少須在兩個不重疊的完成歷史區間獲得價格幅度支持，不能以單次極端樣本批准；
+這是最低重複證據，並非當前交易勝率。未通過者保留研究，刷新後有有效 trade_setups 才能 BUY。
 研究尚未通過進場確認的 pending_entry_setups；用新行情核對獨立延續或回測，
 刷新後必須真正進入 trade_setups 才能 BUY，觀察名額不授予下單權限。
 兩日回升已把前一完整日高點與已跌破波段支撐列為近端阻力；較長趨勢計畫不把每筆日高當硬上限。

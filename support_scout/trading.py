@@ -320,6 +320,7 @@ class SupportCoordinator:
                 'FIRST_DAY_BREAKOUT 評估突破本身，不要求它先滿足另一套支撐回測策略；'
                 'target_reachability 使用前收錨定的過去同期限價格空間，並非期望收益或達標機率；'
                 '確認剩餘空間是否已被追價消耗，反證須指出哪個目前計畫受影響。'
+                '估算報酬情境須有至少兩個不重疊歷史區間的幅度支持，單次極端值不足；這個最低重複證據不等於勝率。'
                 'pending_entry_setups 尚未取得進場確認，研究後須以真實新行情重新形成 trade_setups。'
                 '未核實公司行動、事件或資料時明列 missing_data 並用 WATCH；有具體否決證據才 REJECT。'
                 'RESEARCH 不是買進批准，需引用所有 required_confirmation_evidence 且沒有資料缺口。'

@@ -356,7 +356,9 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                 setup['priority_score']=round(min(economics['reward_risk_ratio'],5)*10+float(net)*100+
                     {'Early':0,'Confirmed':10,'Strong':15}[tier]-float((ask-entry)/atr)*5,4)
                 candidates.append(setup);break
-        plans=sorted(candidates,key=lambda s:-s['priority_score'])[:3]
+        # A veto of the top routes must not erase a lower-ranked valid route.
+        # Bound the final payload only after checking the feasible alternatives.
+        plans=sorted(candidates,key=lambda s:-s['priority_score'])
         rejected=[]
         from entry_decision import policy as entry_policy,review as review_entry
         decision_policy=entry_policy()
@@ -391,7 +393,8 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                 stop_origin=stop_evidence(bars,stop,candidate['low'],session),
                 confirmation_scope='CURRENT_SETUP_NOT_EXPIRED_HISTORICAL_SUPPORT',
                 requires_today_completed_bar=False)
-        candidate['trade_setups']=[s for s in plans if s['setup_id'] not in {r['setup_id'] for r in rejected}]
+        candidate['trade_setups']=[s for s in plans if s['setup_id'] not in {r['setup_id'] for r in rejected}][:3]
+        candidate['pending_entry_setups']=candidate['pending_entry_setups'][:3]
         status['rejected_setups']=rejected
         status.update(signal=tier,atr14=float(atr),allocation_basis='STRATEGY_CAPITAL_LESS_EXISTING_SYMBOL_EXPOSURE',
                       allocation_limit_twd=float(allocation),completed_volume_ratio=float(vol_ratio))
