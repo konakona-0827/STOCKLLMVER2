@@ -34,7 +34,8 @@ def trend_at(bars, index):
             and closes[-1] >= sum(closes[-5:])/5 and closes[-1] >= closes[-6])
 
 
-def profile(bars, *, as_of, holding_days, trend, config=None, session_dates=None):
+def profile(bars, *, as_of, holding_days, trend, config=None, session_dates=None,
+            completed_breakout=False, breakout_volume_ratio=1.2):
     p = config or policy()
     if type(holding_days) is not int or not 1 <= holding_days <= 22:
         raise ValueError('INVALID_REACHABILITY_HORIZON')
@@ -61,23 +62,42 @@ def profile(bars, *, as_of, holding_days, trend, config=None, session_dates=None
         sequence=[lookup.get(d) for d in dates]
     else:
         sequence=past
-    # Work backwards in disjoint forward windows. Every endpoint precedes t0;
-    # no overlapping return windows are advertised as independent observations.
-    windows = []
-    for anchor in range(len(sequence)-1-holding_days, 19, -holding_days):
+    # Match the observation at each historical anchor before spacing windows.
+    # A fixed h-day grid can miss every comparable signal simply because of
+    # its phase. Sample membership never depends on the later excursion.
+    observations = []
+    for anchor in range(len(sequence)-1-holding_days, 19, -1):
         if any(b is None for b in sequence[anchor-19:anchor+holding_days+1]):
             continue
         volatility = atr_at(sequence,anchor)
         if not volatility or volatility <= 0:
             continue
         later = sequence[anchor+1:anchor+holding_days+1]
-        windows.append(dict(anchor_date=sequence[anchor]['date'], end_date=later[-1]['date'],
-            trend=trend_at(sequence,anchor),
+        prior=sequence[anchor-20:anchor]
+        volume=sum(float(b['volume']) for b in sequence[anchor-5:anchor])/5
+        breakout=(not any(b is None for b in prior) and
+                  float(sequence[anchor]['close'])>max(float(b['high']) for b in prior)
+                  and volume>0 and float(sequence[anchor]['volume'])/volume>=breakout_volume_ratio)
+        observations.append(dict(anchor=anchor,anchor_date=sequence[anchor]['date'], end_date=later[-1]['date'],
+            trend=trend_at(sequence,anchor),completed_breakout=breakout,
             favorable_excursion_atr=(max(float(b['high']) for b in later)-float(sequence[anchor]['close']))/volatility))
-    conditional = [w for w in windows if w['trend'] == bool(trend)]
-    cohort = conditional if len(conditional) >= p['minimum_windows'] else windows
+    def disjoint(rows):
+        selected=[];next_anchor=len(sequence)
+        for row in rows:
+            if row['anchor']+holding_days<=next_anchor:
+                selected.append(row);next_anchor=row['anchor']
+        return selected
+    windows=disjoint(observations)
+    conditional=disjoint([w for w in observations if w['trend']==bool(trend)])
+    signal=disjoint([w for w in observations if w['trend']==bool(trend) and w['completed_breakout']])
+    if completed_breakout and len(signal)>=p['minimum_windows']:
+        cohort=signal;conditioning='SAME_COMPLETED_BREAKOUT_AND_VOLUME'
+    elif len(conditional)>=p['minimum_windows']:
+        cohort=conditional;conditioning='SAME_COMPLETED_TREND_REGIME_EVENT_ANCHORED'
+    else:
+        cohort=windows;conditioning='VOLATILITY_RANGE_ONLY'
     result.update(available_windows=len(windows), matching_regime_windows=len(conditional),
-        conditioning='SAME_COMPLETED_TREND_REGIME' if cohort is conditional else 'VOLATILITY_RANGE_ONLY',
+        matching_completed_breakout_windows=len(signal),conditioning=conditioning,
         windows=cohort, anchor_date=past[-1]['date'], anchor_close=float(past[-1]['close']))
     if len(cohort) < p['minimum_windows']:
         return result

@@ -191,7 +191,8 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                   'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY')
         from target_reachability import profile as reachability_profile
         reachability=reachability_profile(full_history,as_of=session,holding_days=10 if trend else 2,trend=trend,
-            session_dates=(candidate.get('daily_history_status') or {}).get('verified_trading_dates'))
+            session_dates=(candidate.get('daily_history_status') or {}).get('verified_trading_dates'),
+            completed_breakout=bool(daily_breakout),breakout_volume_ratio=p['breakout_volume_ratio'])
         candidate['target_reachability']=reachability
         supports=[]; extra=[]
         for i in range(1,len(bars)-1):

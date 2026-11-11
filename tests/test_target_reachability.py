@@ -46,6 +46,17 @@ class TargetReachabilityTests(unittest.TestCase):
         self.assertNotIn('price_ceiling',self.reference())
         self.assertEqual(self.reference(dates=[])['status'],'MARKET_CALENDAR_UNVERIFIED')
 
+    def test_event_matching_precedes_spacing_and_never_calls_generic_trends_breakout_analogues(self):
+        for i,bar in enumerate(self.c['daily_bars']):bar['volume']=10000 if i%12==7 else 1000
+        result=profile(self.c['daily_bars'],as_of='2026-11-03',holding_days=10,trend=True,completed_breakout=True)
+        self.assertEqual(result['conditioning'],'SAME_COMPLETED_BREAKOUT_AND_VOLUME')
+        self.assertGreaterEqual(result['matching_completed_breakout_windows'],8)
+        self.assertTrue(all(w['trend'] and w['completed_breakout'] for w in result['windows']))
+        for bar in self.c['daily_bars']:bar['volume']=1000
+        sparse=profile(self.c['daily_bars'],as_of='2026-11-03',holding_days=10,trend=True,completed_breakout=True)
+        self.assertNotEqual(sparse['conditioning'],'SAME_COMPLETED_BREAKOUT_AND_VOLUME')
+        self.assertEqual(sparse['matching_completed_breakout_windows'],0)
+
     def test_suspended_sessions_are_gaps_in_forward_windows_not_longer_hidden_horizons(self):
         dates=[b['date'] for b in self.c['daily_bars']]
         before=self.reference(dates=dates)
@@ -110,6 +121,21 @@ class TargetReachabilityTests(unittest.TestCase):
                      funding_fee_reserve_twd=20)
         self.c['execution_permitted']=True
         self.assertFalse(refresh(self.c,self.account,self.rules,policy(),research_proxy=True)['trade_setups'])
+
+    def test_initial_model_view_keeps_counts_and_full_tool_retains_auditable_history(self):
+        from token_budget import candidate_view
+        self.c['daily_history_status']=dict(verified_trading_dates=[b['date'] for b in self.c['daily_bars']],
+            market_calendar=dict(verified=True,provenance=[dict(url='source',sha256='test') for _ in range(16)]))
+        refresh(self.c,self.account,self.rules,policy())
+        small=candidate_view(self.c,self.account,self.rules)
+        full=candidate_view(self.c,self.account,self.rules,full_history=True)
+        self.assertNotIn('windows',small['target_reachability'])
+        self.assertEqual(small['daily_history_status']['verified_calendar_sessions'],240)
+        self.assertEqual(small['daily_history_status']['market_calendar']['source_months'],16)
+        self.assertNotIn('provenance',small['daily_history_status']['market_calendar'])
+        self.assertEqual(len(full['daily_bars']['rows']),240)
+        self.assertEqual(len(full['daily_history_status']['verified_trading_dates']),240)
+        self.assertIn('windows',full['target_reachability'])
 
 
 if __name__=='__main__':unittest.main()

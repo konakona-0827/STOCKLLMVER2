@@ -1,0 +1,19 @@
+{
+  "locked_before_scoring": true,
+  "decision": "2026-05-04 through 2026-09-30, new fixed20 stocks excluded from all prior adjustment",
+  "feature_cutoff": "Only completed bars strictly before decision day and the official opening price; no decision-day high, low, close or volume",
+  "entry_proxy": "Assume one legal tick above/below opening for ask/bid; explicitly HISTORICAL_DAILY_PROXY and execution_permitted=false",
+  "eligibility": "Completed daily trend research only; no fake LIVE status, volume, recovery or first-day confirmation",
+  "account": "Each stock-day independently starts with cash10000/capital10000; unchanged fees, risk and profit hurdles; not a portfolio simulation",
+  "baseline": "9fdcd2b engine/config plus frozen disabled entry-decision policy. Isolated adapter translates only its LIVE guard to explicit historical proxy; both versions use actual past-session calendar",
+  "integration": "cc22a1c remote update integrated before freeze; preserves completed recovery/retest and selected-plan specialist handoff. No new intraday archives found in that update",
+  "selection": "Original priority score/top3 each day; score current-ask opening proxy and report lower limit plans as unconfirmed",
+  "path": "Ignore entry-day extrema; score target/stop over the original holding horizon, including open gaps; both barriers same day ambiguous; missing sessions unavailable",
+  "denominator": "All original baseline stock-days remain. A baseline positive rejected or failed by new engine is a miss. Also report genuinely new successful plans",
+  "overlap_control": "Also freeze a baseline cohort from each symbol's first current-ask signal, then skip that symbol through its original holding deadline; membership never depends on outcome",
+  "acceptance": "Show failures, successes, unknowns, reference positives/misses and top3 selection. No all-WAIT pass and no threshold/universe tuning after seeing outcomes",
+  "claim_boundary": "Numerical opportunity/target validation only, not live odd-lot fills, whole-market recall, real Agent win rate, or calibrated probability",
+  "prior_result": "Both prior cohorts failed opportunity-quality acceptance and are retained as development, not rebranded holdout",
+  "extension_locked_before_collection_and_scoring": true,
+  "revision": "Event-anchored completed-signal matching; unchanged price quantile, minimum sample count, financial gates and entry confirmation"
+}

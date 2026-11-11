@@ -40,7 +40,7 @@ def source_history(archive):
     return result
 
 
-def audit(archive):
+def audit(archive, output=REPORT):
     previous = ROOT/'reports/opportunity_quality_20261110/final'
     old = read(previous/'validation.json')
     raw_history = source_history(archive)
@@ -73,7 +73,8 @@ def audit(archive):
     result = dict(scope='DEVELOPMENT_ONLY_NOT_HOLDOUT_VALIDATION',baseline_commit='9fdcd2b',cases=records,
         known_failures_with_remaining_plans=sum(r['old_outcome']=='FAILURE' and bool(r['new_setups']) for r in records),
         known_positive_with_remaining_plan=sum(r['old_outcome']=='SUCCESS' and bool(r['new_setups']) for r in records))
-    (REPORT/'development_forensics.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+    output.mkdir(parents=True,exist_ok=True)
+    (output/'development_forensics.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
     for r in records:
         reach=r.get('reachability') or {}
         print(r['as_of'],r['symbol'],r['old_outcome'],'plans',len(r['new_setups']),'pending',len(r['pending_entry_setups']),
@@ -83,4 +84,6 @@ def audit(archive):
 if __name__ == '__main__':
     import sys
     sys.stdout.reconfigure(encoding='utf-8')
-    audit(ROOT.parent/'STOCKLLM')
+    import argparse
+    parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,default=REPORT)
+    audit(ROOT.parent/'STOCKLLM',parser.parse_args().output)

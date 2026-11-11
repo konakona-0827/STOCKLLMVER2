@@ -11,7 +11,10 @@ from operations.audit_estimated_targets import source_history
 from operations.replay_archived_plans import load_daily
 
 
-def run():
+def run(report=REPORT, source_report=REPORT):
+    global REPORT
+    from operations import validate_target_reachability as study
+    REPORT=report;study.REPORT=report
     verified_freeze()
     output=REPORT/'development_agent'
     if (output/'result.json').exists():raise ValueError('REPLAY_ALREADY_RECORDED_NO_AUTOMATIC_RETRY')
@@ -26,7 +29,7 @@ def run():
     trade=next(t for t in old['trades'] if t['symbol']=='2377' and t['as_of']=='2026-10-19T11:35:05+08:00')
     saved=read(previous/'model_runs'/trade['group_id']/'result.json')
     c=deepcopy(next(c for c in saved['all_candidates'] if c['symbol']=='2377'))
-    c['daily_bars']=[dict(b,complete=True,source='TWSE_DAILY') for b in load_daily(REPORT/'sources','2377')
+    c['daily_bars']=[dict(b,complete=True,source='TWSE_DAILY') for b in load_daily(source_report/'sources','2377')
                      if b['date']<'2026-10-19'][-240:]
     dates,calendar=load_sessions(c['daily_bars'][-1]['date'],240,REPORT/'market_sessions')
     c['daily_history_status']=dict(market_calendar=calendar,verified_trading_dates=dates if calendar['verified'] else [],
@@ -76,4 +79,8 @@ def run():
     print(response['validation'],[(d['symbol'],d['decision']) for d in decision['decisions']],flush=True)
 
 
-if __name__=='__main__':run()
+if __name__=='__main__':
+    import argparse
+    parser=argparse.ArgumentParser();parser.add_argument('--report',type=Path,default=REPORT)
+    parser.add_argument('--source-report',type=Path,default=REPORT)
+    args=parser.parse_args();run(args.report,args.source_report)

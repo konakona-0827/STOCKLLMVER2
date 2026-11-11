@@ -55,6 +55,10 @@ def candidate_view(candidate, account, rules, *, full_history=False):
         if 'verified_trading_dates' in status:
             status['verified_calendar_sessions']=len(status.pop('verified_trading_dates'))
             status['full_calendar_tool']='get_research_data'
+        calendar=status.get('market_calendar') or {}
+        if 'provenance' in calendar:
+            calendar['source_months']=len(calendar.pop('provenance'))
+            calendar['full_provenance_tool']='get_research_data'
         if 'source_urls' in status:
             status['source_urls_available_via'] = 'get_research_data'
             status.pop('source_urls')
