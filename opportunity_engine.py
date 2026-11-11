@@ -86,7 +86,7 @@ def existing_position_risk(candidate, stop, rules):
     return max(Decimal(0),-Decimal(str(pnl))+buy_fee)
 
 
-def refresh(candidate, account, rules, p=None):
+def refresh(candidate, account, rules, p=None, *, research_proxy=False):
     """Refresh scenarios from original full history and current account/quote.
 
     Swing levels use a completed bar and its two completed neighbours; no
@@ -98,6 +98,9 @@ def refresh(candidate, account, rules, p=None):
     candidate['research_only'] = False
     candidate.pop('entry_structure',None)
     candidate.pop('recovery_watch', None)
+    candidate.pop('entry_watch',None)
+    candidate['pending_entry_setups'] = []
+    candidate.pop('target_reachability',None)
     candidate['opportunity_status'] = dict(blockers=[], signal=None)
     status = candidate['opportunity_status']
     try:
@@ -105,7 +108,9 @@ def refresh(candidate, account, rules, p=None):
             raise ValueError('EXISTING_PENDING_ORDER_REQUIRES_RECONCILIATION')
         if candidate.get('opportunity_buy_eligible') is False:
             raise ValueError('POSITION_OUTSIDE_BUY_RESEARCH_UNIVERSE')
-        if candidate.get('quote_status') != 'LIVE' or candidate.get('is_trial'):
+        proxy = (research_proxy and candidate.get('quote_status') == 'HISTORICAL_DAILY_PROXY'
+                 and candidate.get('execution_permitted') is False)
+        if (candidate.get('quote_status') != 'LIVE' and not proxy) or candidate.get('is_trial'):
             raise ValueError('LIVE_NON_TRIAL_QUOTE_REQUIRED')
         if candidate.get('asset_type') not in ('STOCK','ETF'):
             raise ValueError('ASSET_TYPE_UNKNOWN')
@@ -123,12 +128,19 @@ def refresh(candidate, account, rules, p=None):
             raise ValueError('COMPLETE_DAILY_STRUCTURE_REQUIRED')
         # Verify actual dates too: legacy snapshots may lack missing-date metadata.
         from market_calendar import previous_trading_day
-        cursor = datetime.fromisoformat(session).date()
-        required=[]
-        for _ in range(21):
-            cursor=previous_trading_day(cursor); required.append(cursor.isoformat())
+        history_status=candidate.get('daily_history_status') or {}
+        verified_dates=history_status.get('verified_trading_dates')
+        if ((history_status.get('market_calendar') or {}).get('verified') is True
+                and verified_dates and all(d<session for d in verified_dates)):
+            required=verified_dates[-21:]
+        else:
+            cursor = datetime.fromisoformat(session).date()
+            required=[]
+            for _ in range(21):
+                cursor=previous_trading_day(cursor); required.append(cursor.isoformat())
         if not set(required).issubset({b['date'] for b in bars}):
             raise ValueError('COMPLETE_DAILY_STRUCTURE_REQUIRED')
+        full_history=bars
         bars=bars[-22:]
         if len({b['date'] for b in bars}) != len(bars):
             raise ValueError('DUPLICATE_DAILY_STRUCTURE')
@@ -177,6 +189,10 @@ def refresh(candidate, account, rules, p=None):
             raise ValueError('SETUP_STRATEGY_NOT_ELIGIBLE')
         family = ('COMPLETED_REBOUND_RETEST' if retest else 'FIRST_DAY_BREAKOUT' if first_day_breakout else
                   'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY')
+        from target_reachability import profile as reachability_profile
+        reachability=reachability_profile(full_history,as_of=session,holding_days=10 if trend else 2,trend=trend,
+            session_dates=(candidate.get('daily_history_status') or {}).get('verified_trading_dates'))
+        candidate['target_reachability']=reachability
         supports=[]; extra=[]
         for i in range(1,len(bars)-1):
             b=bars[i]
@@ -241,9 +257,15 @@ def refresh(candidate, account, rules, p=None):
             if barrier:
                 target=_number(barrier['price']);kind=barrier['kind']
             elif not retest and (daily_breakout or first_day_breakout):
-                target=_round_price(entry+min((entry-stop)*Decimal(str(p['breakout_target_r_multiple'])),
-                    atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
-                kind='MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE'
+                if reachability['status'] != 'AVAILABLE':
+                    rejections.add('TARGET_REACHABILITY_HISTORY_REQUIRED');continue
+                if reachability['price_ceiling']<=float(entry):
+                    rejections.add('NO_REMAINING_UPSIDE_WITHIN_HORIZON');continue
+                target=_round_price(min(_number(reachability['price_ceiling']),
+                    closes[-1]+atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
+                kind='EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE'
+                if target-entry>atr*Decimal(str(p['maximum_modeled_target_atr'])):
+                    rejections.add('MODELED_TARGET_DISTANCE_EXCEEDS_ATR_LIMIT');continue
             elif not trend and _number(candidate['high'])>entry:
                 target=_number(candidate['high'])
                 kind='OBSERVED_INTRADAY_HIGH_FALLBACK'
@@ -252,6 +274,18 @@ def refresh(candidate, account, rules, p=None):
             if retest and last >= target:
                 rejections.add('RECOVERY_TARGET_ALREADY_REACHED')
                 continue
+            # An empirical point estimate constrains an estimated target.
+            # A real observed barrier retains its distinct evidence; the past
+            # median is not a physical ceiling that deletes every higher swing.
+            if reachability['status']=='AVAILABLE' and 'NOT_OBSERVED_PRICE' in kind:
+                ceiling=Decimal(str(reachability['price_ceiling']))
+                if ceiling<=entry:
+                    rejections.add('NO_REMAINING_UPSIDE_WITHIN_HORIZON');continue
+                bounded=_round_price(ceiling,candidate['asset_type'])
+                if bounded<target:
+                    target=bounded;kind='EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE'
+            if target<=entry:
+                rejections.add('NO_REMAINING_UPSIDE_WITHIN_HORIZON');continue
             qty_max=min(999,int(rules.max_buy_qty or 999),int(allocation/entry))
             if qty_max<1:rejections.add('ONE_SHARE_EXCEEDS_ALLOCATION')
             for qty in range(qty_max,0,-1):
@@ -293,9 +327,11 @@ def refresh(candidate, account, rules, p=None):
                 setup['breakout_confirmation']=('COMPLETED_DAILY_PRICE_AND_VOLUME' if daily_breakout else
                     'LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION' if first_day_breakout else None)
                 setup['breakout_reference_price']=float(breakout_level) if first_day_breakout else None
-                setup['target_evidence']=deepcopy(barrier) if barrier else dict(
-                    kind=kind,source='BOUNDED_R_MODEL' if 'MODELED' in kind else 'LIVE_INTRADAY_HIGH',
-                    date=session)
+                from target_reachability import view as reachability_view
+                setup['target_evidence']=(deepcopy(barrier) if barrier and kind==barrier['kind'] else dict(
+                    kind=kind,source='PAST_HORIZON_RANGE' if 'EMPIRICAL' in kind else 'LIVE_INTRADAY_HIGH',
+                    date=session,nearest_observed_resistance=deepcopy(barrier)))
+                setup['target_evidence']['reachability']=reachability_view(reachability)
                 setup['existing_modeled_risk_twd']=float(existing_risk)
                 setup['combined_modeled_risk_twd']=float(existing_risk+Decimal(str(economics['estimated_net_downside_twd'])))
                 setup['analysis_cost_budget_twd']=p['analysis_cost_budget_twd']
@@ -329,6 +365,7 @@ def refresh(candidate, account, rules, p=None):
                 if not evidence['approved']:
                     rejected.append(dict(setup_id=setup['setup_id'],reason='ENTRY_DECISION_EVIDENCE_NOT_CONFIRMED',
                         blockers=evidence['blockers'],evidence=evidence))
+                    candidate['pending_entry_setups'].append(deepcopy(setup))
                     continue
             setup['entry_evidence']=dict(last_completed_date=bars[-1]['date'],
                 last_completed_close=float(closes[-1]),today_open=float(candidate['open']),
@@ -349,18 +386,24 @@ def refresh(candidate, account, rules, p=None):
             status['blockers']=sorted({r['reason'] for r in rejected}) if rejected else ['NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH']
     except (KeyError,ValueError,TypeError,ArithmeticError) as exc:
         status['blockers']=[str(exc)]
+    if candidate['pending_entry_setups'] and not candidate['trade_setups']:
+        reference=candidate['pending_entry_setups'][0].get('breakout_reference_price') or candidate['last_price']
+        candidate['entry_watch']=dict(symbol=candidate['symbol'],trigger_kind='ENTRY_CONFIRMATION_PENDING',
+            condition_price=reference,expires_session=candidate['quote_timestamp'][:10],
+            status='RESEARCH_CONDITION_MET',purpose='RESEARCH_ONLY_NOT_ORDER_APPROVAL')
+        candidate['research_only']=True
     if candidate.get('market_scout'):
         from opportunity_watch import observe
         candidate['market_scout']=observe(candidate['market_scout'],candidate)
     watch = active_research_watch(candidate)
-    candidate['research_only'] = bool(watch and not candidate['trade_setups'] and status['blockers']
+    candidate['research_only'] = candidate['research_only'] or bool(watch and not candidate['trade_setups'] and status['blockers']
         and set(status['blockers']).issubset({'NO_TREND_OR_RECOVERY_SETUP',
                                              'NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH'}))
     return candidate
 
 
 def active_research_watch(candidate):
-    for key in ('recovery_watch', 'market_scout'):
+    for key in ('entry_watch', 'recovery_watch', 'market_scout'):
         watch = candidate.get(key) or {}
         if watch.get('status') == 'RESEARCH_CONDITION_MET':
             return watch
@@ -379,8 +422,8 @@ def match_setup(candidate, decision):
     return None
 
 
-def select(candidates, account, rules, p):
-    for c in candidates:refresh(c,account,rules,p)
+def select(candidates, account, rules, p, *, research_proxy=False):
+    for c in candidates:refresh(c,account,rules,p,research_proxy=research_proxy)
     opportunities=sorted((c for c in candidates if c['trade_setups']),
         key=lambda c:(-c['trade_setups'][0]['priority_score'],c.get('quant_rank') or 999))
     selected=opportunities[:p['max_research_candidates']]

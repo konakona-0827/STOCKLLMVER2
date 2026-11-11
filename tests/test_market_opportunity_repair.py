@@ -25,7 +25,7 @@ from test_market_discovery import fixtures,answer
 def declining(symbol='WATCH'):
     c=candidate(symbol)
     for i,b in enumerate(c['daily_bars']):
-        close=121-i
+        close=121+len(c['daily_bars'])-22-i
         b.update(open=close+.5,high=close+2,low=close-2,close=close,volume=1000)
     c.update(last_price=101,bid=100.9,ask=101,open=102,high=103,low=99)
     c['market_scout']=dict(symbol=symbol,trigger_kind='PULLBACK_TO_CLOSE',condition_price=101,
@@ -58,7 +58,7 @@ class MarketOpportunityRepairTests(unittest.TestCase):
         self.assertEqual(plan['setup_family'],'FIRST_DAY_BREAKOUT')
         self.assertFalse(plan['daily_breakout_confirmed'])
         self.assertEqual(plan['breakout_reference_price'],124)
-        self.assertEqual(plan['target_kind'],'MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE')
+        self.assertEqual(plan['target_kind'],'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE')
         self.assertTrue(all(s['entry']>=124 for s in c['trade_setups']))
         self.assertLessEqual(plan['combined_modeled_risk_twd'],50)
         self.assertLessEqual(plan['funding_required_twd'],3500)

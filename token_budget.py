@@ -37,6 +37,9 @@ def candidate_view(candidate, account, rules, *, full_history=False):
         from opportunity_engine import refresh
         refresh(candidate, account or {}, rules)
     result = deepcopy(candidate)
+    if not full_history and result.get('target_reachability'):
+        from target_reachability import view
+        result['target_reachability']=view(result['target_reachability'])
     metrics = result.get('metrics')
     if isinstance(metrics, dict):
         result['metrics'] = {key: value for key, value in metrics.items() if value is not None}
@@ -49,6 +52,9 @@ def candidate_view(candidate, account, rules, *, full_history=False):
                                   if key in ('user_qty', 'ai_managed_qty', 'user_average_cost', 'total_qty', 'source')}
         (result.get('daily_trend') or {}).pop('note', None)
         status = result.get('daily_history_status') or {}
+        if 'verified_trading_dates' in status:
+            status['verified_calendar_sessions']=len(status.pop('verified_trading_dates'))
+            status['full_calendar_tool']='get_research_data'
         if 'source_urls' in status:
             status['source_urls_available_via'] = 'get_research_data'
             status.pop('source_urls')

@@ -62,6 +62,8 @@ def prepare(output):
     old_source = subprocess.check_output(['git', 'show', '030d842:opportunity_engine.py'], cwd=ROOT).decode('utf-8')
     old = types.ModuleType('archived_opportunity_engine')
     exec(compile(old_source, '030d842:opportunity_engine.py', 'exec'), old.__dict__)
+    old_entry_policy=json.loads(subprocess.check_output(
+        ['git','show','030d842:config/entry_decision.json'],cwd=ROOT))
     baseline_policy = read(ROOT/'reports/tw_trade_20261110_until_112203_Taipei/policies.json')['code_config']['opportunity_search']
     benchmark = read(BENCHMARK/'benchmark.json')
     groups, comparison = [], []
@@ -69,7 +71,8 @@ def prepare(output):
         pool = deepcopy(group['selection_pool'])
         assert all(all(b['date'] < group['as_of'][:10] for b in c['daily_bars']) for c in pool)
         assert all(c['quote_timestamp'] <= group['as_of'] for c in pool)
-        before, old_audit = old.select(deepcopy(pool), benchmark['account'], execution_rules(), baseline_policy)
+        with patch('entry_decision.policy',return_value=old_entry_policy):
+            before, old_audit = old.select(deepcopy(pool), benchmark['account'], execution_rules(), baseline_policy)
         after, audit = select(deepcopy(pool), benchmark['account'], execution_rules(), policy())
         comparison.append(dict(group_id=group['group_id'], before=old_audit, after=audit))
         groups.append(dict(group_id=group['group_id'], as_of=group['as_of'], selection_pool=pool))

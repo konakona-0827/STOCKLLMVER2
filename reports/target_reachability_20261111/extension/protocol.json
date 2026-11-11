@@ -1,0 +1,66 @@
+{
+  "version": "target-reachability-study-v1",
+  "baseline_commit": "9fdcd2b",
+  "development": "Seven failed October BUY decisions; known October cohort is development only",
+  "hypotheses": [
+    "Replace risk-multiple target fabrication with a past-only horizon-specific empirical range anchored to the last completed close.",
+    "Do not reset remaining upside when the live entry price has already extended.",
+    "First-day breakouts require distinct verified continuation or a held retest; pending evidence remains researchable.",
+    "Keep every original cash, risk, fee, net-return and reward-risk threshold."
+  ],
+  "candidate_method": {
+    "history_bars": 240,
+    "forward_windows": "non-overlapping completed windows, all ending before decision",
+    "quantile": 0.5,
+    "min_windows": 8,
+    "scope": "historical range envelope, not a calibrated win probability"
+  },
+  "validation": {
+    "universe_as_of": "2025-12-31",
+    "entry_dates": [
+      "2026-05-04",
+      "2026-09-30"
+    ],
+    "outcomes_until": "2026-10-30",
+    "universe_rule": "20 equally spaced by stock code among 2025-12-31 liquid affordable four-digit ordinary shares, excluding all original seed and scout symbols",
+    "exclude_symbols": [
+      "0050",
+      "2330",
+      "2454",
+      "2317",
+      "2382",
+      "3231",
+      "3017",
+      "2891",
+      "2881",
+      "2882",
+      "2303",
+      "2308",
+      "2345",
+      "2357",
+      "2376",
+      "2356",
+      "2377",
+      "2603",
+      "2609",
+      "1101",
+      "6269",
+      "2486",
+      "2464",
+      "6451",
+      "3034",
+      "3036",
+      "2449"
+    ],
+    "numeric_protocol": "Every eligible next-session open, only previous completed daily data; entry-day high/low not used as signal",
+    "execution_scope": "Historical ordinary-market price-path proxy; no invented odd-lot quotes, fills or full-market recall",
+    "no_outcome_inspection_before_code_freeze": true
+  },
+  "acceptance": [
+    "Keep modeled-target opportunities and real positive cases visible; all-WAIT is not a pass.",
+    "Report both wrong buys and missed reference opportunities using a fixed baseline denominator.",
+    "Keep uncertain entry, ambiguous daily barrier order and missing data explicit."
+  ],
+  "extension_reason": "FIRST_COHORT_ZERO_BASELINE_POSITIVES_CANNOT_VALIDATE_OPPORTUNITY_RECALL",
+  "financial_code_changed_after_first_cohort": false
+}

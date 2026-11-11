@@ -2,6 +2,7 @@
 import asyncio
 from copy import deepcopy
 from dataclasses import replace
+from datetime import datetime
 import hashlib
 from importlib.metadata import PackageNotFoundError, version
 import json
@@ -15,7 +16,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v13-plan-handoff'
+AGENT_VERSION = 'agent-decision-v14-horizon-reachability-plan-handoff'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -34,6 +35,10 @@ entry_screen／trade_setups 是 Python 按現行資料、成本、配置及風�
 recovery_watch 是觀察基準；確認守住已收復價後，程式會依現行風控生成可選計畫。
 機會策略的 BUY 須有兩位子代理引用所選 ENTRY_PLAN 證據；刷新後若限價或結構已改變，重新研究或改為 WAIT。
 entry_structure、trade_setups.target_evidence 與 entry_evidence.stop_origin 是引擎與研究共用的結構依據。
+target_reachability 是僅用決策前已完成且不重疊歷史區間估算的期限價格空間，錨定前收，
+不是2R自造目標，也不因現價上漲或失效價拉遠而提高；歷史最大漲幅的中位數不是達標勝率或期望收益。
+研究尚未通過進場確認的 pending_entry_setups；用新行情核對獨立延續或回測，
+刷新後必須真正進入 trade_setups 才能 BUY，觀察名額不授予下單權限。
 兩日回升已把前一完整日高點與已跌破波段支撐列為近端阻力；較長趨勢計畫不把每筆日高當硬上限。
 對通過計畫選 WAIT 時，提出該計畫尚未涵蓋的具體反證、來源日期與重新評估條件；不得把數字合格當批准。
 失效價須核對形成日期；形成前的低價不能當成形成後已失效。過期舊支撐不等於當前新支撐。
@@ -69,7 +74,8 @@ def execution_metadata(model):
                  'skills/tw-entry-research/SKILL.md','config/research_skills.json',
                  'trade_economics.py','pretrade_policy.py','strategies/strategy_opportunity_v2.md',
                  'entry_decision.py','config/entry_decision.json',
-                 'entry_screen.py','entry_structure.py','opportunity_engine.py','opportunity_search_cycle.py','opportunity_gate.py',
+                 'entry_screen.py','entry_structure.py','target_reachability.py','config/target_reachability.json',
+                 'opportunity_engine.py','opportunity_search_cycle.py','opportunity_gate.py',
                  'opportunity_watch.py','opportunity_diagnostics.py',
                  'config/opportunity_search.json','config/market_discovery.json','market_discovery.py','weekly_recovery.py',
                  'config/execution_live.json','advice_interface.py',
@@ -171,6 +177,25 @@ class TradingTools:
 
     def _accept_quote(self, symbol, row):
         from analysis_service import apply_buy_limits
+        # Preserve the actual earlier observation before overwriting it. A
+        # fresh timestamp alone is not a prior market observation fabricated
+        # from the replacement quote, and failed/trial/cache rows never count.
+        previous=self.candidates[symbol]
+        try:
+            old_stamp=datetime.fromisoformat(previous['quote_timestamp'])
+            new_stamp=datetime.fromisoformat(row['quote_timestamp'])
+            if (previous.get('quote_status')=='LIVE' and previous.get('is_trial') is False
+                    and row.get('quote_status')=='LIVE' and row.get('is_trial') is False
+                    and old_stamp.tzinfo is not None and new_stamp.tzinfo is not None
+                    and old_stamp<new_stamp and old_stamp.date()==new_stamp.date()
+                    and previous.get('last_price',0)>0):
+                history=previous.setdefault('market_history',[])
+                if not any(h.get('exchange_time')==previous['quote_timestamp'] and h.get('symbol')==symbol for h in history):
+                    history.append(dict(symbol=symbol,exchange_time=previous['quote_timestamp'],
+                        price=previous['last_price'],volume_shares=previous.get('volume'),
+                        quote_status='LIVE',is_trial=False,retrieval_mode=previous.get('retrieval_mode','BROKER')))
+        except (KeyError,ValueError,TypeError):
+            pass
         self.candidates[symbol].update(row)
         c = self.candidates[symbol]
         apply_buy_limits([c], self.account, self.rules if self.live_enabled else None)

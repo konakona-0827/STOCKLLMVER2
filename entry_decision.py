@@ -1,4 +1,4 @@
-"""Experimental entry evidence checks; no outcomes, prediction or execution."""
+"""Shared entry evidence checks; no outcomes, prediction or execution."""
 from datetime import datetime
 import json
 
@@ -30,7 +30,7 @@ def review(candidate,setup,bars,p):
         if not facts['completed_rebound']:blockers.append('COMPLETED_DAILY_REBOUND_NOT_OBSERVED')
         if not facts['live_ma5_reclaimed']:blockers.append('RECOVERY_MA5_NOT_RECLAIMED')
     if (setup['setup_family']=='FIRST_DAY_BREAKOUT' and
-            setup['target_kind']=='MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE' and
+            setup['target_kind'] in ('MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE','EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE') and
             p['modeled_breakout_requires_observed_continuation']):
         at=datetime.fromisoformat(candidate['quote_timestamp']);history=[]
         level=setup['breakout_reference_price']
@@ -47,6 +47,7 @@ def review(candidate,setup,bars,p):
         continuation=bool(prior and last>=prior[1] and not any(
             stamp>prior[0] and price<=level for stamp,price in history))
         facts['breakout_continuation']=dict(confirmed=continuation,breakout_reference=level,
+            confirmation_kind=('HELD_ABOVE_BREAKOUT_AND_NONDECLINING_DISTINCT_LIVE_OBSERVATION' if continuation else None),
             prior_quote_time=prior[0].isoformat() if prior else None,prior_price=prior[1] if prior else None)
         if not continuation:blockers.append('PRIOR_LIVE_BREAKOUT_CONTINUATION_NOT_OBSERVED')
     return dict(version=p['version'],approved=not blockers,blockers=blockers,facts=facts,

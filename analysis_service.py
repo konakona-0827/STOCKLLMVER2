@@ -406,8 +406,11 @@ class AnalysisService:
                                  universe.get('etf_symbols', []), paper_positions, live_managed=live_enabled,
                                  ai_settings=(broker_health or {}).get('ai_position_settings'))
         phase('DAILY_HISTORY')
+        from target_reachability import policy as reachability_policy
+        history_bars = reachability_policy()['history_bars'] if opportunity_active else daily_history.MAX_BARS
         daily_history.enrich_candidates(candidates, quote_map, at.date(),
-                                        self.directory/'daily_history')
+                                        self.directory/'daily_history', max_bars=history_bars,
+                                        verify_sessions=opportunity_active)
         if live_enabled:
             apply_live_position_context(candidates, broker_health,
                                        ROOT/'data'/'execution'/'live_execution.sqlite3', audit)
@@ -499,7 +502,8 @@ class AnalysisService:
                 [p for p in paper_positions if p['symbol'] in fresh_symbols],
                 live_managed=live_enabled, ai_settings=(broker_health or {}).get('ai_position_settings'))
             extra_map = {q['symbol']:q for q in extra['quotes']}
-            daily_history.enrich_candidates(additions, extra_map, now().date(), self.directory/'daily_history')
+            daily_history.enrich_candidates(additions, extra_map, now().date(), self.directory/'daily_history',
+                                             max_bars=history_bars, verify_sessions=True)
             if live_enabled:
                 apply_live_position_context(additions, broker_health, ROOT/'data/execution/live_execution.sqlite3', Audit(destination))
             apply_buy_limits(additions, paper_state, live_config if live_enabled else None)

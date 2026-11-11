@@ -214,17 +214,32 @@ def load_many(symbols, as_of=None, cache_dir=DEFAULT_CACHE, *, max_bars=MAX_BARS
     return result
 
 
-def enrich_candidates(candidates, quote_lookup, as_of=None, cache_dir=DEFAULT_CACHE):
+def enrich_candidates(candidates, quote_lookup, as_of=None, cache_dir=DEFAULT_CACHE, *, max_bars=MAX_BARS,
+                      verify_sessions=False):
     """Attach daily evidence without changing snapshot score or broker prices."""
     from strategy_evidence import assess
     from pretrade_policy import price_levels
 
-    history = load_many((c['symbol'] for c in candidates), as_of, cache_dir)
+    history = load_many((c['symbol'] for c in candidates), as_of, cache_dir, max_bars=max_bars)
+    verified_dates, calendar = None, None
+    if verify_sessions and history:
+        from support_scout.market_sessions import load_sessions
+        latest=next(iter(history.values()))['status']['expected_latest_date']
+        verified_dates,calendar=load_sessions(latest,max_bars,Path(cache_dir).parent/'market_sessions')
     for candidate in candidates:
         item = history[candidate['symbol']]
         candidate['daily_bars'] = item['bars']
         candidate['daily_trend'] = item['trend']
         candidate['daily_history_status'] = item['status']
+        if calendar is not None:
+            item['status']['market_calendar']=calendar
+            item['status']['verified_trading_dates']=verified_dates if calendar['verified'] else []
+            if calendar['verified']:
+                present={b['date'] for b in item['bars']}
+                item['status']['missing_recent_trading_dates']=sorted(set(verified_dates[-5:])-present)
+                item['status']['missing_20d_trading_dates']=sorted(set(verified_dates[-21:])-present)
+                item['status']['coverage']=('SUFFICIENT_FOR_20D_COMPARISON' if len(item['bars'])>=21
+                    and not item['status']['missing_20d_trading_dates'] else 'PARTIAL')
         candidate['price_levels'] = price_levels(candidate)
         quote = dict(quote_lookup[candidate['symbol']], daily_bars=item['bars'])
         evidence = assess(quote, candidate.get('market_history'))

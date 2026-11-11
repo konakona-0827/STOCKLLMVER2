@@ -3,6 +3,7 @@ from dataclasses import replace
 from datetime import date,datetime,timedelta
 from decimal import Decimal
 import json
+import math
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -21,18 +22,21 @@ from execution.risk_guard import RiskRejected
 
 def candidate(symbol='TEST'):
     day=date(2026,11,3);dates=[]
-    for _ in range(22):
+    for _ in range(240):
         day=previous_trading_day(day);dates.append(day.isoformat())
     dates.reverse();bars=[]
     for i,day in enumerate(dates):
-        close=100+i
-        bars.append(dict(date=day,open=close-1,high=close+2,low=close-2,close=close,
+        close=100+(i-218) if i>=218 else 100*math.exp((i-218)/80)
+        bars.append(dict(date=day,open=close-1 if i>=218 else close*.995,
+                         high=close+2 if i>=218 else close*1.01,low=close-2 if i>=218 else close*.99,close=close,
                          volume=1000,complete=True,source='TWSE_DAILY'))
     bars[-1].update(open=121,high=124,low=120,close=124,volume=2500)
     c=dict(symbol=symbol,name='測試',asset_type='STOCK',last_price=125,bid=124.9,ask=125,
            open=123,high=126,low=120,volume=10000,quote_status='LIVE',is_trial=False,
            quote_timestamp='2026-11-03T10:00:00+08:00',pricing_policy='PLANNED_LIMIT',
-           daily_bars=bars,market_history=[],paper_position=dict(qty=0),position=dict(ai_managed_qty=0),
+           daily_bars=bars,market_history=[dict(symbol=symbol,quote_status='LIVE',is_trial=False,
+               retrieval_mode='BROKER',exchange_time='2026-11-03T09:30:00+08:00',price=124.5)],
+           paper_position=dict(qty=0),position=dict(ai_managed_qty=0),
            max_buy_qty=99,max_sell_qty=0,quant_rank=1)
     e=assess(c,[]);c['strategy_evidence']=e;c['eligible_strategies']=e['eligible_strategies']
     c['price_levels']=price_levels(c)
@@ -58,7 +62,7 @@ class OpportunitySearchTests(unittest.TestCase):
         self.assertTrue(c['trade_setups'],c['opportunity_status'])
         for s in c['trade_setups']:
             self.assertTrue(s['daily_breakout_confirmed'])
-            self.assertEqual(s['target_kind'],'MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE')
+            self.assertEqual(s['target_kind'],'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE')
             self.assertLessEqual(s['funding_required_twd'],5000)
             self.assertLessEqual(s['estimated_net_downside_twd'],50)
             self.assertGreaterEqual(s['net_return'],.02)
@@ -75,7 +79,7 @@ class OpportunitySearchTests(unittest.TestCase):
         from execution.risk_guard import MarketQuote
         c = candidate('4100')
         for i, bar in enumerate(c['daily_bars']):
-            close = 140 - 1.5*i
+            close = 140 + 1.5*(len(c['daily_bars'])-22) - 1.5*i
             bar.update(open=close+.5, high=close+2, low=close-2, close=close)
         c['daily_bars'][-3].update(open=108, high=110.5, low=106, close=108)
         c['daily_bars'][-2].update(open=108, high=110, low=103, close=105.5)
@@ -119,7 +123,7 @@ class OpportunitySearchTests(unittest.TestCase):
         early=refresh(c,self.account,self.rules,self.p)['trade_setups']
         self.assertTrue(early)
         self.assertTrue(all(s['tier']=='Early' and not s['daily_breakout_confirmed'] for s in early))
-        c=candidate();c['daily_bars'][3]['high']=135;c['price_levels']=price_levels(c)
+        c=candidate();c['daily_bars'][-19]['high']=135;c['price_levels']=price_levels(c)
         result=refresh(c,self.account,self.rules,self.p)
         self.assertTrue(result['trade_setups'],result['opportunity_status'])
         self.assertEqual(result['trade_setups'][0]['target'],135)
@@ -195,7 +199,7 @@ class OpportunitySearchTests(unittest.TestCase):
             self.assertIn('BUY_MUST_MATCH_CURRENT_ACCOUNT_SIZED_SETUP',d['warnings'])
 
     def test_reduced_size_must_still_cover_the_research_economics_hurdle(self):
-        c=refresh(candidate(),self.account,self.rules,self.p);d=decision(c);d['suggested_qty']=5
+        c=refresh(candidate(),self.account,self.rules,self.p);d=decision(c);d['suggested_qty']=1
         validate(dict(market_view='測試',decisions=[d]),[c],500000,1,.01,capital_twd=10000,
                  funding_fee_reserve_twd=20)
         self.assertEqual(d['decision'],'WAIT')
@@ -306,7 +310,7 @@ class OpportunitySearchTests(unittest.TestCase):
             def reviewer(request):
                 packet = json.loads(request['input'])['original_input']
                 visible = packet['analysis_set'][0]
-                self.assertEqual(visible['trade_setups'][0]['target_kind'],'MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE')
+                self.assertEqual(visible['trade_setups'][0]['target_kind'],'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE')
                 handoff = packet['independent_plan_reviews'][c['symbol']]
                 self.assertTrue(all(handoff['plan_evidence_id'] in review['evidence_ids']
                                     for review in handoff['reviews']))

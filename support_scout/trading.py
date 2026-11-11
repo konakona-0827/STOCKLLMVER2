@@ -164,6 +164,8 @@ class SupportCoordinator:
                     opportunity_status=deepcopy(candidate.get('opportunity_status',{})),
                     recovery_watch=deepcopy(candidate.get('recovery_watch')),
                     entry_structure=deepcopy(candidate.get('entry_structure')),
+                    target_reachability={k:deepcopy(v) for k,v in (candidate.get('target_reachability') or {}).items() if k!='windows'},
+                    pending_entry_setups=deepcopy(candidate.get('pending_entry_setups',[])),
                     eligible_strategies=deepcopy(candidate.get('eligible_strategies',[])))
                 technical = observation.get('technical') or {}
                 evidence = deepcopy(technical.get('evidence', []))
@@ -316,7 +318,9 @@ class SupportCoordinator:
                 '缺少延續證據可列風險，但不得把另一套策略的確認條件當作自動否決。'
                 '歷史跌破與當日站回分別描述；當日價格站回不等於完整日線確認，也不可說未提供當前價格。'
                 'FIRST_DAY_BREAKOUT 評估突破本身，不要求它先滿足另一套支撐回測策略；'
-                '估算 2R 只代表情境報酬，不代表達標機率；反證須指出哪個目前計畫受影響。'
+                'target_reachability 使用前收錨定的過去同期限價格空間，並非期望收益或達標機率；'
+                '確認剩餘空間是否已被追價消耗，反證須指出哪個目前計畫受影響。'
+                'pending_entry_setups 尚未取得進場確認，研究後須以真實新行情重新形成 trade_setups。'
                 '未核實公司行動、事件或資料時明列 missing_data 並用 WATCH；有具體否決證據才 REJECT。'
                 'RESEARCH 不是買進批准，需引用所有 required_confirmation_evidence 且沒有資料缺口。'
                 '以繁體中文回覆指定 JSON，不自行編造身分、時間、packet_id 或勝率。')

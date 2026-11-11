@@ -7,7 +7,7 @@ from entry_decision import review,policy
 
 class EntryDecisionTests(unittest.TestCase):
     def setUp(self):
-        self.p=dict(policy(),enabled=True)
+        self.p=dict(policy(),enabled=True,recovery_requires_completed_rebound=True)
         self.c=dict(symbol='X',last_price=105,quote_timestamp='2026-11-03T10:00:00+08:00',market_history=[])
         self.bars=[dict(date='2026-10-'+str(20+i),open=99,close=100) for i in range(5)]
         self.bars[-1].update(open=100,close=102)
@@ -55,6 +55,7 @@ class EntryDecisionTests(unittest.TestCase):
         from opportunity_engine import refresh,policy as opportunity_policy
         from execution.auto_advice_executor import LiveExecutionConfig
         c=candidate();c['daily_bars'][-1].update(open=121,high=124,low=120,close=121,volume=1000)
+        c['market_history']=[]
         from pretrade_policy import price_levels
         c['price_levels']=price_levels(c)
         account=dict(available_cash_cents=1000000,capital_limit_twd=10000,budget_status='READY')

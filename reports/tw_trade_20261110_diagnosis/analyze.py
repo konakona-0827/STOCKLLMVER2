@@ -11,6 +11,7 @@ import subprocess
 import sys
 import types
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,7 +33,14 @@ socket.create_connection = no_network
 archived_engine = types.ModuleType('archived_diagnosis_engine')
 exec(compile(subprocess.check_output(['git', 'show', '030d842:opportunity_engine.py'], cwd=ROOT).decode('utf-8'),
              '030d842:opportunity_engine.py', 'exec'), archived_engine.__dict__)
-refresh, select = archived_engine.refresh, archived_engine.select
+archived_entry_policy=json.loads(subprocess.check_output(
+    ['git','show','030d842:config/entry_decision.json'],cwd=ROOT))
+def refresh(*args,**kwargs):
+    with patch('entry_decision.policy',return_value=archived_entry_policy):
+        return archived_engine.refresh(*args,**kwargs)
+def select(*args,**kwargs):
+    with patch('entry_decision.policy',return_value=archived_entry_policy):
+        return archived_engine.select(*args,**kwargs)
 from quant_scanner import scan_quote
 from trade_economics import evaluate_buy
 

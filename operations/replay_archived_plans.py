@@ -27,6 +27,10 @@ def parse_twse(record):
     for row in payload['data']:
         y,m,d=map(int,row[0].split('/'));y=y+1911 if y<1911 else y
         number=lambda value:float(str(value).replace(',',''))
+        if all(str(v).strip() in ('--','') for v in row[3:7]):
+            # Official rows can lack all OHLC values even with reported volume.
+            # Do not invent prices; retain missing sessions against the calendar.
+            continue
         op,hi,lo,close=map(number,row[3:7])
         if not 0<lo<=min(op,close)<=max(op,close)<=hi:raise ValueError('INVALID_DAILY_OHLC')
         bars.append(dict(date=date(y,m,d).isoformat(),open=op,high=hi,low=lo,close=close,
@@ -91,6 +95,10 @@ def find_quote_entry(candidate, setup, quotes):
 def load_daily(source_dir, symbol):
     result={}
     for path in sorted(Path(source_dir).glob('twse_'+symbol+'_*.json')):
+        if path.name.endswith('.failure.json'):
+            # Explicit collection failures remain in the manifest. They are
+            # missing observations, not malformed price rows or zero prices.
+            continue
         for bar in parse_twse(json.loads(path.read_text(encoding='utf-8'))):
             if bar['date'] in result and result[bar['date']]!=bar:raise ValueError('CONFLICTING_DAILY_BARS')
             result[bar['date']]=bar
