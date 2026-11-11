@@ -67,7 +67,10 @@ def analyze_existing(service, directory, manifest, request, candidates, account,
         decision, response = _analyze_batch(service, destination, batch_manifest, batch_request, batch, account,
                                            rules, live_enabled, scan_rules, broker_health)
         views.append(decision['market_view'])
-        rejections.extend(dict(symbol=d['symbol'], reason=d['reason'])
+        latest = {c['symbol']: c.get('opportunity_status') or {} for c in batch}
+        rejections.extend(dict(symbol=d['symbol'], reason=d['reason'],
+                               screen_blockers=latest[d['symbol']].get('blockers', []),
+                               economic_rejections=latest[d['symbol']].get('rejection_reasons', []))
                           for d in decision['decisions'] if d['decision'] in ('WAIT', 'HOLD'))
         save_json(destination/'selection_decision.json', decision)
         return decision, response

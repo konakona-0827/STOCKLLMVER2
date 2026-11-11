@@ -9,6 +9,23 @@ from decimal import Decimal
 VERSION = 'entry-structure-v1'
 
 
+def completed_recovery(prior, signal, prior_change):
+    """Name the observed reclaim and the levels to check on a later retest."""
+    try:
+        low, high = Decimal(str(signal['low'])), Decimal(str(signal['high']))
+        close, reclaimed = Decimal(str(signal['close'])), Decimal(str(prior['high']))
+        opening = Decimal(str(signal['open']))
+    except (KeyError, ArithmeticError):
+        return None
+    if (not all(price.is_finite() and price > 0 for price in (low, high, close, reclaimed, opening))
+            or prior_change >= 0 or high <= low or close <= reclaimed
+            or close <= opening or (close-low)/(high-low) < Decimal('.75')):
+        return None
+    return dict(kind='COMPLETED_REBOUND_RETEST', signal_session=signal['date'],
+                prior_session=prior['date'], reclaimed_high=float(reclaimed),
+                observed_target=float(high), daily_invalidation=float(low))
+
+
 def resistance_levels(bars, levels, *, recovery):
     result = []
     for level in levels:

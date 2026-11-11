@@ -94,6 +94,30 @@ class SupportTradingIntegrationTests(unittest.TestCase):
         c['trade_setups'][0]['invalidation']=94
         self.assertEqual(self.coordinator.buy_block_reasons('2330'),['SUPPORT_INDEPENDENT_REVIEWS_REQUIRED'])
 
+    def test_both_roles_must_cover_the_selected_route_and_ignore_unrelated_removals(self):
+        self.read()
+        symbol = self.candidate['symbol']
+        self.candidate['opportunity_policy'] = {'version': 'test'}
+        route = dict(strategy_id='intraday_recovery', setup_family='COMPLETED_REBOUND_RETEST',
+                     tier='Early', entry_basis='COMPLETED_REBOUND_RETEST_LIMIT',
+                     entry=100, target=130, invalidation=95, holding_days=10, max_qty=10)
+        self.candidate['trade_setups'] = [route, dict(route, entry=101)]
+        selected = self.decision['decisions'][0]
+        for role, option in (('researcher', 0), ('reviewer', 1), ('reviewer', 0)):
+            packet = self.coordinator.prepare(role, symbol)
+            plans = [e['id'] for e in packet['core']['evidence'] if e['kind']=='ENTRY_PLAN']
+            self.coordinator.accept(role, symbol, dict(verdict='WATCH',
+                evidence_ids=[*packet['core']['required_confirmation_evidence'], plans[option]],
+                summary='檢查所選限價', risks=[], missing_data=[]))
+            if role == 'reviewer' and option == 1:
+                self.assertEqual(['SUPPORT_SELECTED_PLAN_EVIDENCE_REQUIRED'],
+                                 self.coordinator.buy_block_reasons(symbol, selected))
+        self.candidate['trade_setups'].pop()
+        self.assertEqual([], self.coordinator.buy_block_reasons(symbol, selected))
+        self.context.account['available_cash_cents'] -= 1
+        self.assertEqual(['SUPPORT_INDEPENDENT_REVIEWS_REQUIRED'],
+                         self.coordinator.buy_block_reasons(symbol, selected))
+
     def test_changed_daily_structure_reloads_observation_and_invalidates_review(self):
         c=self.context.candidates['2330'];c['daily_bars']=[dict(date='2026-10-21',close=100)]
         self.accept_pair();key=self.coordinator.state_key('2330')

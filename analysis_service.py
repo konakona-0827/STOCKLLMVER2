@@ -325,7 +325,9 @@ class AnalysisService:
                                      budget_status=scout_budget['status'])
                 excluded = [symbol for symbol,setting in (broker_health.get('ai_position_settings') or {}).items()
                             if setting.get('enabled') is False]
-                discovery = discover(ROOT,directory,scout_account,search_policy,stopped=self.stop.is_set,excluded=excluded)
+                discovery = discover(ROOT, directory, scout_account, search_policy,
+                                     stopped=self.stop.is_set, excluded=excluded,
+                                     include_weekly_recovery=True)
             except (OSError,sqlite3.Error,ValueError,TypeError) as exc:
                 discovery = dict(status='UNAVAILABLE',symbols=[],watchlist=[],model_called=False,error=redact(exc))
             # Persist the fixed seed list and the independent scout's additions.

@@ -8,7 +8,7 @@ import json
 from config import CODE_ROOT
 from pretrade_policy import buy_block, MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
 from trade_economics import evaluate_buy,estimate_sell
-from entry_structure import resistance_levels, target_evidence, stop_evidence, VERSION as STRUCTURE_VERSION
+from entry_structure import completed_recovery, resistance_levels, target_evidence, stop_evidence, VERSION as STRUCTURE_VERSION
 
 
 def policy():
@@ -97,6 +97,7 @@ def refresh(candidate, account, rules, p=None):
     candidate['trade_setups'] = []
     candidate['research_only'] = False
     candidate.pop('entry_structure',None)
+    candidate.pop('recovery_watch', None)
     candidate['opportunity_status'] = dict(blockers=[], signal=None)
     status = candidate['opportunity_status']
     try:
@@ -156,31 +157,45 @@ def refresh(candidate, account, rules, p=None):
                             and last>_number(candidate['open']) and last>=ma5)
         recovery=(last>_number(candidate['open']) and
                   (last-_number(candidate['low']))/max(Decimal('.01'),_number(candidate['high'])-_number(candidate['low']))>=Decimal('.6'))
-        if not trend and not recovery:
+        recovery_plan = completed_recovery(bars[-2], bars[-1], closes[-2] - closes[-3])
+        retest = False
+        if recovery_plan and 'intraday_recovery' in candidate.get('eligible_strategies', []):
+            reclaimed = _number(recovery_plan['reclaimed_high'])
+            low = _number(candidate['low'])
+            retest = not trend and reclaimed <= low <= reclaimed + (ask-bid) and last > low and bid >= reclaimed
+            candidate['recovery_watch'] = dict(
+                recovery_plan, trigger_kind='HOLD_RECLAIMED_LEVEL', condition_price=float(reclaimed),
+                expires_session=session,
+                status=('INVALIDATED_THIS_SESSION' if low < reclaimed else
+                        'RESEARCH_CONDITION_MET' if retest else 'WAITING_FOR_CONDITION'))
+        if not trend and not recovery and not retest:
             raise ValueError('NO_TREND_OR_RECOVERY_SETUP')
         tier='Strong' if trend and last>=ma5 and vol_ratio>=Decimal(str(p['breakout_volume_ratio'])) else ('Confirmed' if trend else 'Early')
         if first_day_breakout:tier='Early'
         strategy='multi_day_trend' if trend else 'intraday_recovery'
         if strategy not in candidate.get('eligible_strategies',[]):
             raise ValueError('SETUP_STRATEGY_NOT_ELIGIBLE')
-        supports=[]; resistances=[]; extra=[]
+        family = ('COMPLETED_REBOUND_RETEST' if retest else 'FIRST_DAY_BREAKOUT' if first_day_breakout else
+                  'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY')
+        supports=[]; extra=[]
         for i in range(1,len(bars)-1):
             b=bars[i]
             if b['low']<=bars[i-1]['low'] and b['low']<bars[i+1]['low']:
                 supports.append(_number(b['low']))
                 extra.append(dict(id='swing_low_'+b['date'],price=b['low'],basis=b['date']))
             if b['high']>=bars[i-1]['high'] and b['high']>bars[i+1]['high']:
-                resistances.append(_number(b['high']))
                 extra.append(dict(id='swing_high_'+b['date'],price=b['high'],basis=b['date']))
         levels=[r for r in candidate.get('price_levels',[]) if not r['id'].startswith('swing_') and r['id']!='last_completed_low']
         for row in levels:
             if row['id'].startswith('low_') or row['id']=='today_low':supports.append(_number(row['price']))
-            if row['id'].startswith('high_'):resistances.append(_number(row['price']))
         candidate['price_levels']=levels+extra
         barriers=resistance_levels(bars,candidate['price_levels'],recovery=not trend)
+        if retest and _number(candidate['high']) > last:
+            barriers.append(dict(price=candidate['high'], kind='OBSERVED_INTRADAY_HIGH_FALLBACK',
+                                 source='LIVE_INTRADAY_HIGH', date=session))
+            barriers.sort(key=lambda row: row['price'])
         candidate['entry_structure']=dict(version=STRUCTURE_VERSION,
-            setup_family=('FIRST_DAY_BREAKOUT' if first_day_breakout else
-                          'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY'),
+            setup_family=family,
             resistance_levels=barriers,
             confirmation_scope='COMPLETED_HISTORY_AND_CURRENT_LIVE_QUOTE',
             requires_today_completed_bar=False)
@@ -198,12 +213,16 @@ def refresh(candidate, account, rules, p=None):
             for r in levels:
                 if r['id'] in ('previous_close','today_open') and _number(r['price'])<ask:
                     entries[_number(r['price'])]=r['id']
+            if retest and reclaimed < ask:
+                entries[reclaimed] = 'COMPLETED_REBOUND_RETEST_LIMIT'
         allocation=allocation_limit(candidate,account,p,tier)
         risk=_number(account['capital_limit_twd'])*MAX_POSITION_RISK
         if allocation<=rules.min_buy_fee_reserve_twd:
             raise ValueError('PER_SYMBOL_ALLOCATION_EXHAUSTED')
         candidates=[];rejections=set();near_misses=[]
         for entry,entry_basis in entries.items():
+            if retest and entry < reclaimed:
+                rejections.add('ENTRY_BELOW_RECLAIMED_LEVEL');continue
             if first_day_breakout and entry<breakout_level:
                 rejections.add('ENTRY_BELOW_BREAKOUT_REFERENCE');continue
             if ask-entry>min(atr*Decimal(str(p['maximum_pullback_atr'])),ask*Decimal(str(p['maximum_pullback_fraction']))):
@@ -221,7 +240,7 @@ def refresh(candidate, account, rules, p=None):
             kind='OBSERVED_SWING_RESISTANCE'
             if barrier:
                 target=_number(barrier['price']);kind=barrier['kind']
-            elif daily_breakout or first_day_breakout:
+            elif not retest and (daily_breakout or first_day_breakout):
                 target=_round_price(entry+min((entry-stop)*Decimal(str(p['breakout_target_r_multiple'])),
                     atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
                 kind='MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE'
@@ -230,6 +249,9 @@ def refresh(candidate, account, rules, p=None):
                 kind='OBSERVED_INTRADAY_HIGH_FALLBACK'
             else:
                 rejections.add('NO_OBSERVED_TARGET_OR_CONFIRMED_BREAKOUT');continue
+            if retest and last >= target:
+                rejections.add('RECOVERY_TARGET_ALREADY_REACHED')
+                continue
             qty_max=min(999,int(rules.max_buy_qty or 999),int(allocation/entry))
             if qty_max<1:rejections.add('ONE_SHARE_EXCEEDS_ALLOCATION')
             for qty in range(qty_max,0,-1):
@@ -265,8 +287,9 @@ def refresh(candidate, account, rules, p=None):
                     max_qty=qty,allocation_limit_twd=float(allocation),funding_required_twd=float(gross+reserve),
                     net_return=float(net),atr14=float(atr),completed_volume_ratio=float(vol_ratio),
                     daily_breakout_confirmed=bool(daily_breakout),**economics)
-                setup['setup_family']=('FIRST_DAY_BREAKOUT' if first_day_breakout else
-                                       'TREND_PULLBACK' if trend else 'MULTI_SESSION_RECOVERY')
+                setup['setup_family'] = family
+                if retest:
+                    setup['recovery_retest'] = dict(recovery_plan, observed_low=float(low), session=session)
                 setup['breakout_confirmation']=('COMPLETED_DAILY_PRICE_AND_VOLUME' if daily_breakout else
                     'LIVE_PRICE_ONLY_NO_COMPLETED_VOLUME_CONFIRMATION' if first_day_breakout else None)
                 setup['breakout_reference_price']=float(breakout_level) if first_day_breakout else None
@@ -329,11 +352,19 @@ def refresh(candidate, account, rules, p=None):
     if candidate.get('market_scout'):
         from opportunity_watch import observe
         candidate['market_scout']=observe(candidate['market_scout'],candidate)
-        candidate['research_only']=bool(not candidate['trade_setups'] and
-            candidate['market_scout']['status']=='RESEARCH_CONDITION_MET' and status['blockers'] and
-            set(status['blockers']).issubset({'NO_TREND_OR_RECOVERY_SETUP',
-                                            'NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH'}))
+    watch = active_research_watch(candidate)
+    candidate['research_only'] = bool(watch and not candidate['trade_setups'] and status['blockers']
+        and set(status['blockers']).issubset({'NO_TREND_OR_RECOVERY_SETUP',
+                                             'NO_COST_AND_RISK_QUALIFIED_ENTRY_IN_REACH'}))
     return candidate
+
+
+def active_research_watch(candidate):
+    for key in ('recovery_watch', 'market_scout'):
+        watch = candidate.get(key) or {}
+        if watch.get('status') == 'RESEARCH_CONDITION_MET':
+            return watch
+    return None
 
 
 def match_setup(candidate, decision):

@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 from config import now
+from opportunity_engine import active_research_watch
 
 
 def snapshot(candidates, account, at):
@@ -14,11 +15,9 @@ def snapshot(candidates, account, at):
         plans={'|'.join((c['symbol'],s['strategy_id'],s['tier'],s['entry_basis'],s['target_kind'])):
                {key:s[key] for key in ('entry','target','invalidation','max_qty')}
                for c in candidates for s in c.get('trade_setups',[])},
-        watches={c['symbol']:dict(trigger_kind=c['market_scout']['trigger_kind'],
-            condition_price=c['market_scout']['condition_price'],
-            expires_session=c['market_scout']['expires_session'],price=c['last_price'])
-            for c in candidates if c.get('research_only') and
-                (c.get('market_scout') or {}).get('status')=='RESEARCH_CONDITION_MET'},
+        watches={c['symbol']:dict(trigger_kind=watch['trigger_kind'],
+            condition_price=watch['condition_price'], expires_session=watch['expires_session'],price=c['last_price'])
+            for c in candidates if c.get('research_only') and (watch := active_research_watch(c))},
         holdings={c['symbol']:dict(qty=int((c.get('paper_position') or {}).get('qty') or 0),
                                   price=c.get('bid') or c.get('last_price'),
                                   max_sell_qty=c.get('max_sell_qty'))

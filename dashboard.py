@@ -167,6 +167,20 @@ def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None,
             lines.append(f"\n{watch['symbol']}：{condition} {watch['condition_price']}（{touched}）；"
                          f"{watch.get('rationale','')}。反證待查：{watch.get('counter_evidence_to_check','')}。")
         if scout.get('watchlist'):lines.append('\n觀察條件用於後續研究；買進另須通過最新報價、計畫與獨立審查。')
+        weekly = scout.get('weekly_recovery')
+        if weekly and weekly['status'] == 'COMPLETE':
+            lines.append(f"\n\n上櫃本週回升研究（{weekly['source_session']} 日線）"
+                         f"：{weekly['eligible_count']} 檔。")
+            for row in weekly['candidates'][:6]:
+                plan = row.get('research_plan') or {}
+                lines.append(f"\n{row['symbol']} {row['name']} 收 {row['close']:g}，"
+                             f"等待回測 {row['reclaimed_high']:g}。")
+                if plan:
+                    lines.append(f" 日線觀察目標 {plan['observed_target']:g}，"
+                                 f"失效參考 {plan['daily_invalidation']:g}。")
+            lines.append('\n列入研究後，須另核對零股報價、近端目標與費後風險。')
+        elif weekly:
+            lines.append('\n\n上櫃回升研究資料暫不可用。')
     if support_research:
         calls = support_research.get('calls') or []
         lines.append(f"\n\n支撐子代理：{support_research.get('policy')}；"

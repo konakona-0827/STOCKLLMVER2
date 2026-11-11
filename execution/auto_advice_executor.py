@@ -45,7 +45,15 @@ def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
     buy_plan = recommendation.get('buy_plan')
     if not isinstance(buy_plan, dict):
         raise RiskRejected(f'{order_plan.symbol}: reviewed BUY plan missing')
+    setup = recommendation.get('entry_setup') or {}
     try:
+        if setup.get('setup_family') == 'COMPLETED_REBOUND_RETEST':
+            reclaimed = Decimal(str(setup['recovery_retest']['reclaimed_high']))
+            target = Decimal(str(buy_plan['target_price']))
+            if (not reclaimed.is_finite() or not target.is_finite()
+                    or quote.bid is None or quote.bid < reclaimed or quote.last_price is None
+                    or not reclaimed <= quote.last_price < target):
+                raise ValueError('BUY_RECOVERY_RETEST_NO_LONGER_VALID')
         economics = evaluate_buy(
             dict(ask=float(quote.ask), bid=float(quote.bid),
                  asset_type=recommendation.get('asset_type'), pricing_policy=recommendation.get('pricing_policy')),

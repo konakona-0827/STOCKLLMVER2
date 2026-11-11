@@ -70,6 +70,50 @@ class OpportunitySearchTests(unittest.TestCase):
                  funding_fee_reserve_twd=20)
         self.assertEqual(d['decision'],'BUY')
 
+    def test_completed_rebound_can_create_a_retest_limit_without_chasing_the_ask(self):
+        from execution.auto_advice_executor import check_refreshed_buy
+        from execution.risk_guard import MarketQuote
+        c = candidate('4100')
+        for i, bar in enumerate(c['daily_bars']):
+            close = 140 - 1.5*i
+            bar.update(open=close+.5, high=close+2, low=close-2, close=close)
+        c['daily_bars'][-3].update(open=108, high=110.5, low=106, close=108)
+        c['daily_bars'][-2].update(open=108, high=110, low=103, close=105.5)
+        c['daily_bars'][-1].update(open=107, high=122, low=106.5, close=121)
+        c.update(last_price=112, bid=112, ask=112.5, open=116, high=120.5, low=110)
+        c['price_levels'] = price_levels(c)
+        refresh(c, self.account, self.rules, self.p)
+        (setup,) = c['trade_setups']
+        self.assertEqual('COMPLETED_REBOUND_RETEST', setup['setup_family'])
+        self.assertEqual((110, 120.5, 106.5), (setup['entry'], setup['target'], setup['invalidation']))
+        self.assertEqual('LIVE_INTRADAY_HIGH', setup['target_evidence']['source'])
+        self.assertLessEqual(setup['combined_modeled_risk_twd'], 50)
+        recommendation = dict(asset_type='STOCK', pricing_policy='PLANNED_LIMIT', entry_setup=setup,
+                              buy_plan=dict(target_price=120.5, invalidation_price=106.5))
+        order = SimpleNamespace(symbol='4100', quantity=setup['max_qty'], limit_price=Decimal(110))
+        quote = MarketQuote('4100', 'LIVE', Decimal(0), Decimal(112), Decimal(112), Decimal('112.5'))
+        check_refreshed_buy(quote, order, recommendation, 10000, 1)
+        for new_quote in (replace(quote, last_price=Decimal(109), bid=Decimal(109)),
+                          replace(quote, last_price=Decimal('120.5'))):
+            with self.assertRaisesRegex(RiskRejected, 'BUY_RECOVERY_RETEST_NO_LONGER_VALID'):
+                check_refreshed_buy(new_quote, order, recommendation, 10000, 1)
+        c['high'] = 114
+        c['open'] = 113
+        c['price_levels'] = price_levels(c)
+        refresh(c, self.account, self.rules, self.p)
+        self.assertFalse(c['trade_setups'])
+        self.assertTrue(c['research_only'])
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = evaluate('AUTO', [c], self.account, Path(tmp)/'review.json', self.p,
+                            at=datetime.fromisoformat(c['quote_timestamp']))
+            self.assertTrue(gate['call_model'])
+            self.assertEqual('HOLD_RECLAIMED_LEVEL', gate['snapshot']['watches']['4100']['trigger_kind'])
+        c.update(last_price=109, bid=109, ask=109.5, low=109)
+        c['price_levels'] = price_levels(c)
+        refresh(c, self.account, self.rules, self.p)
+        self.assertEqual('INVALIDATED_THIS_SESSION', c['recovery_watch']['status'])
+        self.assertFalse(c['trade_setups'])
+
     def test_unconfirmed_volume_uses_early_tier_and_intervening_resistance_remains_required(self):
         c=candidate();c['daily_bars'][-1]['volume']=1000
         early=refresh(c,self.account,self.rules,self.p)['trade_setups']
@@ -255,13 +299,17 @@ class OpportunitySearchTests(unittest.TestCase):
                 for role in ('researcher','reviewer'):
                     packet=ctx.support.prepare(role,c['symbol'])
                     ctx.support.accept(role,c['symbol'],dict(verdict='WATCH',
-                        evidence_ids=packet['core']['required_confirmation_evidence'],summary='測試獨立檢查',
+                        evidence_ids=[e['id'] for e in packet['core']['evidence']], summary='測試獨立檢查',
                         risks=['目標為情境估算'],missing_data=['公司行動未核實']))
                 fresh=ctx.get_market_data(c['symbol'])
                 return dict(market_view='測試可執行進場',decisions=[decision(fresh)]),{}
             def reviewer(request):
-                visible=json.loads(request['input'])['original_input']['analysis_set'][0]
+                packet = json.loads(request['input'])['original_input']
+                visible = packet['analysis_set'][0]
                 self.assertEqual(visible['trade_setups'][0]['target_kind'],'MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE')
+                handoff = packet['independent_plan_reviews'][c['symbol']]
+                self.assertTrue(all(handoff['plan_evidence_id'] in review['evidence_ids']
+                                    for review in handoff['reviews']))
                 return json.dumps(dict(reviews=[dict(symbol=c['symbol'],approved=True,reason='測試條件一致')])),{}
             result,response=analyze(context,'機會策略',runner=runner,reviewer=reviewer)
             self.assertEqual(response['validation'],'VALID',response)

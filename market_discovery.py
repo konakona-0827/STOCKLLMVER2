@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 import certifi
 
 from config import CODE_ROOT, now, redact
+from entry_structure import completed_recovery
 from main import save_json
 from market_calendar import previous_trading_day
 from token_budget import usage_snapshot
@@ -28,6 +29,7 @@ INSTRUCTIONS = '''你是獨立的台股主動尋標子代理，在可執行買�
 從提供的上市普通股候選中主動挑選最多 max_selections 檔值得進一步買入分析的股票。
 來源是上一完整交易日的整股 OHLCV，不是即時零股報價，沒有未提供的均線、新聞或公司事件證據。
 比較相對強勢、回落承接、短線反轉的交易情境、資金可負擔性、下跌風險與日線區間。
+recovery_context 為已完成日線的跌後收復證據；優先核對能否安排回測限價、近端目標及失效條件。
 每檔選一個後續觀察條件：BREAK_ABOVE_HIGH（突破所附日線高點）、
 RECLAIM_OPEN（回到所附日線開盤價以上）、PULLBACK_TO_CLOSE（回落至所附日線收盤價）。
 條件價格由程式從真實日線欄位取出；它們只是研究觸發，不是買單、目標或勝率。
@@ -127,6 +129,28 @@ def affordable_rows(rows, account, opportunity_policy, p, excluded=()):
               and r['close']*1.01+20<=allowance]
 
 
+def add_cached_recoveries(rows, state_dir, session):
+    prior = previous_trading_day(session).isoformat()
+    cache = state_dir / f'market_{prior}.json'
+    try:
+        saved = json.loads(cache.read_text('utf-8'))
+        if (not isinstance(saved, dict) or saved.get('session') != prior
+                or saved.get('source_urls') != [DAILY_URL, COMPANIES_URL]):
+            return rows
+        previous = {r['symbol']: r for r in saved['rows']
+                    if r['date'] == prior and type(r.get('return_1d')) in (int, float)
+                    and math.isfinite(r['return_1d'])}
+    except (OSError, ValueError, KeyError, TypeError):
+        return rows
+    enriched = []
+    for row in rows:
+        bar = previous.get(row['symbol'])
+        recovery = (completed_recovery(bar, row, bar['return_1d'])
+                    if bar is not None and row['return_1d'] > 0 else None)
+        enriched.append(dict(row, recovery_context=recovery) if recovery else row)
+    return enriched
+
+
 def screen(rows, account, opportunity_policy, p, excluded=(), rotation=0):
     eligible=affordable_rows(rows,account,opportunity_policy,p,excluded)
     # Interleave strength, recovery and liquid pullbacks; one score cannot
@@ -134,9 +158,15 @@ def screen(rows, account, opportunity_policy, p, excluded=(), rotation=0):
     buckets=[sorted(eligible,key=lambda r:(-r['return_1d'],-r['turnover'],r['symbol'])),
              sorted(eligible,key=lambda r:(-r['range_position'],-r['turnover'],r['symbol'])),
              sorted(eligible,key=lambda r:(abs(r['return_1d']+.02),-r['turnover'],r['symbol']))]
+    recoveries = sorted((row for row in eligible if row.get('recovery_context')),
+                        key=lambda row: (-row['turnover'], -row['return_1d'], row['symbol']))
+    if recoveries:
+        buckets.insert(0, recoveries)
     ordered=[];seen=set()
     for index in range(len(eligible)):
         for bucket in buckets:
+            if index >= len(bucket):
+                continue
             r=bucket[index]
             if r['symbol'] not in seen:ordered.append(r);seen.add(r['symbol'])
     # Keep the leading half while rotating the exploration half across due
@@ -209,7 +239,8 @@ async def _sdk_scout(packet, model, p, usage_path, stopped=lambda:False):
 
 
 def discover(root, directory, account, opportunity_policy, *, at=None, stopped=lambda:False,
-             runner=None, fetcher=None, excluded=(), reconsider=False):
+             runner=None, fetcher=None, excluded=(), reconsider=False,
+             include_weekly_recovery=False):
     """One automatically dispatched scout, cached intraday; never calls the broker."""
     from scheduler import is_twse_oddlot_market_window, twse_oddlot_first_match
     from trading_agent import agent_model
@@ -222,6 +253,10 @@ def discover(root, directory, account, opportunity_policy, *, at=None, stopped=l
         return {**result,'status':'DISABLED_STOPPED_OR_OUTSIDE_MARKET'}
     if account.get('budget_status','READY')!='READY' or account.get('available_cash_twd',0)<=20:
         return {**result,'status':'NO_BUY_BUDGET'}
+    if include_weekly_recovery:
+        from weekly_recovery import discover_weekly_recovery
+        result['weekly_recovery'] = discover_weekly_recovery(
+            root, account, opportunity_policy, p, at, excluded=excluded, fetcher=fetcher)
     state_dir=root/'data/analysis/market_discovery';state_dir.mkdir(parents=True,exist_ok=True)
     expected=previous_trading_day(at.date());session=at.date().isoformat()
     usage_path=directory/'market_scout_usage_requests.json'
@@ -238,6 +273,7 @@ def discover(root, directory, account, opportunity_policy, *, at=None, stopped=l
             rows=normalize(fetch(DAILY_URL),fetch(COMPANIES_URL),expected,as_of=at.date())
             save_json(cache,dict(session=expected.isoformat(),retrieved_at=at.isoformat(),
                 source_urls=[DAILY_URL,COMPANIES_URL],rows=rows))
+        rows = add_cached_recoveries(rows, state_dir, expected)
         state_path=state_dir/'scout_state.json'
         try:state=json.loads(state_path.read_text('utf-8'))
         except (OSError,ValueError):state={}

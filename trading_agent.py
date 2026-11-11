@@ -15,7 +15,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v12-shared-structure-search'
+AGENT_VERSION = 'agent-decision-v13-plan-handoff'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -30,7 +30,9 @@ daily_bars、daily_trend 與 daily_history_status 是既有日線資料，不得
 初始 daily_bars 僅最近五筆、market_history 僅最近三筆；coverage 標明完整筆數，並非缺資料。
 需要更早原始資料驗證結構時呼叫 get_research_data；不可從截短顯示推論歷史缺漏。
 entry_screen／trade_setups 是 Python 按現行資料、成本、配置及風控算出的有限情境，非交易批准。
-有機會候選時核對目前計畫與反證；觀察觸發本身不能批准 BUY。
+有機會候選時主動比較回測限價、現價與等待觸發路徑，選出最能用最新證據驗證的一案。
+recovery_watch 是觀察基準；確認守住已收復價後，程式會依現行風控生成可選計畫。
+機會策略的 BUY 須有兩位子代理引用所選 ENTRY_PLAN 證據；刷新後若限價或結構已改變，重新研究或改為 WAIT。
 entry_structure、trade_setups.target_evidence 與 entry_evidence.stop_origin 是引擎與研究共用的結構依據。
 兩日回升已把前一完整日高點與已跌破波段支撐列為近端阻力；較長趨勢計畫不把每筆日高當硬上限。
 對通過計畫選 WAIT 時，提出該計畫尚未涵蓋的具體反證、來源日期與重新評估條件；不得把數字合格當批准。
@@ -69,7 +71,7 @@ def execution_metadata(model):
                  'entry_decision.py','config/entry_decision.json',
                  'entry_screen.py','entry_structure.py','opportunity_engine.py','opportunity_search_cycle.py','opportunity_gate.py',
                  'opportunity_watch.py','opportunity_diagnostics.py',
-                 'config/opportunity_search.json','config/market_discovery.json','market_discovery.py',
+                 'config/opportunity_search.json','config/market_discovery.json','market_discovery.py','weekly_recovery.py',
                  'config/execution_live.json','advice_interface.py',
                  'daily_history.py','agent_decision.py','analysis_service.py',
                  'position_analyzer.py','trade_plan_context.py','execution/auto_advice_executor.py',
@@ -427,12 +429,6 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
                                    context.rules.economic_minimum_commission_twd,context.rules.buy_cash_buffer_rate,
                                    capital_twd=context.account.get('capital_limit_twd'),
                                    funding_fee_reserve_twd=context.rules.min_buy_fee_reserve_twd)
-        if context.support is not None:
-            for item in decision['decisions']:
-                if item['decision'] == 'BUY':
-                    reasons = context.support.buy_block_reasons(item['symbol'])
-                    if reasons:
-                        position_analyzer._veto_trade(item, reasons[0], '；'.join(reasons))
         from daily_participation import add_probes
         response['daily_participation'] = add_probes(context, decision)
         if response['daily_participation']['proposed']:
@@ -440,8 +436,19 @@ def analyze(context,strategy_prompt,model=None,runner=None,reviewer=None):
                 context.account['available_cash_cents'], context.rules.economic_minimum_commission_twd,
                 context.rules.buy_cash_buffer_rate, capital_twd=context.account.get('capital_limit_twd'),
                 funding_fee_reserve_twd=context.rules.min_buy_fee_reserve_twd)
+        plan_reviews = {}
+        if context.support is not None:
+            for item in decision['decisions']:
+                if item['decision'] == 'BUY':
+                    symbol = item['symbol']
+                    reasons = context.support.buy_block_reasons(symbol, item)
+                    if reasons:
+                        position_analyzer._veto_trade(item, reasons[0], '；'.join(reasons))
+                    else:
+                        plan_reviews[symbol] = context.support.plan_handoff(symbol, item)
         review_input = dict(context.initial_input or {})
-        review_input.update(analysis_set=list(context.candidates.values()), paper_account=context.account)
+        review_input.update(analysis_set=list(context.candidates.values()), paper_account=context.account,
+                            independent_plan_reviews=plan_reviews)
         from daily_participation import policy, progress
         review_input['daily_participation'] = dict(policy=policy(), progress=progress())
         review_input.setdefault('paper_simulation_rules', dict(

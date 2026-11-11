@@ -97,6 +97,78 @@ class MarketDiscoveryTests(unittest.TestCase):
                 third=m.discover(root,run,self.account,self.op,at=self.at+timedelta(hours=1,minutes=5),runner=runner,fetcher=self.fetch)
             self.assertFalse(third['model_called'])
 
+    def test_tpex_recovery_is_visible_but_kept_outside_tradeable_candidates(self):
+        from dashboard import decision_text
+        import weekly_recovery as weekly
+
+        fields = list(weekly.FIELDS.values())
+        registry = [dict(Date='1151110', SecuritiesCompanyCode='1815',
+                         SecuritiesIndustryCode='28', DateOfListing='20060123')]
+
+        def tpex_payload(day, prices):
+            row = ['1815', '富喬', *prices, '70,067,949', '8,871,168,187']
+            return dict(stat='ok', date='202611'+day,
+                        tables=[dict(title='上櫃股票行情', date='115/11/'+day,
+                                     fields=fields, data=[row])])
+
+        def fetch(url):
+            if url == m.DAILY_URL:
+                return [dict(row, Date='1151109') for row in self.daily]
+            if url == m.COMPANIES_URL:
+                return [dict(row, 出表日期='1151109') for row in self.companies]
+            if url == weekly.COMPANIES_URL:
+                return registry
+            if '%2F09' in url:
+                return tpex_payload('09', ['121', '129', '121', '129', '+11.5'])
+            return tpex_payload('06', ['109.5', '125.5', '109.5', '117.5', '-4'])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run = root/'run'
+            run.mkdir()
+            clock = datetime(2026,11,10,9,11,tzinfo=TAIPEI)
+            fetcher = Mock(side_effect=fetch)
+            result = m.discover(root, run, self.account, self.op, at=clock,
+                                runner=answer, fetcher=fetcher, include_weekly_recovery=True)
+            weekly_result = result['weekly_recovery']
+            self.assertEqual('COMPLETE', weekly_result['status'])
+            (candidate,) = weekly_result['candidates']
+            self.assertEqual(('1815', 125.5, 'RESEARCH_ONLY'),
+                             (candidate['symbol'], candidate['reclaimed_high'], candidate['purpose']))
+            self.assertNotIn('1815', result['symbols'])
+            self.assertIn('1815 富喬', decision_text({}, market_discovery=result))
+
+            cached = weekly.discover_weekly_recovery(root, self.account, self.op, self.p, clock,
+                                                      excluded=['1815'], fetcher=fetcher)
+            self.assertEqual([], cached['candidates'])
+            self.assertEqual(5, fetcher.call_count)
+
+            later = clock + timedelta(days=1)
+            unavailable = weekly.discover_weekly_recovery(
+                root, self.account, self.op, self.p, later, fetcher=fetcher)
+            self.assertEqual('UNAVAILABLE', unavailable['status'])
+            self.assertEqual([], unavailable['candidates'])
+
+    def test_prior_verified_market_cache_prioritizes_recovery_evidence(self):
+        rows = m.normalize(self.daily, self.companies, date(2026,11,3))
+        symbol = rows[-1]['symbol']
+        row = rows[-1]
+        row.update(open=101, high=105, low=100, close=104.9)
+        previous = dict(row, date='2026-11-02', high=104.5, return_1d=-.01)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root/'market_2026-11-02.json'
+            saved = dict(session='2026-11-02', source_urls=[m.DAILY_URL, m.COMPANIES_URL],
+                         rows=[previous])
+            path.write_text(json.dumps(saved), encoding='utf-8')
+            enriched = m.add_cached_recoveries(rows, root, date(2026,11,3))
+            screened, _ = m.screen(enriched, self.account, self.op, self.p)
+            self.assertEqual(symbol, screened[0]['symbol'])
+            self.assertEqual(104.5, screened[0]['recovery_context']['reclaimed_high'])
+            saved['session'] = '2026-11-03'
+            path.write_text(json.dumps(saved), encoding='utf-8')
+            self.assertEqual(rows, m.add_cached_recoveries(rows, root, date(2026,11,3)))
+
     def test_failure_is_accounted_and_next_scan_can_retry_without_daily_quota(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);run=root/'run';run.mkdir();runner=Mock(side_effect=TimeoutError('test'))
