@@ -41,7 +41,7 @@ def profile(bars, *, as_of, holding_days, trend, config=None, session_dates=None
     if type(holding_days) is not int or not 1 <= holding_days <= 22:
         raise ValueError('INVALID_REACHABILITY_HORIZON')
     past = sorted((b for b in bars if b.get('complete') is True and
-        b.get('source') in ('TWSE_DAILY','BROKER_DAILY') and b['date'] < as_of), key=lambda b:b['date'])[-p['history_bars']:]
+        b.get('source') in ('TWSE_DAILY','BROKER_DAILY','TPEX_DAILY') and b['date'] < as_of), key=lambda b:b['date'])[-p['history_bars']:]
     if len({b['date'] for b in past}) != len(past):
         raise ValueError('DUPLICATE_REACHABILITY_HISTORY')
     for b in past:

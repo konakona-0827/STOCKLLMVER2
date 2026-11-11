@@ -277,7 +277,9 @@ def review_position(service, symbol, previous, observations, stopped, *, provide
         raise ValueError('SINGLE_AI_POSITION_REQUIRED')
     c=candidates[0]
     c['market_history']=list({r['exchange_time']:r for r in [*(c.get('market_history') or []),*observations]}.values())
-    daily_history.enrich_candidates(candidates,{q['symbol']:q for q in batch['quotes']},now().date(),service.directory/'daily_history')
+    from target_reachability import policy as reachability_policy
+    daily_history.enrich_candidates(candidates,{q['symbol']:q for q in batch['quotes']},now().date(),
+        service.directory/'daily_history',max_bars=reachability_policy()['history_bars'],verify_sessions=True)
     apply_live_position_context(candidates,health,execution_db,audit)
     apply_buy_limits(candidates,account,rules)
     c['pending_execution']=symbol in store.pending_reconciliation_symbols()

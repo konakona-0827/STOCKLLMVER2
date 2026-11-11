@@ -30,6 +30,16 @@ class Clock(datetime):
 
 
 class VenueAndSellTests(unittest.TestCase):
+    def test_tpex_completed_history_keeps_the_upstream_target_evidence_checks(self):
+        from target_reachability import profile
+        from test_opportunity_search import candidate
+        c=candidate();bars=c['daily_bars']
+        listed=profile(bars,as_of='2026-11-03',holding_days=10,trend=True)
+        for bar in bars:bar['source']='TPEX_DAILY'
+        tpex=profile(bars,as_of='2026-11-03',holding_days=10,trend=True)
+        self.assertEqual(tpex['status'],'AVAILABLE')
+        self.assertEqual(tpex['available_windows'],listed['available_windows'])
+
     def test_tpex_month_converts_lots_and_thousands_of_twd(self):
         payload=dict(stat='ok',code='1815',tables=[dict(title='個股日成交資訊',
             fields=['日 期','成交張數','成交仟元','開盤','最高','最低','收盤'],
@@ -165,6 +175,8 @@ class PositionReviewPipelineTests(unittest.TestCase):
                     decision,dict(validation='VALID',pretrade_review=dict(status='NOT_NEEDED')))))
                 stack.enter_context(patch('advice_interface.write_advice_interface'))
             result=review_position(service,'1815',{},[],stop,provider=provider)
+            self.assertTrue(replacements['daily_history.enrich_candidates'].call_args.kwargs['verify_sessions'])
+            self.assertGreater(replacements['daily_history.enrich_candidates'].call_args.kwargs['max_bars'],22)
             self.assertEqual(result['management_plan']['action'],action)
             self.assertEqual(runtime.fetch_quotes.call_count,2)
             self.assertEqual(len(result['analysis_set']),1)
