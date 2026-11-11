@@ -58,7 +58,7 @@ class MarketOpportunityRepairTests(unittest.TestCase):
         self.assertEqual(plan['setup_family'],'FIRST_DAY_BREAKOUT')
         self.assertFalse(plan['daily_breakout_confirmed'])
         self.assertEqual(plan['breakout_reference_price'],124)
-        self.assertEqual(plan['target_kind'],'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE')
+        self.assertEqual(plan['target_kind'],'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE')
         self.assertTrue(all(s['entry']>=124 for s in c['trade_setups']))
         self.assertLessEqual(plan['combined_modeled_risk_twd'],50)
         self.assertLessEqual(plan['funding_required_twd'],3500)

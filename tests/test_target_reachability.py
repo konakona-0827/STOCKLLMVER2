@@ -3,6 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from entry_decision import policy as entry_policy,review
 from opportunity_engine import refresh,policy,select
@@ -68,6 +69,13 @@ class TargetReachabilityTests(unittest.TestCase):
         self.assertEqual(self.reference(dates=dates)['status'],'RECENT_HISTORY_GAP')
 
     def test_estimates_are_still_available_but_chasing_cannot_move_the_reference_up(self):
+        # This failed proposal remains reproducible, but is disabled by default.
+        from target_reachability import policy as reachability_policy
+        p=dict(reachability_policy(),empirical_target_enabled=True)
+        with patch('target_reachability.policy',return_value=p):
+            self.exercise_empirical_proposal()
+
+    def exercise_empirical_proposal(self):
         result=refresh(self.c,self.account,self.rules,policy())
         self.assertTrue(result['trade_setups'],result['opportunity_status'])
         plans=[s for s in result['trade_setups'] if 'EMPIRICAL' in s['target_kind']]
@@ -85,6 +93,21 @@ class TargetReachabilityTests(unittest.TestCase):
         self.assertFalse(result['trade_setups'])
         self.assertIn('NO_REMAINING_UPSIDE_WITHIN_HORIZON',result['opportunity_status']['rejection_reasons'])
 
+    def test_default_does_not_turn_a_historical_median_into_a_blanket_veto(self):
+        from target_reachability import policy as reachability_policy,assess_target
+        self.assertFalse(reachability_policy()['empirical_target_enabled'])
+        result=refresh(self.c,self.account,self.rules,policy())
+        plan=result['trade_setups'][0]
+        self.assertEqual(plan['target_kind'],'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE')
+        assessment=plan['target_evidence']['payoff_assessment']
+        self.assertFalse(assessment['mandatory_median_veto'])
+        self.assertIsNone(assessment['target_probability'])
+        historical=result['target_reachability']
+        very_far=assess_target(historical,entry=125,target=10000,invalidation=120)
+        self.assertEqual(very_far['past_range_support_windows'],0)
+        self.assertEqual(very_far['anchor_close'],historical['anchor_close'])
+        self.assertGreater(very_far['required_excursion_from_anchor_atr'],assessment['required_excursion_from_anchor_atr'])
+
     def pending(self):
         self.c['daily_bars'][-1].update(open=121,high=124,low=120,close=121,volume=1000)
         self.c['market_history']=[]
@@ -101,7 +124,7 @@ class TargetReachabilityTests(unittest.TestCase):
             tools=TradingTools(selected,self.rules,'test',Path(directory)/'tools.json',None,None,None)
             tools.account=self.account
             updated=tools._accept_quote(self.c['symbol'],dict(symbol=self.c['symbol'],quote_status='LIVE',
-                is_trial=False,quote_timestamp='2026-11-03T10:01:00+08:00',last_price=125.5,ask=125.5,bid=125))
+                is_trial=False,quote_timestamp='2026-11-03T10:01:00+08:00',last_price=125,ask=125,bid=124.9))
             self.assertEqual(updated['market_history'][-1]['price'],125)
             self.assertTrue(updated['trade_setups'],updated['opportunity_status'])
             count=len(updated['market_history'])

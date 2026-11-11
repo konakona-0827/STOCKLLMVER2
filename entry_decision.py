@@ -30,7 +30,8 @@ def review(candidate,setup,bars,p):
         if not facts['completed_rebound']:blockers.append('COMPLETED_DAILY_REBOUND_NOT_OBSERVED')
         if not facts['live_ma5_reclaimed']:blockers.append('RECOVERY_MA5_NOT_RECLAIMED')
     if (setup['setup_family']=='FIRST_DAY_BREAKOUT' and
-            setup['target_kind'] in ('MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE','EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE') and
+            setup['target_kind'] in ('MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE','EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE',
+                                    'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE') and
             p['modeled_breakout_requires_observed_continuation']):
         at=datetime.fromisoformat(candidate['quote_timestamp']);history=[]
         level=setup['breakout_reference_price']

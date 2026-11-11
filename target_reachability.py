@@ -15,6 +15,7 @@ def policy():
     value = json.loads((CODE_ROOT/'config/target_reachability.json').read_text('utf-8-sig'))
     if (type(value['history_bars']) is not int or not 100 <= value['history_bars'] <= 250
             or type(value['minimum_windows']) is not int or value['minimum_windows'] < 4
+            or type(value.get('empirical_target_enabled')) is not bool
             or value['favorable_excursion_quantile'] != .5):
         raise ValueError('INVALID_TARGET_REACHABILITY_POLICY')
     return value
@@ -49,6 +50,7 @@ def profile(bars, *, as_of, holding_days, trend, config=None, session_dates=None
                 not b['low'] <= min(b['open'],b['close']) <= max(b['open'],b['close']) <= b['high']):
             raise ValueError('INVALID_REACHABILITY_HISTORY')
     result = dict(version=p['version'], status='INSUFFICIENT_PAST_WINDOWS',
+        empirical_target_enabled=p['empirical_target_enabled'],
         scope=p['scope'], holding_days=holding_days, completed_bars=len(past),
         minimum_windows=p['minimum_windows'], target_probability=None, windows=[])
     if not past:
@@ -115,3 +117,25 @@ def profile(bars, *, as_of, holding_days, trend, config=None, session_dates=None
 def view(profile):
     """Small shared evidence; raw historical windows stay in the audit/tool."""
     return {k:v for k,v in profile.items() if k != 'windows'}
+
+
+def assess_target(history, *, entry, target, invalidation):
+    """Describe the payoff requirement against past prices, without certifying it.
+
+    The target's excursion is measured from the same last-completed close as
+    the history. An extended entry therefore consumes observed price space.
+    Counts do not condition on an executable entry or target/stop ordering.
+    """
+    result=dict(status=history['status'],scope='PAST_RANGE_SUPPORT_NOT_ENTRY_CONDITIONAL_WIN_PROBABILITY',
+        target_probability=None,entry=float(entry),required_exit=float(target),invalidation=float(invalidation),
+        mandatory_median_veto=False)
+    if history['status']!='AVAILABLE':return result
+    volatility=history['current_atr14'];anchor=history['anchor_close']
+    required=(float(target)-anchor)/volatility
+    rows=history['windows'];supported=sum(w['favorable_excursion_atr']>=required for w in rows)
+    result.update(anchor_date=history['anchor_date'],anchor_close=anchor,
+        required_excursion_from_anchor_atr=required,entry_extension_from_anchor_atr=(float(entry)-anchor)/volatility,
+        historical_median_reference=history['price_ceiling'],past_range_support_windows=supported,
+        sample_windows=len(rows),descriptive_reach_fraction=supported/len(rows),
+        warning='REQUIRED_PAYOFF_IS_NOT_A_FORECAST; PAST_EXTREMA_DO_NOT_VERIFY_ENTRY_OR_BARRIER_ORDER')
+    return result

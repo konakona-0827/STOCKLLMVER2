@@ -16,7 +16,7 @@ import position_analyzer
 from web_research import search_audit
 from token_budget import compact, candidate_view, decision_input, usage_snapshot
 
-AGENT_VERSION = 'agent-decision-v15-event-conditioned-reachability'
+AGENT_VERSION = 'agent-decision-v16-payoff-evidence-and-confirmation'
 DEFAULT_AGENT_MODEL = 'gpt-6-sol'
 AGENT_INSTRUCTIONS = '''你取代現有 LLM 的決策角色，輸入與最終 JSON 欄位沿用既有契約。
 帳戶及歷史由程式預讀；account_and_history_preloaded=true 時不用再呼叫帳戶與歷史工具。
@@ -37,6 +37,10 @@ recovery_watch 是觀察基準；確認守住已收復價後，程式會依現�
 entry_structure、trade_setups.target_evidence 與 entry_evidence.stop_origin 是引擎與研究共用的結構依據。
 target_reachability 是僅用決策前已完成且不重疊歷史區間估算的期限價格空間，錨定前收，
 不是2R自造目標，也不因現價上漲或失效價拉遠而提高；歷史最大漲幅的中位數不是達標勝率或期望收益。
+REQUIRED_PAYOFF_NOT_OBSERVED_PRICE 是沿用財務門檻的報酬情境，不是價格預測；
+必須核對 payoff_assessment 的前收錨定空間、歷史支持樣本數與當前獨立證據。
+不能以2R或數字合格當作潛力證據，也不能把歷史中位數當成一律否決的硬上限。
+歷史支持為零或稀少時明列反證；BUY 仍須兩位獨立研究引用所選計畫及可達性依據。
 研究尚未通過進場確認的 pending_entry_setups；用新行情核對獨立延續或回測，
 刷新後必須真正進入 trade_setups 才能 BUY，觀察名額不授予下單權限。
 兩日回升已把前一完整日高點與已跌破波段支撐列為近端阻力；較長趨勢計畫不把每筆日高當硬上限。

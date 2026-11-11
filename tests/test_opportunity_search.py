@@ -62,7 +62,7 @@ class OpportunitySearchTests(unittest.TestCase):
         self.assertTrue(c['trade_setups'],c['opportunity_status'])
         for s in c['trade_setups']:
             self.assertTrue(s['daily_breakout_confirmed'])
-            self.assertEqual(s['target_kind'],'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE')
+            self.assertEqual(s['target_kind'],'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE')
             self.assertLessEqual(s['funding_required_twd'],5000)
             self.assertLessEqual(s['estimated_net_downside_twd'],50)
             self.assertGreaterEqual(s['net_return'],.02)
@@ -310,7 +310,7 @@ class OpportunitySearchTests(unittest.TestCase):
             def reviewer(request):
                 packet = json.loads(request['input'])['original_input']
                 visible = packet['analysis_set'][0]
-                self.assertEqual(visible['trade_setups'][0]['target_kind'],'EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE')
+                self.assertEqual(visible['trade_setups'][0]['target_kind'],'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE')
                 handoff = packet['independent_plan_reviews'][c['symbol']]
                 self.assertTrue(all(handoff['plan_evidence_id'] in review['evidence_ids']
                                     for review in handoff['reviews']))

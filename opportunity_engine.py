@@ -260,13 +260,22 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
             elif not retest and (daily_breakout or first_day_breakout):
                 if reachability['status'] != 'AVAILABLE':
                     rejections.add('TARGET_REACHABILITY_HISTORY_REQUIRED');continue
-                if reachability['price_ceiling']<=float(entry):
-                    rejections.add('NO_REMAINING_UPSIDE_WITHIN_HORIZON');continue
-                target=_round_price(min(_number(reachability['price_ceiling']),
-                    closes[-1]+atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
-                kind='EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE'
-                if target-entry>atr*Decimal(str(p['maximum_modeled_target_atr'])):
-                    rejections.add('MODELED_TARGET_DISTANCE_EXCEEDS_ATR_LIMIT');continue
+                if reachability['empirical_target_enabled']:
+                    if reachability['price_ceiling']<=float(entry):
+                        rejections.add('NO_REMAINING_UPSIDE_WITHIN_HORIZON');continue
+                    target=_round_price(min(_number(reachability['price_ceiling']),
+                        closes[-1]+atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
+                    kind='EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE'
+                    if target-entry>atr*Decimal(str(p['maximum_modeled_target_atr'])):
+                        rejections.add('MODELED_TARGET_DISTANCE_EXCEEDS_ATR_LIMIT');continue
+                else:
+                    # Retain the original payoff requirement as an explicitly
+                    # unproven research scenario. It is not a price forecast.
+                    # The median-cap experiment failed untouched cohorts and
+                    # must not silently veto all potential breakout targets.
+                    target=_round_price(entry+min((entry-stop)*Decimal(str(p['breakout_target_r_multiple'])),
+                        atr*Decimal(str(p['maximum_modeled_target_atr']))),candidate['asset_type'])
+                    kind='REQUIRED_PAYOFF_NOT_OBSERVED_PRICE'
             elif not trend and _number(candidate['high'])>entry:
                 target=_number(candidate['high'])
                 kind='OBSERVED_INTRADAY_HIGH_FALLBACK'
@@ -278,7 +287,7 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
             # An empirical point estimate constrains an estimated target.
             # A real observed barrier retains its distinct evidence; the past
             # median is not a physical ceiling that deletes every higher swing.
-            if reachability['status']=='AVAILABLE' and 'NOT_OBSERVED_PRICE' in kind:
+            if reachability['status']=='AVAILABLE' and kind=='EMPIRICAL_HORIZON_RANGE_NOT_OBSERVED_PRICE':
                 ceiling=Decimal(str(reachability['price_ceiling']))
                 if ceiling<=entry:
                     rejections.add('NO_REMAINING_UPSIDE_WITHIN_HORIZON');continue
@@ -333,6 +342,11 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                     kind=kind,source='PAST_HORIZON_RANGE' if 'EMPIRICAL' in kind else 'LIVE_INTRADAY_HIGH',
                     date=session,nearest_observed_resistance=deepcopy(barrier)))
                 setup['target_evidence']['reachability']=reachability_view(reachability)
+                from target_reachability import assess_target
+                setup['target_evidence']['payoff_assessment']=assess_target(reachability,
+                    entry=float(entry),target=float(target),invalidation=float(stop))
+                if kind=='REQUIRED_PAYOFF_NOT_OBSERVED_PRICE':
+                    setup['target_evidence']['source']='REQUIRED_R_PAYOFF_NOT_PRICE_FORECAST'
                 setup['existing_modeled_risk_twd']=float(existing_risk)
                 setup['combined_modeled_risk_twd']=float(existing_risk+Decimal(str(economics['estimated_net_downside_twd'])))
                 setup['analysis_cost_budget_twd']=p['analysis_cost_budget_twd']
