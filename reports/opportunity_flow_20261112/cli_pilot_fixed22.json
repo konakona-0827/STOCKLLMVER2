@@ -1,0 +1,923 @@
+{
+  "summary": {
+    "system": "TW Opportunity Flow",
+    "as_of": "2026-11-10T08:30:00+08:00",
+    "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+    "policy_sha256": "cc4e24eebd7499172a3d16eb62167c8455dedbf2c298582934ffca5d754cb61c",
+    "dataset_manifest_sha256": "716000ef884b4bb451d8e2354cf97d5f9328615109c81fadd1eab0f497570f6d",
+    "universe_scope": "USER_APPROVED_CURRENT_FIXED_POOL_NOT_HISTORICAL_MEMBERSHIP",
+    "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+    "symbols_observed": 22,
+    "states": {
+      "NO_SETUP": 4,
+      "ECONOMIC_BLOCKED": 16,
+      "RESEARCH_WATCH": 2
+    },
+    "blockers": {
+      "NO_CURRENT_SETUP": 4,
+      "NET_PROFIT_BELOW_FLOOR": 10,
+      "NET_RETURN_BELOW_FLOOR": 6,
+      "REWARD_RISK_BELOW_FLOOR": 12,
+      "CAPITAL_OR_RISK_CAP": 6
+    },
+    "llm_calls": 2,
+    "cached_theses": 0,
+    "usage": {
+      "input_tokens": 33976,
+      "cached_input_tokens": 0,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 2997,
+      "reasoning_output_tokens": 1251
+    },
+    "usage_unknown_calls": 0,
+    "additional_api_billed_usd": 0,
+    "plan_usage_consumed": true,
+    "orders_sent": 0,
+    "decision_scope": "SHADOW_RESEARCH_NO_BROKER_OR_ACCOUNT_ACCESS",
+    "elapsed_seconds": 73.687
+  },
+  "opinions": [
+    {
+      "symbol": "2303",
+      "state": "RESEARCH_WATCH",
+      "reasons": [],
+      "review": {
+        "packet": {
+          "schema_version": 1,
+          "system": "TW Opportunity Flow",
+          "policy": {
+            "version": "tw-opportunity-flow-v1-frozen-20261112",
+            "history_sessions": 60,
+            "minimum_history_sessions": 21,
+            "minimum_average_turnover_twd": 100000000,
+            "minimum_average_volume_shares": 100000,
+            "capital_twd": 10000,
+            "allocation_fraction": 0.5,
+            "maximum_position_risk_fraction": 0.005,
+            "minimum_net_return": 0.02,
+            "minimum_reward_risk": 1.5,
+            "minimum_net_profit_twd": 50,
+            "minimum_stop_atr": 0.6,
+            "minimum_commission_twd": 1,
+            "commission_rate": 0.001425,
+            "sell_tax_rate": 0.003,
+            "slippage_bps_each_side": 10,
+            "holding_sessions": 5,
+            "quote_max_age_seconds": 120,
+            "material_price_change_fraction": 0.003,
+            "review_max_age_seconds": 14400,
+            "failed_review_retry_seconds": 300,
+            "poll_seconds": 30,
+            "numeric_recheck_seconds": 60,
+            "daily_refresh_taipei": "18:00",
+            "weekly_refresh": "SATURDAY_10:00_TAIPEI",
+            "model": "gpt-6-sol",
+            "model_timeout_seconds": 180,
+            "model_batch_size": 3
+          },
+          "symbol": "2303",
+          "exchange": "TWSE",
+          "decision_session": "2026-11-10",
+          "completed_through": "2026-11-09",
+          "setup_families": [
+            "RECOVERY_RECLAIM"
+          ],
+          "evidence": [
+            {
+              "evidence_id": "E_FEATURES",
+              "facts": {
+                "close": 96.7,
+                "ma5": 99.12,
+                "ma20": 121.905,
+                "return_5d": -0.120909,
+                "return_20d": -0.348822,
+                "atr14": 7.207143,
+                "average_volume_20d": 149280341.45,
+                "average_turnover_20d": 17651005430.15,
+                "volume_ratio_5d": 1.260106,
+                "historical_high_excursion_sessions": 5,
+                "historical_high_excursion_samples": 55,
+                "historical_high_excursion_median": 0.05,
+                "historical_high_excursion_p75": 0.092
+              }
+            },
+            {
+              "evidence_id": "E_LEVELS",
+              "facts": {
+                "supports": [
+                  {
+                    "price": 153.0,
+                    "date": "2026-09-21",
+                    "known_on": "2026-09-22",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 151.5,
+                    "date": "2026-09-29",
+                    "known_on": "2026-09-30",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 145.5,
+                    "date": "2026-10-07",
+                    "known_on": "2026-10-08",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 138.5,
+                    "date": "2026-10-13",
+                    "known_on": "2026-10-14",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 135.0,
+                    "date": "2026-09-14",
+                    "known_on": "2026-09-15",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 132.5,
+                    "date": "2026-10-15",
+                    "known_on": "2026-10-16",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 126.0,
+                    "date": "2026-10-19",
+                    "known_on": "2026-10-20",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 123.0,
+                    "date": "2026-09-03",
+                    "known_on": "2026-09-04",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 121.0,
+                    "date": "2026-10-27",
+                    "known_on": "2026-10-28",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 120.0,
+                    "date": "2026-08-14",
+                    "known_on": "2026-08-17",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 117.0,
+                    "date": "2026-08-27",
+                    "known_on": "2026-08-28",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 112.0,
+                    "date": "2026-08-20",
+                    "known_on": "2026-08-21",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 107.0,
+                    "date": "2026-10-30",
+                    "known_on": "2026-11-02",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 92.0,
+                    "date": "2026-11-09",
+                    "known_on": "2026-11-09",
+                    "kind": "LAST_COMPLETED_LOW"
+                  },
+                  {
+                    "price": 88.6,
+                    "date": "2026-11-06",
+                    "known_on": "2026-11-09",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  }
+                ],
+                "targets": [
+                  {
+                    "price": 118.0,
+                    "date": "2026-08-20",
+                    "known_on": "2026-08-21",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 128.0,
+                    "date": "2026-08-24",
+                    "known_on": "2026-08-25",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 128.5,
+                    "date": "2026-10-28",
+                    "known_on": "2026-10-29",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 130.0,
+                    "date": "2026-08-28",
+                    "known_on": "2026-08-31",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 130.5,
+                    "date": "2026-08-13",
+                    "known_on": "2026-08-14",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 136.5,
+                    "date": "2026-09-01",
+                    "known_on": "2026-09-02",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 143.0,
+                    "date": "2026-09-07",
+                    "known_on": "2026-09-08",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 143.5,
+                    "date": "2026-09-14",
+                    "known_on": "2026-09-15",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 144.0,
+                    "date": "2026-10-14",
+                    "known_on": "2026-10-15",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 145.5,
+                    "date": "2026-09-10",
+                    "known_on": "2026-09-11",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 149.5,
+                    "date": "2026-10-08",
+                    "known_on": "2026-11-09",
+                    "kind": "OBSERVED_20D_HIGH"
+                  },
+                  {
+                    "price": 160.5,
+                    "date": "2026-09-18",
+                    "known_on": "2026-09-21",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 165.0,
+                    "date": "2026-10-05",
+                    "known_on": "2026-10-06",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 168.5,
+                    "date": "2026-09-22",
+                    "known_on": "2026-11-09",
+                    "kind": "OBSERVED_60D_HIGH"
+                  }
+                ]
+              }
+            },
+            {
+              "evidence_id": "E_ECONOMICS",
+              "facts": [
+                {
+                  "entry": 96.7,
+                  "stop": {
+                    "price": 92.0,
+                    "date": "2026-11-09",
+                    "known_on": "2026-11-09",
+                    "kind": "LAST_COMPLETED_LOW"
+                  },
+                  "target": {
+                    "price": 118.0,
+                    "date": "2026-08-20",
+                    "known_on": "2026-08-21",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  "kind": "LAST_CLOSE_RESEARCH_REFERENCE",
+                  "economics": {
+                    "quantity": 9,
+                    "entry": 96.7,
+                    "stop": 92.0,
+                    "target": 118.0,
+                    "invested_twd": 872.1703,
+                    "net_profit_twd": 183.7677,
+                    "modeled_loss_twd": 48.9983,
+                    "net_return": 0.210702,
+                    "reward_risk": 3.750491,
+                    "spread_reserve": 0,
+                    "slippage_bps_each_side": 10
+                  },
+                  "target_distance_atr": 2.9554,
+                  "target_required_return": 0.220269,
+                  "eligible": true,
+                  "blockers": [],
+                  "waiting_for": "RESEARCH_AND_EXECUTION_DATA",
+                  "route_id": "3bf8371da66d14de"
+                },
+                {
+                  "route_id": "f56a32e92eee0164",
+                  "entry": 92.0,
+                  "kind": "OBSERVED_SUPPORT_PULLBACK",
+                  "eligible": false,
+                  "blockers": [
+                    "STRUCTURAL_STOP_MISSING"
+                  ],
+                  "waiting_for": "NEW_COMPLETED_PRICE_STRUCTURE",
+                  "economics": null
+                }
+              ]
+            },
+            {
+              "evidence_id": "E_DATA_LIMITS",
+              "facts": {
+                "price_basis": "RAW_UNADJUSTED_UNVERIFIED_ACTIONS",
+                "point_in_time_certified": false,
+                "corporate_actions_verified": false,
+                "older_history_gaps": [],
+                "price_reference_basis": "LAST_COMPLETED_CLOSE",
+                "spread_known": false,
+                "quote_problem": "ODDLOT_QUOTE_MISSING",
+                "event_check": {
+                  "status": "NOT_CHECKED"
+                }
+              }
+            }
+          ],
+          "recent_bars": [
+            {
+              "date": "2026-10-29",
+              "open": 122.0,
+              "high": 122.0,
+              "low": 115.5,
+              "close": 115.5,
+              "volume": 350078013
+            },
+            {
+              "date": "2026-10-30",
+              "open": 110.0,
+              "high": 112.5,
+              "low": 107.0,
+              "close": 111.5,
+              "volume": 237895670
+            },
+            {
+              "date": "2026-11-02",
+              "open": 109.5,
+              "high": 111.0,
+              "low": 107.5,
+              "close": 110.0,
+              "volume": 131924615
+            },
+            {
+              "date": "2026-11-03",
+              "open": 109.0,
+              "high": 109.5,
+              "low": 102.0,
+              "close": 103.0,
+              "volume": 173468188
+            },
+            {
+              "date": "2026-11-04",
+              "open": 107.5,
+              "high": 107.5,
+              "low": 100.0,
+              "close": 105.5,
+              "volume": 160039980
+            },
+            {
+              "date": "2026-11-05",
+              "open": 102.5,
+              "high": 104.5,
+              "low": 97.9,
+              "close": 98.4,
+              "volume": 160347197
+            },
+            {
+              "date": "2026-11-06",
+              "open": 88.6,
+              "high": 94.6,
+              "low": 88.6,
+              "close": 92.0,
+              "volume": 204952329
+            },
+            {
+              "date": "2026-11-09",
+              "open": 93.0,
+              "high": 100.5,
+              "low": 92.0,
+              "close": 96.7,
+              "volume": 209362151
+            }
+          ],
+          "source_lineage_sha256": "31e4536a7df540815ccc247e0a475f08a675af9be6f219bfcecec3fa0a6d00a4",
+          "source_history_sha256": "91dd1d25c1f9ae5d10cce43fbddfc9ac839e451ecfa8a678e59da0d7f236bd0f",
+          "decision_scope": "RESEARCH_ONLY_NOT_ORDER_PERMISSION",
+          "selected_routes": [
+            "3bf8371da66d14de"
+          ],
+          "packet_id": "8ddc53a08b5e912358129831b8aaf2e72576627ef1cded37519c76c828f78dc5"
+        },
+        "researcher": {
+          "counterevidence": "近20日跌34.88%，收盤96.7低於5日均線99.12及20日均線121.905；5個交易日歷史高點變幅中位數5%、第75百分位9.2%，均低於到達118目標所需的22.03%。這些重疊視窗只描述歷史，不能當作勝率或預測。",
+          "evidence_ids": [
+            "E_FEATURES",
+            "E_LEVELS",
+            "E_ECONOMICS",
+            "E_DATA_LIMITS"
+          ],
+          "execution_missing": [
+            "即時零股報價與買賣價差",
+            "公司事件檢查",
+            "公司行動核實及價格資料時點認證"
+          ],
+          "packet_id": "8ddc53a08b5e912358129831b8aaf2e72576627ef1cded37519c76c828f78dc5",
+          "selected_route_id": null,
+          "symbol": "2303",
+          "thesis": "11月9日反彈，最後收盤參考路徑數值合格；但目標距離2.9554 ATR，五個交易日內重到118的假說尚未確認。92支撐回測路徑缺結構停損，不能替代合格路徑。",
+          "verdict": "WATCH",
+          "wait_conditions": [
+            "後續已完成交易日守住92低點，並收復目前的5日均線99.12，再檢查反彈結構是否成立。",
+            "若形成新的已完成價格結構，重算支撐回測路徑的結構停損與經濟條件；同時重估合格路徑的目標所需漲幅與已成熟的五日變幅。"
+          ]
+        },
+        "challenger": {
+          "counterevidence": "近20日跌34.9%，收盤仍低於5日均線99.12；反彈至96.7後，100.5與107附近仍有近端壓力。118目標需在5個交易日上漲22.0%（2.9554 ATR），高於已成熟歷史高點變幅中位數5.0%及第75百分位9.2%；重疊視窗並非勝率。11月9日自92反彈，追價須審慎。合格數值路徑已計稅費及指定滑價，但未知價差尚未反映；回升假說尚待確認，未構成明確失效反證。",
+          "evidence_ids": [
+            "E_FEATURES",
+            "E_LEVELS",
+            "E_ECONOMICS",
+            "E_DATA_LIMITS"
+          ],
+          "execution_missing": [
+            "即時零股報價及買賣價差",
+            "公司事件查核",
+            "公司行動核實；原始未調整價格的基準仍待確認"
+          ],
+          "packet_id": "8ddc53a08b5e912358129831b8aaf2e72576627ef1cded37519c76c828f78dc5",
+          "selected_route_id": null,
+          "symbol": "2303",
+          "thesis": "雖有合格的96.7參考路徑，價格仍未收復5日均線，且118目標相對5日期限要求偏高；先觀察回升是否成立。92支撐回檔路徑缺少結構停損，不能替代合格路徑。",
+          "verdict": "WATCH",
+          "wait_conditions": [
+            "後續完成的價格資料若收復99.12及100.5，並進一步克服107附近壓力，重審回升假說與118目標的期限可達性；若跌破92，重審既有合格路徑。",
+            "若新完成的價格結構形成可用停損，再重新檢查92支撐回檔路徑的數值資格。",
+            "取得即時零股報價、價差與公司事件及行動資料後，重新核對成本與價格基準。"
+          ]
+        }
+      },
+      "execution": {
+        "state": "NO_APPROVED_RESEARCH_ROUTE",
+        "missing": []
+      }
+    },
+    {
+      "symbol": "5347",
+      "state": "RESEARCH_WATCH",
+      "reasons": [],
+      "review": {
+        "packet": {
+          "schema_version": 1,
+          "system": "TW Opportunity Flow",
+          "policy": {
+            "version": "tw-opportunity-flow-v1-frozen-20261112",
+            "history_sessions": 60,
+            "minimum_history_sessions": 21,
+            "minimum_average_turnover_twd": 100000000,
+            "minimum_average_volume_shares": 100000,
+            "capital_twd": 10000,
+            "allocation_fraction": 0.5,
+            "maximum_position_risk_fraction": 0.005,
+            "minimum_net_return": 0.02,
+            "minimum_reward_risk": 1.5,
+            "minimum_net_profit_twd": 50,
+            "minimum_stop_atr": 0.6,
+            "minimum_commission_twd": 1,
+            "commission_rate": 0.001425,
+            "sell_tax_rate": 0.003,
+            "slippage_bps_each_side": 10,
+            "holding_sessions": 5,
+            "quote_max_age_seconds": 120,
+            "material_price_change_fraction": 0.003,
+            "review_max_age_seconds": 14400,
+            "failed_review_retry_seconds": 300,
+            "poll_seconds": 30,
+            "numeric_recheck_seconds": 60,
+            "daily_refresh_taipei": "18:00",
+            "weekly_refresh": "SATURDAY_10:00_TAIPEI",
+            "model": "gpt-6-sol",
+            "model_timeout_seconds": 180,
+            "model_batch_size": 3
+          },
+          "symbol": "5347",
+          "exchange": "TPEX",
+          "decision_session": "2026-11-10",
+          "completed_through": "2026-11-09",
+          "setup_families": [
+            "RECOVERY_RECLAIM"
+          ],
+          "evidence": [
+            {
+              "evidence_id": "E_FEATURES",
+              "facts": {
+                "close": 132.0,
+                "ma5": 129.8,
+                "ma20": 156.1,
+                "return_5d": -0.089655,
+                "return_20d": -0.305263,
+                "atr14": 10.142857,
+                "average_volume_20d": 14780547.1,
+                "average_turnover_20d": 2261640974.15,
+                "volume_ratio_5d": 0.620574,
+                "historical_high_excursion_sessions": 5,
+                "historical_high_excursion_samples": 55,
+                "historical_high_excursion_median": 0.046358,
+                "historical_high_excursion_p75": 0.06689
+              }
+            },
+            {
+              "evidence_id": "E_LEVELS",
+              "facts": {
+                "supports": [
+                  {
+                    "price": 178.5,
+                    "date": "2026-10-01",
+                    "known_on": "2026-10-02",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 171.5,
+                    "date": "2026-10-13",
+                    "known_on": "2026-10-14",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 168.0,
+                    "date": "2026-09-24",
+                    "known_on": "2026-09-29",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 166.5,
+                    "date": "2026-09-21",
+                    "known_on": "2026-09-22",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 160.5,
+                    "date": "2026-10-15",
+                    "known_on": "2026-10-16",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 159.0,
+                    "date": "2026-10-19",
+                    "known_on": "2026-10-20",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 158.0,
+                    "date": "2026-10-27",
+                    "known_on": "2026-10-28",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 152.5,
+                    "date": "2026-09-14",
+                    "known_on": "2026-09-15",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 149.0,
+                    "date": "2026-08-27",
+                    "known_on": "2026-08-28",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 148.0,
+                    "date": "2026-08-31",
+                    "known_on": "2026-09-01",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 147.5,
+                    "date": "2026-08-19",
+                    "known_on": "2026-08-20",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 147.0,
+                    "date": "2026-09-03",
+                    "known_on": "2026-09-04",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 146.5,
+                    "date": "2026-08-25",
+                    "known_on": "2026-08-26",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 141.0,
+                    "date": "2026-10-30",
+                    "known_on": "2026-11-02",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 120.5,
+                    "date": "2026-11-09",
+                    "known_on": "2026-11-09",
+                    "kind": "LAST_COMPLETED_LOW"
+                  },
+                  {
+                    "price": 113.5,
+                    "date": "2026-11-06",
+                    "known_on": "2026-11-09",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  }
+                ],
+                "targets": [
+                  {
+                    "price": 154.0,
+                    "date": "2026-08-26",
+                    "known_on": "2026-08-27",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 154.5,
+                    "date": "2026-08-20",
+                    "known_on": "2026-08-21",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 156.5,
+                    "date": "2026-09-07",
+                    "known_on": "2026-09-08",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 157.0,
+                    "date": "2026-08-24",
+                    "known_on": "2026-08-25",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 158.0,
+                    "date": "2026-08-28",
+                    "known_on": "2026-08-31",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 160.0,
+                    "date": "2026-09-14",
+                    "known_on": "2026-09-15",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 163.0,
+                    "date": "2026-09-10",
+                    "known_on": "2026-09-11",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 168.0,
+                    "date": "2026-08-14",
+                    "known_on": "2026-08-17",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 170.0,
+                    "date": "2026-10-28",
+                    "known_on": "2026-10-29",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 174.0,
+                    "date": "2026-09-18",
+                    "known_on": "2026-09-21",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 178.5,
+                    "date": "2026-10-14",
+                    "known_on": "2026-10-15",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 181.5,
+                    "date": "2026-09-22",
+                    "known_on": "2026-09-23",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 188.5,
+                    "date": "2026-10-01",
+                    "known_on": "2026-10-02",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 191.0,
+                    "date": "2026-10-08",
+                    "known_on": "2026-11-09",
+                    "kind": "OBSERVED_20D_HIGH"
+                  },
+                  {
+                    "price": 195.0,
+                    "date": "2026-10-06",
+                    "known_on": "2026-11-09",
+                    "kind": "OBSERVED_60D_HIGH"
+                  }
+                ]
+              }
+            },
+            {
+              "evidence_id": "E_ECONOMICS",
+              "facts": [
+                {
+                  "entry": 132.0,
+                  "stop": {
+                    "price": 120.5,
+                    "date": "2026-11-09",
+                    "known_on": "2026-11-09",
+                    "kind": "LAST_COMPLETED_LOW"
+                  },
+                  "target": {
+                    "price": 154.0,
+                    "date": "2026-08-26",
+                    "known_on": "2026-08-27",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  "kind": "LAST_CLOSE_RESEARCH_REFERENCE",
+                  "economics": {
+                    "quantity": 3,
+                    "entry": 132.0,
+                    "stop": 120.5,
+                    "target": 154.0,
+                    "invested_twd": 397.396,
+                    "net_profit_twd": 61.142,
+                    "modeled_loss_twd": 39.2575,
+                    "net_return": 0.153857,
+                    "reward_risk": 1.55746,
+                    "spread_reserve": 0,
+                    "slippage_bps_each_side": 10
+                  },
+                  "target_distance_atr": 2.169,
+                  "target_required_return": 0.166667,
+                  "eligible": true,
+                  "blockers": [],
+                  "waiting_for": "RESEARCH_AND_EXECUTION_DATA",
+                  "route_id": "228c9604c64c4f52"
+                }
+              ]
+            },
+            {
+              "evidence_id": "E_DATA_LIMITS",
+              "facts": {
+                "price_basis": "RAW_UNADJUSTED_UNVERIFIED_ACTIONS",
+                "point_in_time_certified": false,
+                "corporate_actions_verified": false,
+                "older_history_gaps": [],
+                "price_reference_basis": "LAST_COMPLETED_CLOSE",
+                "spread_known": false,
+                "quote_problem": "ODDLOT_QUOTE_MISSING",
+                "event_check": {
+                  "status": "NOT_CHECKED"
+                }
+              }
+            }
+          ],
+          "recent_bars": [
+            {
+              "date": "2026-10-29",
+              "open": 166.0,
+              "high": 166.0,
+              "low": 154.0,
+              "close": 156.5,
+              "volume": 15720542
+            },
+            {
+              "date": "2026-10-30",
+              "open": 145.5,
+              "high": 150.5,
+              "low": 141.0,
+              "close": 144.0,
+              "volume": 35807222
+            },
+            {
+              "date": "2026-11-02",
+              "open": 145.0,
+              "high": 147.5,
+              "low": 141.0,
+              "close": 145.0,
+              "volume": 16606990
+            },
+            {
+              "date": "2026-11-03",
+              "open": 142.0,
+              "high": 142.5,
+              "low": 133.0,
+              "close": 134.0,
+              "volume": 18797938
+            },
+            {
+              "date": "2026-11-04",
+              "open": 138.0,
+              "high": 138.0,
+              "low": 127.0,
+              "close": 137.0,
+              "volume": 16943890
+            },
+            {
+              "date": "2026-11-05",
+              "open": 133.0,
+              "high": 134.5,
+              "low": 126.0,
+              "close": 126.0,
+              "volume": 14742174
+            },
+            {
+              "date": "2026-11-06",
+              "open": 113.5,
+              "high": 123.0,
+              "low": 113.5,
+              "close": 120.0,
+              "volume": 22610231
+            },
+            {
+              "date": "2026-11-09",
+              "open": 121.5,
+              "high": 132.0,
+              "low": 120.5,
+              "close": 132.0,
+              "volume": 11133258
+            }
+          ],
+          "source_lineage_sha256": "8264eafc851ac22ee66780bc2539ce38af7bacf9cd203db95a4f5015bd451983",
+          "source_history_sha256": "abdc6e191a879a74cbc416418c986e805c870bb4166c0b1f84bd3e6c815dba5a",
+          "decision_scope": "RESEARCH_ONLY_NOT_ORDER_PERMISSION",
+          "selected_routes": [
+            "228c9604c64c4f52"
+          ],
+          "packet_id": "52a0ce7fc597e3011dc873cea3891f719bea7e59009e5b4f4eaf646cd9e48619"
+        },
+        "researcher": {
+          "counterevidence": "近20日跌30.53%，收盤132低於20日均線156.1；5個交易日歷史高點變幅中位數4.64%、第75百分位6.69%，均低於到達154目標所需的16.67%。這些重疊視窗只描述歷史，不能當作勝率或預測。",
+          "evidence_ids": [
+            "E_FEATURES",
+            "E_LEVELS",
+            "E_ECONOMICS",
+            "E_DATA_LIMITS"
+          ],
+          "execution_missing": [
+            "即時零股報價與買賣價差",
+            "公司事件檢查",
+            "公司行動核實及價格資料時點認證"
+          ],
+          "packet_id": "52a0ce7fc597e3011dc873cea3891f719bea7e59009e5b4f4eaf646cd9e48619",
+          "selected_route_id": null,
+          "symbol": "5347",
+          "thesis": "11月9日自低點反彈，且有合格數值路徑；但目標距離2.169 ATR，五個交易日內重到歷史高點的假說仍待驗證。現有跌勢與歷史變幅構成疑慮，尚非明確推翻。",
+          "verdict": "WATCH",
+          "wait_conditions": [
+            "後續已完成交易日守住120.5低點，並出現高於132的收盤及改善的量能，再檢查反彈是否延續。",
+            "以新完成資料重算既有路徑，確認經濟條件仍合格，並重新比較目標所需漲幅與已成熟的五日變幅。"
+          ]
+        },
+        "challenger": {
+          "counterevidence": "近20日跌30.5%，目標需在5個交易日上漲16.7%（2.169 ATR），明顯高於已成熟歷史高點變幅中位數4.6%及第75百分位6.7%；這些重疊視窗不能當成勝率。11月9日收在當日高點，較前日收盤急彈，追價風險高；141及149為近端壓力。合格路徑報酬風險比1.557，且未計入未知價差，經濟餘裕窄，但尚無明確證據推翻反彈假說。",
+          "evidence_ids": [
+            "E_FEATURES",
+            "E_LEVELS",
+            "E_ECONOMICS",
+            "E_DATA_LIMITS"
+          ],
+          "execution_missing": [
+            "即時零股報價及買賣價差",
+            "公司事件查核",
+            "公司行動核實；原始未調整價格的基準仍待確認"
+          ],
+          "packet_id": "52a0ce7fc597e3011dc873cea3891f719bea7e59009e5b4f4eaf646cd9e48619",
+          "selected_route_id": "228c9604c64c4f52",
+          "symbol": "5347",
+          "thesis": "11月9日由120.5反彈至132，收盤高於5日均線；既有合格路徑支持繼續研究復甦假說，但154目標在5日內重到仍缺乏確認。RESEARCH 不代表買入。",
+          "verdict": "RESEARCH",
+          "wait_conditions": [
+            "後續完成的價格資料若守住120.5並越過141，重審反彈延續性與154目標的期限可達性；若跌破120.5，重審假說及既有路徑。",
+            "取得即時零股報價、價差與公司事件及行動資料後，重新核對既有路徑的成本與價格基準。"
+          ]
+        }
+      },
+      "execution": {
+        "state": "NO_APPROVED_RESEARCH_ROUTE",
+        "missing": []
+      }
+    }
+  ]
+}

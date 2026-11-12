@@ -1,0 +1,521 @@
+{
+  "summary": {
+    "system": "TW Opportunity Flow",
+    "as_of": "2026-11-12T08:30:00+08:00",
+    "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+    "policy_sha256": "cc4e24eebd7499172a3d16eb62167c8455dedbf2c298582934ffca5d754cb61c",
+    "dataset_manifest_sha256": "d2df009426d71b855597092ff61af279c23964ad7ebe093b40ee20cda47bd384",
+    "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+    "review_scope": [
+      "4904"
+    ],
+    "symbols_observed": 1990,
+    "states": {
+      "NO_SETUP": 447,
+      "SCREENED_OUT": 1301,
+      "DATA_BLOCKED": 177,
+      "ECONOMIC_BLOCKED": 59,
+      "REVIEW_PENDING": 5,
+      "RESEARCH_WATCH": 1
+    },
+    "blockers": {
+      "NO_CURRENT_SETUP": 447,
+      "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1301,
+      "RECENT_HISTORY_GAP_OR_INVALID_BAR": 165,
+      "NET_PROFIT_BELOW_FLOOR": 51,
+      "NET_RETURN_BELOW_FLOOR": 42,
+      "REWARD_RISK_BELOW_FLOOR": 52,
+      "STRUCTURAL_STOP_MISSING": 2,
+      "OBSERVED_TARGET_MISSING": 10,
+      "INSUFFICIENT_COMPLETED_HISTORY": 12,
+      "CAPITAL_OR_RISK_CAP": 4
+    },
+    "llm_calls": 2,
+    "cached_theses": 0,
+    "usage": {
+      "input_tokens": 29918,
+      "cached_input_tokens": 0,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 1659,
+      "reasoning_output_tokens": 772
+    },
+    "usage_unknown_calls": 0,
+    "additional_api_billed_usd": 0,
+    "plan_usage_consumed": true,
+    "orders_sent": 0,
+    "decision_scope": "SHADOW_RESEARCH_NO_BROKER_OR_ACCOUNT_ACCESS",
+    "elapsed_seconds": 48.735
+  },
+  "opinions": [
+    {
+      "symbol": "4904",
+      "state": "RESEARCH_WATCH",
+      "review": {
+        "packet": {
+          "schema_version": 1,
+          "system": "TW Opportunity Flow",
+          "policy": {
+            "version": "tw-opportunity-flow-v1-frozen-20261112",
+            "history_sessions": 60,
+            "minimum_history_sessions": 21,
+            "minimum_average_turnover_twd": 100000000,
+            "minimum_average_volume_shares": 100000,
+            "capital_twd": 10000,
+            "allocation_fraction": 0.5,
+            "maximum_position_risk_fraction": 0.005,
+            "minimum_net_return": 0.02,
+            "minimum_reward_risk": 1.5,
+            "minimum_net_profit_twd": 50,
+            "minimum_stop_atr": 0.6,
+            "minimum_commission_twd": 1,
+            "commission_rate": 0.001425,
+            "sell_tax_rate": 0.003,
+            "slippage_bps_each_side": 10,
+            "holding_sessions": 5,
+            "quote_max_age_seconds": 120,
+            "material_price_change_fraction": 0.003,
+            "review_max_age_seconds": 14400,
+            "failed_review_retry_seconds": 300,
+            "poll_seconds": 30,
+            "numeric_recheck_seconds": 60,
+            "daily_refresh_taipei": "18:00",
+            "weekly_refresh": "SATURDAY_10:00_TAIPEI",
+            "model": "gpt-6-sol",
+            "model_timeout_seconds": 180,
+            "model_batch_size": 3
+          },
+          "symbol": "4904",
+          "exchange": "TWSE",
+          "decision_session": "2026-11-12",
+          "completed_through": "2026-11-11",
+          "setup_families": [
+            "RECOVERY_RECLAIM"
+          ],
+          "trigger_states": {
+            "ma5": "UNOBSERVED",
+            "ma20": "UNOBSERVED",
+            "previous_high": "UNOBSERVED",
+            "previous_low": "UNOBSERVED",
+            "high20": "UNOBSERVED"
+          },
+          "evidence": [
+            {
+              "evidence_id": "E_FEATURES",
+              "facts": {
+                "close": 108.0,
+                "ma5": 108.8,
+                "ma20": 111.525,
+                "return_5d": -0.052632,
+                "return_20d": 0.023697,
+                "atr14": 3.5,
+                "average_volume_20d": 8740580.5,
+                "average_turnover_20d": 969711923.45,
+                "volume_ratio_5d": 0.886206,
+                "historical_high_excursion_sessions": 5,
+                "historical_high_excursion_samples": 55,
+                "historical_high_excursion_median": 0.0199,
+                "historical_high_excursion_p75": 0.034653
+              }
+            },
+            {
+              "evidence_id": "E_LEVELS",
+              "facts": {
+                "supports": [
+                  {
+                    "price": 112.0,
+                    "date": "2026-11-03",
+                    "known_on": "2026-11-04",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 110.0,
+                    "date": "2026-10-29",
+                    "known_on": "2026-10-30",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 105.0,
+                    "date": "2026-09-21",
+                    "known_on": "2026-09-22",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 104.0,
+                    "date": "2026-10-05",
+                    "known_on": "2026-10-06",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 103.0,
+                    "date": "2026-11-11",
+                    "known_on": "2026-11-11",
+                    "kind": "LAST_COMPLETED_LOW"
+                  },
+                  {
+                    "price": 100.5,
+                    "date": "2026-08-26",
+                    "known_on": "2026-08-27",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 99.8,
+                    "date": "2026-08-28",
+                    "known_on": "2026-08-31",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  {
+                    "price": 98.1,
+                    "date": "2026-08-14",
+                    "known_on": "2026-08-17",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  }
+                ],
+                "targets": [
+                  {
+                    "price": 102.5,
+                    "date": "2026-08-25",
+                    "known_on": "2026-08-26",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 104.5,
+                    "date": "2026-09-07",
+                    "known_on": "2026-09-08",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 106.5,
+                    "date": "2026-10-08",
+                    "known_on": "2026-10-12",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 107.5,
+                    "date": "2026-09-15",
+                    "known_on": "2026-09-16",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 115.0,
+                    "date": "2026-10-19",
+                    "known_on": "2026-10-20",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 116.0,
+                    "date": "2026-11-02",
+                    "known_on": "2026-11-03",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  {
+                    "price": 117.0,
+                    "date": "2026-11-05",
+                    "known_on": "2026-11-11",
+                    "kind": "OBSERVED_60D_HIGH"
+                  }
+                ]
+              }
+            },
+            {
+              "evidence_id": "E_ECONOMICS",
+              "facts": [
+                {
+                  "entry": 108.0,
+                  "stop": {
+                    "price": 105.0,
+                    "date": "2026-09-21",
+                    "known_on": "2026-09-22",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  "target": {
+                    "price": 115.0,
+                    "date": "2026-10-19",
+                    "known_on": "2026-10-20",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  "kind": "LAST_CLOSE_RESEARCH_REFERENCE",
+                  "economics": {
+                    "quantity": 13,
+                    "entry": 108.0,
+                    "stop": 105.0,
+                    "target": 115.0,
+                    "invested_twd": 1407.404,
+                    "net_profit_twd": 79.101,
+                    "modeled_loss_twd": 49.769,
+                    "net_return": 0.056203,
+                    "reward_risk": 1.589363,
+                    "spread_reserve": 0,
+                    "slippage_bps_each_side": 10
+                  },
+                  "target_distance_atr": 2.0,
+                  "target_required_return": 0.064815,
+                  "eligible": true,
+                  "blockers": [],
+                  "waiting_for": "RESEARCH_AND_EXECUTION_DATA",
+                  "route_id": "70225474a24bf22a"
+                },
+                {
+                  "entry": 105.0,
+                  "stop": {
+                    "price": 100.5,
+                    "date": "2026-08-26",
+                    "known_on": "2026-08-27",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  "target": {
+                    "price": 106.5,
+                    "date": "2026-10-08",
+                    "known_on": "2026-10-12",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  "kind": "OBSERVED_SUPPORT_PULLBACK",
+                  "economics": {
+                    "quantity": 9,
+                    "entry": 105.0,
+                    "stop": 100.5,
+                    "target": 106.5,
+                    "invested_twd": 946.945,
+                    "net_profit_twd": 6.5965,
+                    "modeled_loss_twd": 47.3495,
+                    "net_return": 0.006966,
+                    "reward_risk": 0.139315,
+                    "spread_reserve": 0,
+                    "slippage_bps_each_side": 10
+                  },
+                  "target_distance_atr": 0.4286,
+                  "target_required_return": 0.014286,
+                  "eligible": false,
+                  "blockers": [
+                    "NET_RETURN_BELOW_FLOOR",
+                    "REWARD_RISK_BELOW_FLOOR",
+                    "NET_PROFIT_BELOW_FLOOR"
+                  ],
+                  "waiting_for": "PRICE_AT_OR_BELOW_ENTRY",
+                  "route_id": "10dc1e0600834af1"
+                },
+                {
+                  "entry": 104.0,
+                  "stop": {
+                    "price": 100.5,
+                    "date": "2026-08-26",
+                    "known_on": "2026-08-27",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  "target": {
+                    "price": 104.5,
+                    "date": "2026-09-07",
+                    "known_on": "2026-09-08",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  "kind": "OBSERVED_SUPPORT_PULLBACK",
+                  "economics": {
+                    "quantity": 11,
+                    "entry": 104.0,
+                    "stop": 100.5,
+                    "target": 104.5,
+                    "invested_twd": 1146.144,
+                    "net_profit_twd": -2.7935,
+                    "modeled_loss_twd": 46.7495,
+                    "net_return": -0.002437,
+                    "reward_risk": -0.059755,
+                    "spread_reserve": 0,
+                    "slippage_bps_each_side": 10
+                  },
+                  "target_distance_atr": 0.1429,
+                  "target_required_return": 0.004808,
+                  "eligible": false,
+                  "blockers": [
+                    "NET_RETURN_BELOW_FLOOR",
+                    "REWARD_RISK_BELOW_FLOOR",
+                    "NET_PROFIT_BELOW_FLOOR"
+                  ],
+                  "waiting_for": "PRICE_AT_OR_BELOW_ENTRY",
+                  "route_id": "918bfc2b768057d0"
+                },
+                {
+                  "entry": 103.0,
+                  "stop": {
+                    "price": 100.5,
+                    "date": "2026-08-26",
+                    "known_on": "2026-08-27",
+                    "kind": "CONFIRMED_SWING_LOW"
+                  },
+                  "target": {
+                    "price": 104.5,
+                    "date": "2026-09-07",
+                    "known_on": "2026-09-08",
+                    "kind": "CONFIRMED_SWING_HIGH"
+                  },
+                  "kind": "OBSERVED_SUPPORT_PULLBACK",
+                  "economics": {
+                    "quantity": 15,
+                    "entry": 103.0,
+                    "stop": 100.5,
+                    "target": 104.5,
+                    "invested_twd": 1548.545,
+                    "net_profit_twd": 10.3875,
+                    "modeled_loss_twd": 49.5525,
+                    "net_return": 0.006708,
+                    "reward_risk": 0.209626,
+                    "spread_reserve": 0,
+                    "slippage_bps_each_side": 10
+                  },
+                  "target_distance_atr": 0.4286,
+                  "target_required_return": 0.014563,
+                  "eligible": false,
+                  "blockers": [
+                    "NET_RETURN_BELOW_FLOOR",
+                    "REWARD_RISK_BELOW_FLOOR",
+                    "NET_PROFIT_BELOW_FLOOR"
+                  ],
+                  "waiting_for": "PRICE_AT_OR_BELOW_ENTRY",
+                  "route_id": "91650db5c7af6155"
+                }
+              ]
+            },
+            {
+              "evidence_id": "E_DATA_LIMITS",
+              "facts": {
+                "price_basis": "RAW_UNADJUSTED_UNVERIFIED_ACTIONS",
+                "point_in_time_certified": false,
+                "corporate_actions_verified": false,
+                "older_history_gaps": [],
+                "price_reference_basis": "LAST_COMPLETED_CLOSE",
+                "spread_known": false,
+                "quote_problem": "ODDLOT_QUOTE_MISSING",
+                "event_check": {
+                  "status": "NOT_CHECKED"
+                }
+              }
+            }
+          ],
+          "recent_bars": [
+            {
+              "date": "2026-11-02",
+              "open": 116.0,
+              "high": 116.0,
+              "low": 112.5,
+              "close": 113.5,
+              "volume": 7697716
+            },
+            {
+              "date": "2026-11-03",
+              "open": 113.0,
+              "high": 115.0,
+              "low": 112.0,
+              "close": 112.5,
+              "volume": 7490190
+            },
+            {
+              "date": "2026-11-04",
+              "open": 113.0,
+              "high": 114.0,
+              "low": 112.5,
+              "close": 114.0,
+              "volume": 7441645
+            },
+            {
+              "date": "2026-11-05",
+              "open": 113.5,
+              "high": 117.0,
+              "low": 112.0,
+              "close": 112.5,
+              "volume": 7745413
+            },
+            {
+              "date": "2026-11-06",
+              "open": 112.5,
+              "high": 112.5,
+              "low": 107.0,
+              "close": 112.0,
+              "volume": 11595321
+            },
+            {
+              "date": "2026-11-09",
+              "open": 111.0,
+              "high": 111.0,
+              "low": 106.0,
+              "close": 106.0,
+              "volume": 18744565
+            },
+            {
+              "date": "2026-11-10",
+              "open": 105.5,
+              "high": 107.5,
+              "low": 104.5,
+              "close": 105.5,
+              "volume": 10387333
+            },
+            {
+              "date": "2026-11-11",
+              "open": 105.0,
+              "high": 108.0,
+              "low": 103.0,
+              "close": 108.0,
+              "volume": 9910311
+            }
+          ],
+          "source_lineage_sha256": "a59ad6710fb47b754dabb134094298cd929cd299b7da13bbf7c4d2e281f12621",
+          "source_history_sha256": "5e30c6ab4e1f40c89ccae1664bebfd403ffc33cd46b4fda5aef86107c030e7ee",
+          "decision_scope": "RESEARCH_ONLY_NOT_ORDER_PERMISSION",
+          "selected_routes": [
+            "70225474a24bf22a"
+          ],
+          "packet_id": "9c9ee0c75d88c2fc2e5c707af89d5703b74f2dbfc6ac95f685a92ee224b4d341"
+        },
+        "researcher": {
+          "counterevidence": "近5日跌幅5.26%，收盤108低於MA5的108.8及MA20的111.525；先前110、112支撐已失守。目標115距離2.0 ATR，需上漲6.48%，高於已成熟5日歷史高點變幅的中位數1.99%及第75百分位3.47%；重疊視窗不能視為勝率或預測。",
+          "evidence_ids": [
+            "E_FEATURES",
+            "E_LEVELS",
+            "E_ECONOMICS",
+            "E_DATA_LIMITS"
+          ],
+          "execution_missing": [
+            "即時行情及零股報價缺失，價差未知",
+            "公司事件尚未查核",
+            "公司行動未核實，原始價格基準及資料時點未認證"
+          ],
+          "packet_id": "9c9ee0c75d88c2fc2e5c707af89d5703b74f2dbfc6ac95f685a92ee224b4d341",
+          "selected_route_id": null,
+          "symbol": "4904",
+          "thesis": "11月11日自103回升至108，留下復甦研究線索；現有108參考路徑數值合格，但收復走勢尚未確認，五個交易日內重到115仍需較大的歷史變幅。",
+          "verdict": "WATCH",
+          "wait_conditions": [
+            "下一次完成日線若收復既有110支撐，並使復甦觸發狀態由UNOBSERVED轉為已觀察，重審價格形態。",
+            "重審時須確認原有108參考路徑仍數值合格，並重新比較到115所需漲幅與已成熟的5日歷史變幅。"
+          ]
+        },
+        "challenger": {
+          "counterevidence": "近五日報酬為負，最新收盤仍低於 MA5 與 MA20；11/11 盤中低點 103 也低於合格路徑所用的 105 支撐。目標需上漲 6.48%（2 ATR），高於已成熟五日歷史高點變幅的中位數 1.99% 與第 75 百分位 3.47%；這些重疊視窗不能當作勝率或期限內達標預測。",
+          "evidence_ids": [
+            "E_FEATURES",
+            "E_LEVELS",
+            "E_ECONOMICS",
+            "E_DATA_LIMITS"
+          ],
+          "execution_missing": [
+            "即時零股報價與買賣價差",
+            "公司事件查核",
+            "公司行動核實及價格基準確認",
+            "資料時點認證"
+          ],
+          "packet_id": "9c9ee0c75d88c2fc2e5c707af89d5703b74f2dbfc6ac95f685a92ee224b4d341",
+          "selected_route_id": null,
+          "symbol": "4904",
+          "thesis": "11/11 自低點反彈，但 RECOVERY_RECLAIM 尚未確認。雖有一條成本後合格的既有路徑，近端支撐受壓，五日目標距離亦偏大；其餘回檔路徑均不符數值條件，故列 WATCH。",
+          "verdict": "WATCH",
+          "wait_conditions": [
+            "後續完成的價格資料顯示重新站上既有 MA5、MA20，且回升觸發狀態由 UNOBSERVED 轉為可觀察的確認訊號時重審。",
+            "屆時重算既有路徑，確認成本後仍合格，並核對更新後的目標距離與已成熟五日高點變幅。",
+            "取得新鮮零股報價及價差，完成公司事件與公司行動查核後，再檢查執行可行性。"
+          ]
+        }
+      },
+      "execution": {
+        "state": "NO_APPROVED_RESEARCH_ROUTE",
+        "missing": []
+      }
+    }
+  ]
+}
