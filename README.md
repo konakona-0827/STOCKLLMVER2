@@ -2,6 +2,8 @@
 
 分支：`codex/new-system-tw-opportunity-flow`。2026-11-12 建立。
 
+完整的流程圖、資料來源、取得時點、掃描間隔、模型決策及持倉管理，請參閱 [Opportunity Flow 1.1 流程參考](docs/OPPORTUNITY_FLOW.md)。
+
 這是使用官方免費資料與既有 Codex CLI 的獨立研究流程。新入口是 **`OpportunityFlow.cmd` / `RunOpportunityFlow.ps1`**，程式位於 `opportunity_flow/`。原 STOCKLLM 說明保存在 [README_STOCKLLM_LEGACY.md](README_STOCKLLM_LEGACY.md)。1.1 版已接上現有正式帳本、群益券商執行器及最新 `codex/profit-exit-strategy` 分支的持倉與退出控制。
 
 **雙擊 `OpportunityFlow.cmd` 現在會啟動自動交易介面**，依既有帳戶設定在交易時間研究、複核及送出 BUY / SELL。研究通過後仍須更新零股買賣價、帳戶、持股及風控，最後交由原執行器送單；成交只按券商確認回寫。`Demo` / `Cycle` / `Watch` 保留獨立影子模式，不會自行載入券商；`RESEARCH_READY` 本身不是成交。

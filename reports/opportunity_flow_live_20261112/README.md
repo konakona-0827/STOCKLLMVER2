@@ -2,6 +2,8 @@
 
 2026-11-12，分支 `codex/new-system-tw-opportunity-flow`。延續影子基線 `f02ea94`，整合本機最新 `codex/profit-exit-strategy` 的 `cdaa644`。遠端更新已 fetch；原正式程式的帳戶根目錄與費用設定維持不變。
 
+操作流程與各項間隔另見 [完整流程圖與說明](../../docs/OPPORTUNITY_FLOW.md)。
+
 ## 結果與驗證界線
 
 - 全套 **674 項測試通過**，72.118 秒；其中新增正式串接測試 37 項。原先影子核心的 34 項與最新退出分支測試均包含其中。
