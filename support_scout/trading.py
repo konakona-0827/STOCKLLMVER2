@@ -62,7 +62,8 @@ def load_observation(symbol, candidate, count, root):
                      item['status'].get('latest_retrieved_at') or now().isoformat(),
                      b['open'], b['high'], b['low'], b['close'], b['volume'], b['turnover_twd'])
                  for b in bars)
-    series = Series(symbol, candidate.get('name') or symbol, 'TWSE', 'TWSE_DAILY',
+    source=item['status'].get('source','TWSE_DAILY')
+    series = Series(symbol, candidate.get('name') or symbol, 'TPEX' if source=='TPEX_DAILY' else 'TWSE', source,
                     'RAW_UNADJUSTED_OBSERVATION', rows, dict(actions_reviewed=False))
     technical = detect_support(series, Rules())
     return dict(status='RAW_PRICE_OBSERVATION', technical=technical,

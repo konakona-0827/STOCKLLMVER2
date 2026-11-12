@@ -14,6 +14,7 @@ from pretrade_policy import (MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK,
                              supported_price)
 from web_research import enable_search
 from opportunity_engine import match_setup
+from pretrade_policy import minimum_net_return
 
 ITEM = object_schema(dict(
     symbol={'type': 'string'}, decision={'type': 'string', 'enum': ['BUY', 'HOLD', 'SELL', 'WAIT']},
@@ -70,8 +71,11 @@ def review_trades(result, request, provider):
                                                Decimal(str(economics['estimated_buy_cost_twd']))),
                     **economics))
             else:
+                from execution.planned_exit import matches as planned_sell
+                exit_candidate = ({**candidate,'bid':decision['suggested_price']}
+                                  if planned_sell(candidate,decision) else candidate)
                 checks.append(dict(symbol=decision['symbol'], side='SELL',
-                    **estimate_sell(candidate, decision['suggested_qty'],
+                    **estimate_sell(exit_candidate, decision['suggested_qty'],
                                     minimum_commission_twd=rules.get('minimum_commission_twd', 1),
                                     commission_rate=rules.get('commission_rate', '0.001425'))))
         except (ValueError, TypeError, ArithmeticError):
@@ -99,7 +103,7 @@ def review_trades(result, request, provider):
                       'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE 與舊 MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE 都是報酬要求，不是價格預測；'
                       '核對 payoff_assessment 的期限、前收錨定空間與不重疊歷史支持，不能用2R或單次極端樣本當作潛力證據。'
                       '須核對突破、完成日線量能、真實支撐與風險，不把估算誤稱歷史成交價。'
-                      'SELL 可因原假設失效、達成目標或重大新風險通過；'
+                      'SELL 可因原假設失效、達成目標、重大新風險，或費後正獲利且有具體回落/壓力證據通過；'
                       '若舊計畫未知，不可捏造失效理由。不能改寫價格或股數。'
                       '若標示 DAILY_PARTICIPATION_PROBE，且每日參與政策啟用、當日該側未完成且無未結單、'
                       '僅 1 股且價金不超過政策上限，使用者授權的小額執行試單本身是有效動作理由；'
@@ -190,7 +194,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                   'price_levels 只含有完整歷史交易日可驗證的前收與 5／10／20 日高低點，及本輪即時開高低。'
                   '缺少可用的目標或失效價就 WAIT，不得自行預測或補造價位。')
     instructions += (level_rule+
-                     f'程式會硬性要求成本後目標淨報酬至少 {MIN_NET_RETURN:.0%}、'
+                     f'依各檔政策要求費後正淨利（機會策略至少 1 元；其他策略淨報酬至少 {MIN_NET_RETURN:.0%}）、'
                      f'報酬風險比至少 {MIN_REWARD_RISK}，並以設定資金上限的 {MAX_POSITION_RISK:.1%}'
                      '限制單筆模型損失。這些是假設門檻，非獲利或最大損失保證。'
                      f'同檔賣出後 {REENTRY_COOLDOWN_DAYS} 個交易日內不再 BUY；'
@@ -221,7 +225,7 @@ def build_request(candidates, paper_account=None, strategy_prompt=None, model=No
                          '逐項重新評估原假設、失效價、到期後續抱的現有證據及下次檢查條件；到期不自動 SELL。'
                          'available=false 或 plan=null 表示舊持倉計畫未知，不得虛構。'
                          '部分賣出採近似先進先出配對，請留意 date_basis。'
-                         'SELL 的 reason 須逐一指出被觸發的原假設、目標已達或新增重大風險；'
+                         'SELL 的 reason 可指出費後正獲利且有具體回落或近端壓力、原假設失效、目標已達或新增重大風險；'
                          '若舊計畫未知，明說未知並改以可驗證風險說明。')
     instructions += ('\n\n輸出完整性：analysis_set 的每個 symbol 必須在 decisions 中恰好出現一次，'
                      '包括沒有買賣訊號及僅因持倉而納入的標的；不得省略。'
@@ -404,7 +408,7 @@ def validate(result, candidates, available_cash_cents=None, minimum_buy_fee_twd=
                         probe = (MARKER in d['warnings'] and capital_twd is not None
                                  and probe_allowed('BUY', d['suggested_qty'],
                                                    max(c['ask'], d['suggested_price'])))
-                        if not probe and (net_return < MIN_NET_RETURN or economics['reward_risk_ratio'] is None or
+                        if not probe and (net_return < minimum_net_return(c) or economics['reward_risk_ratio'] is None or
                                 Decimal(str(economics['reward_risk_ratio'])) < MIN_REWARD_RISK):
                             plan_error = 'BUY_NET_UPSIDE_OR_RISK_REWARD_INSUFFICIENT'
                         if c.get('opportunity_policy'):

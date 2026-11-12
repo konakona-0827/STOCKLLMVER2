@@ -57,7 +57,7 @@ def entry_screen(candidate, account, rules):
         # 5/10/20-day extrema. They are barriers, not invented legal targets.
         barriers = set(prices)
         for bar in candidate.get('daily_bars') or []:
-            if (bar.get('complete') is True and bar.get('source') in ('TWSE_DAILY', 'BROKER_DAILY')
+            if (bar.get('complete') is True and bar.get('source') in ('TWSE_DAILY', 'BROKER_DAILY', 'TPEX_DAILY')
                     and bar.get('date', '') < session and bar.get('high', 0) > 0):
                 barriers.add(Decimal(str(bar['high'])))
         minimum = rules.economic_minimum_commission_twd

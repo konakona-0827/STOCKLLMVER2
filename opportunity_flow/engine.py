@@ -82,13 +82,18 @@ def levels(bars):
     return sorted(supports.values(), key=lambda r: r["price"], reverse=True), sorted(targets.values(), key=lambda r: r["price"])
 
 
-def routes(bars, f, q, p, price_reference=None):
+def routes(bars, f, q, p, price_reference=None, account=None):
     supports, targets = levels(bars)
     reference = q["ask"] if q else price_reference["price"] if price_reference else f["close"]
     spread = q["ask"] - q["bid"] if q else 0
     entries = [(reference, "CURRENT_ASK" if q else "PUBLIC_PRICE_RESEARCH_REFERENCE" if price_reference else "LAST_CLOSE_RESEARCH_REFERENCE")]
     entries += [(r["price"], "OBSERVED_SUPPORT_PULLBACK") for r in supports if reference * .95 <= r["price"] < reference]
     result = []
+    account=account or {}
+    held=int(account.get('held_qty',0))
+    unit=max(reference,float(account.get('average_cost_twd') or reference))
+    allocation=max(0,p['capital_twd']*p['allocation_fraction']-held*unit)
+    funding=min(allocation,float(account.get('available_cash_twd',allocation)))
     for entry, kind in entries:
         stops = [r for r in supports if r["price"] < entry and entry-r["price"] >= max(p["minimum_stop_atr"] * f["atr14"], 2*spread)]
         overhead = [r for r in targets if r["price"] > entry]
@@ -99,11 +104,14 @@ def routes(bars, f, q, p, price_reference=None):
             continue
         stop, target = stops[0], overhead[0]
         # Nearest observed overhead target prevents silently jumping resistance.
-        ceiling = min(999, int(p["capital_twd"] * p["allocation_fraction"] / entry))
+        ceiling = min(999, int(max(0,funding) / entry))
+        existing_risk=float(account.get('risk_by_stop',{}).get(str(float(stop['price'])),0)) if not held or account.get('risk_by_stop') else None
         viable = []
         for qty in range(ceiling, 0, -1):
             e = economics(entry, stop["price"], target["price"], qty, spread, p)
-            if e["invested_twd"] <= p["capital_twd"] * p["allocation_fraction"] and e["modeled_loss_twd"] <= p["capital_twd"] * p["maximum_position_risk_fraction"]:
+            reserve=max(float(account.get('minimum_fee_reserve_twd',0)),entry*qty*float(account.get('buy_cash_buffer_rate',0)))
+            if (max(e['invested_twd'],entry*qty+reserve)<=funding and existing_risk is not None
+                    and e['modeled_loss_twd']+existing_risk<=p['capital_twd']*p['maximum_position_risk_fraction']):
                 viable.append(e)
                 break
         e = viable[0] if viable else economics(entry, stop["price"], target["price"], 1, spread, p)
@@ -117,6 +125,7 @@ def routes(bars, f, q, p, price_reference=None):
         if e["net_profit_twd"] < p["minimum_net_profit_twd"]:
             blocks.append("NET_PROFIT_BELOW_FLOOR")
         route = dict(entry=entry, stop=stop, target=target, kind=kind, economics=e,
+            existing_modeled_risk_twd=existing_risk,allocation_remaining_twd=round(allocation,4),
             target_distance_atr=round((target["price"]-entry)/f["atr14"],4),
             target_required_return=round(target["price"]/entry-1,6),
             eligible=not blocks, blockers=blocks,
@@ -126,7 +135,7 @@ def routes(bars, f, q, p, price_reference=None):
     return result
 
 
-def build(symbol, dataset, at, p, raw_quote=None, event=None):
+def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
     at = stamp(at)
     day = at.date().isoformat()
     sessions = [d for d in dataset["sessions"] if d < day]
@@ -160,6 +169,10 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None):
         return base
     exchange = bars[-1]["exchange"]
     base["exchange"] = exchange
+    if account and (account.get('pending_execution') or account.get('trading_enabled') is False or account.get('buy_block_reason')):
+        base.update(state='ACCOUNT_BLOCKED',reasons=[account.get('buy_block_reason') or
+                    ('PENDING_BROKER_ORDER' if account.get('pending_execution') else 'AI_TRADING_DISABLED')])
+        return base
     f = features(bars,p["holding_sessions"])
     if (f["average_turnover_20d"] is None or f["average_turnover_20d"] < p["minimum_average_turnover_twd"]
             or f["average_volume_20d"] < p["minimum_average_volume_shares"] or f["atr14"] <= 0):
@@ -181,7 +194,7 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None):
     if not families:
         base.update(state="NO_SETUP", reasons=["NO_CURRENT_SETUP"])
         return base
-    scenarios = routes(bars, f, q, p,price_reference)
+    scenarios = routes(bars, f, q, p,price_reference,account)
     # Data availability and trade economics are explicit, separate dimensions.
     eligible = [r for r in scenarios if r["eligible"]]
     base.update(state="REVIEW_PENDING" if eligible else "ECONOMIC_BLOCKED",
@@ -201,6 +214,7 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None):
     core = dict(schema_version=1, system="TW Opportunity Flow", policy=p, symbol=symbol, exchange=exchange,
         decision_session=day, completed_through=bars[-1]["date"], setup_families=families,
         trigger_states=trigger_states,
+        execution_context={k:v for k,v in (account or {}).items() if k!='checked_at'} or None,
         evidence=evidence, recent_bars=[{k:b[k] for k in ("date","open","high","low","close","volume")} for b in bars[-8:]],
         source_lineage_sha256=digest(source_rows), source_history_sha256=digest(bars),
         decision_scope="RESEARCH_ONLY_NOT_ORDER_PERMISSION", selected_routes=[r["route_id"] for r in eligible])

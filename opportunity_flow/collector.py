@@ -10,7 +10,7 @@ import time
 from urllib.parse import urlencode
 from urllib.request import Request,urlopen
 
-from .common import TAIPEI,number,read,save
+from .common import TAIPEI,number,read,save,stamp
 
 FIELDS=("symbol","exchange","date","open","high","low","close","volume","turnover_twd",
         "retrieved_at","source","source_sha256","price_basis")
@@ -19,13 +19,15 @@ MASTERS={"TWSE":"https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
 
 
 class PublicHTTP:
-    def __init__(self,folder,delay=1.5):
+    def __init__(self,folder,delay=1.5,stopped=lambda:False):
         self.folder=Path(folder)
         self.folder.mkdir(parents=True,exist_ok=True)
         self.delay,self.last=delay,0
         self.records=[]
+        self.stopped=stopped
 
     def get(self,name,url):
+        if self.stopped():raise RuntimeError('COLLECTION_STOPPED')
         path=self.folder/(name+".json")
         meta=path.with_suffix(".meta.json")
         cached=path.exists() and meta.exists()
@@ -36,6 +38,7 @@ class PublicHTTP:
                 raise ValueError("PUBLIC_CACHE_HASH_OR_URL_MISMATCH")
         else:
             time.sleep(max(0,self.delay-(time.monotonic()-self.last)))
+            if self.stopped():raise RuntimeError('COLLECTION_STOPPED')
             started=time.monotonic()
             request=Request(url,headers={"User-Agent":"TWOpportunityFlow/1.0 (personal research)","Accept":"application/json"})
             with urlopen(request,timeout=45) as response:
@@ -114,7 +117,12 @@ def roc_date(value):
     return date(int(y)+1911,int(m),int(d)).isoformat()
 
 
-def collect(folder,end,count=65,http=None):
+def collect(folder,end,count=65,http=None,stopped=lambda:False):
+    from .dataset_lock import dataset_lease
+    with dataset_lease(folder):return _collect_locked(folder,end,count,http,stopped)
+
+
+def _collect_locked(folder,end,count,http,stopped):
     started=time.monotonic()
     end=date.fromisoformat(end)
     now=datetime.now(TAIPEI)
@@ -123,10 +131,9 @@ def collect(folder,end,count=65,http=None):
     folder=Path(folder)
     folder.mkdir(parents=True,exist_ok=True)
     lock=folder/".collecting"
-    with lock.open("x",encoding="utf-8") as f:
-        f.write(datetime.now(TAIPEI).isoformat())
+    save(lock,dict(lock_version=1,started_at=datetime.now(TAIPEI).isoformat()))
     try:
-        http=http or PublicHTTP(folder/"sources")
+        http=http or PublicHTTP(folder/"sources",stopped=stopped)
         today=datetime.now(TAIPEI).date().isoformat()
         master={}
         for exchange,url in MASTERS.items():
@@ -141,8 +148,14 @@ def collect(folder,end,count=65,http=None):
             url="https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?"+urlencode(dict(date=cursor.strftime("%Y%m01"),response="json"))
             calendar_key="calendar_"+cursor.strftime("%Y%m")+"_"+str(end)
             if cursor.strftime("%Y%m")!=end.strftime("%Y%m"):
-                # Closed months need not be downloaded again for every new day.
-                cached=[x for x in http.folder.glob("calendar_"+cursor.strftime("%Y%m")+"_*.json") if not x.name.endswith(".meta.json")]
+                # A cache captured mid-month is incomplete even after that month closes.
+                closed_before=(cursor.replace(day=28)+timedelta(days=4)).replace(day=1)
+                cached=[]
+                for x in http.folder.glob('calendar_'+cursor.strftime('%Y%m')+'_*.json'):
+                    if x.name.endswith('.meta.json'):continue
+                    try:
+                        if stamp(read(x.with_suffix('.meta.json'))['retrieved_at']).date()>=closed_before:cached.append(x)
+                    except (ValueError,KeyError,OSError,TypeError):continue
                 if cached:
                     calendar_key=sorted(cached)[-1].stem
             obj,_=http.get(calendar_key,url)
@@ -157,6 +170,7 @@ def collect(folder,end,count=65,http=None):
             raise ValueError("OFFICIAL_CALENDAR_OR_HISTORY_INCOMPLETE")
         bars,errors=[],[]
         for session in days:
+            if stopped():raise RuntimeError('COLLECTION_STOPPED')
             for exchange in ("TWSE","TPEX"):
                 if exchange=="TWSE":
                     url="https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?"+urlencode(dict(date=session.replace("-",""),type="ALLBUT0999",response="json"))
@@ -166,6 +180,7 @@ def collect(folder,end,count=65,http=None):
                 subset={s:m for s,m in master.items() if m["exchange"]==exchange}
                 found,rejected=parse_daily(exchange,obj,session,subset,record)
                 bars.extend(found);errors.extend(rejected)
+        if stopped():raise RuntimeError('COLLECTION_STOPPED')
         for name,fields,rows in (("bars.csv",FIELDS,bars),("sessions.csv",["date"],[dict(date=d) for d in days])):
             path=folder/name
             with path.with_suffix(".tmp").open("w",encoding="utf-8",newline="") as f:

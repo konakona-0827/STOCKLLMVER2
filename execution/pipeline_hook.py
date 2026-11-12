@@ -18,6 +18,7 @@ def execute_after_advice_written(
     account_snapshot: ExecutionAccountSnapshot | None = None,
     execution_db_path: str | Path | None = None,
     latest_report_path: str | Path | None = None,
+    stopped=None,
 ) -> dict:
     """Call this immediately after advice_interface.py finishes writing JSON."""
     root = Path(project_root)
@@ -31,6 +32,7 @@ def execute_after_advice_written(
         session=session,
         account_snapshot=account_snapshot,
         execution_db_path=execution_db_path,
+        **({'stopped':stopped} if stopped is not None else {}),
     )
 
     out_dir = root / "data" / "execution"

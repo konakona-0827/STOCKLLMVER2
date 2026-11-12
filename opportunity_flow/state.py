@@ -23,6 +23,8 @@ class Ledger:
                 status TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS feed_events (id INTEGER PRIMARY KEY, at TEXT NOT NULL,
                 kind TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS handoffs (decision_id TEXT PRIMARY KEY, status TEXT NOT NULL,
+                payload TEXT NOT NULL, report TEXT);
         """)
         self.db.commit()
 
@@ -74,4 +76,19 @@ class Ledger:
 
     def feed(self,at,kind,data):
         self.db.execute("INSERT INTO feed_events(at,kind,data) VALUES (?,?,?)",(at,kind,canonical(data)))
+        self.db.commit()
+
+    def claim_handoff(self,ids,payload):
+        self.db.execute('BEGIN IMMEDIATE')
+        try:
+            if any(self.db.execute('SELECT 1 FROM handoffs WHERE decision_id=?',(i,)).fetchone() for i in ids):
+                self.db.rollback();return False
+            for i in ids:self.db.execute('INSERT INTO handoffs VALUES (?,?,?,NULL)',(i,'PREPARED',canonical(payload)))
+            self.db.commit();return True
+        except BaseException:
+            self.db.rollback();raise
+
+    def finish_handoff(self,ids,report):
+        for i in ids:self.db.execute('UPDATE handoffs SET status=?,report=? WHERE decision_id=?',
+            (report.get('status','RECORDED'),canonical(report),i))
         self.db.commit()

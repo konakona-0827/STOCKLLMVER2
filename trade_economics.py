@@ -62,6 +62,9 @@ def estimate_sell(candidate, qty, *, minimum_commission_twd=1,
     bid = Decimal(str(candidate.get('bid')))
     if not bid.is_finite() or bid <= 0 or type(qty) is not int or qty <= 0:
         raise ValueError('INVALID_SELL_ESTIMATE')
+    minimum,rate=Decimal(str(minimum_commission_twd)),Decimal(str(commission_rate))
+    if not minimum.is_finite() or minimum<0 or not rate.is_finite() or rate<0:
+        raise ValueError('INVALID_COMMISSION_ASSUMPTION')
     gross = bid * qty
     fee = max(Decimal(str(minimum_commission_twd)),
               (gross * Decimal(str(commission_rate))).to_integral_value(rounding=ROUND_FLOOR))
@@ -71,13 +74,38 @@ def estimate_sell(candidate, qty, *, minimum_commission_twd=1,
     held = int((candidate.get('paper_position') or {}).get('qty') or 0)
     basis = candidate.get('ai_cost_basis') or {}
     if basis.get('available'):
+        if held<=0 or qty>held:
+            raise ValueError('SELL_ESTIMATE_EXCEEDS_KNOWN_HOLDING')
         cost = Decimal(str(basis['average_unit_cost_twd'])) * qty
-        cost_basis_source = 'RECONSTRUCTED_EXCLUDES_BUY_FEES'
+        # The formal reconstructed basis excludes buy commissions. Allocate a
+        # conservative estimated buy commission before calling a sale profitable.
+        buy_gross = Decimal(str(basis['average_unit_cost_twd'])) * held
+        buy_fee = max(Decimal(str(minimum_commission_twd)),
+                      (buy_gross*Decimal(str(commission_rate))).to_integral_value(rounding=ROUND_FLOOR))
+        allocated_buy_fee = buy_fee*qty/held if held else Decimal(0)
+        lots=(candidate.get('buy_plans') or {}).get('lots',[])
+        if lots and sum(int(lot.get('quantity') or 0) for lot in lots)==held:
+            remaining=qty
+            allocated_buy_fee=Decimal(0)
+            for lot in lots:
+                original=int(lot.get('original_quantity') or lot['quantity'])
+                if original<int(lot['quantity']) or original<=0:
+                    raise ValueError('INVALID_REMAINING_LOT_QUANTITY')
+                taken=min(remaining,int(lot['quantity']))
+                lot_gross=Decimal(str(basis['average_unit_cost_twd']))*original
+                lot_fee=max(minimum,(lot_gross*rate).to_integral_value(rounding=ROUND_FLOOR))
+                allocated_buy_fee+=lot_fee*taken/original
+                remaining-=taken
+                if not remaining:break
+        cost += allocated_buy_fee
+        cost_basis_source = 'RECONSTRUCTED_INCLUDES_ESTIMATED_BUY_FEES'
     else:
         cents = (candidate.get('paper_position') or {}).get('cost_cents')
         cost = Decimal(str(cents)) * qty / (100 * held) if cents and held else None
         cost_basis_source = 'PAPER_INCLUDES_BUY_FEES' if cost is not None else 'UNKNOWN'
+        allocated_buy_fee = Decimal(0)
     return dict(estimated_net_proceeds_twd=float(proceeds),
                 estimated_realized_pnl_twd=float(proceeds-cost) if cost is not None else None,
+                estimated_allocated_buy_commission_twd=float(allocated_buy_fee),
                 cost_basis_source=cost_basis_source,
                 excludes_future_execution_slippage=True)

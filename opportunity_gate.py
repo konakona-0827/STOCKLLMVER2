@@ -30,6 +30,8 @@ def evaluate(trigger, candidates, account, path, policy, at=None):
     result=dict(call_model=False,reason='NO_QUALIFIED_ENTRY_OR_POSITION',snapshot=current)
     if trigger=='MANUAL':
         return {**result,'call_model':True,'reason':'MANUAL_REVIEW'}
+    if any((c.get('exit_context') or {}).get('urgent_review') for c in candidates):
+        return {**result,'call_model':True,'reason':'POSITION_PROFIT_OR_RISK_EXIT_REQUIRES_REVIEW'}
     if not current['setups'] and not current['holdings'] and not current['watches']:
         return result
     try:

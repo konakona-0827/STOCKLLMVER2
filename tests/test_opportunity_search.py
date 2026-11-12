@@ -199,6 +199,7 @@ class OpportunitySearchTests(unittest.TestCase):
             self.assertIn('BUY_MUST_MATCH_CURRENT_ACCOUNT_SIZED_SETUP',d['warnings'])
 
     def test_reduced_size_must_still_cover_the_research_economics_hurdle(self):
+        self.p['minimum_target_net_profit_twd']=50
         c=refresh(candidate(),self.account,self.rules,self.p);d=decision(c);d['suggested_qty']=1
         validate(dict(market_view='測試',decisions=[d]),[c],500000,1,.01,capital_twd=10000,
                  funding_fee_reserve_twd=20)

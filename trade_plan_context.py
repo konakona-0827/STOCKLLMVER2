@@ -21,7 +21,7 @@ def remaining_plans(events, held_qty):
         if event['side'] == 'BUY':
             stamp = datetime.fromisoformat(event['at'])
             entry_date = stamp.astimezone(TAIPEI).date().isoformat() if stamp.tzinfo else stamp.date().isoformat()
-            lots.append(dict(quantity=qty, plan=event.get('plan'),
+            lots.append(dict(quantity=qty, original_quantity=qty, plan=event.get('plan'),
                              entry_date=entry_date, date_basis=event['date_basis']))
         elif event['side'] == 'SELL':
             remaining = qty

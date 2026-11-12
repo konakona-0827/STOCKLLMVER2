@@ -12,6 +12,12 @@ MAX_POSITION_RISK = Decimal('0.005')
 REENTRY_COOLDOWN_DAYS = 3
 
 
+def minimum_net_return(candidate):
+    """Small positive opportunity profits retain the same downside and R/R limits."""
+    return (Decimal(0) if (candidate.get('opportunity_policy') or {}).get('accept_small_positive_profit') is True
+            else MIN_NET_RETURN)
+
+
 def _positive(value):
     return type(value) in (int, float) and math.isfinite(value) and value > 0
 
@@ -24,7 +30,7 @@ def price_levels(candidate):
         return []
     rows = {}
     for bar in candidate.get('daily_bars') or []:
-        if not isinstance(bar, dict) or bar.get('source') not in ('TWSE_DAILY', 'BROKER_DAILY') or bar.get('complete') is not True:
+        if not isinstance(bar, dict) or bar.get('source') not in ('TWSE_DAILY', 'BROKER_DAILY', 'TPEX_DAILY') or bar.get('complete') is not True:
             continue
         try:
             day = date.fromisoformat(bar['date'])

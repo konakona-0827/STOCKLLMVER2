@@ -10,9 +10,12 @@ from .common import digest, number, read, stamp
 
 
 def load_dataset(folder):
+    from .dataset_lock import dataset_lease
+    with dataset_lease(folder):return _load_dataset_locked(folder)
+
+
+def _load_dataset_locked(folder):
     folder = Path(folder)
-    if (folder / ".collecting").exists():
-        raise ValueError("DATASET_UPDATE_IN_PROGRESS")
     manifest = read(folder / "manifest.json")
     for name, expected in manifest.get("files", {}).items():
         candidate = (folder / name).resolve()

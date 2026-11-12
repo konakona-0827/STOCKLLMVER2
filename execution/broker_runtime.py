@@ -30,11 +30,30 @@ class BrokerRuntime:
     def execute(self, advice_path: str | Path):
         return self._submit("execute", Path(advice_path))
 
+    def execute_if_active(self,advice_path,stopped):
+        return self._submit('execute',Path(advice_path),stopped)
+
     def health(self):
         return self._submit("health")
 
     def fetch_quotes(self, symbols, audit, stopped, timeout=12):
         return self._submit("quotes", tuple(symbols), audit, stopped, timeout)
+
+    def fetch_quotes_with_markets(self, symbols, markets, audit, stopped, timeout=12):
+        quotes,errors={},{}
+        for market in (5,6):
+            group=tuple(s for s in dict.fromkeys(symbols) if markets.get(s)==market)
+            if not group:continue
+            try:
+                found,failed=self._submit('quotes',group,audit,stopped,timeout,market)
+                quotes.update(found);errors.update(failed)
+            except Exception as exc:
+                errors.update({s:f'{type(exc).__name__}: {exc}' for s in group})
+        errors.update({s:'ODDLOT_MARKET_UNKNOWN' for s in symbols if markets.get(s) not in (5,6)})
+        return quotes,errors
+
+    def cancel_exit(self,decision_id,stopped=lambda:False):
+        return self._submit('cancel_exit',decision_id,stopped)
 
     def shutdown(self):
         if not self._thread.is_alive():
@@ -116,7 +135,13 @@ class BrokerRuntime:
                             result = execute_after_advice_written(
                                 args[0], project_root=self.project_root,
                                 session=session,
+                                **({'stopped':args[1]} if len(args)>1 else {}),
                             )
+                        elif kind == 'cancel_exit':
+                            if session is None:
+                                raise RuntimeError(connection_error)
+                            from .exit_cancel import request_cancel
+                            result=request_cancel(self.project_root,session,args[0],args[1])
                         elif kind == "health":
                             from .health_monitor import run_health_check
                             result = run_health_check(
@@ -157,6 +182,7 @@ class BrokerRuntime:
                                     "symbol_count": len(requested_symbols),
                                 })
                             try:
+                                quote_market.flow_market_override=args[4] if len(args)>4 else None
                                 result = quote_market.fetch_batch(
                                     requested_symbols, timeout=args[3],
                                 )

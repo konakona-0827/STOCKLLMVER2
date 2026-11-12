@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from uuid import uuid4
 
 TAIPEI = timezone(timedelta(hours=8))
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,9 +33,12 @@ def digest(value):
 def save(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8",newline="\n")
-    tmp.replace(path)
+    tmp = path.with_name(path.name+'.'+uuid4().hex+'.tmp')
+    try:
+        tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8",newline="\n")
+        tmp.replace(path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def number(value, positive=False):

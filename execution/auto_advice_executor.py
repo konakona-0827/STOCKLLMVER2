@@ -39,7 +39,7 @@ from .risk_guard import (
 def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
                         minimum_commission_twd, existing_modeled_risk_twd=0):
     """Re-evaluate an approved BUY at the executable quote immediately before send."""
-    from pretrade_policy import MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
+    from pretrade_policy import minimum_net_return, MIN_REWARD_RISK, MAX_POSITION_RISK
     from trade_economics import evaluate_buy
 
     buy_plan = recommendation.get('buy_plan')
@@ -70,7 +70,9 @@ def check_refreshed_buy(quote, order_plan, recommendation, capital_twd,
     from daily_participation import MARKER, probe_allowed
     probe = (MARKER in recommendation.get('warnings', []) and
              probe_allowed('BUY', order_plan.quantity, max(quote.ask, order_plan.limit_price)))
-    if ((not probe and (net_return < MIN_NET_RETURN or reward_risk < MIN_REWARD_RISK)) or
+    from opportunity_engine import policy as opportunity_policy
+    return_candidate = dict(opportunity_policy=opportunity_policy()) if recommendation.get('entry_setup') else {}
+    if ((not probe and (net_return < minimum_net_return(return_candidate) or reward_risk < MIN_REWARD_RISK)) or
             Decimal(str(economics['estimated_net_downside_twd']))+Decimal(str(existing_modeled_risk_twd)) > capital * MAX_POSITION_RISK):
         raise RiskRejected(f'{order_plan.symbol}: refreshed BUY price fails net return, reward/risk or risk budget')
     if recommendation.get('entry_setup'):
@@ -218,6 +220,7 @@ def execute_advice_file(
     session: CapitalReplySession | None = None,
     account_snapshot: ExecutionAccountSnapshot | None = None,
     execution_db_path: str | Path | None = None,
+    stopped=None,
 ) -> dict[str, Any]:
     """Execute every BUY/SELL intent in one final advice JSON sequentially.
 
@@ -237,6 +240,8 @@ def execute_advice_file(
         "advice_path": str(advice_path),
         "results": [],
     }
+    if stopped is not None and stopped():
+        report['status']='USER_STOPPED';return report
     if not config.enabled:
         report["status"] = "DISABLED"
         return report
@@ -253,11 +258,12 @@ def execute_advice_file(
         return report
 
     # A checked, exhausted trading allowance pauses both sides. In particular,
-    # a SELL-only batch must not bypass the Dashboard's account pause.
+    # BUY allowance does not prevent an otherwise verified risk/profit SELL.
     allowance = payload.get('execution_budget') or {}
     checked_cash = allowance.get('available_cash_twd')
-    if (allowance.get('budget_status') in ('BLOCKED', 'UNVERIFIED')
-            or (checked_cash is not None and Decimal(str(checked_cash)) <= 0)):
+    if (any(x.side == Side.BUY for x in intents) and
+            (allowance.get('budget_status') in ('BLOCKED', 'UNVERIFIED')
+            or (checked_cash is not None and Decimal(str(checked_cash)) <= 0))):
         reason = 'Checked trading allowance is exhausted or unverified; all trades are paused'
         report.update(status='BLOCKED_BUDGET', block_reason=reason,
                       broker_order_sent=False, execution_attempted=False)
@@ -509,6 +515,9 @@ def execute_advice_file(
                 )
 
             existing = store.get_ai_qty(intent.symbol)
+            flow_expected=recommendation_map[intent.symbol].get('flow_expected_ai_qty')
+            if flow_expected is not None and (existing or 0)!=flow_expected:
+                raise RiskRejected('FLOW_POSITION_CHANGED_AFTER_REVIEW')
             if existing is None:
                 # Advice may contain a user-entered, stale AI quantity. Only
                 # bootstrap a pre-existing SELL holding when the independent
@@ -553,6 +562,10 @@ def execute_advice_file(
                 position=position if intent.side == Side.SELL else None,
                 config=risk_cfg,
             )
+            flow_plan=recommendation_map[intent.symbol].get('flow_plan')
+            if intent.side==Side.BUY and flow_plan:
+                if plan.limit_price>Decimal(str(flow_plan['limit_cap'])) or plan.quantity!=flow_plan['quantity']:
+                    raise RiskRejected('FLOW_REVIEWED_PRICE_OR_QUANTITY_CHANGED')
 
             if intent.side == Side.BUY and payload.get('pretrade_review_status') == 'VALID':
                 existing_risk=check_setup_allocation(quote,plan,recommendation_map[intent.symbol],
@@ -562,11 +575,17 @@ def execute_advice_file(
                                     config.economic_minimum_commission_twd,existing_risk)
 
             if intent.pricing_policy == 'PLANNED_LIMIT':
-                from .planned_entry import verify
                 if payload.get('pretrade_review_status') != 'VALID':
                     raise RiskRejected('PLANNED_ENTRY_REQUIRES_VALID_REVIEW')
-                verify(intent, recommendation_map[intent.symbol], quote, datetime.now().astimezone())
-                item.update(pricing_policy='PLANNED_LIMIT', entry_plan=recommendation_map[intent.symbol]['entry_plan'])
+                if intent.side == Side.BUY:
+                    from .planned_entry import verify
+                    verify(intent, recommendation_map[intent.symbol], quote, datetime.now().astimezone())
+                    item.update(pricing_policy='PLANNED_LIMIT', entry_plan=recommendation_map[intent.symbol]['entry_plan'])
+                else:
+                    from .planned_exit import verify
+                    verify(intent,recommendation_map[intent.symbol],quote,datetime.now().astimezone(),
+                           config.economic_minimum_commission_twd)
+                    item.update(pricing_policy='PLANNED_LIMIT',exit_plan=recommendation_map[intent.symbol]['exit_plan'])
 
             reserved_this_order_twd = Decimal("0")
 
@@ -673,6 +692,9 @@ def execute_advice_file(
                         f"{effective_sellable} < requested {plan.quantity}"
                     )
 
+            if stopped is not None and stopped():raise RiskRejected('USER_STOPPED_BEFORE_SEND')
+            broker.stopped=stopped
+
             def on_submitted(sent: SendResult) -> None:
                 item["broker_order_sent"] = True
                 item["send_return_code"] = sent.return_code
@@ -693,6 +715,7 @@ def execute_advice_file(
                         "buy_plan": item.get("buy_plan"),
                         "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
                         "entry_plan": item.get('entry_plan'),
+                        "exit_plan": item.get('exit_plan'),
                     },
                 )
 

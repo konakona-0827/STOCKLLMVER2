@@ -34,10 +34,10 @@ def record_feed(folder,kind,data):
         ledger.close()
 
 
-def main(argv=None):
+def main(argv=None,coordinator=None,external_stop=None):
     if hasattr(sys.stdout,"reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    parser=argparse.ArgumentParser(description=f"{SYSTEM} {VERSION} — 獨立影子研究，使用 Python 與既有 Codex CLI")
+    parser=argparse.ArgumentParser(description=f"{SYSTEM} {VERSION} — 獨立研究與既有執行器，使用 Python 與既有 Codex CLI")
     sub=parser.add_subparsers(dest="command",required=True)
     demo=sub.add_parser("demo",help="合成控制案例，不連網、不呼叫模型")
     demo.add_argument("--output",default="local_data/opportunity_flow_demo")
@@ -50,6 +50,15 @@ def main(argv=None):
     quotes_cmd.add_argument("--output",default="local_data/opportunity_flow_quotes.json")
     status_cmd=sub.add_parser("status",help="顯示最新流程狀態與累計模型用量")
     status_cmd.add_argument("--state",default="local_data/opportunity_flow_state")
+    doctor_cmd=sub.add_parser('doctor',help='檢查既有帳本、設定與相依套件；不登入券商、不下單')
+    doctor_cmd.add_argument('--state-root')
+    live_cmd=sub.add_parser('live',help='正式執行器與人工持股交接介面')
+    live_cmd.add_argument('--state-root')
+    live_cmd.add_argument('--dataset',default='local_data/official_market_20261111')
+    live_cmd.add_argument('--state',default='local_data/opportunity_flow_live')
+    live_cmd.add_argument('--model')
+    live_cmd.add_argument('--read-only',action='store_true')
+    live_cmd.add_argument('--headless',action='store_true')
     for name in ("cycle","watch"):
         cmd=sub.add_parser(name,help="執行一輪" if name=="cycle" else "前景監看；Ctrl+C 結束")
         cmd.add_argument("--dataset",required=True)
@@ -68,7 +77,22 @@ def main(argv=None):
             cmd.add_argument("--poll-seconds",type=float)
             cmd.add_argument("--public-quotes",action="store_true",help="輪替40檔官方整股參考行情，供研究觸發")
             cmd.add_argument("--refresh-daily",action="store_true",help="08:30補齊日線，18:00更新當日日線")
+            cmd.add_argument('--live',action='store_true',help='接上已授權的既有正式執行器')
+            cmd.add_argument('--state-root')
+            cmd.add_argument('--read-only',action='store_true',help='可連券商查詢，但不送委託或撤單')
     args=parser.parse_args(argv)
+    if args.command=='doctor':
+        from .live import doctor
+        print(json.dumps(doctor(args.state_root),ensure_ascii=False,indent=2));return 0
+    if args.command=='live':
+        if not args.headless:
+            from .control_panel import launch
+            return launch(args)
+        forwarded=['watch','--dataset',args.dataset,'--state',args.state,'--live','--llm','--public-quotes','--refresh-daily']
+        if args.state_root:forwarded+=['--state-root',args.state_root]
+        if args.read_only:forwarded+=['--read-only']
+        if args.model:forwarded+=['--model',args.model]
+        return main(forwarded)
     if args.command=="status":
         from .state import Ledger
         from collections import Counter
@@ -132,43 +156,80 @@ def main(argv=None):
     executor=ThreadPoolExecutor(max_workers=1) if args.command=="watch" and args.llm else None
     worker=None
     review_cursor=0
-    stop_event=threading.Event()
+    stop_event=external_stop or threading.Event()
+    live=coordinator
+    if args.command=='watch' and args.live:
+        if not args.llm:parser.error('--live 必須啟用 --llm，研究不得跳過')
+        if live is None:
+            from .live import LiveCoordinator,resolve_account_root
+            live=LiveCoordinator(resolve_account_root(args.state_root),args.state,p,stop_event,read_only=args.read_only)
+    previous_result=None
+    data_executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='flow-daily-data') if live is not None else None
+    data_worker=None
+    data_retry_after=0
     try:
-        while True:
+        while not stop_event.is_set():
             if worker is not None and worker.done():
                 try:
-                    print(json.dumps(dict(background_review=worker.result()["summary"]),ensure_ascii=False),flush=True)
+                    reviewed=worker.result()
+                    print(json.dumps(dict(background_review=reviewed["summary"]),ensure_ascii=False),flush=True)
+                    if live is not None:live.offer(reviewed,live.dataset or load_dataset(args.dataset))
                 except Exception as exc:
                     print(json.dumps(dict(background_review_error=type(exc).__name__+":"+str(exc)[:180])),flush=True)
                 worker=None
             at=stamp(args.as_of) if args.command=="cycle" else datetime.now(TAIPEI)
+            if live is not None:
+                if live.dataset is None:
+                    try:live.dataset=load_dataset(args.dataset)
+                    except (OSError,ValueError):pass
+                live.maintenance(force=True)
             if args.command=="watch" and args.refresh_daily:
+                if data_worker is not None and data_worker.done():
+                    try:
+                        report=data_worker.result()
+                        record_feed(args.state,'DAILY_REFRESH',dict(date=report['calendar_verified_through'],http_requests=report['http_requests'],cache_hits=report['cache_hits']))
+                    except Exception as exc:
+                        data_retry_after=time.monotonic()+60
+                        record_feed(args.state,'DAILY_REFRESH_ERROR',dict(error=type(exc).__name__+':'+str(exc)[:180],http_requests=None))
+                    finally:data_worker=None
                 manifest_path=Path(args.dataset)/"manifest.json"
-                manifest=read(manifest_path) if manifest_path.exists() else {}
+                try:manifest=read(manifest_path) if manifest_path.exists() else {}
+                except (ValueError,OSError):manifest={}
                 target=refresh_due(at,manifest)
                 if target:
                     from .collector import collect as download
                     try:
-                        report=download(args.dataset,target,65)
+                        if data_executor is not None:
+                            if data_worker is None and time.monotonic()>=data_retry_after:
+                                data_worker=data_executor.submit(download,args.dataset,target,65,stopped=stop_event.is_set)
+                            live.maintenance(force=True)
+                            stop_event.wait(min(interval,30));continue
+                        else:report=download(args.dataset,target,65)
                         record_feed(args.state,"DAILY_REFRESH",dict(date=target,http_requests=report["http_requests"],cache_hits=report["cache_hits"]))
                         print(json.dumps(dict(data_refresh=target,http_requests=report["http_requests"],cache_hits=report["cache_hits"])),flush=True)
                     except Exception as exc:
+                        if data_executor is not None:
+                            data_worker=None;data_retry_after=time.monotonic()+60;live.maintenance(force=True)
                         record_feed(args.state,"DAILY_REFRESH_ERROR",dict(date=target,error=type(exc).__name__+":"+str(exc)[:180],http_requests=None))
                         print(json.dumps(dict(data_refresh_error=type(exc).__name__+":"+str(exc)[:180])),flush=True)
-                        time.sleep(min(interval,30))
+                        stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
                         continue
                 at=datetime.now(TAIPEI)
             if args.command=="watch" and not (at.weekday()<5 and "08:30"<=at.strftime("%H:%M")<="13:30"):
-                time.sleep(min(interval,30))
+                if live is not None and time.monotonic()-live.last_refresh>=60:
+                    try:live.refresh_account()
+                    except Exception as exc:print(json.dumps(dict(broker_health_error=type(exc).__name__+':'+str(exc)[:180])),flush=True)
+                stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
                 continue
             if args.command=="watch" and args.public_quotes and not args.quotes:
                 from .public_quotes import fetch
                 try:
                     ds=load_dataset(args.dataset)
-                except ValueError as exc:
+                except (ValueError,RuntimeError,OSError) as exc:
                     record_feed(args.state,"DATASET_READ_ERROR",dict(error=str(exc)[:180]))
+                    if live is not None:live.maintenance(force=True)
                     print(json.dumps(dict(dataset_error=str(exc)[:180])),flush=True)
-                    time.sleep(min(interval,30))
+                    stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
                     continue
                 pool=[]
                 priority=[]
@@ -211,19 +272,27 @@ def main(argv=None):
                 public_path=Path(args.state)/"public_quotes.json"
                 active_quote=str(public_path) if public_path.exists() else None
             paths += [Path(x) for x in (active_quote,args.events) if x]
-            signature=tuple((str(x),x.stat().st_mtime_ns) for x in paths)
+            signature=tuple((str(x),x.stat().st_mtime_ns if x.exists() else None) for x in paths)
             if args.command=="cycle" or signature!=last_signature or time.monotonic()-last_numeric>=p["numeric_recheck_seconds"]:
                 events=read(args.events) if args.events else {}
                 try:
                     ds=load_dataset(args.dataset)
                     observed_quotes=quote_map(active_quote)
+                    account_context=None
+                    if live is not None:
+                        p,broker_quotes,event_facts,account_context=live.pulse(ds,previous_result)
+                        observed_quotes.update({(q['exchange'],s):q for s,q in broker_quotes.items()})
+                        events.update(event_facts)
+                        at=datetime.now(TAIPEI)
                     result=run_cycle(ds,at,p,args.state,observed_quotes,events,
-                        use_llm=args.llm and args.command=="cycle",diagnose_blocked=args.diagnose_blocked,review_symbols=args.review_symbols)
-                except ValueError as exc:
+                        use_llm=args.llm and args.command=="cycle",diagnose_blocked=args.diagnose_blocked,review_symbols=args.review_symbols,
+                        account_context=account_context)
+                except (ValueError,RuntimeError,OSError) as exc:
                     if args.command!="watch":
                         raise
                     print(json.dumps(dict(cycle_error=str(exc)[:180])),flush=True)
-                    time.sleep(min(interval,30))
+                    if live is not None:live.maintenance(force=True)
+                    stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
                     continue
                 if executor is not None and worker is None:
                     pool=sorted([c for c in result["candidates"] if c["state"]=="REVIEW_PENDING" or
@@ -236,23 +305,28 @@ def main(argv=None):
                         chosen=(pool+pool)[review_cursor:review_cursor+min(len(pool),p["model_batch_size"])]
                         review_cursor=(review_cursor+len(chosen))%len(pool)
                         selected={c["symbol"] for c in chosen}
-                        def review_job(ds=ds,at=at,observed_quotes=observed_quotes,events=events,selected=selected):
+                        def review_job(ds=ds,at=at,observed_quotes=observed_quotes,events=events,selected=selected,
+                                       account_context=account_context,p=dict(p)):
                             from .review import CodexRunner
                             return run_cycle(ds,at,p,args.state,observed_quotes,events,
                                 runner=CodexRunner(p["model"],p["model_timeout_seconds"],stop_event),use_llm=True,
-                                diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False)
+                                diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False,account_context=account_context)
                         worker=executor.submit(review_job)
+                if live is not None:live.offer(result,ds)
+                previous_result=result
                 print(json.dumps(dict(summary=result["summary"],output=result["output"]),ensure_ascii=False),flush=True)
                 last_signature,last_numeric=signature,time.monotonic()
             if args.command=="cycle":
                 break
-            time.sleep(min(interval,30))
+            stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
     except KeyboardInterrupt:
         print("TW Opportunity Flow 已停止。")
     finally:
         stop_event.set()
         if executor is not None:
             executor.shutdown(wait=True,cancel_futures=True)
+        if data_executor is not None:data_executor.shutdown(wait=True,cancel_futures=True)
+        if live is not None:live.close()
     return 0
 
 

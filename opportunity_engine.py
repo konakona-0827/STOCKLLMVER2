@@ -6,7 +6,7 @@ import hashlib
 import json
 
 from config import CODE_ROOT
-from pretrade_policy import buy_block, MIN_NET_RETURN, MIN_REWARD_RISK, MAX_POSITION_RISK
+from pretrade_policy import buy_block, minimum_net_return, MIN_REWARD_RISK, MAX_POSITION_RISK
 from trade_economics import evaluate_buy,estimate_sell
 from entry_structure import completed_recovery, resistance_levels, target_evidence, stop_evidence, VERSION as STRUCTURE_VERSION
 
@@ -32,6 +32,12 @@ def _number(value):
     if not d.is_finite() or d <= 0:
         raise ValueError('INVALID_OPPORTUNITY_PRICE')
     return d
+
+
+def setup_order_key(setup):
+    """Prefer an observed exit reference over an arithmetic/model-only target."""
+    observed=str(setup.get('target_kind','')).startswith('OBSERVED_')
+    return (0 if observed else 1,-setup['priority_score'])
 
 
 def _round_price(value, asset, upward=False):
@@ -76,14 +82,8 @@ def existing_position_risk(candidate, stop, rules):
                             minimum_commission_twd=rules.economic_minimum_commission_twd)
     pnl=economics['estimated_realized_pnl_twd']
     if pnl is None:raise ValueError('EXISTING_POSITION_RISK_BASIS_UNKNOWN')
-    # Reconstructed broker basis excludes buy fees; include a conservative
-    # estimate so repeated scans cannot reset the same symbol's risk budget.
-    buy_fee=Decimal(0)
-    if (candidate.get('ai_cost_basis') or {}).get('available'):
-        cost=_number(candidate['ai_cost_basis']['average_unit_cost_twd'])*held
-        buy_fee=max(rules.economic_minimum_commission_twd,
-                    (cost*Decimal('.001425')).to_integral_value(rounding=ROUND_FLOOR))
-    return max(Decimal(0),-Decimal(str(pnl))+buy_fee)
+    # estimate_sell already includes the allocated acquisition commission.
+    return max(Decimal(0),-Decimal(str(pnl)))
 
 
 def refresh(candidate, account, rules, p=None, *, research_proxy=False):
@@ -94,6 +94,8 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
     """
     p = deepcopy(p or candidate.get('opportunity_policy') or policy())
     candidate['opportunity_policy'] = p
+    from profit_exit import refresh as refresh_exit
+    refresh_exit(candidate, rules)
     candidate['trade_setups'] = []
     candidate['research_only'] = False
     candidate.pop('entry_structure',None)
@@ -123,7 +125,7 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
         if stamp.tzinfo is None:raise ValueError('QUOTE_TIMEZONE_REQUIRED')
         session = stamp.date().isoformat()
         bars = sorted((b for b in candidate.get('daily_bars', []) if b.get('complete') is True
-            and b.get('source') in ('TWSE_DAILY','BROKER_DAILY') and b['date'] < session), key=lambda b:b['date'])
+            and b.get('source') in ('TWSE_DAILY','BROKER_DAILY','TPEX_DAILY') and b['date'] < session), key=lambda b:b['date'])
         if len(bars) < 21 or (candidate.get('daily_history_status') or {}).get('missing_20d_trading_dates'):
             raise ValueError('COMPLETE_DAILY_STRUCTURE_REQUIRED')
         # Verify actual dates too: legacy snapshots may lack missing-date metadata.
@@ -313,7 +315,7 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                     continue
                 net=Decimal(str(economics['estimated_net_upside_twd']))/Decimal(str(economics['estimated_buy_cost_twd']))
                 rejection=None
-                if net<MIN_NET_RETURN:rejection='NET_RETURN_BELOW_MINIMUM'
+                if net<minimum_net_return(candidate):rejection='NET_RETURN_BELOW_MINIMUM'
                 elif (economics['reward_risk_ratio'] or 0)<MIN_REWARD_RISK:rejection='REWARD_RISK_BELOW_MINIMUM'
                 hurdle=max(p['minimum_target_net_profit_twd'],
                            p['analysis_cost_budget_twd']*p['minimum_target_profit_to_analysis_cost'])
@@ -332,6 +334,8 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                     net_return=float(net),atr14=float(atr),completed_volume_ratio=float(vol_ratio),
                     daily_breakout_confirmed=bool(daily_breakout),**economics)
                 setup['setup_family'] = family
+                from profit_exit import prepare
+                setup['prepared_exit'] = prepare(candidate,setup,rules)
                 if retest:
                     setup['recovery_retest'] = dict(recovery_plan, observed_low=float(low), session=session)
                 setup['breakout_confirmation']=('COMPLETED_DAILY_PRICE_AND_VOLUME' if daily_breakout else
@@ -356,9 +360,8 @@ def refresh(candidate, account, rules, p=None, *, research_proxy=False):
                 setup['priority_score']=round(min(economics['reward_risk_ratio'],5)*10+float(net)*100+
                     {'Early':0,'Confirmed':10,'Strong':15}[tier]-float((ask-entry)/atr)*5,4)
                 candidates.append(setup);break
-        # A veto of the top routes must not erase a lower-ranked valid route.
-        # Bound the final payload only after checking the feasible alternatives.
-        plans=sorted(candidates,key=lambda s:-s['priority_score'])
+        # Check every feasible route before applying the final payload cap.
+        plans=sorted(candidates,key=setup_order_key)
         rejected=[]
         from entry_decision import policy as entry_policy,review as review_entry
         decision_policy=entry_policy()
@@ -443,7 +446,7 @@ def match_setup(candidate, decision):
 def select(candidates, account, rules, p, *, research_proxy=False):
     for c in candidates:refresh(c,account,rules,p,research_proxy=research_proxy)
     opportunities=sorted((c for c in candidates if c['trade_setups']),
-        key=lambda c:(-c['trade_setups'][0]['priority_score'],c.get('quant_rank') or 999))
+        key=lambda c:(*setup_order_key(c['trade_setups'][0]),c.get('quant_rank') or 999))
     selected=opportunities[:p['max_research_candidates']]
     # A live watch touch can request research before an executable plan exists.
     # Missing data, pending orders and account/ownership blocks remain excluded.

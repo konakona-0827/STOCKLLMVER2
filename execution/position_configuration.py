@@ -116,7 +116,7 @@ def reconcile_broker_inventory(project_root, report):
 
 
 def save_ai_holding_configuration(project_root, analysis_db, symbol, qty, snapshot,
-                                  *, unit_cost_twd=None, at=None):
+                                  *, unit_cost_twd=None, at=None, handoff_source=None):
     root, analysis_db = Path(project_root), Path(analysis_db)
     if not isinstance(symbol, str) or not re.fullmatch(r'(?:[0-9]{4,6}|[0-9]{4,5}[A-Z])', symbol):
         raise ValueError('股票代號格式錯誤')
@@ -168,6 +168,17 @@ def save_ai_holding_configuration(project_root, analysis_db, symbol, qty, snapsh
                 raise ValueError('增加 AI 管理股數時，請填入轉入股數的每股成本')
             gross = unit * (qty-previous)
             cost += gross + max(cfg.min_buy_fee_reserve_twd, gross*cfg.buy_cash_buffer_rate)
+            if handoff_source is not None:
+                if handoff_source not in ('USER_INPUT','VERIFIED_BROKER_COST'):
+                    raise ValueError('未知的交接成本來源')
+                con.execute('''CREATE TABLE IF NOT EXISTS manual_ai_handoffs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,symbol TEXT NOT NULL,quantity INTEGER NOT NULL,
+                    previous_ai_qty INTEGER NOT NULL,ai_qty_after INTEGER NOT NULL,unit_cost_twd TEXT NOT NULL,
+                    cost_source TEXT NOT NULL,transferred_at TEXT NOT NULL,broker_checked_at TEXT NOT NULL,
+                    original_buy_plan_known INTEGER NOT NULL DEFAULT 0)''')
+                con.execute('''INSERT INTO manual_ai_handoffs
+                    (symbol,quantity,previous_ai_qty,ai_qty_after,unit_cost_twd,cost_source,transferred_at,broker_checked_at)
+                    VALUES (?,?,?,?,?,?,?,?)''',(symbol,qty-previous,previous,qty,str(unit),handoff_source,stamp,checked.isoformat()))
         old = con.execute('SELECT * FROM analysis.positions WHERE symbol=?', (symbol,)).fetchone()
         names = ('symbol', 'user_qty', 'ai_managed_qty', 'user_average_cost', 'ai_average_cost', 'updated_at')
         before = dict(zip(names, old)) if old else None

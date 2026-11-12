@@ -79,7 +79,9 @@ def _parse_month(payload, symbol, month, fetched_at, url):
 
 
 def _fetch_month(symbol, month, cache_dir, as_of, *, require_turnover=False, minimum_latest=None):
-    cache_file = cache_dir/f'{symbol}_{month:%Y%m}.json'
+    from market_venue import oddlot_market
+    tpex=oddlot_market(symbol)==6
+    cache_file = cache_dir/f'{"tpex_" if tpex else ""}{symbol}_{month:%Y%m}.json'
     cached = None
     if cache_file.is_file():
         try:
@@ -112,18 +114,24 @@ def _fetch_month(symbol, month, cache_dir, as_of, *, require_turnover=False, min
     if cached and finalized and latest_present and (not require_turnover or complete_amounts) and (not is_current or cached.get('fetched_at', '')[:10] == as_of.isoformat()):
         return cached.get('bars', []), None
     url = BASE_URL + '?' + urlencode(dict(response='json', date=month.strftime('%Y%m%d'), stockNo=symbol))
+    if tpex:
+        from tpex_history import monthly_url
+        url=monthly_url(symbol,month)
     try:
         request = Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'})
         with urlopen(request, timeout=8,
                      context=ssl.create_default_context(cafile=certifi.where())) as response:
             payload = json.load(response)
         fetched_at = now().isoformat()
-        bars = _parse_month(payload, symbol, month, fetched_at, url)
+        if tpex:
+            from tpex_history import parse_month
+            bars=parse_month(payload,symbol,month,fetched_at,url)
+        else:
+            bars = _parse_month(payload, symbol, month, fetched_at, url)
         cache_dir.mkdir(parents=True, exist_ok=True)
         record = dict(symbol=symbol, month=month.strftime('%Y%m'), fetched_at=fetched_at, bars=bars)
-        temporary = cache_file.with_suffix('.tmp')
-        temporary.write_text(json.dumps(record, ensure_ascii=False), encoding='utf-8')
-        temporary.replace(cache_file)
+        from main import save_json
+        save_json(cache_file,record)
         return bars, None
     except (OSError, ValueError, TypeError, KeyError) as exc:
         return (cached.get('bars', []) if cached else []), type(exc).__name__
@@ -197,8 +205,10 @@ def load_many(symbols, as_of=None, cache_dir=DEFAULT_CACHE, *, max_bars=MAX_BARS
         dates_present = {bar['date'] for bar in bars}
         missing_sessions = sorted(set(expected_sessions)-dates_present)
         result[symbol] = dict(bars=bars, trend=daily_trend(bars),
-                              status=dict(source=SOURCE, as_of=as_of.isoformat(),
-                                          market='TWSE_LISTED_DAILY_NOT_ODD_LOT',
+                              status=dict(source=bars[-1]['source'] if bars else SOURCE, as_of=as_of.isoformat(),
+                                          market=('TPEX_ORDINARY_DAILY_NOT_ODD_LOT' if bars and bars[-1]['source']=='TPEX_DAILY'
+                                                  else 'TWSE_LISTED_DAILY_NOT_ODD_LOT'),
+                                          turnover_precision_twd=1000 if bars and bars[-1]['source']=='TPEX_DAILY' else 1,
                                           prior_complete_sessions=count,
                                           latest_date=bars[-1]['date'] if bars else None,
                                           source_urls=source_urls,

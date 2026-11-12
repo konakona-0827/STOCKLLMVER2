@@ -143,6 +143,8 @@ class CapitalOddLotExecutor:
         if hasattr(order, "nSpecialTradeType"):
             order.nSpecialTradeType = 2
 
+        stopped=getattr(self,'stopped',None)
+        if stopped is not None and stopped():raise CapitalExecutionError('USER_STOPPED_BEFORE_SDK_SEND')
         raw = self.session._skO.SendStockOddLotOrder(
             self.session.user,
             False,

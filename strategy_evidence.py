@@ -84,7 +84,7 @@ def assess(quote, history=()):
     for bar in bars:
         date = _session(bar.get('date')) if isinstance(bar, dict) else None
         if (date and today and date < today and
-                bar.get('complete') is True and bar.get('source') in {'TWSE_DAILY', 'BROKER_DAILY'} and
+                bar.get('complete') is True and bar.get('source') in {'TWSE_DAILY', 'BROKER_DAILY', 'TPEX_DAILY'} and
                 all(_positive(bar.get(k)) for k in ('open', 'high', 'low', 'close', 'volume')) and
                 bar['low'] <= bar['open'] <= bar['high'] and
                 bar['low'] <= bar['close'] <= bar['high']):

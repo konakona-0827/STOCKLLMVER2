@@ -56,7 +56,7 @@ def execution_readiness(candidate, reviewed_packet, route_id, at, event, p):
     return dict(state="PAPER_REVIEW_READY",missing=[],orders_permitted=False)
 
 
-def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_llm=False,diagnose_blocked=False,review_symbols=None,publish_latest=True):
+def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_llm=False,diagnose_blocked=False,review_symbols=None,publish_latest=True,account_context=None):
     started=time.monotonic()
     at=stamp(at)
     quotes,events=quotes or {},events or {}
@@ -67,7 +67,7 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             bars=dataset["grouped"][symbol]
             exchange=bars[-1]["exchange"] if bars else None
             event=events.get(symbol)
-            c=build(symbol,dataset,at,p,quotes.get((exchange,symbol)),event)
+            c=build(symbol,dataset,at,p,quotes.get((exchange,symbol)),event,(account_context or {}).get(symbol))
             candidates.append(c)
         queue=sorted([c for c in candidates if c["state"] == "REVIEW_PENDING" or
             (diagnose_blocked and c["state"] == "ECONOMIC_BLOCKED")],
@@ -130,7 +130,8 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
                         c.update(state="REVIEW_ERROR",reasons=[error])
                     else:
                         pid=c["packet"]["packet_id"]
-                        result=dict(packet=c["packet"],researcher=answers["researcher"][pid],challenger=answers["challenger"][pid])
+                        result=dict(packet=c["packet"],researcher=answers["researcher"][pid],challenger=answers["challenger"][pid],
+                            reviewed_at=(at+timedelta(seconds=time.monotonic()-started)).isoformat())
                         ledger.finish(key,"VALID",now,result)
                         c.update(review=result,review_source="NEW_MATERIAL_FACTS")
                 if error:
@@ -163,7 +164,7 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             symbols_observed=len(candidates),states=dict(states),blockers=dict(blockers),
             llm_calls=len(calls),cached_theses=cached,usage=dict(usage),usage_unknown_calls=unknown,
             additional_api_billed_usd=0,plan_usage_consumed=bool(calls),orders_sent=0,
-            decision_scope="SHADOW_RESEARCH_NO_BROKER_OR_ACCOUNT_ACCESS",
+            decision_scope="LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF" if account_context is not None else "SHADOW_RESEARCH_NO_BROKER_OR_ACCOUNT_ACCESS",
             elapsed_seconds=round(time.monotonic()-started,3))
         cycle_id=ledger.cycle(at.isoformat(),summary)
         root=ledger.folder/"cycles"/f"{cycle_id:06d}"
