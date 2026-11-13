@@ -2,13 +2,15 @@
 
 分支：`codex/new-system-tw-opportunity-flow`。2026-11-12 建立。
 
-完整的流程圖、資料來源、取得時點、掃描間隔、模型決策及持倉管理，請參閱 [Opportunity Flow 1.1 流程參考](docs/OPPORTUNITY_FLOW.md)。
+完整的流程圖、資料來源、取得時點、掃描間隔、模型決策及持倉管理，請參閱 [Opportunity Flow 流程參考](docs/OPPORTUNITY_FLOW.md)。最新介面與費率修正見 [1.2 檢討與驗證](reports/opportunity_flow_ui_fee_20261113/README.md)。
 
 這是使用官方免費資料與既有 Codex CLI 的獨立研究流程。新入口是 **`OpportunityFlow.cmd` / `RunOpportunityFlow.ps1`**，程式位於 `opportunity_flow/`。原 STOCKLLM 說明保存在 [README_STOCKLLM_LEGACY.md](README_STOCKLLM_LEGACY.md)。1.1 版已接上現有正式帳本、群益券商執行器及最新 `codex/profit-exit-strategy` 分支的持倉與退出控制。
 
+1.2 版主介面直接沿用舊 `Dashboard` 的資金卡、資金上限、持倉、行情時間、交割、正式委託與成交紀錄及策略模擬；新 FLOW 取代原小時掃描排程，另加全母體狀態、研究卡、兩方理由與模型／資料錯誤。原 `llm/agent` 切換不適用新流程，因此移除；「選擇 MD 策略」改為「流程／費用」。
+
 **雙擊 `OpportunityFlow.cmd` 現在會啟動自動交易介面**，依既有帳戶設定在交易時間研究、複核及送出 BUY / SELL。研究通過後仍須更新零股買賣價、帳戶、持股及風控，最後交由原執行器送單；成交只按券商確認回寫。`Demo` / `Cycle` / `Watch` 保留獨立影子模式，不會自行載入券商；`RESEARCH_READY` 本身不是成交。
 
-介面會列出券商總持股、人工與 AI 股數。選取人工持股，填寫「本次轉交股數」與「每股成本價」，按「轉交並啟用 AI 管理」。若券商提供可核實成本，程式優先採用；目前原券商庫存解析沒有可靠成本欄位，因此通常需要輸入。交接是歸屬調整，不產生假買單；模型會看到「使用者轉交、原買進計畫未知」，按成本、完成日線、真實觀測與新風險決定續抱或賣出。未交接的人工股數不會被 AI 賣出。
+介面會列出券商總持股、人工與 AI 股數。選取股票，按「持股歸屬／轉交 AI」，沿用舊設定視窗填寫**調整後的 AI 總股數**；增加時填入新增股數的每股成本。例如原 AI 10 股、再交接 5 股，填 15；設為 0 即禁止 AI 買賣。若券商提供可核實成本，程式優先採用；目前原券商庫存解析沒有可靠成本欄位，因此通常需要輸入。交接是歸屬調整，不產生假買單；模型會看到「使用者轉交、原買進計畫未知」，按成本、完成日線、真實觀測與新風險決定續抱或賣出。未交接的人工股數不會被 AI 賣出。
 
 ## 改善的問題
 
@@ -109,7 +111,7 @@ python -m opportunity_flow watch --dataset local_data/official_market_20261111 `
 
 財務假設在 [policy.json](opportunity_flow/policy.json)：資金 NT$10,000、單檔配置至多 50%、模型風險至多資金 0.5%、淨報酬至少 2%、報酬風險至少 1.5、淨收益至少 NT$50、停損距離至少 0.6 ATR。普通股稅 0.3%、佣金 0.1425%、最低每邊 NT$1，另加每邊 10 bps 滑價情境。這是明列的研究假設，沒有讀取個人實收費率，也沒有為增加機會降低門檻。
 
-正式模式會以原帳戶的資金上限、當前可用額及 `execution_live.json` 的最低佣金覆蓋影子假設。這台目前綁定帳戶的最低佣金假設為 **每邊 NT$20**，且 **`planned_limits_enabled=false`**；程式保留原設定，不會為促成交易改成 NT$1 或自動開啟預掛。新買進仍維持 2%／NT$50 門檻；已持股則沿用最新分支的費後獲利、原假設失效及重大風險退出判斷，買進可用額為零仍可賣出。
+正式模式會以原帳戶的資金上限、當前可用額及 `execution_live.json` 的最低佣金覆蓋影子假設。2026-11-13 依使用者指定的 [群益官方未折扣電子盤中零股標準](https://www.capital.com.tw/event/stock/oddLot/default.asp)，將綁定帳戶明確設為 **佣金率 0.1425%、每筆最低 NT$1**；原 **NT$20 保留為資金預留**，不再兼當最低佣金。沒有個別帳戶折扣或實收對帳單證據，未套用額外優惠。`planned_limits_enabled=false`、資金限制、配置、0.5% 模型風險、2%／NT$50 新買進門檻均保持不變。已持股沿用最新分支的費後獲利、原假設失效及重大風險退出判斷，買進可用額為零仍可賣出。
 
 資料沒有額外付費方案；CLI 消耗既有 Codex 方案額度，額度不足會留下錯誤。總呼叫量取決於合格研究與持股數，沒有保證零成本的無限模型額度。舊版 8 次真實 CLI 用量只是先前研究試驗，不能當成新版每個交易日的成本。
 
@@ -139,10 +141,11 @@ python -m opportunity_flow watch --dataset local_data/official_market_20261111 `
 ```powershell
 python -m unittest discover -s tests -p test_opportunity_flow.py -v
 python -m unittest discover -s tests -p test_flow_execution_bridge.py -v
+python -m unittest discover -s tests -p test_flow_dashboard.py -v
 python -m unittest discover -s tests -v
 python -m compileall -q opportunity_flow
 ```
 
-原影子資料與真實 CLI 試驗見 [1.0 實作檢討](reports/opportunity_flow_20261112/README.md)；正式串接、故障對策及回歸驗證見 [1.1 整合紀錄](reports/opportunity_flow_live_20261112/README.md)。自動測試使用隔離帳本與模擬券商，不會送實盤測試單；實際券商登入與成交仍須由開盤試運轉觀察。
+原影子資料與真實 CLI 試驗見 [1.0 實作檢討](reports/opportunity_flow_20261112/README.md)；正式串接見 [1.1 整合紀錄](reports/opportunity_flow_live_20261112/README.md)；沿用舊 UI 與官方費率修正見 [1.2 驗證](reports/opportunity_flow_ui_fee_20261113/README.md)。自動測試使用隔離帳本與模擬券商，不會送實盤測試單；實際券商登入與成交仍須由開盤試運轉觀察。
 
 參考做法：[Taiwan StockRadar 的日線／候選集保分層](https://github.com/Yen60229/Taiwan_StockRadar)、[stock-screener 的數值篩選與快照 CLI](https://github.com/xang1234/stock-screener)、[OpenAI 官方非互動 CLI 文件](https://learn.chatgpt.com/docs/non-interactive-mode)。本系統採自行實作，沒有整包複製第三方系統或安裝付費資料服務。

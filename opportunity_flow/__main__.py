@@ -34,7 +34,7 @@ def record_feed(folder,kind,data):
         ledger.close()
 
 
-def main(argv=None,coordinator=None,external_stop=None):
+def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
     if hasattr(sys.stdout,"reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     parser=argparse.ArgumentParser(description=f"{SYSTEM} {VERSION} — 獨立研究與既有執行器，使用 Python 與既有 Codex CLI")
@@ -167,8 +167,14 @@ def main(argv=None,coordinator=None,external_stop=None):
     data_executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='flow-daily-data') if live is not None else None
     data_worker=None
     data_retry_after=0
+    def pause(seconds):
+        if live is not None and external_wake is not None:external_wake.wait(seconds)
+        elif live is not None:stop_event.wait(seconds)
+        else:time.sleep(seconds)
     try:
         while not stop_event.is_set():
+            if external_wake is not None and external_wake.is_set():
+                external_wake.clear();last_numeric=0;last_signature=None
             if worker is not None and worker.done():
                 try:
                     reviewed=worker.result()
@@ -203,7 +209,7 @@ def main(argv=None,coordinator=None,external_stop=None):
                             if data_worker is None and time.monotonic()>=data_retry_after:
                                 data_worker=data_executor.submit(download,args.dataset,target,65,stopped=stop_event.is_set)
                             live.maintenance(force=True)
-                            stop_event.wait(min(interval,30));continue
+                            pause(min(interval,30));continue
                         else:report=download(args.dataset,target,65)
                         record_feed(args.state,"DAILY_REFRESH",dict(date=target,http_requests=report["http_requests"],cache_hits=report["cache_hits"]))
                         print(json.dumps(dict(data_refresh=target,http_requests=report["http_requests"],cache_hits=report["cache_hits"])),flush=True)
@@ -212,14 +218,14 @@ def main(argv=None,coordinator=None,external_stop=None):
                             data_worker=None;data_retry_after=time.monotonic()+60;live.maintenance(force=True)
                         record_feed(args.state,"DAILY_REFRESH_ERROR",dict(date=target,error=type(exc).__name__+":"+str(exc)[:180],http_requests=None))
                         print(json.dumps(dict(data_refresh_error=type(exc).__name__+":"+str(exc)[:180])),flush=True)
-                        stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
+                        pause(min(interval,30))
                         continue
                 at=datetime.now(TAIPEI)
             if args.command=="watch" and not (at.weekday()<5 and "08:30"<=at.strftime("%H:%M")<="13:30"):
                 if live is not None and time.monotonic()-live.last_refresh>=60:
                     try:live.refresh_account()
                     except Exception as exc:print(json.dumps(dict(broker_health_error=type(exc).__name__+':'+str(exc)[:180])),flush=True)
-                stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
+                pause(min(interval,30))
                 continue
             if args.command=="watch" and args.public_quotes and not args.quotes:
                 from .public_quotes import fetch
@@ -229,7 +235,7 @@ def main(argv=None,coordinator=None,external_stop=None):
                     record_feed(args.state,"DATASET_READ_ERROR",dict(error=str(exc)[:180]))
                     if live is not None:live.maintenance(force=True)
                     print(json.dumps(dict(dataset_error=str(exc)[:180])),flush=True)
-                    stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
+                    pause(min(interval,30))
                     continue
                 pool=[]
                 priority=[]
@@ -292,7 +298,7 @@ def main(argv=None,coordinator=None,external_stop=None):
                         raise
                     print(json.dumps(dict(cycle_error=str(exc)[:180])),flush=True)
                     if live is not None:live.maintenance(force=True)
-                    stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
+                    pause(min(interval,30))
                     continue
                 if executor is not None and worker is None:
                     pool=sorted([c for c in result["candidates"] if c["state"]=="REVIEW_PENDING" or
@@ -318,7 +324,7 @@ def main(argv=None,coordinator=None,external_stop=None):
                 last_signature,last_numeric=signature,time.monotonic()
             if args.command=="cycle":
                 break
-            stop_event.wait(min(interval,30)) if live is not None else time.sleep(min(interval,30))
+            pause(min(interval,30))
     except KeyboardInterrupt:
         print("TW Opportunity Flow 已停止。")
     finally:

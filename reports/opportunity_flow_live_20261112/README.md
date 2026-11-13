@@ -1,5 +1,7 @@
 # Opportunity Flow 1.1 正式執行器整合驗證
 
+此為 2026-11-12 的歷史紀錄。本文的最低佣金 NT$20 是當時的保守假設；2026-11-13 已依群益官方電子盤中零股標準修正為最低 NT$1，NT$20 僅作資金預留，並沿用完整舊 UI。請見 [1.2 最新檢討與驗證](../opportunity_flow_ui_fee_20261113/README.md)。
+
 2026-11-12，分支 `codex/new-system-tw-opportunity-flow`。延續影子基線 `f02ea94`，整合本機最新 `codex/profit-exit-strategy` 的 `cdaa644`。遠端更新已 fetch；原正式程式的帳戶根目錄與費用設定維持不變。
 
 操作流程與各項間隔另見 [完整流程圖與說明](../../docs/OPPORTUNITY_FLOW.md)。

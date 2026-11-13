@@ -133,5 +133,13 @@ class ControlPanel:
 
 
 def launch(args):
-    import tkinter as tk
-    root=tk.Tk();ControlPanel(root,args);root.mainloop();return 0
+    # Select the account before the complete legacy UI imports config.ROOT.
+    # Otherwise --state-root could display or edit the checkout's bound account.
+    import os
+    from .live import resolve_account_root
+    selected=resolve_account_root(args.state_root)
+    os.environ['TRADING_STATE_ROOT']=str(selected)
+    from config import ROOT as account_root
+    if account_root.resolve()!=selected:raise RuntimeError('ACCOUNT_STATE_ALREADY_IMPORTED_FOR_ANOTHER_ROOT')
+    from .dashboard import launch as full_dashboard
+    return full_dashboard(args)

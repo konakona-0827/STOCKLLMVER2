@@ -30,6 +30,10 @@ class LegacyRuntime:
         self.root,self.output,self.model=selected,Path(output),model
         self.read_only,self.stop_event=read_only,stop_event
         self.operation_lock=threading.RLock()
+        if not read_only:
+            from .fees import fee_status,correct_legacy_capital_fee
+            if fee_status(selected)['basis']=='LEGACY_RESERVE_USED_AS_COMMISSION':
+                correct_legacy_capital_fee(selected,self.output/'fee_review')
         self.config=LiveExecutionConfig.load(selected/'config/execution_live.json')
         if not read_only and not self.config.enabled:
             raise RuntimeError('EXISTING_EXECUTOR_IS_DISABLED')
@@ -189,6 +193,28 @@ class LegacyRuntime:
                 buy_block_reason=reason,minimum_fee_reserve_twd=float(self.config.min_buy_fee_reserve_twd),
                 buy_cash_buffer_rate=float(self.config.buy_cash_buffer_rate),checked_at=snapshot.get('checked_at'))
         return context
+
+    def configure_position(self,symbol,quantity,unit_cost=None):
+        """Total managed shares, matching the existing Dashboard ownership editor."""
+        from execution.position_configuration import save_ai_holding_configuration
+        if self.read_only or self.stopped():raise ValueError('只讀或停止狀態不可變更持股歸屬')
+        if type(quantity) is not int or quantity<0:raise ValueError('AI 管理股數須為非負整數')
+        with self.operation_lock:
+            snapshot=self.refresh()
+            previous=int(snapshot.get('ai_positions',{}).get(symbol,0))
+            source=None;unit=None
+            if quantity>previous:
+                row=next((r for r in snapshot.get('inventory_comparison',[]) if r['symbol']==symbol),{})
+                broker=(snapshot.get('verified_position_costs') or {}).get(symbol) or {}
+                if broker.get('verified') is True and broker.get('quantity')==row.get('broker_cash_qty') and previous==0:
+                    unit=broker.get('average_unit_cost_twd');source='VERIFIED_BROKER_COST'
+                else:
+                    unit=unit_cost;source='USER_INPUT'
+                    if unit is None:raise ValueError('增加 AI 管理股數時，請輸入轉入股數的每股成本')
+            result=save_ai_holding_configuration(self.root,self.root/'data/analysis/market_history.sqlite3',symbol,
+                quantity,snapshot,unit_cost_twd=unit,handoff_source=source)
+            result.update(cost_source=source,original_buy_plan_known=False,order_sent=False)
+            self.refresh();return result
 
     def effective_policy(self,p):
         from .common import policy

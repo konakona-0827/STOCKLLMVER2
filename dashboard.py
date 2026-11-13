@@ -68,7 +68,7 @@ def current_position_quotes(health, result):
 
 
 DECISION_LABELS = {'BUY': '買進', 'HOLD': '持有', 'SELL': '賣出', 'WAIT': '觀望'}
-QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情'}
+QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情', 'PUBLIC_REFERENCE':'普通交易參考（非零股）'}
 STATUS_LABELS = {
     'IDLE': '閒置', 'SCANNING_QUOTES': '取得行情中', 'QUANT_ANALYSIS': '量化分析中',
     'DAILY_HISTORY': '取得歷史日線中', 'MARKET_DISCOVERY': '子代理主動尋標中',
@@ -117,7 +117,7 @@ ORDER_LEDGER_LABELS = {
     'PARTIALLY_FILLED_EXPIRED': '部分成交，ROD 餘量跨日失效',
     'SKIPPED_CHECK_FAILED': '未送單：交易前檢查未通過',
 }
-SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉'}
+SOURCE_LABELS = {'TOP10': '量化前十名', 'POSITION': '持倉追蹤', 'TOP10+POSITION': '前十名與持倉', 'TW_OPPORTUNITY_FLOW':'FLOW 數值研究'}
 
 
 def decision_text(decision, analysis_set=(), analysis_at=None, budget_info=None, web_search=None,
@@ -380,14 +380,14 @@ def settlement_snapshot_current(checked_at, at):
 
 class Dashboard:
     def __init__(self, root, directory=ROOT/'data'/'analysis', interval=AUTO_INTERVAL_SECONDS,
-                 lifecycle=None):
+                 lifecycle=None, service=None):
         # Populate TRADING_MODE before the selector is initialized. The worker
         # also loads .env, but that happens after the user starts a scan.
         load_env(ROOT / '.env')
         self.root = root
         self.lifecycle = lifecycle
         self.last_lifecycle_heartbeat = time.monotonic()
-        self.service = AnalysisService(directory)
+        self.service = service if service is not None else AnalysisService(directory)
         self.scheduler = Scheduler(
             interval,
             allowed_slot=(
@@ -508,6 +508,7 @@ class Dashboard:
                                                               pady=(0, 3))
         bar = ttk.Frame(self.live_page)
         bar.pack(fill='x', padx=20, pady=(0, 7))
+        self.action_buttons = {}
         self.run_button = ttk.Button(bar, text='分析並送交實盤風控', command=self.manual)
         self.run_button.pack(side='left', padx=(0, 8), ipady=3)
         self.decision_mode = tk.StringVar(value=trading_mode())
@@ -519,11 +520,12 @@ class Dashboard:
                                ('重新整理並與券商對帳', lambda: self.refresh(sync_broker=True)), ('開啟最近分析資料夾', self.open_folder),
                                ('設定持倉', self.position_settings)]:
             button = ttk.Button(bar, text=label, command=command)
+            self.action_buttons[label] = button
             button.pack(side='left', padx=4, ipady=3)
             if label == '重新整理並與券商對帳':
                 self.refresh_button = button
-        ttk.Button(bar, text='選擇 MD 策略', command=self.choose_live_strategy).pack(
-            side='left', padx=4, ipady=3)
+        self.strategy_button = ttk.Button(bar, text='選擇 MD 策略', command=self.choose_live_strategy)
+        self.strategy_button.pack(side='left', padx=4, ipady=3)
         ttk.Label(bar, text='目前策略：').pack(side='left', padx=(8, 0))
         self.live_strategy_text = tk.StringVar()
         ttk.Label(bar, textvariable=self.live_strategy_text,
@@ -1790,7 +1792,9 @@ class Dashboard:
         def load_symbol(*unused):
             row = rows.get(symbol.get().strip(), {})
             ai_qty.set(str(row.get('ai_qty') or 0))
-            cost.set('')
+            broker_cost=(health.get('verified_position_costs') or {}).get(symbol.get().strip()) or {}
+            verified_cost=(broker_cost.get('verified') is True and broker_cost.get('quantity')==row.get('broker_cash_qty') and not row.get('ai_qty'))
+            cost.set(str(broker_cost['average_unit_cost_twd']) if verified_cost and broker_cost.get('average_unit_cost_twd') is not None else '')
             summary.set(f"最近對帳：券商現股 {row.get('broker_cash_qty', '待查詢')} 股，"
                         f"目前 AI 管理 {row.get('ai_qty', '待查詢')} 股。\n儲存時會重新與券商對帳。")
         choice.bind('<<ComboboxSelected>>', load_symbol)
@@ -1816,9 +1820,7 @@ class Dashboard:
             save_button.configure(state='disabled')
             def work():
                 try:
-                    from execution.position_configuration import configure_ai_holding
-                    result = configure_ai_holding(ROOT, self.service.db_path, target, shares,
-                                                  unit_cost_twd=unit)
+                    result = self.configure_ai_holding(target, shares, unit)
                     self.events.put(('position_saved', (win, result)))
                 except Exception as exc:
                     self.events.put(('position_save_error', (win, save_button, redact(exc))))
@@ -1831,8 +1833,14 @@ class Dashboard:
         ttk.Label(win, wraplength=400, justify='left', text=
             'AI 管理股數設為 0，即禁止 AI 買進與賣出此股票。\n'
             '股數不可超過券商現股；其餘股數歸為人工持有。\n'
-            '增加 AI 股數時必須填入轉入成本。此設定會更新持股歸屬，不會送出委託。'
+            '增加 AI 股數時必須填入轉入成本。此設定會更新持股歸屬，不會送出委託。'+self.position_configuration_note()
         ).grid(row=5,columnspan=2,padx=12,pady=(4,12),sticky='w')
+
+    def configure_ai_holding(self,symbol,quantity,unit_cost):
+        from execution.position_configuration import configure_ai_holding
+        return configure_ai_holding(ROOT,self.service.db_path,symbol,quantity,unit_cost_twd=unit_cost)
+
+    def position_configuration_note(self):return ''
 
     def close(self):
         if self.closing:

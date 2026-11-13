@@ -475,6 +475,8 @@ def execute_advice_file(
             "broker_order_sent": False,
             "crosscheck_performed": False,
         }
+        item['analysis_reason']=recommendation_map[intent.symbol].get('reason')
+        item['analysis_source']=recommendation_map[intent.symbol].get('analysis_source')
         if intent.side == Side.BUY:
             item['buy_plan'] = recommendation_map.get(intent.symbol, {}).get('buy_plan')
 
@@ -713,6 +715,8 @@ def execute_advice_file(
                         "market_session": "INTRADAY_ODD_LOT",
                         "submitted_at": item["submitted_at"],
                         "buy_plan": item.get("buy_plan"),
+                        "analysis_reason":item.get('analysis_reason'),
+                        "analysis_source":item.get('analysis_source'),
                         "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
                         "entry_plan": item.get('entry_plan'),
                         "exit_plan": item.get('exit_plan'),
@@ -728,6 +732,8 @@ def execute_advice_file(
                 "time_in_force": "ROD", "market_session": "INTRADAY_ODD_LOT",
                 "submitted_at": item["submitted_at"],
                 "buy_plan": item.get("buy_plan"),
+                "analysis_reason":item.get('analysis_reason'),
+                "analysis_source":item.get('analysis_source'),
                 "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
                 "entry_plan": item.get('entry_plan'),
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
