@@ -19,6 +19,7 @@ def execute_after_advice_written(
     execution_db_path: str | Path | None = None,
     latest_report_path: str | Path | None = None,
     stopped=None,
+    health_order_test=False,
 ) -> dict:
     """Call this immediately after advice_interface.py finishes writing JSON."""
     root = Path(project_root)
@@ -33,11 +34,14 @@ def execute_after_advice_written(
         account_snapshot=account_snapshot,
         execution_db_path=execution_db_path,
         **({'stopped':stopped} if stopped is not None else {}),
+        **({'health_order_test':True} if health_order_test else {}),
     )
 
     out_dir = root / "data" / "execution"
     out_dir.mkdir(parents=True, exist_ok=True)
-    latest = Path(latest_report_path) if latest_report_path else out_dir / "latest_live_execution.json"
+    default_report=(out_dir/'health_order_test/latest_execution.json' if health_order_test
+                    else out_dir/'latest_live_execution.json')
+    latest = Path(latest_report_path) if latest_report_path else default_report
     latest.parent.mkdir(parents=True, exist_ok=True)
     tmp = latest.with_suffix(".json.tmp")
     tmp.write_text(

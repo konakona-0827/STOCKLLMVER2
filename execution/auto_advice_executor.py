@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass,replace
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -223,6 +223,7 @@ def execute_advice_file(
     account_snapshot: ExecutionAccountSnapshot | None = None,
     execution_db_path: str | Path | None = None,
     stopped=None,
+    health_order_test=False,
 ) -> dict[str, Any]:
     """Execute every BUY/SELL intent in one final advice JSON sequentially.
 
@@ -249,6 +250,13 @@ def execute_advice_file(
         return report
 
     payload, intents = load_advice_file(advice_path)
+    order_metadata={}
+    if health_order_test:
+        from .health_order_test import validate
+        validate(payload,intents,datetime.now().astimezone())
+        order_metadata={k:payload[k] for k in ('requested_outside_session','valid_trading_date')}
+        from .ownership import MANUAL_DIAGNOSTIC,RECORD_ONLY
+        order_metadata.update(ownership=MANUAL_DIAGNOSTIC,management_policy=RECORD_ONLY)
     agent_mode = payload.get('trading_mode') == 'agent'
     report['trading_mode'] = payload.get('trading_mode', 'llm')
     if intents and payload.get('pretrade_review_status') not in (None, 'VALID'):
@@ -287,6 +295,7 @@ def execute_advice_file(
 
     broker = CapitalOddLotExecutor(session)
     risk_cfg = config.risk_config()
+    if health_order_test:risk_cfg=replace(risk_cfg,allow_health_order_test=True)
 
     # One broker account snapshot for this final advice batch.
     # If a caller (e.g. synthetic test) already performed the precheck,
@@ -337,6 +346,12 @@ def execute_advice_file(
             health['status'] = 'ERROR'
         live_snapshot = persist_refresh_snapshot(root, health)
         current_limit = Decimal(str(live_snapshot.get('current_buy_budget_twd') or 0))
+        if health_order_test:
+            # This explicit manual order uses account cash, never AI allocation or daily allowance.
+            cash=Decimal(str(live_snapshot.get('broker_balance_twd') or 0))
+            pending=Decimal(str(live_snapshot.get('account_pending_buy_reserve_twd',live_snapshot.get('pending_buy_reserve_twd')) or 0))
+            current_limit=(max(Decimal(0),cash-config.min_available_to_buy_twd-pending)
+                if live_snapshot.get('broker_inventory_verified') is True and not live_snapshot.get('errors') else Decimal(0))
         budget_payload = payload.get('execution_budget') or {}
         old_limit = Decimal(str(budget_payload.get('available_cash_twd') or 0))
         budget_payload['available_cash_twd'] = str(min(old_limit, current_limit))
@@ -352,7 +367,7 @@ def execute_advice_file(
         budget_payload = payload.get('execution_budget') or payload.get('paper_simulation') or {}
         cycle_budget_raw = budget_payload.get('available_cash_twd')
         daily_reserved_before = store.daily_reserved_buy_twd()
-        daily_remaining = max(Decimal('0'), config.max_daily_buy_twd-daily_reserved_before)
+        daily_remaining = Decimal(100) if health_order_test else max(Decimal('0'), config.max_daily_buy_twd-daily_reserved_before)
         broker_remaining = (max(Decimal('0'), initial_buying_power-config.min_available_to_buy_twd)
                             if initial_buying_power is not None else Decimal('0'))
         planned_buy_twd = Decimal('0')
@@ -400,7 +415,7 @@ def execute_advice_file(
         budget_payload = payload.get("execution_budget") or payload.get("paper_simulation") or {}
         cycle_budget_raw = budget_payload.get("available_cash_twd")
         daily_reserved_before = store.daily_reserved_buy_twd()
-        daily_remaining = max(Decimal("0"), config.max_daily_buy_twd-daily_reserved_before)
+        daily_remaining = Decimal(100) if health_order_test else max(Decimal("0"), config.max_daily_buy_twd-daily_reserved_before)
         broker_remaining = (max(Decimal("0"), initial_buying_power-config.min_available_to_buy_twd)
                             if initial_buying_power is not None else Decimal("0"))
         if cycle_budget_raw is None:
@@ -478,6 +493,7 @@ def execute_advice_file(
             "crosscheck_performed": False,
         }
         begin_intent(intent.decision_id,intent.symbol,intent.side.value)
+        item.update(order_metadata)
         trace=current_trace()
         item['timing_ref']=dict(trace_id=trace.id,record_path=str(trace.path)) if trace is not None else None
         mark('intent_started')
@@ -491,6 +507,8 @@ def execute_advice_file(
             intent.run_id,
             intent.symbol,
             intent.side.value,
+            **({'detail':dict(order_metadata,quantity=1,limit_price='80',send_attempted=False,
+                required_twd_with_buffer=str(Decimal(80)+max(config.min_buy_fee_reserve_twd,Decimal(80)*config.buy_cash_buffer_rate)))} if health_order_test else {}),
         ):
             item.update(
                 status="SKIPPED_DUPLICATE",
@@ -616,7 +634,7 @@ def execute_advice_file(
                 fresh_available = fresh_buying_power.available_to_buy_twd
                 if fresh_available is None:
                     raise AccountCheckError("fresh broker buying power is unavailable")
-                strategy_cap_raw = budget_payload.get("strategy_cap_twd")
+                strategy_cap_raw = None if health_order_test else budget_payload.get("strategy_cap_twd")
                 if strategy_cap_raw is not None:
                     fresh_account_balance = fresh_buying_power.balance_twd
                     if (fresh_account_balance is None or
@@ -642,7 +660,7 @@ def execute_advice_file(
                 item["daily_reserved_buy_twd_before"] = str(daily_reserved)
                 item["max_daily_buy_twd"] = str(current_daily_limit)
 
-                if daily_reserved + required > current_daily_limit:
+                if not health_order_test and daily_reserved + required > current_daily_limit:
                     raise AccountCheckError(
                         f"daily BUY cap: reserved={daily_reserved}, "
                         f"required={required}, max={current_daily_limit}"
@@ -728,6 +746,7 @@ def execute_advice_file(
                         "entry_plan": item.get('entry_plan'),
                         "exit_plan": item.get('exit_plan'),
                         "timing_ref": item.get('timing_ref'),
+                        **order_metadata,
                     },
                 )
                 mark('broker_submission_persist_finished')
@@ -746,10 +765,13 @@ def execute_advice_file(
                 "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
                 "entry_plan": item.get('entry_plan'),
                 "timing_ref": item.get('timing_ref'),
+                **order_metadata,
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
-                                if intent.side == Side.BUY else None))
+                                if intent.side == Side.BUY and not health_order_test else None))
             item["send_attempted"] = True
-            mark('send_boundary',quote_timestamp=intent.quote_timestamp,bid=str(quote.bid),ask=str(quote.ask),
+            mark('send_boundary',quote_timestamp=None if quote.quote_status=='USER_FIXED_LIMIT' else intent.quote_timestamp,
+                 user_authorization_timestamp=intent.quote_timestamp if quote.quote_status=='USER_FIXED_LIMIT' else None,
+                 bid=str(quote.bid),ask=str(quote.ask),
                  quantity=plan.quantity,limit_price=str(plan.limit_price))
             result = broker.send_limit_order(
                 symbol=plan.symbol,

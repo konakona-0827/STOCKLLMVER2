@@ -21,6 +21,7 @@ from .auto_advice_executor import LiveExecutionConfig
 from .capital_crosscheck import parse_reply_row
 from .settlement_balance import assess_settlement_balance
 from .timing import timed
+from .ownership import is_manual_diagnostic,MANUAL_DIAGNOSTIC,RECORD_ONLY
 
 
 _broker_sync_lock = threading.RLock()
@@ -218,6 +219,7 @@ def current_buy_block_reasons(report: dict) -> list[str]:
         reasons.append("AI_CAPITAL_UNVERIFIED")
     try:
         pending = Decimal(str(report["pending_buy_reserve_twd"]))
+        account_pending = Decimal(str(report.get("account_pending_buy_reserve_twd",report["pending_buy_reserve_twd"])))
         invested = Decimal(str(report["ai_committed_capital_twd"]))
         strategy = Decimal(str(report["strategy_cap_twd"]))
         daily_limit = Decimal(str(report["daily_buy_limit_twd"]))
@@ -233,14 +235,14 @@ def current_buy_block_reasons(report: dict) -> list[str]:
             reasons.append("DAILY_BUY_LIMIT_REACHED")
         if (report.get("broker_balance_twd") is not None and
                 Decimal(str(report["broker_balance_twd"])) -
-                Decimal(str(report["minimum_balance_twd"])) - pending <= 0):
+                Decimal(str(report["minimum_balance_twd"])) - account_pending <= 0):
             reasons.append("NO_BROKER_HEADROOM_AFTER_RESERVE")
     except (KeyError, TypeError, ValueError, ArithmeticError):
         pass
     if any(row.get("status") != "MATCH"
            for row in report.get("inventory_comparison") or []):
         reasons.append("INVENTORY_MISMATCH")
-    checks = report.get("broker_order_reconciliation") or []
+    checks = [row for row in report.get("broker_order_reconciliation") or [] if not is_manual_diagnostic(row)]
     if any(row.get("status") == "FILL_MISMATCH" for row in checks):
         reasons.append("BROKER_FILL_LEDGER_MISMATCH")
     if any(row.get("status") != "FILL_MISMATCH"
@@ -270,6 +272,20 @@ def _pending_buy_reservation(project_root: Path, report: dict,
     for decision_id, symbol, status, detail_json in rows:
         detail = json.loads(detail_json or "{}")
         check = checks.get(decision_id)
+        if is_manual_diagnostic(detail):
+            # User-managed pending orders still consume real buying power.
+            # No broker replay means retain the worst-case reservation, not an AI management task.
+            ordered=int(detail.get('quantity') or 0);filled=int(detail.get('filled_quantity') or 0)
+            if check and check.get('status') in VERIFIED_BROKER_ORDER_STATUSES:
+                filled=max(filled,int(check.get('broker_verified_filled_qty') or 0))
+            if not 0<=filled<=ordered<=999 or ordered<=0:raise RuntimeError('manual diagnostic quantity unverified')
+            remaining=ordered-filled;price=Decimal(str(detail.get('limit_price')))
+            if not price.is_finite() or price<=0:raise RuntimeError('manual diagnostic price unverified')
+            gross=price*remaining;fee=max(cfg.min_buy_fee_reserve_twd,gross*cfg.buy_cash_buffer_rate) if remaining else Decimal(0)
+            amount=gross+fee;total+=amount
+            pending.append(dict(decision_id=decision_id,symbol=symbol,remaining_qty=remaining,limit_price_twd=str(price),
+                gross_twd=str(gross),fee_buffer_twd=str(fee),reserve_twd=str(amount),ownership=MANUAL_DIAGNOSTIC,management_policy=RECORD_ONLY))
+            continue
         if (check is None or not check.get("broker_replay_complete")
                 or check.get("status") not in
                    ("FILL_MATCH", "ARCHIVED_BROKER_FILL_VERIFIED",
@@ -344,6 +360,7 @@ def _ai_committed_capital(project_root: Path,
         if symbol in checkpoints and datetime.fromisoformat(stamp) <= checkpoints[symbol]:
             continue
         detail = json.loads(detail_json or "{}")
+        if is_manual_diagnostic(detail):continue
         filled = int(detail.get("filled_quantity") or 0)
         if filled <= 0:
             continue
@@ -434,7 +451,8 @@ def reconcile_confirmed_broker_events(project_root: str | Path, report: dict) ->
                 if cancel_change.get("changed"):
                     outcome["updated"].append(cancel_change)
         except Exception as exc:
-            outcome["errors"].append(dict(
+            bucket='manual_diagnostic_warnings' if is_manual_diagnostic(check) else 'errors'
+            outcome.setdefault(bucket,[]).append(dict(
                 decision_id=check.get("decision_id"),
                 reason=f"{type(exc).__name__}: {exc}"))
     return outcome
@@ -476,6 +494,7 @@ def sync_broker_state(project_root: str | Path, runtime=None, *, enrich=None,
         health["reconciled_positions"] = adjusted
         health["reconciled_fills"] = reconciliation["updated"]
         health["reconciliation_errors"] = reconciliation["errors"]
+        health['manual_diagnostic_warnings']=health.get('manual_diagnostic_warnings',[])+reconciliation.get('manual_diagnostic_warnings',[])
         remaining=[dict(row) for row in health.get('inventory_comparison',[]) if row.get('status')!='MATCH']
         try:fresh=0<=(datetime.now(TAIPEI)-datetime.fromisoformat(health['checked_at'])).total_seconds()<=120
         except (KeyError,TypeError,ValueError):fresh=False
@@ -558,11 +577,15 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "reconciled_fills": report.get("reconciled_fills", []),
             "reconciled_positions": report.get("reconciled_positions", []),
             "reconciliation_errors": report.get("reconciliation_errors", []),
+            "manual_diagnostic_warnings": report.get('manual_diagnostic_warnings',[]),
+            "manual_diagnostic_orders": [row for row in attempts if is_manual_diagnostic(row.get('detail'))],
             "reconciliation_receipt": report.get('reconciliation_receipt'),
             "daily_buy_limit_twd": report.get("daily_buy_limit_twd"),
             "daily_buy_reserved_twd": report.get("daily_buy_reserved_twd"),
             "pending_buy_orders": report.get("pending_buy_orders", []),
             "pending_buy_reserve_twd": report.get("pending_buy_reserve_twd"),
+            "manual_pending_buy_reserve_twd": report.get("manual_pending_buy_reserve_twd", "0"),
+            "account_pending_buy_reserve_twd": report.get("account_pending_buy_reserve_twd", report.get("pending_buy_reserve_twd")),
             "pending_buy_reserve_error": report.get("pending_buy_reserve_error"),
             "ai_committed_capital_twd": report.get("ai_committed_capital_twd"),
             "ai_committed_positions": report.get("ai_committed_positions", []),
@@ -584,14 +607,15 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             daily_reserved = snapshot["daily_buy_reserved_twd"]
             strategy_cap = snapshot["strategy_cap_twd"]
             pending_reserve = snapshot["pending_buy_reserve_twd"]
+            account_pending_reserve = snapshot["account_pending_buy_reserve_twd"]
             invested = snapshot["ai_committed_capital_twd"]
             if None in (balance, daily_limit, daily_reserved,
-                        strategy_cap, pending_reserve, invested):
+                        strategy_cap, pending_reserve, account_pending_reserve, invested):
                 raise ValueError("budget inputs are incomplete")
             after_floor = max(Decimal("0"), Decimal(str(balance)) -
                               Decimal(str(snapshot["minimum_balance_twd"] or 0)))
             after_pending = max(Decimal("0"), after_floor -
-                                Decimal(str(pending_reserve)))
+                                Decimal(str(account_pending_reserve)))
             daily_remaining = max(Decimal("0"), Decimal(str(daily_limit)) -
                                   Decimal(str(daily_reserved)))
             strategy_remaining = max(
@@ -654,6 +678,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                   daily_buy_limit_twd=str(cfg.max_daily_buy_twd),
                   daily_buy_reserved_twd=None, strategy_cap_twd=None,
                   pending_buy_orders=[], pending_buy_reserve_twd=None,
+                  manual_pending_buy_reserve_twd=None,account_pending_buy_reserve_twd=None,
                   pending_buy_reserve_error=None,
                   ai_committed_capital_twd=None, ai_committed_positions=[],
                   ai_committed_capital_estimated=False,
@@ -811,9 +836,11 @@ def run_health_check(project_root: str | Path, *, session=None,
                 report["errors"].append(f"inventory CSV: {type(exc).__name__}: {exc}")
 
     if broker_session_ready and not any(x.startswith("database:") for x in report["errors"]):
+        manual_ids=set();status_before_orders=report['status']
         try:
             db_path = root / "data" / "execution" / "live_execution.sqlite3"
             attempts = _read_order_keys(db_path)
+            manual_ids={a['decision_id'] for a in attempts if is_manual_diagnostic(a.get('detail'))}
             archived_fills = None
             for attempt in attempts:
                 detail = attempt["detail"]
@@ -825,7 +852,13 @@ def run_health_check(project_root: str | Path, *, session=None,
                     if report["status"] == "OK":
                         report["status"] = "WARN"
                     continue
-                cross = session.crosscheck_seq13(str(seq13), include_report9=True)
+                try:cross = session.crosscheck_seq13(str(seq13), include_report9=True)
+                except Exception as exc:
+                    if not is_manual_diagnostic(detail):raise
+                    report.setdefault('manual_diagnostic_warnings',[]).append(dict(decision_id=attempt['decision_id'],reason=type(exc).__name__))
+                    report['broker_order_reconciliation'].append(dict(decision_id=attempt['decision_id'],symbol=attempt['symbol'],
+                        side=attempt['side'],seq13=str(seq13),status='MANUAL_DIAGNOSTIC_REPLAY_UNAVAILABLE'))
+                    continue
                 recorded_qty = int(detail.get("filled_quantity") or 0)
                 broker_qty = cross.filled_quantity
                 if broker_qty == 0 and recorded_qty > 0 and archived_fills is None:
@@ -862,6 +895,7 @@ def run_health_check(project_root: str | Path, *, session=None,
                 fills = []
                 for raw in cross.fill_rows:
                     parsed = parse_reply_row(raw)
+                    if parsed is None:continue
                     if parsed.quantity is not None and parsed.quantity > 0:
                         fills.append(dict(
                             quantity=parsed.quantity,
@@ -947,10 +981,21 @@ def run_health_check(project_root: str | Path, *, session=None,
         except Exception as exc:
             report["errors"].append(f"order reconciliation: {type(exc).__name__}: {exc}")
 
+        for check in report['broker_order_reconciliation']:
+            if check.get('decision_id') in manual_ids:
+                check.update(ownership=MANUAL_DIAGNOSTIC,management_policy=RECORD_ONLY)
+        ai_checks=[c for c in report['broker_order_reconciliation'] if not is_manual_diagnostic(c)]
+        if (manual_ids and report['status'] in ('WARN','ALERT') and status_before_orders=='OK'
+                and not report['errors'] and all(c.get('status') in VERIFIED_BROKER_ORDER_STATUSES for c in ai_checks)):
+            report['status']='OK'
+
     try:
         pending, reserved = _pending_buy_reservation(root, report, cfg)
         report["pending_buy_orders"] = pending
-        report["pending_buy_reserve_twd"] = str(reserved)
+        manual_reserved=sum((Decimal(row['reserve_twd']) for row in pending if is_manual_diagnostic(row)),Decimal(0))
+        report["pending_buy_reserve_twd"] = str(reserved-manual_reserved)
+        report["manual_pending_buy_reserve_twd"] = str(manual_reserved)
+        report["account_pending_buy_reserve_twd"] = str(reserved)
     except Exception as exc:
         report["pending_buy_reserve_error"] = f"{type(exc).__name__}: {exc}"
     try:

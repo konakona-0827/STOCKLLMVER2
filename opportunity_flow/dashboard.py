@@ -27,7 +27,7 @@ class FlowDashboard(Dashboard):
         root.title('TW Opportunity Flow｜完整帳戶、研究與持倉管理')
         root.geometry(f'{min(1500,root.winfo_screenwidth()-20)}x{min(920,root.winfo_screenheight()-80)}')
         self.run_button.configure(text='立即更新研究')
-        self.refresh_button.configure(text='健康檢查',command=self.request_health_check)
+        self.refresh_button.configure(text='健康檢查',command=self.choose_health_check)
         self.refresh_progress.configure(mode='determinate',maximum=100,value=0)
         self.action_buttons['開始自動掃描'].configure(text='啟動 FLOW',command=self.start_auto)
         self.action_buttons['停止自動掃描'].configure(text='停止 FLOW',command=self.stop_auto)
@@ -66,12 +66,14 @@ class FlowDashboard(Dashboard):
         self.health_summary=tk.StringVar(value='尚未執行健康檢查。檢查會核對券商、帳本及流程狀態；平時畫面同步不會執行這項檢查。')
         ttk.Label(self.health_page,textvariable=self.health_summary,wraplength=1350,justify='left',padding=10).pack(fill='x')
         health_grid=ttk.Frame(self.health_page);health_grid.pack(fill='both',expand=True,padx=10,pady=(0,10))
-        self.health_tree=ttk.Treeview(health_grid,columns=('check','status','detail'),show='headings')
-        for key,label,width in (('check','檢查項目',200),('status','結果',85),('detail','證據／處理建議',1000)):
+        self.health_tree=ttk.Treeview(health_grid,columns=('check','status','detail','remediation'),show='headings')
+        for key,label,width in (('check','檢查項目',180),('status','結果',75),('detail','證據',650),('remediation','處理方式',450)):
             self.health_tree.heading(key,text=label);self.health_tree.column(key,width=width,stretch=key=='detail')
         for tag,color in (('PASS','#087A35'),('WARN','#8B5A00'),('FAIL','#B00020')):self.health_tree.tag_configure(tag,foreground=color)
         scroll=ttk.Scrollbar(health_grid,orient='vertical',command=self.health_tree.yview)
-        self.health_tree.configure(yscrollcommand=scroll.set);scroll.pack(side='right',fill='y');self.health_tree.pack(fill='both',expand=True)
+        horizontal=ttk.Scrollbar(health_grid,orient='horizontal',command=self.health_tree.xview)
+        horizontal.pack(side='bottom',fill='x')
+        self.health_tree.configure(yscrollcommand=scroll.set,xscrollcommand=horizontal.set);scroll.pack(side='right',fill='y');self.health_tree.pack(fill='both',expand=True)
         self.health_tree.bind('<Double-1>',lambda e:self.show_text('健康檢查證據',json.dumps(self.health_report or {},ensure_ascii=False,indent=2)))
         self.timing_page=ttk.Frame(self.notebook);self.notebook.add(self.timing_page,text='執行耗時')
         self.timing_summary=tk.StringVar(value='尚無新版執行計時；BUY／SELL 提案及執行時會自動記錄。')
@@ -103,6 +105,8 @@ class FlowDashboard(Dashboard):
     def launch_health(self):pass  # The FLOW coordinator owns broker refreshes.
 
     def run_strategy_info(self,run_id,symbol):
+        if isinstance(run_id,str) and run_id.startswith('health-0050-1-80-'):
+            return '人工診斷／不交由 AI 管理','使用者確認的 0050／1股／80元 ROD；僅記錄與核對，不自動撤單、改價、重送或管理。'
         if isinstance(run_id,str) and run_id.startswith('tw-flow-'):
             import re
             if re.fullmatch(r'tw-flow-[0-9a-f]{28}',run_id):
@@ -154,6 +158,35 @@ class FlowDashboard(Dashboard):
         threading.Thread(target=work,name='flow-health-check',daemon=True).start()
         return True
 
+    def choose_health_check(self):
+        if self.closing or self.health_pending:return False
+        if self.args.read_only:return self.request_health_check()
+        if self.controller.status in ('STARTING','STOPPING'):
+            self.health_summary.set('FLOW 正在啟動或停止，請待目前工作結束後測試。');return False
+        accepted=messagebox.askyesno('健康檢查範圍',
+            '這次健康檢查是否包含 FLOW 與送單路徑測試？\n\n'
+            '選「是」：以固定假設測試 FLOW 送單路徑，允許以下真實委託：\n0050 買進 1 股\n限價 80 元／ROD\n'
+            '成交價金最多 80 元，另計手續費；可能成交，不能保證買不到。\n\n'
+            '以使用者指定的假設決策測試原執行器，並非模型投資研究。\n'
+            '仍須通過原帳戶、行情、額度與防重送檢查；不追價、不自動重送。\n'
+            '同日已有診斷紀錄時只重新核對；盤外也嘗試交給券商收單。\n'
+            '是否成為下一交易日預約單，以券商回報為準；不保證收單。\n\n'
+            '選「否」：只查帳戶、帳本及系統，標示本次 FLOW 尚未測試。',
+            parent=self.root,default=messagebox.NO)
+        if not accepted:return self.request_health_check()
+        self.health_pending=True;self._health_started=time.monotonic();self._health_stage='診斷測試：等待原執行器'
+        self.refresh_button.configure(state='disabled',text='檢查中…')
+        self.notebook.select(self.health_page)
+        def work():
+            try:
+                result=self.service.test_health_order(confirmed=True,progress=lambda label:self.flow_events.put(('health_stage',label)))
+                self.flow_events.put(('health',result))
+            except Exception as exc:
+                from config import redact
+                self.flow_events.put(('health_error',redact(type(exc).__name__+': '+str(exc))))
+        threading.Thread(target=work,name='flow-health-order-test',daemon=True).start()
+        return True
+
     def _drain_flow_events(self):
         try:
             while True:
@@ -171,17 +204,22 @@ class FlowDashboard(Dashboard):
                     self.health_report=payload if kind=='health' else dict(checked_at=datetime.now(TAIPEI).isoformat(),status='FAIL',
                         checks=[dict(key='health_check',label='健康檢查',status='FAIL',detail=payload)])
                     if not self.closing:
-                        self.refresh_button.configure(state='normal',text='健康檢查');self.render_health();self.refresh()
+                        self.refresh_button.configure(state='normal',text='健康檢查')
+                        self.render_health();self.refresh()
         except Empty:pass
 
     def render_health(self):
         report=self.health_report or {};labels={'PASS':'通過','WARN':'需注意','FAIL':'失敗'}
         self.health_tree.delete(*self.health_tree.get_children())
         for item in report.get('checks',[]):
-            self.health_tree.insert('','end',iid=item['key'],values=(item['label'],labels.get(item['status'],item['status']),item['detail']),tags=(item['status'],))
+            self.health_tree.insert('','end',iid=item['key'],values=(item['label'],labels.get(item['status'],item['status'])+('＊' if item.get('asterisk') else ''),item['detail'],item.get('remediation','雙擊查看完整證據。')),tags=(item['status'],))
         counts={key:sum(r['status']==key for r in report.get('checks',[])) for key in labels}
+        description=report.get('current_flow_test_description','本次 FLOW／實盤送單：尚未測試。')
+        if (report.get('flow_execution_test') or {}).get('status')=='PASS' or any(r['key']=='diagnostic_submission' and r['status']=='PASS' for r in report.get('checks',[])):
+            description='FLOW 送單路徑：通過＊（固定假設決策取得券商收單；真實研究另驗）。'
         self.health_summary.set(f'健康檢查：{labels.get(report.get("status"),"尚無結果")}｜完成 {report.get("checked_at","--")}\n'
-            f'通過 {counts["PASS"]} 項、需注意 {counts["WARN"]} 項、失敗 {counts["FAIL"]} 項。雙擊項目查看證據。')
+            f'通過 {counts["PASS"]} 項、需注意 {counts["WARN"]} 項、失敗 {counts["FAIL"]} 項。｜'
+            +description)
 
     def update_work_status(self):
         if hasattr(self.controller,'observation'):observation=self.controller.observation()

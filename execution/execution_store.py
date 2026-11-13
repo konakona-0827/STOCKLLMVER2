@@ -9,6 +9,7 @@ import sqlite3
 from typing import Any
 
 from .models import Side
+from .ownership import is_manual_diagnostic
 from config import TAIPEI
 
 
@@ -116,6 +117,7 @@ class ExecutionStore:
                 ('SUBMITTED','ACKNOWLEDGED','PARTIALLY_FILLED','UNCONFIRMED')""").fetchall()
             for decision_id, symbol, side, started, raw in rows:
                 detail = json.loads(raw or "{}")
+                if is_manual_diagnostic(detail):continue  # User-managed; observe broker, never close it by our clock.
                 # Historical formal orders were all SendStockOddLotOrder,
                 # sPeriod=4/nTradeType=0. Explicit other order types never expire here.
                 if (detail.get("time_in_force", "ROD") != "ROD"
@@ -124,7 +126,11 @@ class ExecutionStore:
                         or not detail.get("seq13")):
                     continue
                 stamp = datetime.fromisoformat(detail.get("submitted_at") or started)
-                if stamp.tzinfo is None or stamp.astimezone(TAIPEI).date() >= local_day:
+                trade_day=stamp.astimezone(TAIPEI).date() if stamp.tzinfo else local_day
+                if detail.get('requested_outside_session'):
+                    try:trade_day=datetime.fromisoformat(detail['valid_trading_date']).date()
+                    except (KeyError,TypeError,ValueError):continue
+                if stamp.tzinfo is None or trade_day >= local_day:
                     continue
                 ordered, filled = int(detail.get("quantity") or 0), int(detail.get("filled_quantity") or 0)
                 if side not in ("BUY", "SELL") or not 0 <= filled < ordered <= 999:
@@ -134,7 +140,7 @@ class ExecutionStore:
                               send_return_code=0,
                               expired_quantity=ordered-filled,
                               expired_at=at.isoformat(), expiration_source="ROD_DAY_END",
-                              order_trade_date=stamp.astimezone(TAIPEI).date().isoformat())
+                              order_trade_date=trade_day.isoformat())
                 con.execute("""UPDATE execution_attempts SET status=?,finished_at=?,detail_json=?
                     WHERE decision_id=?""", (status, at.isoformat(),
                     json.dumps(detail, ensure_ascii=False), decision_id))
@@ -163,18 +169,18 @@ class ExecutionStore:
                 ),
             )
 
-    def claim(self, decision_id: str, run_id: str, symbol: str, side: str) -> bool:
+    def claim(self, decision_id: str, run_id: str, symbol: str, side: str, *, detail=None) -> bool:
         now = datetime.now(timezone.utc).isoformat()
         try:
             with self._connect() as con:
                 con.execute(
                     """INSERT INTO execution_attempts
-                       (decision_id, run_id, symbol, side, started_at, status)
-                       VALUES (?, ?, ?, ?, ?, 'STARTED')""",
-                    (decision_id, run_id, symbol, side, now),
+                       (decision_id, run_id, symbol, side, started_at, status,detail_json)
+                       VALUES (?, ?, ?, ?, ?, 'STARTED',?)""",
+                    (decision_id, run_id, symbol, side, now,json.dumps(detail,ensure_ascii=False,default=str) if detail is not None else None),
                 )
                 self._insert_event(con, decision_id, "STARTED", now,
-                                   {"run_id": run_id, "symbol": symbol, "side": side})
+                                   {"run_id": run_id, "symbol": symbol, "side": side,**(detail or {})})
         except sqlite3.IntegrityError:
             return False
         return True
@@ -195,9 +201,14 @@ class ExecutionStore:
             """SELECT started_at, status, detail_json FROM execution_attempts
                WHERE side='BUY' AND status NOT IN ('STARTED','SKIPPED_CHECK_FAILED')"""
         ):
-            if datetime.fromisoformat(started_at).astimezone(TAIPEI).date() != local_day:
-                continue
             detail = json.loads(detail_json or "{}")
+            if is_manual_diagnostic(detail):continue  # AI daily allowance excludes user purchases.
+            trade_day=datetime.fromisoformat(started_at).astimezone(TAIPEI).date()
+            if detail.get('requested_outside_session'):
+                trade_day=datetime.fromisoformat(detail['valid_trading_date']).date()
+            pending_preorder=(detail.get('requested_outside_session') and status in
+                ('SEND_PENDING','SUBMITTED','ACKNOWLEDGED','PARTIALLY_FILLED','UNCONFIRMED'))
+            if trade_day != local_day and not pending_preorder:continue
             if status == "FAILED" and detail.get("send_return_code") not in (0, None):
                 continue
             if status == "FAILED" and not detail.get("send_attempted"):
@@ -286,13 +297,15 @@ class ExecutionStore:
             current = int(row[0]) if row else 0
             if side == Side.SELL and current < qty:
                 raise RuntimeError(f"confirmed SELL fill exceeds AI shares: {symbol}")
-            new_qty = current + qty if side == Side.BUY else current - qty
-            con.execute(
-                """INSERT INTO ai_positions(symbol, qty, updated_at) VALUES (?, ?, ?)
-                   ON CONFLICT(symbol) DO UPDATE
-                   SET qty=excluded.qty, updated_at=excluded.updated_at""",
-                (symbol, new_qty, now),
-            )
+            manual=is_manual_diagnostic(detail)
+            new_qty = current if manual else current + qty if side == Side.BUY else current - qty
+            if not manual:
+                con.execute(
+                    """INSERT INTO ai_positions(symbol, qty, updated_at) VALUES (?, ?, ?)
+                       ON CONFLICT(symbol) DO UPDATE
+                       SET qty=excluded.qty, updated_at=excluded.updated_at""",
+                    (symbol, new_qty, now),
+                )
             full_detail = dict(detail, ai_managed_qty_after_fill=new_qty)
             con.execute(
                 """UPDATE execution_attempts SET finished_at=?, status=?, detail_json=?
@@ -355,7 +368,8 @@ class ExecutionStore:
                 datetime.fromisoformat(started_at) <= datetime.fromisoformat(adjustment[0]))
             # Configuration assigns all broker inventory after old orders have
             # closed. Late replay of those fills must preserve that assignment.
-            ai_delta = 0 if covered_by_configuration else delta
+            manual=is_manual_diagnostic(detail)
+            ai_delta = 0 if covered_by_configuration or manual else delta
             new_qty = current_qty + ai_delta if side == "BUY" else current_qty - ai_delta
             if new_qty < 0:
                 raise RuntimeError("broker SELL fill exceeds formal AI shares")
@@ -378,12 +392,13 @@ class ExecutionStore:
             )
             if covered_by_configuration:
                 detail["broker_fill_covered_by_configuration_at"] = adjustment[0]
-            con.execute(
-                """INSERT INTO ai_positions(symbol,qty,updated_at) VALUES (?,?,?)
-                   ON CONFLICT(symbol) DO UPDATE
-                   SET qty=excluded.qty,updated_at=excluded.updated_at""",
-                (symbol, new_qty, now),
-            )
+            if not manual:
+                con.execute(
+                    """INSERT INTO ai_positions(symbol,qty,updated_at) VALUES (?,?,?)
+                       ON CONFLICT(symbol) DO UPDATE
+                       SET qty=excluded.qty,updated_at=excluded.updated_at""",
+                    (symbol, new_qty, now),
+                )
             con.execute(
                 """UPDATE execution_attempts SET status=?,detail_json=?
                    WHERE decision_id=?""",
@@ -541,13 +556,13 @@ class ExecutionStore:
         """Symbols whose later fills may not yet be reflected in ai_positions."""
         with self._connect() as con:
             rows = con.execute(
-                """SELECT DISTINCT symbol FROM execution_attempts
+                """SELECT symbol,detail_json FROM execution_attempts
                    WHERE status IN ('STARTED','SEND_PENDING','SUBMITTED',
                                     'ACKNOWLEDGED','PARTIALLY_FILLED','UNCONFIRMED')
                      AND decision_id<>?""",
                 (exclude_decision_id,),
             ).fetchall()
-        return {str(row[0]).upper() for row in rows}
+        return {str(row[0]).upper() for row in rows if not is_manual_diagnostic(json.loads(row[1] or '{}'))}
 
     def events_for(self, decision_id: str) -> list[dict[str, Any]]:
         with self._connect() as con:

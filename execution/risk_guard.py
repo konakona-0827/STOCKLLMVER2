@@ -48,6 +48,8 @@ class RiskConfig:
     require_executable_side_price: bool = True
     # Opt-in only for the durable plan coordinator. Existing live paths stay off.
     allow_planned_limits: bool = False
+    # Only the separate, user-confirmed diagnostic entry may enable this.
+    allow_health_order_test: bool = False
 
 
 @dataclass(frozen=True)
@@ -130,6 +132,9 @@ def _validate_quote(intent: AdviceIntent, quote: MarketQuote, cfg: RiskConfig) -
         )
 
     required = cfg.require_quote_status.strip().upper()
+    if (cfg.allow_health_order_test and intent.pricing_policy=='USER_HEALTH_LIMIT'
+            and quote.quote_status=='USER_FIXED_LIMIT'):
+        required='USER_FIXED_LIMIT'  # User authorization time, explicitly not a live quote.
     if required and quote.quote_status != required:
         raise RiskRejected(
             f"{intent.symbol}: quote_status={quote.quote_status}, required={required}"
@@ -153,6 +158,15 @@ def _validate_quote(intent: AdviceIntent, quote: MarketQuote, cfg: RiskConfig) -
 
 
 def _choose_limit_price(intent: AdviceIntent, quote: MarketQuote, cfg: RiskConfig) -> Decimal:
+    if intent.pricing_policy == 'USER_HEALTH_LIMIT':
+        if (not cfg.allow_health_order_test or intent.symbol != '0050' or intent.side != Side.BUY
+                or intent.suggested_qty != 1 or intent.suggested_price != Decimal(80)):
+            raise RiskRejected('HEALTH_TEST_REQUIRES_CONFIRMED_FIXED_CONTRACT')
+        if quote.quote_status=='USER_FIXED_LIMIT':return Decimal(80)
+        if (quote.bid is None or quote.ask is None or not quote.bid.is_finite()
+                or not quote.ask.is_finite() or not 0 < quote.bid <= quote.ask):
+            raise RiskRejected('HEALTH_TEST_REQUIRES_CURRENT_EXECUTABLE_BOOK')
+        return Decimal(80)
     if intent.pricing_policy not in ("AT_QUOTE", "PLANNED_LIMIT"):
         raise RiskRejected('unknown pricing policy')
     if intent.pricing_policy == 'PLANNED_LIMIT':

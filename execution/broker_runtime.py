@@ -87,6 +87,9 @@ class BrokerRuntime:
     def execute_if_active(self,advice_path,stopped):
         return self._submit('execute',Path(advice_path),stopped)
 
+    def execute_health_order_test(self,advice_path,stopped):
+        return self._submit('health_order_test',Path(advice_path),stopped)
+
     def health(self):
         return self._submit("health")
 
@@ -195,7 +198,7 @@ class BrokerRuntime:
                                     # setup failure. Another login could return 2003.
                                     login_blocked = True
                                     login_error = connection_error
-                        if kind == "execute":
+                        if kind in ('execute','health_order_test'):
                             if session is None:
                                 raise RuntimeError(connection_error)
                             from .pipeline_hook import execute_after_advice_written
@@ -203,6 +206,7 @@ class BrokerRuntime:
                                 args[0], project_root=self.project_root,
                                 session=session,
                                 stopped=lambda: self._unresponsive.is_set() or (len(args)>1 and args[1]()),
+                                **({'health_order_test':True} if kind=='health_order_test' else {}),
                             )
                         elif kind == 'cancel_exit':
                             if session is None:

@@ -67,8 +67,22 @@ def current_position_quotes(health, result):
     return quotes
 
 
+def display_position_quotes(health,result):
+    """Holdings valuation may use explicitly labelled closes; execution never calls this."""
+    quotes=current_position_quotes(health,result)
+    for q in (result or {}).get('batch',{}).get('quotes',[]):
+        if (q.get('quote_status')!='DAILY_CLOSE_REFERENCE' or q.get('quote_basis')!='OFFICIAL_DAILY_CLOSE_NOT_EXECUTABLE'
+                or q.get('display_only') is not True or q.get('execution_usable') is not False):continue
+        try:
+            day=date.fromisoformat(q['price_as_of']);price=float(q['last_price']);symbol=q['symbol']
+            if day>now().date() or not math.isfinite(price) or price<=0:continue
+        except (KeyError,TypeError,ValueError):continue
+        quotes[symbol]=(datetime.combine(day,datetime.min.time(),tzinfo=TAIPEI),price,q.get('name'),f'{day} 收盤參考＊')
+    return quotes
+
+
 DECISION_LABELS = {'BUY': '買進', 'HOLD': '持有', 'SELL': '賣出', 'WAIT': '觀望'}
-QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情', 'PUBLIC_REFERENCE':'普通交易參考（非零股）'}
+QUALITY_LABELS = {'LIVE': '即時行情', 'LAST_KNOWN': '最近行情', 'MIXED': '行情混合', 'UNAVAILABLE': '無可用行情', 'PUBLIC_REFERENCE':'普通交易參考（非零股）','DAILY_CLOSE_REFERENCE':'收盤參考＊（不可即時交易）'}
 STATUS_LABELS = {
     'IDLE': '閒置', 'SCANNING_QUOTES': '取得行情中', 'QUANT_ANALYSIS': '量化分析中',
     'DAILY_HISTORY': '取得歷史日線中', 'MARKET_DISCOVERY': '子代理主動尋標中',
@@ -1349,21 +1363,24 @@ class Dashboard:
             update_detail_text(self.detail, detail_text)
         # The live holdings feed must remain visible between analysis runs.
         display_quotes = dict(quotes)
-        display_quotes.update({q['symbol']: q for q in health.get('position_quotes') or []})
+        display_quotes.update({q['symbol']:q for q in health.get('position_quotes') or []
+            if display_quotes.get(q['symbol'],{}).get('quote_status')!='DAILY_CLOSE_REFERENCE'})
         for q in display_quotes.values():
             status = q.get('quote_status', 'UNAVAILABLE')
             try:
+                if status=='DAILY_CLOSE_REFERENCE':raise ValueError('DISPLAY_CLOSE')
                 seconds = (now() - datetime.fromisoformat(q['quote_timestamp'])).total_seconds()
                 age = f'{seconds:,.0f}'
                 if status == 'LIVE' and not 0 <= seconds <= MAX_QUOTE_AGE_SECONDS:
                     status = 'LAST_KNOWN'
             except (KeyError, TypeError, ValueError):
-                age, status = '--', 'UNAVAILABLE'
+                age='--'
+                if status!='DAILY_CLOSE_REFERENCE':status='UNAVAILABLE'
             label = ('試撮（不可交易）' if q.get('is_trial') else
                      QUALITY_LABELS.get(status, status))
             self.quote_tree.insert('', 'end', values=[
                 q['symbol'], q.get('name') or '股票名稱未取得', label,
-                value(q.get('last_price')), age, format_taipei_time(q.get('quote_timestamp')),
+                value(q.get('last_price')), age, (str(q.get('price_as_of'))+' 收盤參考＊') if status=='DAILY_CLOSE_REFERENCE' else format_taipei_time(q.get('quote_timestamp')),
                 format_taipei_time(q.get('request_started_at')), format_taipei_time(q.get('received_at')),
                 format_taipei_time(q.get('request_completed_at'))])
         self.broker_position_tree.delete(*self.broker_position_tree.get_children())
@@ -1689,7 +1706,7 @@ class Dashboard:
                 '等待券商查詢交割資料；請重新整理並與券商對帳。\n'
                 f'正式 AI 委託已核實買進 {buy_fill_text}、賣出 {sell_fill_text}；'
                 '此為成交價金，尚無法與交割淨額核對。')
-        fresh_quotes = current_position_quotes(health, self.result)
+        fresh_quotes = display_position_quotes(health, self.result)
         broker_rows = health.get('inventory_comparison') or []
         held = [row for row in broker_rows if int(row.get('broker_cash_qty') or 0) > 0]
         priced = [row for row in held if row['symbol'] in fresh_quotes]
@@ -1701,6 +1718,7 @@ class Dashboard:
             total_value = sum(int(row['broker_cash_qty'])*fresh_quotes[row['symbol']][1]
                               for row in held)
             market_value = f'NT$ {total_value:,.2f}'
+            if any(len(fresh_quotes[row['symbol']])>3 for row in held):market_value+='（含收盤參考＊）'
         cap = f"NT$ {account['capital_limit_cents']/100:,.0f}" if account else '尚未設定'
         buy_budget = money(health.get('current_buy_budget_twd'))
         if health.get('budget_status') == 'BLOCKED':
@@ -1756,7 +1774,7 @@ class Dashboard:
                 ai_usage,
                 row.get('configured_user_qty') if verified else '--',
                 latest_buy_strategy.get(symbol, ('','--'))[1] if verified and int(row.get('ai_qty') or 0)>0 else '--',
-                reference, value_twd, format_taipei_time(quote[0] if quote else None),
+                reference, value_twd, quote[3] if quote and len(quote)>3 else format_taipei_time(quote[0] if quote else None),
                 row.get('status') if verified else '待券商對帳',
                 checked_at])
 

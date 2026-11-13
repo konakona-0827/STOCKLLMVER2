@@ -10,6 +10,7 @@ from config import TAIPEI
 import position_store
 from .execution_store import ExecutionStore
 from .auto_advice_executor import LiveExecutionConfig
+from .ownership import is_manual_diagnostic
 
 
 def _record_position(con, before, after, event_type, evidence=None):
@@ -38,7 +39,7 @@ def reconcile_broker_inventory(project_root, report):
 
     from .health_monitor import VERIFIED_BROKER_ORDER_STATUSES
     unresolved = {row.get('symbol') for row in report.get('broker_order_reconciliation', [])
-                  if row['status'] not in VERIFIED_BROKER_ORDER_STATUSES}
+                  if row['status'] not in VERIFIED_BROKER_ORDER_STATUSES and not is_manual_diagnostic(row)}
     if None in unresolved:
         return []
 
@@ -60,14 +61,14 @@ def reconcile_broker_inventory(project_root, report):
             symbol = row['symbol']
             if symbol in unresolved:
                 continue
-            activity = con.execute("""SELECT 1 FROM execution_attempts WHERE symbol=?
+            activity = con.execute("""SELECT detail_json FROM execution_attempts WHERE symbol=?
                 AND (finished_at IS NULL OR status IN
                      ('STARTED','SEND_PENDING','SUBMITTED','ACKNOWLEDGED',
                       'PARTIALLY_FILLED','UNCONFIRMED')
                      OR julianday(started_at)>=julianday(?)
-                     OR julianday(finished_at)>=julianday(?)) LIMIT 1""",
-                (symbol, report['checked_at'], report['checked_at'])).fetchone()
-            if activity:
+                     OR julianday(finished_at)>=julianday(?))""",
+                (symbol, report['checked_at'], report['checked_at'])).fetchall()
+            if any(not is_manual_diagnostic(json.loads(r[0] or '{}')) for r in activity):
                 continue
             ai = con.execute('SELECT qty,updated_at FROM ai_positions WHERE symbol=?',
                              (symbol,)).fetchone()

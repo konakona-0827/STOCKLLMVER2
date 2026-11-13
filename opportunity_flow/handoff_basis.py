@@ -2,6 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 import json
+from execution.ownership import is_manual_diagnostic
 
 
 def remaining_manual_basis(handoffs,attempts,held):
@@ -12,6 +13,7 @@ def remaining_manual_basis(handoffs,attempts,held):
         at=datetime.fromisoformat(attempt['started_at'])
         if at<first:continue
         detail=json.loads(attempt['detail_json'] or '{}')
+        if is_manual_diagnostic(detail):continue
         qty=int(detail.get('filled_quantity') or 0)
         if qty>0:
             if attempt['side']=='BUY':return None  # Use the existing mixed-acquisition basis instead.

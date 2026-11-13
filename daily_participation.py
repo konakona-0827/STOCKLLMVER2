@@ -29,6 +29,8 @@ def progress(path=None, at=None):
             if side not in result['filled']:
                 continue
             detail = json.loads(raw or '{}')
+            from execution.ownership import is_manual_diagnostic
+            if is_manual_diagnostic(detail):continue
             submitted = datetime.fromisoformat(stamp)
             if submitted.tzinfo is None:
                 raise ValueError('ORDER_TIMEZONE_UNKNOWN')

@@ -1,13 +1,14 @@
 """Adapt FLOW research to the existing Dashboard without running legacy scans."""
 from copy import deepcopy
 from contextlib import closing
+from datetime import datetime
 import json
 from pathlib import Path
 import sqlite3
 import threading
 import time
 
-from .common import policy,read
+from .common import TAIPEI,policy,read
 
 
 STATE_LABELS={
@@ -127,6 +128,21 @@ class FlowController:
             return result
         return self.runtime_action(work,write=True)
 
+    def test_health_order(self,*,confirmed=False,progress=None):
+        if confirmed is not True:raise ValueError('USER_CONFIRMATION_REQUIRED')
+        def work(runtime,coordinator):
+            from .data import load_dataset
+            from .health_order import run_test
+            from .activity import activity_for
+            dataset=coordinator.dataset if coordinator and coordinator.dataset is not None else load_dataset(self.args.dataset)
+            with activity_for(runtime).track('HEALTH_ORDER_TEST','診斷假設／原執行器／券商對帳'):
+                result,snapshot=run_test(runtime,dataset,confirmed=True,progress=progress)
+            if coordinator:
+                coordinator.snapshot=deepcopy(snapshot);coordinator.last_refresh=time.monotonic();coordinator.publish()
+            self.last_diagnostic_quotes_at=getattr(runtime,'quotes_received_at',None)
+            return result,snapshot
+        return self.runtime_action(work,write=True)
+
 
 def project_research(flow,names=None):
     """Display-only old Dashboard shape; never an advice/execution payload."""
@@ -200,14 +216,75 @@ class FlowViewService:
 
     def _signature(self):
         paths=[Path(self.args.state)/name for name in ('latest.json','latest_flow_execution.json','public_quotes.json','live_status.json')]
-        paths += [Path(self.args.dataset)/'master.json',self.account_root/'config/execution_live.json']
+        paths += [Path(self.args.dataset)/name for name in ('master.json','manifest.json','bars.csv','sessions.csv')]
+        paths += [self.account_root/'config/execution_live.json']
         for db in (self.db_path,self.account_root/'data/execution/live_execution.sqlite3',Path(self.args.state)/'flow.sqlite3'):
             paths += [db,Path(str(db)+'-wal')]
         result=[]
         for path in paths:
             try:stat=path.stat();result.append((str(path),stat.st_mtime_ns,stat.st_size))
             except FileNotFoundError:result.append((str(path),None,None))
+        at=datetime.now(TAIPEI)
+        result.append(('DISPLAY_SESSION',at.date().isoformat(),self._market_open(at)))
         return tuple(result)
+
+    @staticmethod
+    def _market_open(at=None):
+        from scheduler import is_twse_oddlot_market_window
+        return is_twse_oddlot_market_window((at or datetime.now(TAIPEI)).timestamp())
+
+    @staticmethod
+    def _held_symbols(snapshot=None,positions=()):
+        symbols=set()
+        for row in (snapshot or {}).get('inventory_comparison',[]):
+            try:
+                if int(row.get('broker_cash_qty') or 0)>0:symbols.add(row['symbol'])
+            except (KeyError,ValueError,TypeError):pass
+        for row in positions:
+            try:
+                if int(row.get('user_qty') or 0)+int(row.get('ai_managed_qty') or 0)>0:symbols.add(row['symbol'])
+            except (KeyError,ValueError,TypeError):pass
+        return symbols
+
+    def _daily_close_quotes(self,symbols):
+        """Official daily closes are a display projection, never executable quotes."""
+        symbols=set(symbols)
+        if not symbols:return {}
+        signature=[]
+        for name in ('manifest.json','bars.csv','sessions.csv'):
+            path=Path(self.args.dataset)/name
+            try:stat=path.stat();signature.append((name,stat.st_mtime_ns,stat.st_size))
+            except FileNotFoundError:signature.append((name,None,None))
+        signature=tuple(signature)
+        with self.lock:
+            cached=getattr(self,'_daily_close_cache',None)
+            if cached is None or cached[0]!=signature:
+                from .data import load_dataset
+                try:dataset=load_dataset(self.args.dataset)
+                except (OSError,ValueError,RuntimeError,KeyError):dataset={}
+                self._daily_close_cache=(signature,dataset)
+            else:dataset=cached[1]
+            at=datetime.now(TAIPEI);quotes={}
+            for symbol in symbols:
+                eligible=[]
+                for bar in dataset.get('grouped',{}).get(symbol,[]):
+                    day=bar.get('date','')
+                    expected={'TWSE':('TWSE_DAILY','TWSE_OFFICIAL_DAILY_BULK'),'TPEX':('TPEX_DAILY','TPEX_OFFICIAL_DAILY_BULK')}.get(bar.get('exchange'),())
+                    if (bar.get('source') in expected and day<=at.date().isoformat()
+                            and (day<at.date().isoformat() or at.strftime('%H:%M:%S')>='13:30:00')):
+                        eligible.append(bar)
+                if not eligible:continue
+                bar=max(eligible,key=lambda row:row['date'])
+                quotes[symbol]=dict(symbol=symbol,exchange=bar['exchange'],price=bar['close'],last_price=bar['close'],
+                    close_price=bar['close'],quote_status='DAILY_CLOSE_REFERENCE',quote_basis='OFFICIAL_DAILY_CLOSE_NOT_EXECUTABLE',
+                    display_only=True,execution_usable=False,price_as_of=bar['date'],quote_timestamp=None,bid=None,ask=None,
+                    quote_age_seconds=None,data_age_seconds=None,is_trial=None,source=bar['source'],
+                    source_sha256=bar.get('source_sha256'),retrieved_at=bar.get('retrieved_at'),
+                    retrieval_mode='OFFICIAL_DAILY_CLOSE_DISPLAY',warnings=['DISPLAY_ONLY_NOT_FOR_EXECUTION'])
+            return quotes
+
+    def _health_reference_quotes(self,snapshot):
+        return None if self._market_open() else self._daily_close_quotes(self._held_symbols(snapshot))
 
     def check_health(self,progress=None):
         from .health import inspect_health
@@ -218,7 +295,25 @@ class FlowViewService:
             snapshot=dict(status='ERROR',errors=[redact(type(exc).__name__+': '+str(exc))])
         report=inspect_health(self.account_root,self.args.state,self.args.dataset,snapshot,
             controller_status=self.controller.status,controller_error=self.controller.error,read_only=self.args.read_only,
-            progress=progress)
+            progress=progress,reference_quotes=self._health_reference_quotes(snapshot))
+        report['current_flow_test_description']='本次 FLOW／實盤送單：尚未測試（只查帳戶與系統）。'
+        save(Path(self.args.state)/'health/latest.json',report)
+        return report
+
+    def test_health_order(self,*,confirmed=False,progress=None):
+        if confirmed is not True:raise ValueError('USER_CONFIRMATION_REQUIRED')
+        if self.args.read_only:raise ValueError('只讀模式不可測試下單')
+        from .health import inspect_health
+        from .common import save
+        diagnostic,snapshot=self.controller.test_health_order(confirmed=True,progress=progress)
+        report=inspect_health(self.account_root,self.args.state,self.args.dataset,snapshot,
+            controller_status=self.controller.status,controller_error=self.controller.error,read_only=False,progress=progress,
+            reference_quotes=self._health_reference_quotes(snapshot))
+        report['diagnostic_order_test']=diagnostic
+        states=dict(ACCEPTED='券商受理已核實',UNCONFIRMED='回報未確認，不可重送',BLOCKED='送單前被阻擋',REJECTED='券商拒絕')
+        report['current_flow_test_description']='本次假設送單路徑：'+states.get(diagnostic.get('status'),'尚未測試')+'；真實研究未測試。'
+        attempted=diagnostic.get('new_send_attempted')
+        report['order_submission_calls']=None if attempted is None else int(attempted)
         save(Path(self.args.state)/'health/latest.json',report)
         return report
 
@@ -265,17 +360,32 @@ class FlowViewService:
             for s,q in observed.items():
                 if s not in merged or q.get('quote_status')=='LIVE' or merged[s]['quote_status']!='LIVE':
                     merged[s]={**q,'name':q.get('name') or names.get(s,s)}
-            result['batch']['quotes']=list(merged.values())
-            result['batch']['symbols_received']=sum(q.get('quote_status') in ('LIVE','PUBLIC_REFERENCE') for q in merged.values())
-            for row in result['top']:row['quote_status']=merged[row['symbol']]['quote_status']
             positions=[]
             if self.db_path.exists():
                 with closing(sqlite3.connect(self.db_path.resolve().as_uri()+'?mode=ro',uri=True,timeout=2)) as db:
                     db.row_factory=sqlite3.Row
                     if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='positions'").fetchone():
                         positions=[dict(row) for row in db.execute('SELECT * FROM positions ORDER BY symbol')]
-            latest={q['symbol']:q for q in (health or {}).get('position_quotes',[])}
-            positions=[position_store.context(p,latest.get(p['symbol'],{}).get('last_price')) for p in positions]
+            if not self._market_open():
+                held=self._held_symbols(health,positions)
+                closes=self._daily_close_quotes(held)
+                for symbol in held:
+                    quote=closes.get(symbol) or dict(symbol=symbol,quote_status='UNAVAILABLE',last_price=None,price=None,
+                        bid=None,ask=None,quote_timestamp=None,price_as_of=None,display_only=True,execution_usable=False,
+                        quote_basis='OFFICIAL_DAILY_CLOSE_UNAVAILABLE',warnings=['OFFICIAL_DAILY_CLOSE_UNAVAILABLE'])
+                    merged[symbol]={**quote,'name':names.get(symbol,symbol)}
+            result['batch']['quotes']=list(merged.values())
+            result['batch']['symbols_received']=sum(q.get('quote_status') in ('LIVE','PUBLIC_REFERENCE','DAILY_CLOSE_REFERENCE') for q in merged.values())
+            for row in result['top']:row['quote_status']=merged[row['symbol']]['quote_status']
+            projected=[]
+            for position in positions:
+                quote=merged.get(position['symbol'],{})
+                context=position_store.context(position,quote.get('last_price'))
+                context.update(price_as_of=quote.get('price_as_of'),quote_status=quote.get('quote_status'),
+                    quote_basis=quote.get('quote_basis'),display_only=quote.get('display_only',False),
+                    execution_usable=quote.get('execution_usable',quote.get('quote_status')=='LIVE'))
+                projected.append(context)
+            positions=projected
             self.usage=self._usage()
             from .common import digest
             result['_flow_view_revision']=digest(signature)

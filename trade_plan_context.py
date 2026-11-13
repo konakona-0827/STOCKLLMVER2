@@ -120,6 +120,8 @@ def live_plans(path, quantities, analysis_path=None, as_of=None):
                     "WHERE symbol=? AND side IN ('BUY','SELL') ORDER BY started_at", (symbol,)):
                 try:
                     detail = json.loads(raw or '{}')
+                    from execution.ownership import is_manual_diagnostic
+                    if is_manual_diagnostic(detail):continue
                     qty = int(detail.get('filled_quantity') or 0)
                 except (ValueError, TypeError):
                     continue

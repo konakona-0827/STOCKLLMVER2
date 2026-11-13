@@ -1,0 +1,160 @@
+{
+  "generated_at": "2026-11-13T17:59:34.586072+08:00",
+  "baseline_commit": "dedd30b",
+  "timezone": "Asia/Taipei",
+  "regression": {
+    "tests": 780,
+    "seconds": 111.245,
+    "status": "PASS",
+    "command": "python -m unittest discover -s tests -v",
+    "final_change": "Official collector source-name compatibility; 9 focused closing-display tests passed after the full run",
+    "focused_tests": 9,
+    "focused_seconds": 1.045
+  },
+  "user_confirmed_live_evidence": {
+    "requested_at": "2026-11-13T17:45:42.246156+08:00",
+    "status": "ACCEPTED",
+    "owner": "MANUAL_DIAGNOSTIC",
+    "sdk_send_at": "2026-11-13T17:45:58.853610+08:00",
+    "ledger_status": "ACKNOWLEDGED",
+    "quantity": 1,
+    "limit_price": "80",
+    "filled_quantity": 0,
+    "return_code": 0,
+    "broker_order_identity_present": true,
+    "broker_reconciliation_status": "NO_FILL_YET_VERIFIED",
+    "broker_replay_complete": true,
+    "valid_trading_date": "2026-11-16",
+    "ai_allowances_unchanged": {
+      "ai_positions": true,
+      "ai_committed_capital_twd": true,
+      "strategy_remaining_twd": true,
+      "daily_buy_reserved_twd": true,
+      "daily_buy_remaining_twd": true
+    },
+    "manual_cash_reserve_twd": "100",
+    "ai_pending_reserve_twd": "0",
+    "total_diagnostic_elapsed_ms": 38036.496,
+    "sdk_send_duration_ms": 230.641,
+    "actual_model_calls": 0,
+    "initiated_by": "USER_ACCEPTED_NATIVE_CONFIRMATION",
+    "agent_clicked_accept": false
+  },
+  "final_read_only_health": {
+    "checked_at": "2026-11-13T17:58:21.917218+08:00",
+    "status": "WARN",
+    "order_submission_calls": 0,
+    "flow_execution_test": {
+      "status": "PASS",
+      "asterisk": true,
+      "tested_at": "2026-11-13T17:45:42.246156+08:00",
+      "evidence": "USER_CONFIRMED_ASSUMPTION_WITH_REAL_BROKER_ACK",
+      "note": "＊固定假設決策經正式格式與原執行器取得真實券商收單證據；非模型研究績效。人工單不占 AI 配置／日額、不交由 AI 管理。"
+    },
+    "quote_check": {
+      "key": "quotes",
+      "label": "持股行情",
+      "status": "PASS",
+      "detail": "盤外已取得 5/5 檔官方收盤參考價；交易日 2026-11-12。＊僅確認資料可取得，非盤中可執行報價。",
+      "remediation": "無需處理。",
+      "asterisk": true
+    },
+    "counts": {
+      "PASS": 16,
+      "WARN": 1,
+      "FAIL": 0
+    },
+    "warning_keys": [
+      "flow"
+    ],
+    "display_close_count": 5,
+    "display_close_dates": [
+      "2026-11-12"
+    ],
+    "display_only_all": true
+  },
+  "cli_login_preflight": {
+    "codex_cli_executable_found": true,
+    "chatgpt_login_verified": true,
+    "login_check_exit_code": 0,
+    "quota_verified": false,
+    "model_inference_performed": false
+  },
+  "launcher_check": "PASS; Mode Check; orders_sent=0",
+  "startup": {
+    "default_live_auto_start_preserved": true,
+    "normal_buy_sell_requires_per_order_confirmation": false,
+    "account_and_original_executor_reused": true,
+    "manual_diagnostics_require_native_confirmation": true,
+    "known_source_policy_files_unchanged": {
+      "config/execution_live.json": true,
+      "opportunity_flow/policy.json": true,
+      "OpportunityFlow.cmd": true,
+      "RunOpportunityFlow.ps1": true
+    }
+  },
+  "readiness": {
+    "monday": "2026-11-16",
+    "result": "READY_FOR_FORMAL_REPLACEMENT_TRIAL",
+    "required_conditions": [
+      "Close old Dashboard/COM owner normally",
+      "Launch OpportunityFlow.cmd from this branch",
+      "Retain valid official dataset and broker/ChatGPT CLI access"
+    ],
+    "boundaries": [
+      "Fixed hypothetical decision verified real broker acceptance; live model-selected decisions remain a separate observation",
+      "ChatGPT login verified; future quota and service availability are not guaranteed"
+    ]
+  },
+  "manual_order_policy": {
+    "ownership": "MANUAL_DIAGNOSTIC",
+    "management": "RECORD_ONLY_NO_AI_ACTION",
+    "ai_allocation_charged": false,
+    "ai_daily_allowance_charged": false,
+    "account_cash_still_reserved": true,
+    "automatic_cancel": false,
+    "automatic_reprice": false,
+    "automatic_resend": false,
+    "automatic_local_expiry": false,
+    "first_started_record_atomic_ownership": true
+  },
+  "source_hash_format": "sha256 UTF-8 without BOM; universal LF newlines",
+  "source_sha256": {
+    "OpportunityFlow.cmd": "a785cecb16df714eef6aeb6f506becaa7f91078780bc0fc240cedbe79d4a2814",
+    "README.md": "d9d20aadce41ae823e3d8fb5364006f720482d310c7876367f27c71a15a17ed3",
+    "RunOpportunityFlow.ps1": "5568eb966d202840c442649f1e0228f0203b053edebd617f2de11535cc5e62b7",
+    "analysis_service.py": "f71b2388c7ff5d3d2df84c5ea11697b8df18fa4114708f9ed1d9f8b6e02d8003",
+    "config/execution_live.json": "2201b2fe1b139dc4323307738ff4635ace32e398405111130e8b8944c4564f0f",
+    "daily_participation.py": "3509d2ceb0e3a55940279f41c63ef6e47fa6e42db9f2e198914b651fac484ce4",
+    "dashboard.py": "b349314916a39cf03d7ff4101eda4df0135cc66c8c8c8d83f2ec7702783f7f83",
+    "docs/OPPORTUNITY_FLOW.md": "59ebbe81cdfb30e6d6bbda7084e1e44379703129552059ed36b6d766dc9398a6",
+    "execution/auto_advice_executor.py": "4f013ee9a7864ddb0468376b26598b281a7f6e29c8d2e780cf7fb053e9fa9701",
+    "execution/broker_runtime.py": "94737b1124108c23147522a6c30294c016ce4b6618553b87aa2414c84aae1b73",
+    "execution/execution_store.py": "d8ee2b87c35c850103112cc62c322eb5e7509c2554585a441636e81653985e0f",
+    "execution/health_monitor.py": "868dea2cc620c235778c5fd3005ea182e4c7863346bc03458a41ee5e14041636",
+    "execution/health_order_test.py": "19795ad9e21baebf16f087b9f6a0b1974533e94c07231089f5e82fab2558a155",
+    "execution/ownership.py": "f413bd249e8d2e22b7f482b9cb4336dc558038ca40f5a3c43ad52277a841105e",
+    "execution/pipeline_hook.py": "501415ceedceef9c8d5cf49b5967ce7c2f8fcb80cba91c6d14a289acad58b9c7",
+    "execution/position_configuration.py": "2147a071c83789a20a3638b046cc42ae1c08c0d84ea1871c78ddcfcd4037352a",
+    "execution/risk_guard.py": "64416aa2f3ddc2b3e91f3240e004b312b6a0858a9246c7a51422fbb24f2b62b8",
+    "execution/trade_dates.py": "64320ffb534469b8af19973f1d48c16025579eaeae70bb378e1a90eb0cd70fa6",
+    "execution/trade_pnl.py": "04f9380833e4850bb5ef0d6866758476b2c0a85ec7e4c82cf2a138a1340820e5",
+    "opportunity_flow/dashboard.py": "9e4ed824fc139f1e65579d3da1eb32117ca1412b28c2d41b99631ace518a670d",
+    "opportunity_flow/dashboard_service.py": "633759735d9a3daa49c118b03eb8db6efad8d96f7898e9e0f2a9d89aa09a4594",
+    "opportunity_flow/handoff_basis.py": "ccf0ed5f80b2336bc01639233e514292a455d8d8a2c3c23a733d837f26736095",
+    "opportunity_flow/health.py": "ecf1a40abc50e652c03c4e1f6471451eb1648d0ccf61942c98822156632de965",
+    "opportunity_flow/health_order.py": "5d0113623ddb4047f58c8d2a9b1588955ee46951511f578820b2f4587ba81e57",
+    "opportunity_flow/policy.json": "8a71f1651c2dfac1dd83da4f6198146275d3ffb294681a4731a276a6d01c1b77",
+    "tests/test_close_price_labels.py": "185469335ccbf2e18ee1d8a00f2f8f10fc08d9f92d1451e99ab21edc7c5b5855",
+    "tests/test_flow_dashboard.py": "53fc41cda06bf96d6f6403547b2dffc3d895d3ab68e8c46fee452e740d0de265",
+    "tests/test_flow_health.py": "09be1490bbd6bf643e1929823efd8e31c26098ad14d91e7e0bd89943b5cf0db4",
+    "tests/test_health_order.py": "7cccde6293e024371b3b3ff85cfb4d237e9f59b460a1e0a00557c81f5a65d467",
+    "tests/test_health_order_fence.py": "86e0f0fc5c65a1bab3af23747f50ec74027a02493dfc8fae8e9c2c8bcdd76c3a",
+    "tests/test_health_pipeline_report.py": "85c82d76fbdee027b13a4f8fa549f346e58ecb9349f5d49bcb78e9751c489a74",
+    "tests/test_manual_budget.py": "feca97d5e4150c9c5e0fa8c046013995c108ee72e37e2dd791ce30e9b798d6ad",
+    "tests/test_manual_diagnostic.py": "4efba2a2efb76342f1a5d85fdc600005e873987f697ff413d96fd1b9f05a2845",
+    "tests/test_offhours_close_display.py": "0e144e70258f870708a02d8e8bb26c43e4b530da90224893573d95cc7b4e0ec0",
+    "trade_plan_context.py": "d40407fa0e4553cebf35f84f4af857a5144f128f541d0f6c30d34c9da61895ce"
+  },
+  "privacy": "No account identity, broker sequence, balances, individual holdings, prices of actual holdings, or screenshots published."
+}

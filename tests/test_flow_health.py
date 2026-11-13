@@ -56,6 +56,8 @@ class HealthTests(unittest.TestCase):
         report=self.inspect(snapshot);checks={r['key']:r for r in report['checks']}
         self.assertEqual(checks['broker']['status'],'FAIL');self.assertEqual(checks['buy_budget']['status'],'WARN')
         self.assertEqual(checks['orders']['status'],'WARN');self.assertEqual(checks['execution_db']['status'],'PASS')
+        self.assertIn('不為測試降低',checks['buy_budget']['remediation'])
+        self.assertIn('不重送',checks['orders']['remediation'])
 
     def test_broker_failure_still_checks_local_ledgers_and_never_starts_the_controller(self):
         controller=SimpleNamespace(status='STOPPED',error='',refresh_account=Mock(side_effect=TimeoutError('BROKER_READ_DEADLINE_EXCEEDED')),start=Mock())
@@ -116,6 +118,18 @@ class HealthTests(unittest.TestCase):
             report=controller.refresh_account()
         runtime.refresh.assert_called_once_with();runtime.fetch_quotes.assert_not_called()
         self.assertEqual(report['quote_check_status'],'OUTSIDE_TRADING_SESSION')
+
+
+    def test_offhours_close_evidence_gets_provisional_pass_with_date(self):
+        reference=dict(quote_status='DAILY_CLOSE_REFERENCE',display_only=True,execution_usable=False,last_price=100,price_as_of='2026-09-29')
+        with patch('opportunity_flow.data.load_dataset',return_value=dict(grouped={'1111':[]},sessions=['2026-09-29'])):
+            report=inspect_health(self.root,self.state,self.dataset,self.snapshot,controller_status='RUNNING',at=self.at,
+                reference_quotes={'1111':reference})
+            item=next(r for r in report['checks'] if r['key']=='quotes')
+            self.assertEqual(item['status'],'PASS');self.assertTrue(item['asterisk']);self.assertIn('2026-09-29',item['detail'])
+            report=inspect_health(self.root,self.state,self.dataset,self.snapshot,controller_status='RUNNING',at=self.at,
+                reference_quotes={'1111':dict(reference,last_price=None)})
+        self.assertEqual(next(r for r in report['checks'] if r['key']=='quotes')['status'],'WARN')
 
 
 class ActivityTests(unittest.TestCase):

@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import json
 import sqlite3
+from .ownership import is_manual_diagnostic
 
 
 def _positive_decimal(value):
@@ -77,6 +78,7 @@ def _reconstruct_price_difference(db_path, order_checks):
             holdings[symbol] = (held + int(qty), new_cost, True)
         else:
             side, decision_id, detail = values
+            if is_manual_diagnostic(detail):continue
             filled = int(detail.get('filled_quantity') or 0)
             if filled <= 0:
                 continue

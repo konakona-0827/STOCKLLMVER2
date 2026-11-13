@@ -1,6 +1,6 @@
 """Read-only checks of broker evidence, SQLite ledgers and FLOW progress."""
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime,date
 from pathlib import Path
 import sqlite3
 from decimal import Decimal
@@ -8,15 +8,34 @@ from time import monotonic
 
 from .common import TAIPEI, read, stamp
 
+REMEDIATIONS={
+    'execution_db':'保留帳本與備份，停止新增委託；先恢復可核實備份，再與券商核對，不刪除重建歷史。',
+    'analysis_db':'保留歸屬／成本紀錄，依券商與已確認成交核對；成本不能核實時由使用者補入。',
+    'research_db':'保留錯誤檔與研究紀錄；資料可讀後由原 FLOW 排程重新研究。',
+    'broker':'重新執行券商對帳；逾時要求重啟時先等原 owner 結束，不另開連線或放行舊額度。',
+    'inventory':'依券商新鮮完整庫存修正可核實差異；成本、人工歸屬或未確認成交不作推測。',
+    'repair':'保留本次修正收據，再核對剩餘差異；仍未核實的交易繼續阻擋。',
+    'quotes':'交易時段重新取得非試撮零股行情；未取得時阻擋送單，非交易時段等待開盤。',
+    'orders':'沿用券商核對及原 ROD 到期處理；結果未明不重送，不把本地無成交當作未送單。',
+    'buy_budget':'檢查券商可動用金額、交割、未結預留及資金上限；不為測試降低保留資金。',
+    'flow':'需自動研究時按「啟動 FLOW」；錯誤時先修正原因。健康檢查不代啟動交易。',
+    'dataset':'由既有 08:30／18:00 官方資料排程補齊；資料不全的股票繼續等待。',
+    'research':'檢查資料、原排程及模型錯誤；沿用研究快取／退避，不硬產生 BUY。',
+    'models':'檢查 CLI 登入、配額與錯誤；沿用退避，恢復後重審，不轉用付費 API。',
+    'executor':'確認正式模式與原執行器設定；健康檢查不自動開啟停用的交易設定。',
+    'timing':'檢查儲存空間及檔案權限；先以正式委託帳本／券商確認，不因缺計時檔重送。',
+}
+
 
 def inspect_health(account_root, state, dataset, snapshot, *, controller_status, controller_error='',
-                   read_only=False, at=None, progress=None):
+                   read_only=False, at=None, progress=None,reference_quotes=None):
     at = stamp(at or datetime.now(TAIPEI))
     root, state = Path(account_root), Path(state)
     rows = []
     progress = progress or (lambda label: None)
     def add(key, label, status, detail):
-        rows.append(dict(key=key, label=label, status=status, detail=detail))
+        rows.append(dict(key=key, label=label, status=status, detail=detail,
+            remediation=REMEDIATIONS.get(key,'查看原始證據後重新檢查。') if status!='PASS' else '無需處理。'))
     def database(key, label, path, required=True):
         progress(label)
         if not path.exists():
@@ -58,7 +77,22 @@ def inspect_health(account_root, state, dataset, snapshot, *, controller_status,
             age=(at-stamp(quote['quote_timestamp'])).total_seconds()
             if quote.get('quote_status')!='LIVE' or quote.get('is_trial') is not False or not 0<=age<=120:unusable.append(quote.get('symbol','?'))
         except (KeyError,TypeError,ValueError):unusable.append(quote.get('symbol','?'))
-    if snapshot.get('quote_check_status')=='OUTSIDE_TRADING_SESSION':
+    if reference_quotes is not None:
+        held_symbols={r['symbol'] for r in snapshot.get('inventory_comparison',[]) if int(r.get('broker_cash_qty') or 0)>0}
+        available={}
+        for s,q in reference_quotes.items():
+            try:
+                price=Decimal(str(q['last_price']));day=date.fromisoformat(q['price_as_of'])
+                if (s in held_symbols and q.get('quote_status')=='DAILY_CLOSE_REFERENCE' and q.get('display_only') is True
+                        and q.get('execution_usable') is False and day<=at.date() and price.is_finite() and price>0):available[s]=q
+            except (ValueError,TypeError,KeyError,ArithmeticError):continue
+        missing=sorted(held_symbols-set(available))
+        dates=sorted({str(q.get('price_as_of')) for q in available.values()})
+        add('quotes','持股行情','WARN' if missing else 'PASS',
+            f'盤外已取得 {len(available)}/{len(held_symbols)} 檔官方收盤參考價；交易日 '+('、'.join(dates) or '無持股')+
+            ('；缺資料：'+'、'.join(missing) if missing else '。＊僅確認資料可取得，非盤中可執行報價。'))
+        if not missing:rows[-1]['asterisk']=True
+    elif snapshot.get('quote_check_status')=='OUTSIDE_TRADING_SESSION':
         add('quotes','持股行情','PASS','非交易時段，未要求盤中零股報價；保留最後行情時間')
     else:
         add('quotes','持股行情','WARN' if unusable or held and not quotes else 'PASS',
@@ -125,7 +159,26 @@ def inspect_health(account_root, state, dataset, snapshot, *, controller_status,
         add('timing','執行計時紀錄','WARN' if lost else 'PASS',
             '計時檔寫入未完成，請保留原委託帳本並檢查儲存空間／權限' if lost else '最近執行已有分段計時' if timing else '尚無新版執行計時；交易提案發生後自動記錄')
     except (OSError,ValueError,TypeError,AttributeError):add('timing','執行計時紀錄','WARN','最近執行紀錄格式無法核實，請查看原始檔案')
+    flow_test=None
+    diagnostic=root/'data/execution/health_order_test/latest.json'
+    if diagnostic.exists():
+        try:
+            from .health_order import checks
+            probe=read(diagnostic)
+            if not isinstance(probe,dict):raise ValueError('INVALID_HEALTH_TEST_REPORT')
+            evidence=checks(probe,snapshot);rows.extend(evidence)
+            submitted=next((r for r in evidence if r['key']=='diagnostic_submission'),{})
+            if submitted.get('status')=='PASS':
+                submitted.update(label='FLOW 送單路徑＊',asterisk=True,
+                    remediation='＊固定假設決策經正式格式與原執行器取得真實券商收單證據；非模型研究績效。人工單不占 AI 配置／日額、不交由 AI 管理。')
+                flow_test=dict(status='PASS',asterisk=True,tested_at=probe.get('checked_at'),
+                    evidence='USER_CONFIRMED_ASSUMPTION_WITH_REAL_BROKER_ACK',
+                    note=submitted['remediation'])
+        except (OSError,ValueError,TypeError,KeyError,AttributeError):
+            add('diagnostic_record','測試下單紀錄','WARN','診斷檔無法讀取；不能推定沒有送單。')
+            rows[-1]['remediation']='保留正式委託帳本，先與券商核對；不要刪檔或重送診斷單。'
     status = 'FAIL' if any(r['status'] == 'FAIL' for r in rows) else 'WARN' if any(r['status'] == 'WARN' for r in rows) else 'PASS'
     return dict(checked_at=at.isoformat(), status=status, checks=rows, broker_checked_at=snapshot.get('checked_at'),
                 reconciliation_receipt=receipt,
+                flow_execution_test=flow_test,
                 scope='BROKER_READS_LEDGER_INTEGRITY_AND_FLOW_OBSERVATIONS', order_submission_calls=0, cancellation_calls=0)

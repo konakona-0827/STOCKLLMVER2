@@ -63,6 +63,7 @@ class DashboardReuseTests(unittest.TestCase):
         paper_portfolio.set_capital_limit(self.service.db_path,10000)
         self.root=tk.Tk();self.root.withdraw()
         self.patches=[patch('dashboard.ROOT',self.base),patch('dashboard.load_env'),
+            patch('opportunity_flow.dashboard.messagebox.askyesno',return_value=False),
             patch('daily_participation.policy',return_value={'enabled':False}),
             patch('execution.health_monitor.sync_broker_state',side_effect=AssertionError('Real broker access forbidden')),
             patch.object(FlowDashboard,'refresh')]
@@ -168,6 +169,44 @@ class DashboardReuseTests(unittest.TestCase):
         with patch.object(self.root,'destroy') as destroy,patch.object(self.root,'after'):
             self.app.tick()
         destroy.assert_called_once_with();self.assertFalse(self.app.refresh_pending)
+
+    def test_health_order_test_cancelled_confirmation_never_dispatches(self):
+        self.service.test_health_order=Mock()
+        self.service.check_health=Mock(return_value=dict(status='WARN',checks=[],current_flow_test_description='本次 FLOW 尚未測試'))
+        with patch('opportunity_flow.dashboard.messagebox.askyesno',return_value=False) as confirm:
+            self.assertTrue(self.app.choose_health_check())
+        event=self.app.flow_events.get(timeout=2);self.app.flow_events.put(event);self.app._drain_flow_events()
+        self.service.test_health_order.assert_not_called();self.service.check_health.assert_called_once()
+        self.assertFalse(self.app.health_pending);self.assertIn('尚未測試',self.app.health_summary.get())
+        self.assertIn('80 元',confirm.call_args.args[1]);self.assertEqual(confirm.call_args.kwargs['default'],'no')
+
+    def test_health_order_test_runs_only_after_acceptance_and_never_starts_flow(self):
+        entered,release=threading.Event(),threading.Event()
+        def test_order(*,confirmed,progress):
+            self.assertIs(confirmed,True);progress('診斷測試：券商核對');entered.set();release.wait(2)
+            return dict(status='WARN',checks=[dict(key='diagnostic_submission',label='測試單券商受理',status='WARN',detail='未確認',remediation='不可重送')])
+        self.service.test_health_order=Mock(side_effect=test_order)
+        try:
+            with patch('opportunity_flow.dashboard.messagebox.askyesno',return_value=True) as confirm:
+                self.assertTrue(self.app.choose_health_check());self.assertTrue(entered.wait(1))
+                self.assertFalse(self.app.choose_health_check());confirm.assert_called_once()
+            self.app._drain_flow_events();self.app.update_work_status()
+            self.assertTrue(self.app.health_pending);self.assertIn('券商核對',self.app.refresh_text.get())
+            self.service.controller.start.assert_not_called()
+        finally:release.set()
+        event=self.app.flow_events.get(timeout=2);self.app.flow_events.put(event);self.app._drain_flow_events()
+        self.assertFalse(self.app.health_pending)
+        self.assertEqual(self.app.health_tree.item('diagnostic_submission','values')[-1],'不可重送')
+        self.assertEqual(str(self.app.refresh_button.cget('state')),'normal')
+        self.app.update_work_status()
+
+    def test_read_only_health_test_cannot_even_open_confirmation(self):
+        self.app.args.read_only=True
+        self.service.check_health=Mock(return_value=dict(status='PASS',checks=[]))
+        with patch('opportunity_flow.dashboard.messagebox.askyesno') as confirm:
+            self.assertTrue(self.app.choose_health_check())
+        event=self.app.flow_events.get(timeout=2);self.app.flow_events.put(event);self.app._drain_flow_events()
+        confirm.assert_not_called()
 
     def test_view_notification_is_retained_until_an_inflight_read_finishes(self):
         self.service.controller.view_changed=threading.Event();self.service.controller.view_changed.set()

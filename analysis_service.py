@@ -58,7 +58,8 @@ def live_buy_budget(broker_health, daily_reserved, strategy_cap, daily_limit):
     invested = Decimal(str(invested_raw)) if invested_raw is not None else Decimal('0')
     broker_after_minimum = (max(Decimal('0'), Decimal(str(balance))-minimum)
                             if balance is not None else Decimal('0'))
-    broker_remaining = max(Decimal('0'), broker_after_minimum-pending)
+    account_pending=Decimal(str(broker_health.get('account_pending_buy_reserve_twd',pending_raw) or 0))
+    broker_remaining = max(Decimal('0'), broker_after_minimum-account_pending)
     strategy_remaining = max(Decimal('0'), strategy_cap-invested-pending)
     daily_limit = Decimal(str(daily_limit))
     daily_remaining = (max(Decimal('0'), daily_limit-Decimal(str(daily_reserved)))
@@ -70,7 +71,7 @@ def live_buy_budget(broker_health, daily_reserved, strategy_cap, daily_limit):
     return dict(available=available,
                 broker_available=Decimal(str(balance)) if balance is not None else None,
                 broker_after_minimum=broker_after_minimum,
-                broker_remaining=broker_remaining, pending_reserve=pending,
+                broker_remaining=broker_remaining, pending_reserve=pending,account_pending_reserve=account_pending,
                 ai_committed=invested, strategy_remaining=strategy_remaining,
                 minimum_reserve=minimum, strategy_cap=strategy_cap,
                 daily_limit=daily_limit,

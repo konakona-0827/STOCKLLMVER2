@@ -6,6 +6,7 @@ from pathlib import Path
 import sqlite3
 
 from config import TAIPEI
+from .ownership import is_manual_diagnostic
 
 
 def _taipei_date(stamp):
@@ -47,6 +48,7 @@ def dated_ai_trades(db_path, symbols, *, recent_limit=24):
     for symbol, side, started_at, raw in attempts:
         try:
             detail = json.loads(raw or '{}')
+            if is_manual_diagnostic(detail):continue
             quantity = int(detail.get('filled_quantity') or 0)
             date = _taipei_date(started_at)
         except (TypeError, ValueError, KeyError):
