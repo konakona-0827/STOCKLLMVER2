@@ -143,4 +143,5 @@ class LiveCoordinator:
     def close(self):
         if self.closed:return
         self.stop.set();self.pool.shutdown(wait=True,cancel_futures=True)
-        self.runtime.close();self.closed=True
+        with self.lock:
+            self.runtime.close();self.closed=True

@@ -483,6 +483,75 @@ class HandoffAndSourceTests(unittest.TestCase):
             self.assertIsNone(panel.coordinator)
         finally:root.destroy()
 
+    def test_control_panel_resumes_after_previous_broker_closes(self):
+        from threading import Event
+        from time import monotonic,sleep
+        import tkinter as tk
+        from opportunity_flow.control_panel import ControlPanel
+
+        root=tk.Tk();root.withdraw()
+        allow_close=Event()
+        instances=[]
+
+        def coordinator(_root,_state,_policy,stop,*,read_only):
+            self.assertTrue(all(item.closed for item in instances))
+            item=SimpleNamespace(stop=stop,read_only=read_only,closed=False,
+                                 refresh_account=Mock(),closing=Event())
+            instances.append(item)
+            return item
+
+        def watch(_args,*,coordinator,external_stop):
+            external_stop.wait(8)
+            coordinator.closing.set()
+            allow_close.wait(8)
+            coordinator.closed=True
+
+        def wait_until(predicate):
+            deadline=monotonic()+4
+            while not predicate() and monotonic()<deadline:
+                root.update()
+                sleep(.01)
+            self.assertTrue(predicate())
+
+        try:
+            with tempfile.TemporaryDirectory() as folder, \
+                 patch('opportunity_flow.live.resolve_account_root',return_value=folder), \
+                 patch('opportunity_flow.live.LiveCoordinator',side_effect=coordinator), \
+                 patch('opportunity_flow.__main__.main',side_effect=watch):
+                args=SimpleNamespace(state=folder,dataset='unused',state_root=folder,model=None,read_only=False)
+                paused=Path(folder)/'trading_paused'
+                paused.touch()
+                panel=ControlPanel(root,args)
+                self.assertEqual(instances,[])
+                panel.enable_button.invoke()
+                wait_until(lambda:panel.ready)
+                self.assertFalse(paused.exists())
+                self.assertFalse(instances[0].read_only)
+                instances[0].refresh_account.assert_called_once_with()
+
+                panel.stop_button.invoke()
+                wait_until(instances[0].closing.is_set)
+                self.assertTrue(paused.is_file())
+                self.assertTrue(panel.enable_button.instate(['disabled']))
+                panel.enable_button.invoke()
+                self.assertEqual(len(instances),1)
+                allow_close.set()
+                wait_until(lambda:panel.enable_button.instate(['!disabled']))
+
+                panel.enable_button.invoke()
+                wait_until(lambda:panel.ready)
+                self.assertEqual(len(instances),2)
+                self.assertIsNot(instances[0].stop,instances[1].stop)
+                instances[1].refresh_account.assert_called_once_with()
+                self.assertFalse(paused.exists())
+                panel.stop_button.invoke()
+                wait_until(lambda:panel.worker is None)
+                self.assertTrue(paused.is_file())
+        finally:
+            allow_close.set()
+            for item in instances:item.stop.set()
+            root.destroy()
+
     def test_manual_average_cost_survives_partial_sell_and_second_transfer(self):
         from opportunity_flow.handoff_basis import remaining_manual_basis
         import json
