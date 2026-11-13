@@ -95,6 +95,46 @@ class DashboardReuseTests(unittest.TestCase):
         self.service.run.assert_not_called()
         self.assertEqual(self.app.mode_selector.winfo_manager(),'')
 
+    def test_default_dashboard_starts_flow_without_a_button_or_trade_confirmation(self):
+        from opportunity_flow.dashboard import FlowDashboard
+        window=tk.Tk();window.withdraw()
+        try:
+            FlowDashboard(window,self.args,service=self.service)
+            self.service.controller.start.assert_not_called()
+            window.update()  # Run the default after(0) startup callback.
+            self.service.controller.start.assert_called_once_with()
+            self.service.run.assert_not_called()
+        finally:window.destroy()
+
+    def test_controller_starts_live_research_and_original_executor_by_default(self):
+        coordinator=SimpleNamespace(refresh_account=Mock(),close=Mock())
+        controller=FlowController(self.base,self.args)
+        with patch('opportunity_flow.live.LiveCoordinator',return_value=coordinator) as live,patch(
+            'opportunity_flow.__main__.main',return_value=0,
+        ) as run:
+            controller._run()
+        self.assertFalse(live.call_args.kwargs['read_only'])
+        coordinator.refresh_account.assert_called_once_with()
+        argv=run.call_args.args[0]
+        self.assertEqual(argv[0],'watch')
+        for flag in ('--live','--llm','--public-quotes','--refresh-daily'):self.assertIn(flag,argv)
+        self.assertNotIn('--read-only',argv)
+        self.assertIs(run.call_args.kwargs['coordinator'],coordinator)
+        coordinator.close.assert_called_once_with()
+
+    def test_headless_live_entry_enables_automatic_research_and_execution(self):
+        from opportunity_flow import __main__ as entry
+        main=entry.main
+        for readonly in (False,True):
+            with self.subTest(readonly=readonly),patch.object(entry,'main',return_value=0) as watch:
+                argv=['live','--headless','--dataset',self.args.dataset,'--state',self.args.state]
+                if readonly:argv.append('--read-only')
+                self.assertEqual(main(argv),0)
+                forwarded=watch.call_args.args[0]
+                self.assertEqual(forwarded[0],'watch')
+                for flag in ('--live','--llm','--public-quotes','--refresh-daily'):self.assertIn(flag,forwarded)
+                self.assertEqual('--read-only' in forwarded,readonly)
+
     def test_pipeline_filters_include_failed_data_and_research_is_not_displayed_as_buy(self):
         self.assertEqual(len(self.app.flow_tree.get_children()),2)
         self.app.flow_filter.set('全部');self.app.render_flow_rows()

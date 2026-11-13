@@ -21,6 +21,8 @@ flowchart TD
 
 研究通過後仍須通過當前帳戶、行情與下單前複核，才可能送單；送單受理也不等於成交。沒有新買進候選時，既有 AI 持股仍會進行退出檢查。
 
+**正式模式為自動執行，不需逐筆人工確認。** 雙擊 `OpportunityFlow.cmd` → `Live` → 完整 Dashboard → 自動啟動 `FlowController`；背景研究結果經 `LiveCoordinator.offer()` 交給 `ExecutionBridge`，再由 `LegacyRuntime.execute()` → 原 `BrokerRuntime` → `execute_after_advice_written()` → `execute_advice_file()` → 原群益送單類別執行。正常流程不呼叫手動的 `real_order_test.py`。交易日台灣 09:00～13:30 允許委託；開盤前可先啟動放置。人工持股轉交 AI 是一次性的歸屬設定，不是每次買賣的批准程序。
+
 ## 資料如何取得、多久更新
 
 | 工作 | 資料來源與取得方式 | 時間與間隔 |
