@@ -9,6 +9,7 @@ from typing import Any, Callable
 from .capital_crosscheck import CrossCheckResult, recover_unique_new_tc_order
 from .capital_reply_session import CapitalReplySession
 from .models import ExecutionStatus, Side
+from .timing import span,mark
 
 
 SEQ13_RE = re.compile(r"(?<!\d)(\d{13})(?!\d)")
@@ -140,7 +141,7 @@ class CapitalOddLotExecutor:
         # Cheap pre-order liveness check. Reuse a healthy login and, if needed,
         # reconnect only SKReply. Never perform a blind second SKCenterLib_Login.
         try:
-            self.session.ensure_ready()
+            with span('sdk_session_ready'):self.session.ensure_ready()
         except Exception as exc:
             raise CapitalExecutionError(
                 f"Capital session health check failed: {type(exc).__name__}: {exc}"
@@ -155,12 +156,12 @@ class CapitalOddLotExecutor:
 
         stopped=getattr(self,'stopped',None)
         if stopped is not None and stopped():raise CapitalExecutionError('USER_STOPPED_BEFORE_SDK_SEND')
-        raw = self.session._skO.SendStockOddLotOrder(
-            self.session.user,
-            False,
-            order,
-        )
+        with span('sdk_send'):
+            raw = self.session._skO.SendStockOddLotOrder(
+                self.session.user,False,order,
+            )
         sent = parse_send_result(raw)
+        mark('sdk_return',return_code=sent.return_code,broker_seq13=sent.seq13)
 
         # SKCOM's synchronous return code is authoritative: a non-zero code
         # means the broker rejected the request. Do not persist SUBMITTED or
@@ -196,6 +197,7 @@ class CapitalOddLotExecutor:
         # For a known SEQ13, stop waiting as soon as the broker reply stream
         # proves ACK/CANCEL/DEAL. observe_seconds is a timeout, not a fixed sleep.
         cross = None
+        mark('broker_crosscheck_started')
         if sent.seq13:
             deadline = time.time() + max(0.0, float(observe_seconds))
             while time.time() < deadline:
@@ -235,6 +237,7 @@ class CapitalOddLotExecutor:
             )
 
         filled = min(qty, max(0, cross.filled_quantity))
+        mark('broker_crosscheck_finished',status=cross.status.value,filled_quantity=filled)
 
         if sent.return_code is None:
             # The call happened, but its acceptance was not established.

@@ -10,6 +10,7 @@ from .account_guard import (
     query_inventory,
 )
 from .capital_reply_session import CapitalReplySession
+from .timing import timed
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class ExecutionAccountSnapshot:
         return self.inventory is not None
 
 
+@timed('account_snapshot')
 def capture_account_snapshot(
     session: CapitalReplySession,
     *,

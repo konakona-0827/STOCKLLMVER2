@@ -26,12 +26,15 @@ def doctor(explicit=None):
 
 
 class LiveCoordinator:
-    def __init__(self,account_root,state,p,stop_event=None,*,read_only=False,runtime=None):
+    def __init__(self,account_root,state,p,stop_event=None,*,read_only=False,runtime=None,on_change=None):
         from .legacy_runtime import LegacyRuntime
         from .execution_bridge import ExecutionBridge
         self.state=Path(state);self.state.mkdir(parents=True,exist_ok=True)
         self.policy=p;self.stop=stop_event or threading.Event()
         self.runtime=runtime or LegacyRuntime(account_root,self.state/'broker',p['model'],read_only=read_only,stop_event=self.stop)
+        from .activity import activity_for
+        self.activity=activity_for(self.runtime)
+        self.on_change=on_change
         self.bridge=ExecutionBridge(self.runtime,self.state,p)
         self.pool=ThreadPoolExecutor(max_workers=1,thread_name_prefix='flow-execution')
         self.future=None;self.pending=None;self.last_refresh=0;self.last_quote_refresh=0;self.quote_cursor=0;self.quotes={};self.events={};self.contexts={};self.snapshot={}
@@ -55,6 +58,7 @@ class LiveCoordinator:
                 read_only=self.runtime.read_only,stopping=self.stop.is_set(),execution_running=self.future is not None,
                 broker_quote_count=len(self.quotes),errors=self.snapshot.get('errors',[]),**extra)
             save(self.state/'live_status.json',status)
+            if self.on_change is not None:self.on_change()
             return status
 
     def refresh_account(self):

@@ -6,10 +6,11 @@ from math import ceil
 from pathlib import Path
 from queue import Queue, Empty
 from threading import Event, Lock, Thread
-from time import monotonic
+from time import monotonic,perf_counter_ns
 from state_lock import StateLease
 
 from .capital_reply_session import build_live_readonly_session_from_project
+from .timing import current_trace,set_trace,reset_trace,mark
 
 
 class BrokerRuntime:
@@ -49,11 +50,14 @@ class BrokerRuntime:
                 future = self._shutdown_future
             else:
                 future = Future()
+                future._execution_trace=current_trace()
                 future._broker_read_deadline = (
                     started + wait_seconds if kind in ('health', 'quotes') else None
                 )
                 if kind == 'shutdown':
                     self._shutdown_future = future
+                future._timing_queued_ns=perf_counter_ns()
+                mark('broker_queue_enqueued',job_kind=kind)
                 self._queue.put((kind, args, future))
         try:
             result = future.result(timeout=wait_seconds)
@@ -148,7 +152,10 @@ class BrokerRuntime:
                 if not future.set_running_or_notify_cancel():
                     self._queue.task_done()
                     continue
+                trace_token=set_trace(getattr(future,'_execution_trace',None))
                 try:
+                    queued_ns=getattr(future,'_timing_queued_ns',None)
+                    mark('broker_worker_started',job_kind=kind,queue_wait_ms=round((perf_counter_ns()-queued_ns)/1_000_000,3) if queued_ns is not None else 0)
                     self._check_read_deadline(future)
                     if kind != 'shutdown' and self._unresponsive.is_set():
                         raise RuntimeError('BROKER_READ_TIMEOUT_RESTART_REQUIRED')
@@ -268,10 +275,13 @@ class BrokerRuntime:
                     # This covers a suspended caller which has not yet woken
                     # to mark its own Future wait as timed out.
                     self._check_read_deadline(future)
+                    mark('broker_worker_finished',job_kind=kind)
                     future.set_result(result)
                 except BaseException as exc:
+                    mark('broker_worker_failed',job_kind=kind,error=type(exc).__name__)
                     future.set_exception(exc)
                 finally:
+                    reset_trace(trace_token)
                     self._queue.task_done()
                 if stop_worker:
                     break

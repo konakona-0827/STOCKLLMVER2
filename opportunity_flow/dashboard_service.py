@@ -1,9 +1,11 @@
 """Adapt FLOW research to the existing Dashboard without running legacy scans."""
 from copy import deepcopy
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
 import threading
+import time
 
 from .common import policy,read
 
@@ -21,6 +23,7 @@ class FlowController:
     def __init__(self,account_root,args):
         self.account_root=Path(account_root);self.args=args;self.state=Path(args.state)
         self.stop_event=threading.Event();self.wake=threading.Event()
+        self.view_changed=threading.Event()
         self.thread=None;self.coordinator=None;self.status='STOPPED';self.error='';self.lock=threading.RLock()
 
     @property
@@ -30,6 +33,7 @@ class FlowController:
         with self.lock:
             if self.running:return False
             self.stop_event=threading.Event();self.wake=threading.Event();self.error='';self.status='STARTING'
+            self.view_changed.set()
             self.thread=threading.Thread(target=self._run,name='opportunity-flow-watch',daemon=False)
             self.thread.start();return True
 
@@ -40,7 +44,7 @@ class FlowController:
             p=policy()
             if self.args.model:p['model']=self.args.model
             if self.stop_event.is_set():return
-            self.coordinator=LiveCoordinator(self.account_root,self.state,p,self.stop_event,read_only=self.args.read_only)
+            self.coordinator=LiveCoordinator(self.account_root,self.state,p,self.stop_event,read_only=self.args.read_only,on_change=self.view_changed.set)
             if self.stop_event.is_set():return
             self.coordinator.refresh_account();self.status='RUNNING'
             argv=['watch','--dataset',str(self.args.dataset),'--state',str(self.state),'--live','--llm','--public-quotes','--refresh-daily']
@@ -50,6 +54,7 @@ class FlowController:
         except Exception as exc:
             from config import redact
             self.error=redact(type(exc).__name__+': '+str(exc));self.status='ERROR'
+            self.view_changed.set()
         finally:
             self.stop_event.set()
             if self.coordinator is not None:
@@ -57,10 +62,12 @@ class FlowController:
                 except Exception as exc:
                     self.error='CLOSE_ERROR:'+type(exc).__name__;self.status='ERROR'
             if self.status!='ERROR':self.status='STOPPED'
+            self.view_changed.set()
 
     def stop(self):
         self.stop_event.set();self.wake.set()
         if self.running:self.status='STOPPING'
+        self.view_changed.set()
 
     def request_update(self):
         if self.running and not self.stop_event.is_set():self.wake.set();return True
@@ -79,19 +86,36 @@ class FlowController:
             try:return operation(runtime,None)
             finally:runtime.close()
 
-    def refresh_account(self):
+    def observation(self):
+        """Do not wait on the controller/broker lock from the Tk main thread."""
+        c=self.coordinator
+        tracker=getattr(c,'activity',None) if c is not None else None
+        return dict(status=self.status,error=self.error,running=self.running,
+            activity=tracker.snapshot() if tracker is not None else dict(active=[],recent=[]),
+            quotes_received_at=getattr(getattr(c,'runtime',None),'quotes_received_at',None),
+            quote_count=len(c.quotes) if c is not None and hasattr(c,'quotes') else 0,
+            live_quote_count=sum(q.get('quote_status')=='LIVE' for q in c.quotes.values()) if c is not None and hasattr(c,'quotes') else 0)
+
+    def refresh_account(self,progress=None):
+        progress=progress or (lambda label:None)
         def work(runtime,coordinator):
+            progress('正在查詢券商並核對正式帳本')
             snapshot=runtime.refresh()
             from .data import load_dataset
             try:dataset=coordinator.dataset if coordinator and coordinator.dataset is not None else load_dataset(self.args.dataset)
             except (OSError,ValueError):dataset=None
-            if dataset is not None:
+            if dataset is not None and runtime.can_trade_now():
                 symbols=[r['symbol'] for r in snapshot.get('inventory_comparison',[]) if int(r.get('broker_cash_qty') or 0)>0]
                 if symbols:
+                    progress(f'正在取得 {len(symbols)} 檔持股的零股行情')
                     quotes=runtime.fetch_quotes(symbols,dataset)
                     snapshot={**snapshot,'position_quotes':list(quotes.values())}
+            elif not runtime.can_trade_now():
+                progress('目前非交易時段，保留最後行情時間')
+                snapshot={**snapshot,'quote_check_status':'OUTSIDE_TRADING_SESSION'}
+            self.last_diagnostic_quotes_at=getattr(runtime,'quotes_received_at',None)
             if coordinator:
-                coordinator.snapshot=deepcopy(snapshot);coordinator.publish()
+                coordinator.snapshot=deepcopy(snapshot);coordinator.last_refresh=time.monotonic();coordinator.publish()
             return snapshot
         return self.runtime_action(work)
 
@@ -132,6 +156,8 @@ class FlowViewService:
         self.account_root=Path(account_root);self.directory=self.account_root/'data/analysis';self.db_path=self.directory/'market_history.sqlite3'
         self.args=args;self.controller=controller or FlowController(account_root,args);self.position_manager_active=False
         self.flow={};self.execution={};self.usage={};self.activity={};self.names={};self.read_errors=[];self._cache={};self.lock=threading.RLock()
+        self._view_signature=None;self._view_result=None
+        self._last_verified_health=None
 
     @property
     def stop(self):return self.controller.stop_event
@@ -146,12 +172,66 @@ class FlowViewService:
 
     def refresh_broker_state(self,refresh_quotes=True):return self.controller.refresh_account()
 
+    def _display_health(self,health):
+        if health and health.get('broker_inventory_verified') is True and not health.get('errors'):
+            self._last_verified_health=deepcopy(health)
+            return health
+        if not health:return health
+        saved=self._last_verified_health
+        if saved is None:
+            path=self.account_root/'data/execution/live_execution.sqlite3'
+            if path.exists():
+                try:
+                    with closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True,timeout=2)) as db:
+                        for (raw,) in db.execute('SELECT payload_json FROM broker_refresh_snapshots ORDER BY id DESC LIMIT 50'):
+                            candidate=json.loads(raw)
+                            if candidate.get('broker_inventory_verified') is True and not candidate.get('errors'):
+                                saved=candidate;break
+                except (sqlite3.Error,ValueError):pass
+        if saved and not health.get('inventory_comparison'):
+            # Display-only fallback. Never restore buying power or mark old
+            # inventory as current evidence for the execution path.
+            health=deepcopy(health)
+            health['inventory_comparison']=[dict(row,status='LAST_VERIFIED_NOT_CURRENT') for row in saved.get('inventory_comparison',[])]
+            health['inventory_display_source']='LAST_VERIFIED_BROKER_SNAPSHOT'
+            health['inventory_display_checked_at']=saved.get('checked_at')
+            health['broker_inventory_verified']=False
+        return health
+
+    def _signature(self):
+        paths=[Path(self.args.state)/name for name in ('latest.json','latest_flow_execution.json','public_quotes.json','live_status.json')]
+        paths += [Path(self.args.dataset)/'master.json',self.account_root/'config/execution_live.json']
+        for db in (self.db_path,self.account_root/'data/execution/live_execution.sqlite3',Path(self.args.state)/'flow.sqlite3'):
+            paths += [db,Path(str(db)+'-wal')]
+        result=[]
+        for path in paths:
+            try:stat=path.stat();result.append((str(path),stat.st_mtime_ns,stat.st_size))
+            except FileNotFoundError:result.append((str(path),None,None))
+        return tuple(result)
+
+    def check_health(self,progress=None):
+        from .health import inspect_health
+        from .common import save
+        try:snapshot=self.controller.refresh_account(progress=progress)
+        except Exception as exc:
+            from config import redact
+            snapshot=dict(status='ERROR',errors=[redact(type(exc).__name__+': '+str(exc))])
+        report=inspect_health(self.account_root,self.args.state,self.args.dataset,snapshot,
+            controller_status=self.controller.status,controller_error=self.controller.error,read_only=self.args.read_only,
+            progress=progress)
+        save(Path(self.args.state)/'health/latest.json',report)
+        return report
+
     def refresh(self,sync_broker=False):
         from execution.health_monitor import latest_refresh_snapshot
         import position_store
         with self.lock:
+            signature=self._signature()
+            if not sync_broker and signature==self._view_signature and self._view_result is not None:
+                return self._view_result
             c=self.controller.coordinator
             health=self.refresh_broker_state() if sync_broker else deepcopy(c.snapshot) if c and c.snapshot else latest_refresh_snapshot(self.account_root)
+            health=self._display_health(health)
             self.read_errors=[]
             try:
                 flow=self._read(Path(self.args.state)/'latest.json',{})
@@ -188,17 +268,25 @@ class FlowViewService:
             result['batch']['quotes']=list(merged.values())
             result['batch']['symbols_received']=sum(q.get('quote_status') in ('LIVE','PUBLIC_REFERENCE') for q in merged.values())
             for row in result['top']:row['quote_status']=merged[row['symbol']]['quote_status']
-            positions=position_store.load(self.db_path)
+            positions=[]
+            if self.db_path.exists():
+                with closing(sqlite3.connect(self.db_path.resolve().as_uri()+'?mode=ro',uri=True,timeout=2)) as db:
+                    db.row_factory=sqlite3.Row
+                    if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='positions'").fetchone():
+                        positions=[dict(row) for row in db.execute('SELECT * FROM positions ORDER BY symbol')]
             latest={q['symbol']:q for q in (health or {}).get('position_quotes',[])}
             positions=[position_store.context(p,latest.get(p['symbol'],{}).get('last_price')) for p in positions]
             self.usage=self._usage()
-            return result,positions,health
+            from .common import digest
+            result['_flow_view_revision']=digest(signature)
+            self._view_signature=signature;self._view_result=(result,positions,health)
+            return self._view_result
 
     def _usage(self):
         path=Path(self.args.state)/'flow.sqlite3';totals={};calls=0;unknown=0
         if not path.exists():return dict(calls=0,usage={},unknown_calls=0)
         try:
-            with sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True,timeout=2) as con:
+            with closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True,timeout=2)) as con:
                 for (raw,) in con.execute('SELECT data FROM calls'):
                     item=json.loads(raw);calls+=1;usage=item.get('usage')
                     if usage is None:unknown+=1

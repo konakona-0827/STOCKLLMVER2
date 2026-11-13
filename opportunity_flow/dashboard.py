@@ -2,6 +2,8 @@
 from datetime import datetime
 import json
 from pathlib import Path
+from queue import Queue,Empty
+import threading
 import time
 import tkinter as tk
 from tkinter import ttk,messagebox
@@ -14,6 +16,9 @@ from .dashboard_service import FlowViewService,STATE_LABELS
 class FlowDashboard(Dashboard):
     def __init__(self,root,args,*,start=True,service=None):
         self.args=args;self.flow_ready=False;self.flow_tick=0;self.flow_rows={};self._flow_signature=None
+        self.flow_events=Queue();self._last_local_poll=0;self._local_sync_at=None;self._ui_read_error=''
+        self._rendered_revision=None;self._last_status_update=0;self._progress_busy=False;self._view_refresh_requested=False
+        self.health_pending=False;self.health_report=None;self._health_stage='';self._health_started=0
         if service is None:
             from .live import resolve_account_root
             service=FlowViewService(resolve_account_root(args.state_root),args)
@@ -22,6 +27,8 @@ class FlowDashboard(Dashboard):
         root.title('TW Opportunity Flow｜完整帳戶、研究與持倉管理')
         root.geometry(f'{min(1500,root.winfo_screenwidth()-20)}x{min(920,root.winfo_screenheight()-80)}')
         self.run_button.configure(text='立即更新研究')
+        self.refresh_button.configure(text='健康檢查',command=self.request_health_check)
+        self.refresh_progress.configure(mode='determinate',maximum=100,value=0)
         self.action_buttons['開始自動掃描'].configure(text='啟動 FLOW',command=self.start_auto)
         self.action_buttons['停止自動掃描'].configure(text='停止 FLOW',command=self.stop_auto)
         self.action_buttons['設定持倉'].configure(text='持股歸屬／轉交 AI')
@@ -55,6 +62,34 @@ class FlowDashboard(Dashboard):
         grid.columnconfigure(0,weight=1);grid.rowconfigure(0,weight=1)
         self.flow_tree.grid(row=0,column=0,sticky='nsew');y.grid(row=0,column=1,sticky='ns');x.grid(row=1,column=0,sticky='ew')
         self.flow_tree.bind('<Double-1>',self.show_research_card)
+        self.health_page=ttk.Frame(self.notebook);self.notebook.add(self.health_page,text='健康檢查')
+        self.health_summary=tk.StringVar(value='尚未執行健康檢查。檢查會核對券商、帳本及流程狀態；平時畫面同步不會執行這項檢查。')
+        ttk.Label(self.health_page,textvariable=self.health_summary,wraplength=1350,justify='left',padding=10).pack(fill='x')
+        health_grid=ttk.Frame(self.health_page);health_grid.pack(fill='both',expand=True,padx=10,pady=(0,10))
+        self.health_tree=ttk.Treeview(health_grid,columns=('check','status','detail'),show='headings')
+        for key,label,width in (('check','檢查項目',200),('status','結果',85),('detail','證據／處理建議',1000)):
+            self.health_tree.heading(key,text=label);self.health_tree.column(key,width=width,stretch=key=='detail')
+        for tag,color in (('PASS','#087A35'),('WARN','#8B5A00'),('FAIL','#B00020')):self.health_tree.tag_configure(tag,foreground=color)
+        scroll=ttk.Scrollbar(health_grid,orient='vertical',command=self.health_tree.yview)
+        self.health_tree.configure(yscrollcommand=scroll.set);scroll.pack(side='right',fill='y');self.health_tree.pack(fill='both',expand=True)
+        self.health_tree.bind('<Double-1>',lambda e:self.show_text('健康檢查證據',json.dumps(self.health_report or {},ensure_ascii=False,indent=2)))
+        self.timing_page=ttk.Frame(self.notebook);self.notebook.add(self.timing_page,text='執行耗時')
+        self.timing_summary=tk.StringVar(value='尚無新版執行計時；BUY／SELL 提案及執行時會自動記錄。')
+        ttk.Label(self.timing_page,textvariable=self.timing_summary,wraplength=1350,padding=10,justify='left').pack(fill='x')
+        timing_grid=ttk.Frame(self.timing_page);timing_grid.pack(fill='both',expand=True,padx=10,pady=(0,10))
+        self.timing_tree=ttk.Treeview(timing_grid,columns=('stage','start','end','ms','symbol','result'),show='headings')
+        for key,label,width in (('stage','階段',240),('start','開始（台灣時間）',210),('end','完成（台灣時間）',210),('ms','耗時 ms',110),('symbol','股票／側別',100),('result','結果',160)):
+            self.timing_tree.heading(key,text=label);self.timing_tree.column(key,width=width,stretch=key=='result')
+        timing_scroll=ttk.Scrollbar(timing_grid,orient='vertical',command=self.timing_tree.yview)
+        self.timing_tree.configure(yscrollcommand=timing_scroll.set);timing_scroll.pack(side='right',fill='y');self.timing_tree.pack(fill='both',expand=True)
+        try:
+            report=Path(args.state)/'health/latest.json'
+            if report.exists():
+                self.health_report=read(report)
+                if not isinstance(self.health_report,dict) or not isinstance(self.health_report.get('checks'),list):raise ValueError('HEALTH_REPORT_SCHEMA')
+                self.render_health()
+        except (OSError,ValueError,KeyError,TypeError):
+            self.health_report=None;self.health_summary.set('先前健康檢查紀錄無法讀取，請重新執行健康檢查。')
         self.notebook.select(self.flow_page)
         if args.read_only:
             self.paper_capital_button.configure(state='disabled');self.daily_limit_button.configure(state='disabled')
@@ -84,7 +119,109 @@ class FlowDashboard(Dashboard):
         return super().run_strategy_info(run_id,symbol)
 
     def refresh(self,sync_broker=False):
-        if self.flow_ready:super().refresh(sync_broker)
+        if not self.flow_ready or self.closing:return False
+        if sync_broker:return self.request_health_check()
+        if self.refresh_pending or self.scheduler.scan_lock.locked():return False
+        self.refresh_pending=True;self._last_local_poll=time.monotonic()
+        def work():
+            try:self.flow_events.put(('local',self.service.refresh(sync_broker=False)))
+            except Exception as exc:
+                from config import redact
+                self.flow_events.put(('local_error',redact(type(exc).__name__+': '+str(exc))))
+        threading.Thread(target=work,name='flow-view-read',daemon=True).start()
+        return True
+
+    def update_refresh_progress(self):pass  # Local reads never run the manual-refresh animation.
+
+    def finish_refresh(self,snapshot=None,error=None,deferred=False):
+        self.refresh_pending=False
+        if error:self._ui_read_error=str(error)
+
+    def request_health_check(self):
+        if self.closing or self.health_pending:return False
+        if self.controller.status in ('STARTING','STOPPING'):
+            self.health_summary.set('FLOW 正在啟動或停止，請待目前工作結束後執行健康檢查。')
+            self.notebook.select(self.health_page);return False
+        self.health_pending=True;self._health_started=time.monotonic();self._health_stage='等待原券商工作執行緒'
+        self.refresh_button.configure(state='disabled',text='檢查中…');self.notebook.select(self.health_page)
+        def work():
+            try:
+                result=self.service.check_health(progress=lambda label:self.flow_events.put(('health_stage',label)))
+                self.flow_events.put(('health',result))
+            except Exception as exc:
+                from config import redact
+                self.flow_events.put(('health_error',redact(type(exc).__name__+': '+str(exc))))
+        threading.Thread(target=work,name='flow-health-check',daemon=True).start()
+        return True
+
+    def _drain_flow_events(self):
+        try:
+            while True:
+                kind,payload=self.flow_events.get_nowait()
+                if kind=='local':
+                    self.refresh_pending=False;self._local_sync_at=datetime.now(TAIPEI).isoformat();self._ui_read_error=''
+                    if not self.closing:
+                        self.result,self.positions,snapshot=payload
+                        if snapshot is not None:self.last_health=snapshot
+                        self.render()
+                elif kind=='local_error':self.refresh_pending=False;self._ui_read_error=payload
+                elif kind=='health_stage':self._health_stage=payload
+                elif kind in ('health','health_error'):
+                    self.health_pending=False
+                    self.health_report=payload if kind=='health' else dict(checked_at=datetime.now(TAIPEI).isoformat(),status='FAIL',
+                        checks=[dict(key='health_check',label='健康檢查',status='FAIL',detail=payload)])
+                    if not self.closing:
+                        self.refresh_button.configure(state='normal',text='健康檢查');self.render_health();self.refresh()
+        except Empty:pass
+
+    def render_health(self):
+        report=self.health_report or {};labels={'PASS':'通過','WARN':'需注意','FAIL':'失敗'}
+        self.health_tree.delete(*self.health_tree.get_children())
+        for item in report.get('checks',[]):
+            self.health_tree.insert('','end',iid=item['key'],values=(item['label'],labels.get(item['status'],item['status']),item['detail']),tags=(item['status'],))
+        counts={key:sum(r['status']==key for r in report.get('checks',[])) for key in labels}
+        self.health_summary.set(f'健康檢查：{labels.get(report.get("status"),"尚無結果")}｜完成 {report.get("checked_at","--")}\n'
+            f'通過 {counts["PASS"]} 項、需注意 {counts["WARN"]} 項、失敗 {counts["FAIL"]} 項。雙擊項目查看證據。')
+
+    def update_work_status(self):
+        if hasattr(self.controller,'observation'):observation=self.controller.observation()
+        else:observation=dict(activity={},quotes_received_at=None)
+        active=(observation.get('activity') or {}).get('active',[])
+        recent=(observation.get('activity') or {}).get('recent',[])
+        latest={r['kind']:r for r in recent};failures=[r for r in latest.values() if r.get('error')]
+        error=self.controller.error or self._ui_read_error or '；'.join(self.service.read_errors)
+        if self.health_pending:
+            work=f'健康檢查：{self._health_stage}（{int(time.monotonic()-self._health_started)} 秒）'
+            self.health_summary.set(work+'\n券商查詢與帳本檢查在背景執行，可繼續查看其他分頁。')
+        elif active:work='；'.join(f'{r["label"]}（{r["elapsed_seconds"]} 秒）' for r in active)
+        elif error:work='工作異常：'+error
+        elif failures:work='最近工作異常：'+failures[-1]['label']+'／'+failures[-1]['error']
+        elif self.controller.running:work='等待下一個排程；本機畫面自動同步'
+        else:work='FLOW 已停止；顯示最後已核對資料'
+        busy=bool(self.health_pending or active)
+        if busy!=self._progress_busy:
+            self.refresh_progress.stop();self._progress_busy=busy
+            if busy:self.refresh_progress.configure(mode='indeterminate');self.refresh_progress.start(35)
+            else:self.refresh_progress.configure(mode='determinate',value=100 if self._local_sync_at else 0)
+        elif not busy:self.refresh_progress.configure(value=100 if self._local_sync_at else 0)
+        def clock(value):
+            from .common import stamp
+            try:return stamp(value).strftime('%Y-%m-%d %H:%M:%S')
+            except (ValueError,TypeError):return '尚未取得'
+        health=self.last_health or {}
+        receipt=health.get('reconciliation_receipt') or {}
+        if not busy and receipt.get('state')=='REPAIRED':work='本次發現本地差異，已依券商修正；詳見健康檢查證據'
+        if not busy and (receipt.get('state') in ('UNRESOLVED','BROKER_UNVERIFIED') or health.get('inventory_display_source')):
+            work='券商／帳本尚未重新核實；保留已確認資料並阻擋未核實交易'
+            error=error or 'BROKER_OR_LEDGER_UNVERIFIED'
+        quote_at=observation.get('quotes_received_at') or getattr(self.controller,'last_diagnostic_quotes_at',None) or health.get('position_quotes_checked_at')
+        detail=f'畫面檢查 {clock(self._local_sync_at)}｜券商對帳 {clock(health.get("checked_at"))}｜行情取得 {clock(quote_at)}（台灣時間）'
+        if self.health_report and not self.health_pending:
+            detail+='｜健康檢查 '+{'PASS':'通過','WARN':'需注意','FAIL':'失敗'}.get(self.health_report.get('status'),'待確認')
+        text=work+'\n'+detail
+        if self.refresh_text.get()!=text:self.refresh_text.set(text)
+        report_status=(self.health_report or {}).get('status')
+        self.refresh_label.configure(foreground='#175A9C' if busy else '#B00020' if error or failures or report_status=='FAIL' else '#8B5A00' if report_status=='WARN' or receipt.get('state')=='REPAIRED' else '#184D47')
 
     def manual(self):
         if not self.closing:
@@ -113,10 +250,11 @@ class FlowDashboard(Dashboard):
         if not self.args.read_only:super().save_daily_buy_limit()
 
     def tick(self):
+        self._drain_flow_events()
         if not self.flow_ready:
             self.root.after(100,self.tick);return
         if self.closing:
-            if not self.controller.running and not self.refresh_pending and not self.scheduler.scan_lock.locked():
+            if not self.controller.running and not self.refresh_pending and not self.health_pending and not self.scheduler.scan_lock.locked():
                 if self.simulation_window and not self.simulation_window.closed:self.simulation_window.close()
                 self.root.destroy()
             else:self.status_text.set('正在停止 FLOW，等待已開始的查詢與模型結束；已送券商委託仍待核對。');self.root.after(100,self.tick)
@@ -124,7 +262,13 @@ class FlowDashboard(Dashboard):
         self.next_health_at=float('inf')
         super().tick()  # Retain financial/configuration events, never the legacy scan scheduler.
         self.flow_tick+=1
-        if self.flow_tick%20==0 and not self.refresh_pending:self.refresh()
+        changed=getattr(self.controller,'view_changed',None)
+        if changed is not None and changed.is_set():
+            changed.clear();self._view_refresh_requested=True
+        if (self._view_refresh_requested or time.monotonic()-self._last_local_poll>=5) and not self.refresh_pending:
+            if self.refresh():self._view_refresh_requested=False
+        if time.monotonic()-self._last_status_update>=.5:
+            self._last_status_update=time.monotonic();self.update_work_status()
         status={'STOPPED':'已停止','STARTING':'正在啟動','RUNNING':'運行中','STOPPING':'正在停止','ERROR':'啟動／執行錯誤'}.get(self.controller.status,self.controller.status)
         health=self.last_health or {};summary=self.service.flow.get('summary',{})
         mode='只讀演練' if self.args.read_only else '正式執行器'
@@ -133,6 +277,7 @@ class FlowDashboard(Dashboard):
             f'券商核對 {health.get("checked_at") or "尚未核對"}｜新買可用額 {health.get("current_buy_budget_twd","待核對")}｜最近錯誤：{error or "無"}')
         self.system_status_text.set('FLOW 主輪詢約30秒；全母體數值約60秒或輸入更新時重算；券商／持倉約60秒。\n'
             '每批最多3檔、兩個獨立角色；持倉各自重審60～3600秒。\n'
+            '畫面依工作完成通知更新，5秒檢查補漏；健康檢查由按鈕主動執行。\n'
             f'狀態：{status}；錯誤：{error or "無"}；UI讀取錯誤：{"；".join(self.service.read_errors) or "無"}\n'
             f'CLI累計用量：{json.dumps(self.service.usage,ensure_ascii=False)}')
         self.run_button.configure(state='disabled' if self.controller.status=='STOPPING' else 'normal')
@@ -140,8 +285,22 @@ class FlowDashboard(Dashboard):
         self.action_buttons['停止自動掃描'].configure(state='normal' if self.controller.running else 'disabled')
 
     def render(self):
+        revision=(self.result or {}).get('_flow_view_revision') if self.flow_ready else None
+        if revision is not None and revision==self._rendered_revision:return
+        selections=[]
+        if self.flow_ready:
+            for name,index in (('top_tree',1),('union_tree',0),('position_tree',0),('broker_position_tree',1),('quote_tree',0)):
+                tree=getattr(self,name);chosen={tree.item(i,'values')[index] for i in tree.selection()}
+                selections.append((tree,index,chosen,tree.yview(),tree.xview()))
         super().render()
         if not self.flow_ready:return
+        self._rendered_revision=revision
+        self.render_timing()
+        for tree,index,chosen,y,x in selections:
+            selected=[i for i in tree.get_children() if tree.item(i,'values')[index] in chosen]
+            if selected:tree.selection_set(selected)
+            if y:tree.yview_moveto(y[0])
+            if x:tree.xview_moveto(x[0])
         candidates=self.service.flow.get('candidates',[]);states={c['symbol']:STATE_LABELS.get(c['state'],c['state']) for c in candidates}
         for tree,index in ((self.top_tree,6),(self.union_tree,7)):
             for item in tree.get_children():
@@ -154,6 +313,39 @@ class FlowDashboard(Dashboard):
         update_detail_text(self.detail,self.flow_detail())
         signature=(summary.get('as_of'),summary.get('policy_sha256'),tuple(sorted(summary.get('states',{}).items())))
         if signature!=self._flow_signature:self._flow_signature=signature;self.render_flow_rows()
+
+    def render_timing(self):
+        execution=self.service.execution or {};trace=execution.get('execution_timing') or {}
+        if not trace:
+            reports=execution.get('reports') or []
+            trace=next((r['execution_timing'] for r in reversed(reports) if isinstance(r,dict) and r.get('execution_timing')), {}) if isinstance(reports,list) else {}
+        self.timing_tree.delete(*self.timing_tree.get_children())
+        if not trace:
+            self.timing_summary.set('尚無新版執行計時；BUY／SELL 提案及執行時會自動記錄。健康檢查本身不會送單。');return
+        from execution.timing import valid_record
+        if not isinstance(trace,dict) or not isinstance(trace.get('metrics',{}),dict) or not isinstance(trace.get('events'),list) or not all(valid_record(e) for e in trace['events']):
+            self.timing_summary.set('執行計時紀錄格式無法核實，請查看原始紀錄；正式委託與券商對帳仍分開顯示。');return
+        labels={'flow_cycle':'整輪執行','broker_account':'券商對帳／帳本核對','broker_quotes':'券商零股行情','pretrade':'下單前模型複核',
+            'position_review':'持股研究','executor_handoff':'交給原執行器','executor_pipeline':'原執行器檢查',
+            'broker_balance_query':'券商餘額查詢','broker_inventory_query':'券商庫存查詢','broker_settlement_query':'交割查詢',
+            'fresh_buy_balance_check':'買進前最新餘額','sdk_session_ready':'SDK 連線確認','sdk_send':'SDK 送單呼叫',
+            'ledger_fill_write':'確認成交回寫','ledger_status_write':'委託狀態回寫','account_snapshot':'帳戶快照','broker_health_check':'券商健康查詢','broker_reconciliation':'券商差異修正'}
+        events=trace.get('events',[]);by_id={e['sequence']:e for e in events}
+        def clock(value):
+            from .common import stamp
+            try:return stamp(value).strftime('%m/%d %H:%M:%S.%f')[:-3]
+            except (TypeError,ValueError):return '--'
+        for event in events:
+            if event.get('phase')=='end':
+                first=by_id.get(event.get('span_start'),{})
+                self.timing_tree.insert('','end',values=(labels.get(event['stage'],event['stage']),clock(first.get('at')),clock(event['at']),
+                    event.get('duration_ms','--'),str(event.get('symbol') or '')+' '+str(event.get('side') or ''),event.get('error') or '完成'))
+            elif event['stage']=='broker_worker_started':
+                self.timing_tree.insert('','end',values=('原執行器排隊 '+str(event.get('job_kind','')), '--',clock(event['at']),event.get('queue_wait_ms','--'),'','開始執行'))
+        metrics=trace.get('metrics',{})
+        self.timing_summary.set(f'最近一輪：{trace.get("started_at","--")}｜合計 {trace.get("elapsed_ms","--")} ms\n'
+            f'最後送單時報價年齡：{metrics.get("quote_age_at_sdk_send_seconds","尚無送單")} 秒；巢狀階段時間會重疊，請勿直接加總。\n'
+            f'歷史紀錄：{trace.get("record_path") or "本輪沒有產生需保存的買賣提案"}')
 
     def render_flow_rows(self):
         if not self.flow_ready:return

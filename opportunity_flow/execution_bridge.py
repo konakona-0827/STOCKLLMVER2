@@ -139,6 +139,10 @@ def payload_for(decisions,candidates,account,at,*,kind='BUY',review=None):
                 limit_price=d['suggested_price'],target_price=d['target_price'],invalidation_price=d['invalidation_price'],
                 reason=d['reason'],time_in_force='ROD',repricing='NEVER_AUTOMATIC')
         recommendations.append(row)
+        from execution.timing import mark
+        mark('handoff_quote',decision_id=decision_id,symbol=d['symbol'],side=d['decision'],
+             quote_timestamp=c['quote_timestamp'],bid=c['bid'],ask=c['ask'],last_price=c['last_price'],
+             quantity=d['suggested_qty'],limit_price=d['suggested_price'])
         quotes.append(dict(symbol=c['symbol'],price=c['last_price'],bid=c['bid'],ask=c['ask'],
             quote_status=c['quote_status'],exchange_time=c['quote_timestamp'],is_trial=c.get('is_trial'),
             source='CAPITAL_SKCOM',quote_basis='capital_intraday_odd_lot'))
@@ -220,6 +224,11 @@ class ExecutionBridge:
             reports.append(runtime.cancel_exit(cancellation['decision_id']))
         sells=[deepcopy(d) for d in exit_result['decisions'] if d['decision']=='SELL']
         if sells:
+            from execution.timing import current_trace,mark
+            if current_trace() is not None:current_trace().enable(getattr(runtime,'root',self.state))
+            for decision in sells:
+                mark('sell_proposal',symbol=decision['symbol'],side='SELL',quote_timestamp=candidate['quote_timestamp'],
+                     bid=candidate.get('bid'),ask=candidate.get('ask'))
             fresh=runtime.fetch_quotes([d['symbol'] for d in sells],dataset)
             runtime.refresh();verified_snapshot(runtime.snapshot,self.now(),need_buying_power=False)
             current=runtime.candidates([d['symbol'] for d in sells],fresh,dataset)
@@ -260,6 +269,14 @@ class ExecutionBridge:
                     if send:reports.append(self.dispatch(payload_for(send,send_candidates,runtime.account(),self.now(),kind='SELL',review=review)))
 
     def step(self,result,dataset,at):
+        from execution.timing import trace_scope,span
+        with trace_scope() as trace:
+            with span('flow_cycle'):
+                report=self._step(result,dataset,at)
+            report['execution_timing']=trace.export()
+            return report
+
+    def _step(self,result,dataset,at):
         runtime=self.runtime;reports=[];blocked=[]
         if runtime.stopped() or not runtime.can_trade_now():
             return dict(reports=[],blocked=[dict(reason='USER_STOPPED_OR_OUTSIDE_TRADING_SESSION')])
@@ -287,6 +304,10 @@ class ExecutionBridge:
                     pricing_policy='PLANNED_LIMIT' if runtime.config.planned_limits_enabled else 'AT_QUOTE',
                     independent_plan_reviews=candidate['review'],company_disclosures=candidate['review']['packet']['evidence'][3]['facts']['event_check'])
                 decision=buy_decision(candidate,route,quotes[symbol])
+                from execution.timing import current_trace,mark
+                if current_trace() is not None:current_trace().enable(getattr(runtime,'root',self.state))
+                mark('buy_proposal',symbol=symbol,side='BUY',research_reviewed_at=candidate['review']['reviewed_at'],
+                     quote_timestamp=quotes[symbol]['quote_timestamp'],bid=quotes[symbol]['bid'],ask=quotes[symbol]['ask'])
                 decisions,review=runtime.pretrade([decision],[c])
                 if review['status']!='VALID' or decisions[0]['decision']!='BUY':
                     blocked.append(dict(symbol=symbol,reason='PRETRADE_VETO_OR_ERROR'));continue

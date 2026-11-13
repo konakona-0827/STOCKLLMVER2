@@ -8,6 +8,7 @@ import time
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 
 from . import SYSTEM,VERSION
 from .common import TAIPEI,policy,read,save,stamp,number
@@ -207,7 +208,10 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                     try:
                         if data_executor is not None:
                             if data_worker is None and time.monotonic()>=data_retry_after:
-                                data_worker=data_executor.submit(download,args.dataset,target,65,stopped=stop_event.is_set)
+                                def download_job(target=target):
+                                    with live.activity.track('DAILY_DATA', '更新官方日線資料'):
+                                        return download(args.dataset,target,65,stopped=stop_event.is_set)
+                                data_worker=data_executor.submit(download_job)
                             live.maintenance(force=True)
                             pause(min(interval,30));continue
                         else:report=download(args.dataset,target,65)
@@ -256,7 +260,8 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                         quote_cursor=(quote_cursor+len(rotated))%len(exploration)
                     focus=urgent+rotated
                     try:
-                        feed=fetch(focus,last_public)
+                        with live.activity.track('PUBLIC_QUOTES', '更新公開參考行情') if live is not None else nullcontext():
+                            feed=fetch(focus,last_public)
                         last_public=time.monotonic()
                         public_path=Path(args.state)/"public_quotes.json"
                         old=quote_map(public_path) if public_path.exists() else {}
@@ -314,9 +319,10 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                         def review_job(ds=ds,at=at,observed_quotes=observed_quotes,events=events,selected=selected,
                                        account_context=account_context,p=dict(p)):
                             from .review import CodexRunner
-                            return run_cycle(ds,at,p,args.state,observed_quotes,events,
-                                runner=CodexRunner(p["model"],p["model_timeout_seconds"],stop_event),use_llm=True,
-                                diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False,account_context=account_context)
+                            with live.activity.track('RESEARCH', '兩方 CLI 研究') if live is not None else nullcontext():
+                                return run_cycle(ds,at,p,args.state,observed_quotes,events,
+                                    runner=CodexRunner(p["model"],p["model_timeout_seconds"],stop_event),use_llm=True,
+                                    diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False,account_context=account_context)
                         worker=executor.submit(review_job)
                 if live is not None:live.offer(result,ds)
                 previous_result=result

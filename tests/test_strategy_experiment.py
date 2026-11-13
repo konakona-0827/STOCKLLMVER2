@@ -141,7 +141,7 @@ class StrategyExperimentTests(unittest.TestCase):
         second_prompt = self.folder/'other.md'
         second_prompt.write_text('另一策略',encoding='utf-8')
         second = self.store.add_strategy(second_prompt)
-        strategy = self.store.strategies()[0]
+        strategy = next(row for row in self.store.strategies() if row['id'] == self.first)
         response = dict(validation='VALID',api={'usage':{'input_tokens':1000,'output_tokens':200}})
         self.store.record('cycle-1',strategy,[self.candidate()],self.decision(),response,self.rules,True)
         self.store.mark_equity('cycle-1',[self.first,second],[self.candidate()])

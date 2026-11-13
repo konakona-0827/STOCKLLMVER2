@@ -1,0 +1,200 @@
+{
+  "generated_at": "2026-11-13T16:51:32.187083+08:00",
+  "baseline_commit": "47fca25",
+  "timezone": "Asia/Taipei",
+  "regression": {
+    "command": "python -m unittest discover -s tests -v",
+    "tests": 729,
+    "duration_seconds": 78.085,
+    "result": "PASS",
+    "orders_sent": 0,
+    "broker_boundary": "ISOLATED_SDK_SUBSTITUTE"
+  },
+  "formal_ui": {
+    "read_only": false,
+    "auto_trading_started_by_agent": false,
+    "controller_status": "STOPPED",
+    "observations": [
+      "Latest source relaunched using actual FlowDashboard with start=False",
+      "Health button shows real asynchronous stage and elapsed seconds",
+      "Full quote date makes old quote age explicit",
+      "Execution timing tab renders an empty state without fabricating trade data",
+      "UI left open on health results"
+    ],
+    "polling_measurement": {
+      "before": {
+        "at": "2026-11-13T16:46:48.075324+08:00",
+        "view_polls": 9,
+        "view_reads": 2,
+        "full_redraws": 2
+      },
+      "after": {
+        "at": "2026-11-13T16:48:48.265997+08:00",
+        "view_polls": 33,
+        "view_reads": 2,
+        "full_redraws": 2,
+        "controller_status": "STOPPED",
+        "health_pending": false,
+        "health_result": "WARN",
+        "progress_mode": "determinate"
+      },
+      "additional_local_checks": 24,
+      "additional_full_reads": 0,
+      "additional_full_redraws": 0
+    }
+  },
+  "actual_health": {
+    "checked_at": "2026-11-13T16:46:43.521007+08:00",
+    "broker_checked_at": "2026-11-13T16:46:40+08:00",
+    "status": "WARN",
+    "counts": {
+      "PASS": 13,
+      "WARN": 1,
+      "FAIL": 0
+    },
+    "checks": [
+      {
+        "key": "execution_db",
+        "status": "PASS"
+      },
+      {
+        "key": "analysis_db",
+        "status": "PASS"
+      },
+      {
+        "key": "research_db",
+        "status": "PASS"
+      },
+      {
+        "key": "broker",
+        "status": "PASS"
+      },
+      {
+        "key": "inventory",
+        "status": "PASS"
+      },
+      {
+        "key": "quotes",
+        "status": "PASS"
+      },
+      {
+        "key": "orders",
+        "status": "PASS"
+      },
+      {
+        "key": "buy_budget",
+        "status": "PASS"
+      },
+      {
+        "key": "flow",
+        "status": "WARN"
+      },
+      {
+        "key": "dataset",
+        "status": "PASS"
+      },
+      {
+        "key": "research",
+        "status": "PASS"
+      },
+      {
+        "key": "models",
+        "status": "PASS"
+      },
+      {
+        "key": "executor",
+        "status": "PASS"
+      },
+      {
+        "key": "timing",
+        "status": "PASS"
+      }
+    ],
+    "warning_reason": "FLOW_STOPPED",
+    "order_submission_calls": 0,
+    "cancellation_calls": 0,
+    "reconciliation": {
+      "state": "VERIFIED",
+      "initial_difference_count": 0,
+      "remaining_difference_count": 0,
+      "position_repair_count": 0,
+      "fill_repair_count": 0
+    },
+    "repair_and_failure_fallback_verification": "ISOLATED_TESTS_ONLY; real ledger deliberately not corrupted"
+  },
+  "timing_cli": {
+    "command": "python -m operations.review_execution_timing --date 2026-11-13 --output local_data/ui_preview_20261113/timing_cli_review.json",
+    "source": "LOCAL_EXECUTION_TIMING_ONLY",
+    "trace_count": 0,
+    "read_errors": [],
+    "realized_live_slippage": "NOT_MEASURED"
+  },
+  "risk_and_startup": {
+    "unchanged_against_baseline": {
+      "opportunity_flow/policy.json": true,
+      "config/execution_live.json": true,
+      "OpportunityFlow.cmd": true
+    },
+    "actual_account_settings": {
+      "enabled": true,
+      "minimum_commission_twd": 1,
+      "min_buy_fee_reserve_twd": 20,
+      "min_available_to_buy_twd": 5000
+    },
+    "default_formal_launcher_auto_start_preserved": true,
+    "per_trade_manual_confirmation_added": false
+  },
+  "incident_review": {
+    "branch": "origin/codex/opportunity-flow-incident-20261113",
+    "commit": "6978ee08ea7c551ab0bf8b01ff47452fb5c44e85",
+    "captured_runtime_commit": "d740a35",
+    "error": "ImportError: cannot import name 'pending_exit' from 'position_manager'",
+    "fixed_by_ancestor": "d7e656f",
+    "current_import": "from execution.exit_cancel import pending_exit",
+    "test": "test_real_runtime_candidate_context_imports_pending_exit_without_broker_access",
+    "legacy_panel_lifecycle_changes": "Not merged over full Dashboard; current FlowController and coordinator implement corresponding lifecycle guards"
+  },
+  "source_hash_format": "sha256 UTF-8 without BOM; universal newlines LF",
+  "source_sha256": {
+    "OpportunityFlow.cmd": "a785cecb16df714eef6aeb6f506becaa7f91078780bc0fc240cedbe79d4a2814",
+    "README.md": "bcfd3b8350a018c8872dc824115ef25d239a852b152740a7e94f0f956391ba36",
+    "config/execution_live.json": "2201b2fe1b139dc4323307738ff4635ace32e398405111130e8b8944c4564f0f",
+    "docs/OPPORTUNITY_FLOW.md": "155fddf314fb26082e8e418a749e40a2e8197b89e531a756e5e6debdd748c5ef",
+    "execution/account_guard.py": "e52b8253d190f79eb68ecb20b9207b868fd12489c45f9ae2910fe34bf0ebb6b8",
+    "execution/account_snapshot.py": "568149e7dcb6ff9d5cc6b0779c1b07eb5c8d3ddf30fdcf928e6bad28548e6cdf",
+    "execution/auto_advice_executor.py": "fc0c7d24dc3b2ad77ec6c8f6f59ede13c6c777f09058fcefb4524e0e2b52f08d",
+    "execution/broker_runtime.py": "388ab6a1780a0160398a32fd84f1f96f18b5c08d8ad533245a8ed4543f2633d2",
+    "execution/capital_executor.py": "6ffd8d47307efb9f51f3954a690dcd83c0e02cf23ff5b0b6d3496d34f365d896",
+    "execution/health_monitor.py": "92adee612215e3ea5084a3572251bf9415d222df2f2b040fbf92fc87759f8015",
+    "execution/timing.py": "630888161a8c068a2568977bb41b46607c00963925ce8daddd9e4e9bb3ec1fae",
+    "operations/review_execution_timing.py": "eefacbbf0b0a8f4b2f17280f17bcab6fdb3b00707a1c21e3cbe0a9303601a763",
+    "opportunity_flow/__main__.py": "9629a9c51ed35a980f2fbf38f563805cdd0a20b29abe4ef0cb4e365139af5674",
+    "opportunity_flow/activity.py": "39615416ef71ad70ed4a853a3ea1e5b341a65430a1f4c273074ed2f54de084a5",
+    "opportunity_flow/dashboard.py": "addd6fa280bdbdb068a6783ea0e062f4d22c8fbb6fcf35936f10471ecc2ff30c",
+    "opportunity_flow/dashboard_service.py": "2f798c1b954e6a33595a2ded52275f2061a7d607d2023f01b83583774ea28507",
+    "opportunity_flow/execution_bridge.py": "d2546e1d57a7c8b9b179c75c86321404dca7997dd886de36b6d73c7ec97cc146",
+    "opportunity_flow/health.py": "ea6da1b30f513aacecfcf0f95dc14091454ca4047e65c6787dd6d8b7dce2d1d0",
+    "opportunity_flow/legacy_runtime.py": "c0fc18054a01a8572ad17c69e935fa229d872cea787916c8174c4437de910458",
+    "opportunity_flow/live.py": "51135a74de37806870caf2718c74d5d52ad922111493abbbdf2334de318e28fe",
+    "opportunity_flow/policy.json": "8a71f1651c2dfac1dd83da4f6198146275d3ffb294681a4731a276a6d01c1b77",
+    "tests/test_execution_timing.py": "aaf548fe25ea6280a15895309d3e59ea95506e1d856b0f91032d81520246d150",
+    "tests/test_flow_dashboard.py": "081118ff01bb52d7b0437939c3a8fde1bfb392ad88b9d896489529233a1dac5d",
+    "tests/test_flow_execution_bridge.py": "0b612967b34681c019572281275d82b2eece9f38e720ac1e5ee0963e2495e0ff",
+    "tests/test_flow_health.py": "0466fc3f1ba4fce3b9fc33b7b73e7585ee1621cac680b4360ae27ad753df9e03",
+    "tests/test_strategy_experiment.py": "e06a8eb30cc8886b6d590d657e7a2ab7eadf42002fd4076a97fd4046883478ce"
+  },
+  "limitations": [
+    "Real broker acceptance/fill of new BUY or SELL was not exercised",
+    "No live execution latency or realized slippage conclusion",
+    "Health local model records do not prove model service live availability",
+    "Public report excludes account identity, balances, holdings and screenshots"
+  ],
+  "reader_corruption_cases": [
+    "invalid sequence type",
+    "invalid duration type",
+    "non-finite numeric timing",
+    "invalid decision identifier",
+    "incomplete JSON line",
+    "invalid UI metrics shape"
+  ]
+}

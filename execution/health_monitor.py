@@ -20,6 +20,7 @@ from .account_guard import (cash_sellable_qty, query_buying_power,
 from .auto_advice_executor import LiveExecutionConfig
 from .capital_crosscheck import parse_reply_row
 from .settlement_balance import assess_settlement_balance
+from .timing import timed
 
 
 _broker_sync_lock = threading.RLock()
@@ -444,6 +445,7 @@ def reconcile_confirmed_buy_fills(project_root: str | Path, report: dict) -> dic
     return reconcile_confirmed_broker_events(project_root, report)
 
 
+@timed('broker_reconciliation')
 def sync_broker_state(project_root: str | Path, runtime=None, *, enrich=None,
                       return_report: bool = False):
     """Serialize broker reads, ledger updates, and the saved UI snapshot."""
@@ -453,6 +455,8 @@ def sync_broker_state(project_root: str | Path, runtime=None, *, enrich=None,
     with _broker_sync_lock:
         broker = runtime or get_broker_runtime(root)
         health = broker.health()
+        original_checked_at=health.get('checked_at')
+        original_differences=[dict(row) for row in health.get('inventory_comparison',[]) if row.get('status')!='MATCH']
         reconciliation = reconcile_confirmed_broker_events(root, health)
         if any(row.get("changed") for row in reconciliation["updated"]):
             # A second read reflects the newly committed formal ledger. The
@@ -472,6 +476,17 @@ def sync_broker_state(project_root: str | Path, runtime=None, *, enrich=None,
         health["reconciled_positions"] = adjusted
         health["reconciled_fills"] = reconciliation["updated"]
         health["reconciliation_errors"] = reconciliation["errors"]
+        remaining=[dict(row) for row in health.get('inventory_comparison',[]) if row.get('status')!='MATCH']
+        try:fresh=0<=(datetime.now(TAIPEI)-datetime.fromisoformat(health['checked_at'])).total_seconds()<=120
+        except (KeyError,TypeError,ValueError):fresh=False
+        verified=fresh and health.get('inventory_checked') is True and not health.get('errors') and health.get('status')!='ERROR'
+        repaired=bool(adjusted or any(row.get('changed') for row in reconciliation['updated']))
+        health['reconciliation_receipt']=dict(source='BROKER_AUTHORITATIVE',initial_checked_at=original_checked_at,
+            initial_differences=original_differences,position_repairs=adjusted,fill_repairs=reconciliation['updated'],
+            remaining_differences=remaining,
+            state='BROKER_UNVERIFIED' if not verified else 'REPAIRED' if repaired and not remaining and not reconciliation['errors'] else
+                  'UNRESOLVED' if remaining or reconciliation['errors'] else 'VERIFIED' if verified else 'BROKER_UNVERIFIED',
+            fallback='KEEP_CONFIRMED_LOCAL_RECORDS_AND_BLOCK_UNVERIFIED_TRADES' if not verified or remaining or reconciliation['errors'] else None)
         if reconciliation["errors"]:
             health["errors"].extend(
                 "broker reconciliation: " + str(row["decision_id"]) + ": "
@@ -543,6 +558,7 @@ def persist_refresh_snapshot(project_root: str | Path, report: dict) -> dict:
             "reconciled_fills": report.get("reconciled_fills", []),
             "reconciled_positions": report.get("reconciled_positions", []),
             "reconciliation_errors": report.get("reconciliation_errors", []),
+            "reconciliation_receipt": report.get('reconciliation_receipt'),
             "daily_buy_limit_twd": report.get("daily_buy_limit_twd"),
             "daily_buy_reserved_twd": report.get("daily_buy_reserved_twd"),
             "pending_buy_orders": report.get("pending_buy_orders", []),
@@ -621,6 +637,7 @@ def latest_refresh_snapshot(project_root: str | Path) -> dict | None:
     return json.loads(row[0]) if row else None
 
 
+@timed('broker_health_check')
 def run_health_check(project_root: str | Path, *, session=None,
                      connection_error: str | None = None) -> dict:
     root = Path(project_root)

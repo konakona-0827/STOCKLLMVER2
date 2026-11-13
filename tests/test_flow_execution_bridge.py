@@ -214,6 +214,15 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(coordinator.bridge.step.call_args.args[0]['candidates'],self.result['candidates'])
         finally:coordinator.close()
 
+    def test_ui_notification_is_sent_only_after_the_snapshot_is_saved(self):
+        from opportunity_flow.live import LiveCoordinator
+        state=self.root/'notify'
+        notify=Mock(side_effect=lambda:self.assertEqual(read(state/'live_status.json')['budget_status'],'READY'))
+        coordinator=LiveCoordinator('unused',state,self.p,runtime=self.runtime,on_change=notify)
+        coordinator.snapshot=self.runtime.snapshot
+        try:coordinator.publish();notify.assert_called_once_with()
+        finally:coordinator.close()
+
     def test_exit_model_failure_does_not_abort_independent_new_buy_research(self):
         # A bad existing-position model response is surfaced, while another stock retains its BUY path.
         self.runtime.positions={'2222':10}
@@ -311,6 +320,11 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(report['results'][0]['status'],'PARTIALLY_FILLED',report)
         self.assertEqual(store.get_ai_qty('1111'),8)  # Manual 20 shares stay outside AI ownership.
         sender.assert_called_once()
+        events=report['results'][0]['execution_timing']['events']
+        self.assertTrue(any(e['stage']=='ledger_fill_write' and e['phase']=='end' for e in events))
+        self.assertFalse(any(e['stage']=='fresh_buy_balance_check' for e in events))
+        observed=next(e for e in events if e['stage']=='fill_price_observation')
+        self.assertFalse(observed['verified']);self.assertIsNone(observed['realized_slippage_bps'])
 
     def test_actual_existing_executor_records_only_confirmed_partial_fill(self):
         from execution.auto_advice_executor import execute_advice_file
@@ -351,6 +365,15 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual((order.bstrStockNo,order.sBuySell,order.sPeriod,order.nQty),
                 ('1111',0,4,payload['recommendations'][0]['suggested_qty']))
             self.assertEqual(Decimal(order.bstrPrice),Decimal(str(payload['recommendations'][0]['suggested_price'])))
+            timing=result['results'][0]['execution_timing'];events=timing['events']
+            self.assertTrue(any(e['stage']=='sdk_send' and e['phase']=='start' for e in events))
+            self.assertTrue(any(e['stage']=='fresh_buy_balance_check' and e['phase']=='end' for e in events))
+            self.assertTrue(any(e['stage']=='ledger_fill_write' and e['phase']=='end' for e in events))
+            self.assertEqual([e['offset_ms'] for e in events],sorted(e['offset_ms'] for e in events))
+            observed=next(e for e in events if e['stage']=='fill_price_observation')
+            self.assertTrue(observed['verified']);self.assertEqual(observed['source'],'BROKER_TRADE_ROWS')
+            self.assertTrue(Path(timing['record_path']).exists())
+            self.assertFalse(any(e['stage']=='sdk_send' for e in again['results'][0]['execution_timing']['events']))
 
 
 class HandoffAndSourceTests(unittest.TestCase):

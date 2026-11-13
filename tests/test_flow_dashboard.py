@@ -55,6 +55,7 @@ class FakeView:
 class DashboardReuseTests(unittest.TestCase):
     def setUp(self):
         from opportunity_flow.dashboard import FlowDashboard
+        self.real_refresh=FlowDashboard.refresh
         self.temp=tempfile.TemporaryDirectory();self.base=Path(self.temp.name)
         self.service=FakeView(self.base)
         save(self.base/'config/execution_live.json',dict(enabled=True,min_buy_fee_reserve_twd=20,minimum_commission_twd=1,max_daily_buy_twd=30000))
@@ -73,6 +74,7 @@ class DashboardReuseTests(unittest.TestCase):
         self.addCleanup(self.cleanup)
 
     def cleanup(self):
+        for token in self.root.tk.call('after','info'):self.root.after_cancel(token)
         self.root.destroy()
         self.app=self.root=self.service=None
         for p in reversed(self.patches):p.stop()
@@ -104,7 +106,88 @@ class DashboardReuseTests(unittest.TestCase):
             window.update()  # Run the default after(0) startup callback.
             self.service.controller.start.assert_called_once_with()
             self.service.run.assert_not_called()
-        finally:window.destroy()
+        finally:
+            for token in window.tk.call('after','info'):window.after_cancel(token)
+            window.destroy()
+
+    def test_local_poll_is_quiet_and_never_runs_a_broker_health_check(self):
+        self.service.check_health=Mock(side_effect=AssertionError('Local poll must not contact broker'))
+        self.service.refresh=Mock(wraps=self.service.refresh)
+        with patch.object(self.app.refresh_progress,'start') as animate:
+            self.real_refresh(self.app)
+            event=self.app.flow_events.get(timeout=2);self.app.flow_events.put(event)
+            self.app._drain_flow_events();self.app.update_work_status()
+        self.service.refresh.assert_called_once_with(sync_broker=False)
+        self.service.check_health.assert_not_called();animate.assert_not_called()
+        self.assertEqual(self.app.refresh_button.cget('text'),'健康檢查')
+        self.assertNotIn('本機資料已更新',self.app.refresh_text.get())
+        self.assertIn('畫面檢查',self.app.refresh_text.get())
+
+    def test_unchanged_revision_keeps_selection_and_skips_the_full_redraw(self):
+        self.app.result['_flow_view_revision']='same-snapshot';self.app.render()
+        selected=self.app.position_tree.get_children()[0];self.app.position_tree.selection_set(selected)
+        with patch('dashboard.Dashboard.render') as redraw:self.app.render()
+        redraw.assert_not_called();self.assertEqual(self.app.position_tree.selection(),(selected,))
+
+    def test_execution_timing_view_shows_stages_and_survives_corrupt_timing(self):
+        at=datetime.now(TAIPEI).isoformat()
+        self.service.execution=dict(execution_timing=dict(started_at=at,elapsed_ms=14,metrics={},events=[
+            dict(sequence=1,stage='sdk_send',phase='start',at=at),
+            dict(sequence=2,stage='sdk_send',phase='end',at=at,span_start=1,duration_ms=12)]))
+        self.app.render_timing();items=self.app.timing_tree.get_children()
+        self.assertEqual(len(items),1);self.assertEqual(self.app.timing_tree.item(items[0],'values')[0],'SDK 送單呼叫')
+        for broken in ('corrupt',dict(metrics=[],events=[]),dict(events=[dict(sequence=[],stage='sdk_send',phase='end',at=at)]),
+                       dict(events=[dict(sequence=1,stage='sdk_send',phase='end',at=at,duration_ms='bad')])):
+            with self.subTest(record=broken):
+                self.service.execution=dict(execution_timing=broken)
+                self.app.render_timing();self.assertIn('無法核實',self.app.timing_summary.get())
+
+    def test_health_button_has_independent_progress_and_never_starts_trading(self):
+        entered,release=threading.Event(),threading.Event()
+        def inspect(progress):
+            progress('正在查詢券商');entered.set();release.wait(2)
+            return dict(status='PASS',checked_at=datetime.now(TAIPEI).isoformat(),
+                checks=[dict(key='ledger',label='正式交易帳本',status='PASS',detail='完整性通過')])
+        self.service.check_health=Mock(side_effect=inspect)
+        try:
+            self.app.refresh_button.invoke();self.assertTrue(entered.wait(1))
+            self.app._drain_flow_events();self.app.update_work_status()
+            self.assertTrue(self.app.health_pending);self.assertEqual(str(self.app.refresh_progress.cget('mode')),'indeterminate')
+            self.assertIn('正在查詢券商',self.app.refresh_text.get());self.service.controller.start.assert_not_called()
+            self.assertFalse(self.app.request_health_check())  # No concurrent duplicate query.
+        finally:release.set()
+        event=self.app.flow_events.get(timeout=2);self.app.flow_events.put(event)
+        self.app._drain_flow_events();self.app.update_work_status()
+        self.assertFalse(self.app.health_pending);self.assertEqual(self.app.health_report['status'],'PASS')
+        self.assertEqual(self.app.refresh_button.cget('text'),'健康檢查')
+        self.assertIn('通過',self.app.health_summary.get())
+
+    def test_close_drains_a_completed_view_read_instead_of_waiting_forever(self):
+        self.app.refresh_pending=True;self.app.flow_events.put(('local',self.service.refresh()))
+        self.app.close()
+        with patch.object(self.root,'destroy') as destroy,patch.object(self.root,'after'):
+            self.app.tick()
+        destroy.assert_called_once_with();self.assertFalse(self.app.refresh_pending)
+
+    def test_view_notification_is_retained_until_an_inflight_read_finishes(self):
+        self.service.controller.view_changed=threading.Event();self.service.controller.view_changed.set()
+        self.app._last_local_poll=__import__('time').monotonic();self.app.refresh_pending=True
+        with patch.object(self.root,'after'),patch.object(self.app,'refresh',return_value=True) as refresh:
+            self.app.tick();refresh.assert_not_called();self.assertTrue(self.app._view_refresh_requested)
+            self.app.refresh_pending=False;self.app.tick();refresh.assert_called_once_with()
+        self.assertFalse(self.app._view_refresh_requested)
+
+    def test_work_indicator_uses_real_activity_and_keeps_failed_work_visible(self):
+        self.service.controller.observation=lambda:dict(quotes_received_at='2026-10-16T09:18:25+08:00',
+            activity=dict(active=[dict(kind='BROKER_ACCOUNT',label='券商對帳',elapsed_seconds=7)],recent=[]))
+        self.app.update_work_status()
+        self.assertIn('券商對帳（7 秒）',self.app.refresh_text.get())
+        self.assertIn('2026-10-16 09:18:25',self.app.refresh_text.get())
+        self.assertEqual(str(self.app.refresh_progress.cget('mode')),'indeterminate')
+        self.service.controller.observation=lambda:dict(activity=dict(active=[],recent=[dict(kind='BROKER_ACCOUNT',label='券商對帳',error='TimeoutError')]))
+        self.app.update_work_status()
+        self.assertIn('TimeoutError',self.app.refresh_text.get())
+        self.assertEqual(str(self.app.refresh_label.cget('foreground')),'#B00020')
 
     def test_controller_starts_live_research_and_original_executor_by_default(self):
         coordinator=SimpleNamespace(refresh_account=Mock(),close=Mock())

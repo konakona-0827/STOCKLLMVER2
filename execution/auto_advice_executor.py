@@ -23,6 +23,7 @@ from .account_snapshot import (
 )
 from .advice_adapter import load_advice_file
 from .capital_executor import CapitalOddLotExecutor, SendResult
+from .timing import instrument_execution,current_trace,begin_intent,mark,span,observe_fill
 from .capital_reply_session import CapitalReplySession, build_live_readonly_session_from_project
 from .execution_store import ExecutionStore
 from .models import AdviceIntent, Side
@@ -211,6 +212,7 @@ def _refresh_quote(intent: AdviceIntent, quote: MarketQuote) -> MarketQuote:
     )
 
 
+@instrument_execution
 def execute_advice_file(
     advice_path: str | Path,
     *,
@@ -475,6 +477,10 @@ def execute_advice_file(
             "broker_order_sent": False,
             "crosscheck_performed": False,
         }
+        begin_intent(intent.decision_id,intent.symbol,intent.side.value)
+        trace=current_trace()
+        item['timing_ref']=dict(trace_id=trace.id,record_path=str(trace.path)) if trace is not None else None
+        mark('intent_started')
         item['analysis_reason']=recommendation_map[intent.symbol].get('reason')
         item['analysis_source']=recommendation_map[intent.symbol].get('analysis_source')
         if intent.side == Side.BUY:
@@ -496,7 +502,7 @@ def execute_advice_file(
         try:
             if not store.ai_trading_enabled(intent.symbol):
                 raise RiskRejected(f"{intent.symbol}: AI trading disabled by Dashboard (configured shares = 0)")
-            health = session.ensure_ready()
+            with span('intent_session_ready'):health = session.ensure_ready()
             item["session_health"] = {
                 "ready": health.ready,
                 "reply_state": health.reply_state,
@@ -606,7 +612,7 @@ def execute_advice_file(
                 # Re-read broker buying power for every BUY. The local
                 # reservation remains authoritative if broker balance updates
                 # lag behind accepted orders; the smaller value wins.
-                fresh_buying_power = query_buying_power(session)
+                with span('fresh_buy_balance_check'):fresh_buying_power = query_buying_power(session)
                 fresh_available = fresh_buying_power.available_to_buy_twd
                 if fresh_available is None:
                     raise AccountCheckError("fresh broker buying power is unavailable")
@@ -701,6 +707,7 @@ def execute_advice_file(
                 item["broker_order_sent"] = True
                 item["send_return_code"] = sent.return_code
                 item["seq13"] = sent.seq13
+                mark('broker_submission_persist_started',broker_seq13=sent.seq13)
                 store.mark_submitted(
                     intent.decision_id,
                     {
@@ -720,8 +727,10 @@ def execute_advice_file(
                         "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
                         "entry_plan": item.get('entry_plan'),
                         "exit_plan": item.get('exit_plan'),
+                        "timing_ref": item.get('timing_ref'),
                     },
                 )
+                mark('broker_submission_persist_finished')
 
             item.update(time_in_force="ROD", market_session="INTRADAY_ODD_LOT",
                         submitted_at=datetime.now().astimezone().isoformat())
@@ -736,9 +745,12 @@ def execute_advice_file(
                 "analysis_source":item.get('analysis_source'),
                 "pricing_policy": item.get('pricing_policy', 'AT_QUOTE'),
                 "entry_plan": item.get('entry_plan'),
+                "timing_ref": item.get('timing_ref'),
             }, daily_limit_twd=(LiveExecutionConfig.load(config_path).max_daily_buy_twd
                                 if intent.side == Side.BUY else None))
             item["send_attempted"] = True
+            mark('send_boundary',quote_timestamp=intent.quote_timestamp,bid=str(quote.bid),ask=str(quote.ask),
+                 quantity=plan.quantity,limit_price=str(plan.limit_price))
             result = broker.send_limit_order(
                 symbol=plan.symbol,
                 side=plan.side,
@@ -765,6 +777,7 @@ def execute_advice_file(
                 used_fallback=result.crosscheck.used_fallback,
                 automatic_retry=False,
             )
+            observe_fill(result,quote,intent.side)
 
             # Reserve the submitted quantity/value for the rest of this batch
             # even when final observation is ambiguous. This is deliberately
@@ -779,13 +792,14 @@ def execute_advice_file(
                     )
 
             if result.changes_position:
-                new_ai_qty = store.finish_with_fill(
-                    intent.decision_id, result.status.value, item,
-                    result.symbol, result.side, result.filled_quantity,
-                )
+                with span('ledger_fill_write'):
+                    new_ai_qty = store.finish_with_fill(
+                        intent.decision_id, result.status.value, item,
+                        result.symbol, result.side, result.filled_quantity,
+                    )
                 item["ai_managed_qty_after_fill"] = new_ai_qty
             else:
-                store.finish(intent.decision_id, result.status.value, item)
+                with span('ledger_status_write'):store.finish(intent.decision_id, result.status.value, item)
 
         except (RiskRejected, AccountCheckError) as exc:
             item.update(
@@ -817,6 +831,7 @@ def execute_advice_file(
                 pass
 
         report["results"].append(item)
+        mark('intent_finished',status=item['status'])
 
     report["processed_count"] = len(report["results"])
     report["status"] = "COMPLETE"

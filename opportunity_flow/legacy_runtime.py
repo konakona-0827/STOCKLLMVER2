@@ -12,6 +12,7 @@ import sqlite3
 from pathlib import Path
 
 from .common import TAIPEI,digest,save,stamp
+from .activity import tracked
 
 
 class LegacyRuntime:
@@ -54,6 +55,7 @@ class LegacyRuntime:
         from scheduler import is_twse_oddlot_market_window
         return is_twse_oddlot_market_window(datetime.now(TAIPEI).timestamp())
 
+    @tracked('BROKER_ACCOUNT', '券商對帳／核對帳本')
     def refresh(self):
         from execution.health_monitor import sync_broker_state
         from execution.auto_advice_executor import LiveExecutionConfig
@@ -73,6 +75,7 @@ class LegacyRuntime:
             elif s in etfs:markets[s]=5  # Existing configured TWSE ETF universe.
         return markets
 
+    @tracked('BROKER_QUOTES', '取得券商零股行情')
     def fetch_quotes(self,symbols,dataset):
         from capital_multi_quote import multi_snapshot
         markets=self.market_map(symbols,dataset)
@@ -91,6 +94,7 @@ class LegacyRuntime:
                     history.append(dict(symbol=q['symbol'],exchange_time=q['quote_timestamp'],price=q['last_price'],
                         quote_status='LIVE',is_trial=False,retrieval_mode='BROKER'))
                     self.observations[q['symbol']]=history[-60:]
+        self.quotes_received_at=datetime.now(TAIPEI).isoformat()
         return {q['symbol']:q for q in result['quotes']}
 
     def candidates(self,symbols,quotes,dataset):
@@ -251,6 +255,7 @@ class LegacyRuntime:
             raise
         finally:ledger.close()
 
+    @tracked('POSITION_REVIEW', '持股研究與退出檢查')
     def review_exits(self,candidates):
         import position_analyzer
         from position_manager import plan_request,validate_plan
@@ -288,6 +293,7 @@ class LegacyRuntime:
         if self.read_only or self.stopped():return dict(status='READ_ONLY_OR_STOPPED',broker_order_sent=False)
         return self.broker.cancel_exit(decision_id,self.stopped)
 
+    @tracked('PRETRADE', '下單前模型複核')
     def pretrade(self,decisions,candidates):
         import position_analyzer
         request=dict(model=self.model,input=json.dumps(dict(analysis_set=candidates,
@@ -296,9 +302,12 @@ class LegacyRuntime:
         review=position_analyzer.review_trades(result,request,self.provider)
         return result['decisions'],review
 
+    @tracked('EXECUTOR_HANDOFF', '原執行器／券商送單核對')
     def execute(self,payload,path):
         if self.stopped():return dict(status='USER_STOPPED',results=[],broker_order_sent=False)
         if self.read_only:return dict(status='READ_ONLY',results=[],broker_order_sent=False)
+        from execution.timing import current_trace
+        if current_trace() is not None:current_trace().enable(self.root)
         from config import redact
         save(path,json.loads(redact(json.dumps(payload,ensure_ascii=False))))
         return self.broker.execute_if_active(path,self.stopped)

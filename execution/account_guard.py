@@ -7,6 +7,7 @@ from typing import Iterable
 import time
 
 from .capital_reply_session import CapitalReplySession, CapitalReplySessionError
+from .timing import timed
 
 
 class AccountCheckError(RuntimeError):
@@ -84,6 +85,7 @@ def parse_get_t3_due_amt(raw: str) -> list[SettlementDue]:
     return twd
 
 
+@timed('broker_settlement_query')
 def query_settlement_dues(session: CapitalReplySession) -> list[SettlementDue]:
     if not session.connected or session._skO is None or not session.account:
         raise AccountCheckError("Capital session is not connected")
@@ -139,6 +141,7 @@ def parse_get_balance(raw: str) -> BuyingPower:
     return BuyingPower(True, one, balance, withdrawable, available, raw)
 
 
+@timed('broker_balance_query')
 def query_buying_power(session: CapitalReplySession) -> BuyingPower:
     if not session.connected or session._skO is None:
         raise AccountCheckError("Capital session is not connected.")
@@ -185,6 +188,7 @@ def parse_real_balance_row(raw: str) -> InventoryRow | None:
         return None
 
 
+@timed('broker_inventory_query')
 def query_inventory(
     session: CapitalReplySession,
     *,
