@@ -115,7 +115,7 @@ class LegacyRuntime:
             candidates.append(c)
         apply_live_position_context(candidates,self.health,self.store.path,self.audit)
         pending=self.store.pending_reconciliation_symbols()
-        from position_manager import pending_exit
+        from execution.exit_cancel import pending_exit
         from profit_exit import refresh
         for c in candidates:
             c['pending_execution']=c['symbol'] in pending

@@ -1,0 +1,99 @@
+{
+  "started_at": "2026-11-13T11:00:05.802969+08:00",
+  "finished_at": "2026-11-13T11:00:38.872510+08:00",
+  "role": "challenger",
+  "status": "VALID",
+  "symbols": [
+    "1402",
+    "1514",
+    "3048"
+  ],
+  "answer": {
+    "opinions": [
+      {
+        "counterevidence": "收盤27.5低於MA20的28.36，近5日與20日報酬均為負，量比0.51；尚未形成回升確認，但不足以判定未來反彈假說失效。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情未提供，無法確認現價與追價風險。",
+          "公司事件來源不含完整新聞歷史，公司行動及歷史價格調整未核實。",
+          "可用現金為0；目前無合格路徑可執行。"
+        ],
+        "packet_id": "c8b222ef7f94e54d70e357d6604b6db18de4ba15203f98765b697d17dd804532",
+        "selected_route_id": null,
+        "symbol": "1402",
+        "thesis": "目前沒有價量型態或合格數值路徑。28.2起的歷史高點是近端壓力；經濟資料為空，無法比較目標距離、必要報酬與5日歷史高點變幅，也無法確認成本後條件。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "新的已完成交易資料形成可辨識的回升型態，且程式產生符合既定成本、風險與報酬門檻的路徑時重審。",
+          "公司行動與歷史價格資料完成核實時重審。"
+        ]
+      },
+      {
+        "counterevidence": "20日跌幅17.65%，收盤84低於MA20的93.005；11月12日自87.8開盤跌至84，顯示近期反彈仍不穩，但尚不足以否定後續形成新型態的可能。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情未提供，無法確認現價與追價風險。",
+          "11月12日第三季財報公告及其他可能事件尚需來源審閱；公司行動與歷史價格調整未核實。",
+          "可用現金為0；目前無合格路徑可執行。"
+        ],
+        "packet_id": "5093d794d6be24173c595862678cc578b29eee1999cc18299754330cfadad727",
+        "selected_route_id": null,
+        "symbol": "1514",
+        "thesis": "急跌後雖有反彈，現況仍無合格型態或數值路徑。101起的歷史高點距現價甚遠；缺少目標距離與必要報酬，不能以曾達高點推論5個交易日內可重到，也無法核對成本後條件。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "新的已完成交易資料確認反彈型態，且程式產生符合既定成本、風險與報酬門檻的路徑時重審。",
+          "完成財報公告影響、公司行動及歷史價格資料核實時重審。"
+        ]
+      },
+      {
+        "counterevidence": "20日平均成交金額95,848,244.85元，低於既定1億元門檻；11月12日收在當日低點43.65，亦削弱近期反彈假說。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情未提供，無法確認現價與追價風險。",
+          "公司事件來源不含完整新聞歷史，公司行動及歷史價格調整未核實。",
+          "可用現金為0；目前無合格路徑可執行。"
+        ],
+        "packet_id": "92f3b4b259903911e88c15f1294e2415e7bca44597508d5ed0d2c66ecd1ba7e9",
+        "selected_route_id": null,
+        "symbol": "3048",
+        "thesis": "目前候選違反既定流動性門檻，且沒有合格數值路徑。45.45與45.55為近端壓力；經濟資料為空，無法比較目標距離、必要報酬與5日歷史高點變幅，亦無法確認成本後條件。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "20日平均成交金額重新達到既定門檻，且程式產生符合成本、風險與報酬門檻的路徑時，才重審新候選。",
+          "公司行動與歷史價格資料完成核實時，重新檢查數值依據。"
+        ]
+      }
+    ],
+    "role": "challenger"
+  },
+  "usage": {
+    "input_tokens": 19224,
+    "cached_input_tokens": 0,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1538,
+    "reasoning_output_tokens": 448
+  },
+  "model": "gpt-6-sol",
+  "elapsed_seconds": 33.062,
+  "prompt_characters": 18935,
+  "prompt_sha256": "e9a16077954fcc684204581c853013d2a2c4b1c074754ba3e9e788292784a016",
+  "prompt_version": "flow-review-v1",
+  "billing_source": "chatgpt-plan",
+  "additional_api_billed_usd": 0
+}

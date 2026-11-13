@@ -150,6 +150,16 @@ class BridgeTests(unittest.TestCase):
         self.assertIn('PRETRADE_ALTERED_FROZEN_PLAN',[x['reason'] for x in result['blocked']])
         self.assertFalse(self.runtime.sent)
 
+    def test_pretrade_candidate_buy_cap_matches_the_verified_frozen_quantity(self):
+        original=self.runtime.pretrade
+        def review(decisions,candidates):
+            self.assertEqual(candidates[0]['max_buy_qty'],decisions[0]['suggested_qty'])
+            self.assertGreater(candidates[0]['max_buy_qty'],0)
+            return original(decisions,candidates)
+        self.runtime.pretrade=review
+        self.bridge.step(self.result,self.ds,self.now)
+        self.assertEqual(len(self.runtime.sent),1)
+
     def test_above_entry_waits_in_current_non_planned_mode(self):
         with self.assertRaisesRegex(ValueError,'WAITING_FOR_REVIEWED_ENTRY'):
             self.validate(q={**self.quote,'ask':self.quote['ask']+.5})
@@ -308,38 +318,70 @@ class BridgeTests(unittest.TestCase):
         from execution.account_snapshot import ExecutionAccountSnapshot
         from execution.execution_store import ExecutionStore
         from execution.models import ExecutionStatus,Side
-        from execution.capital_executor import SendResult
+        from execution.capital_crosscheck import CrossCheckResult
         self.bridge.step(self.result,self.ds,self.now);payload=self.runtime.sent[0]
         root=self.root/'executor';root.mkdir();store=ExecutionStore(root/'isolated.sqlite3')
-        cfg=root/'config.json';save(cfg,dict(enabled=True,min_available_to_buy_twd=0,min_buy_fee_reserve_twd=20,
+        cfg=root/'config.json';save(cfg,dict(enabled=True,min_available_to_buy_twd=5000,min_buy_fee_reserve_twd=20,
             minimum_commission_twd=1,max_daily_buy_twd=30000,observe_seconds=0))
         advice=root/'advice.json';save(advice,payload)
-        balance=BuyingPower(True,False,Decimal(30000),Decimal(30000),Decimal(30000),'test')
+        balance=BuyingPower(True,True,Decimal(30000),Decimal(30000),Decimal(30000),'test')
         snapshot=ExecutionAccountSnapshot(self.at,buying_power=balance)
-        session=SimpleNamespace(connected=True,ensure_ready=lambda:SimpleNamespace(ready=True,reply_state=1,reply_connected=True,action='REUSE'))
+        seq='1234567890123';fields=['']*21
+        fields[0],fields[1],fields[2],fields[3]=seq,'TC','D','N'
+        fields[6],fields[8],fields[11],fields[20]='B','1111',str(payload['recommendations'][0]['suggested_price']),'2'
+        sender=Mock(return_value=(seq,0))
+        session=SimpleNamespace(connected=True,user='ISOLATED_TEST',account='ISOLATED_TEST',
+            _sk=SimpleNamespace(STOCKORDER=lambda:SimpleNamespace()),
+            _skO=SimpleNamespace(SendStockOddLotOrder=sender),tc_rows_copy=Mock(return_value=[]),pump=Mock(),
+            crosscheck_seq13=Mock(return_value=CrossCheckResult(ExecutionStatus.PARTIALLY_FILLED,seq,seq,fill_rows=(','.join(fields),))),
+            ensure_ready=lambda:SimpleNamespace(ready=True,reply_state=1,reply_connected=True,action='REUSE'))
         at=self.now
         class Clock(datetime):
             @classmethod
             def now(cls,tz=None):return at.astimezone(tz) if tz else at.astimezone().replace(tzinfo=None)
-        def send(**kwargs):
-            kwargs['on_submitted'](SendResult(0,'accepted','1234567890123','test'))
-            return SimpleNamespace(symbol='1111',side=Side.BUY,status=ExecutionStatus.PARTIALLY_FILLED,
-                quantity=kwargs['quantity'],price=kwargs['price'],send_return_code=0,seq13='1234567890123',
-                filled_quantity=2,broker_order_sent=True,send_attempted=True,crosscheck_performed=True,
-                changes_position=True,used_fallback=False,crosscheck=SimpleNamespace(status=ExecutionStatus.PARTIALLY_FILLED,
-                    accepted_rows=['ack'],fill_rows=['two shares'],cancel_rows=[],used_fallback=False))
         with patch('execution.auto_advice_executor.datetime',Clock),\
-             patch('execution.auto_advice_executor.query_buying_power',return_value=balance),\
-             patch('execution.auto_advice_executor.CapitalOddLotExecutor.send_limit_order',side_effect=send) as sender:
+             patch('execution.auto_advice_executor.query_buying_power',return_value=balance):
             result=execute_advice_file(advice,project_root=root,config_path=cfg,session=session,account_snapshot=snapshot,execution_db_path=store.path)
             self.assertEqual(result['results'][0]['status'],'PARTIALLY_FILLED',result)
             self.assertEqual(store.get_ai_qty('1111'),2)
             again=execute_advice_file(advice,project_root=root,config_path=cfg,session=session,account_snapshot=snapshot,execution_db_path=store.path)
             self.assertEqual(again['results'][0]['status'],'SKIPPED_DUPLICATE')
             sender.assert_called_once()
+            order=sender.call_args.args[2]
+            self.assertEqual((order.bstrStockNo,order.sBuySell,order.sPeriod,order.nQty),
+                ('1111',0,4,payload['recommendations'][0]['suggested_qty']))
+            self.assertEqual(Decimal(order.bstrPrice),Decimal(str(payload['recommendations'][0]['suggested_price'])))
 
 
 class HandoffAndSourceTests(unittest.TestCase):
+    def test_diagnostic_card_includes_observed_quote_without_order_eligibility(self):
+        from operations.review_flow_candidates import diagnostic_packet
+        from opportunity_flow.review import verify_packet
+        with tempfile.TemporaryDirectory() as temp:
+            folder=Path(temp)/'data';at=stamp(create(folder));dataset=load_dataset(folder)
+            quote=dict(symbol='1111',quote_status='LIVE',is_trial=False,bid=100,ask=100.5,quote_timestamp=at.isoformat())
+            packet=diagnostic_packet(dict(symbol='1111',state='NO_SETUP',reasons=['NO_CURRENT_SETUP']),
+                dataset,at,policy(),dict(available_cash_twd=0),dict(status='SOURCE_REVIEW_REQUIRED'),quote)
+            verify_packet(packet)
+            self.assertEqual(packet['evidence'][3]['facts']['observed_oddlot_quote'],quote)
+            self.assertEqual(packet['selected_routes'],[])
+            quote['ask']=999
+            self.assertEqual(packet['evidence'][3]['facts']['observed_oddlot_quote']['ask'],100.5)
+
+    def test_real_runtime_candidate_context_imports_pending_exit_without_broker_access(self):
+        from opportunity_flow.legacy_runtime import LegacyRuntime
+        from execution.execution_store import ExecutionStore
+        from execution.auto_advice_executor import LiveExecutionConfig
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);runtime=LegacyRuntime.__new__(LegacyRuntime)
+            runtime.store=ExecutionStore(root/'ledger.sqlite3');runtime.health=dict(inventory_comparison=[])
+            runtime.config=LiveExecutionConfig(minimum_commission_twd=Decimal(1));runtime.audit=Mock()
+            runtime.observations={};runtime.disclosures={}
+            dataset=dict(grouped={'1111':[]},master={'1111':dict(name='isolated')})
+            result=runtime.candidates(['1111'],{},dataset)
+            self.assertEqual(result[0]['paper_position']['qty'],0)
+            self.assertIsNone(result[0]['pending_exit'])
+
     def test_resume_after_month_end_does_not_reuse_partial_old_calendar(self):
         from opportunity_flow.collector import collect
         with tempfile.TemporaryDirectory() as temp:

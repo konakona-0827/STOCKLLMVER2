@@ -283,6 +283,7 @@ class ExecutionBridge:
                     quantity=route['economics']['quantity'],
                     existing_modeled_risk_twd=route.get('existing_modeled_risk_twd',0)),
                     handoff_key=digest([candidate['review']['packet']['packet_id'],route['route_id']]),
+                    max_buy_qty=route['economics']['quantity'],
                     pricing_policy='PLANNED_LIMIT' if runtime.config.planned_limits_enabled else 'AT_QUOTE',
                     independent_plan_reviews=candidate['review'],company_disclosures=candidate['review']['packet']['evidence'][3]['facts']['event_check'])
                 decision=buy_decision(candidate,route,quotes[symbol])

@@ -1,0 +1,97 @@
+{
+  "started_at": "2026-11-13T12:42:50.663051+08:00",
+  "finished_at": "2026-11-13T12:43:18.598486+08:00",
+  "role": "researcher",
+  "status": "VALID",
+  "symbols": [
+    "1402",
+    "1514",
+    "3048"
+  ],
+  "answer": {
+    "opinions": [
+      {
+        "counterevidence": "收盤 27.5 低於 MA20 28.36，近 5 日及 20 日報酬皆為負；目前沒有成立的價量型態。既有高點不證明可在 5 個交易日內重到，且本卡沒有合格路徑的目標距離或所需報酬可比較。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "後續即時行情與成交條件",
+          "完整公司事件查核",
+          "歷史公司行動與價格資料時點認證"
+        ],
+        "packet_id": "ac85c9e8189310f22debe037fb5649a7e8cf77c67185f72acb0f02f5d0dc5ee8",
+        "selected_route_id": null,
+        "symbol": "1402",
+        "thesis": "反彈假說尚無當前型態或合格數值路徑支持；歷史 5 日高點變幅中位數 1.43%、第 75 百分位 3.21%，是重疊視窗描述，不能當作達標機率。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "完成新交易日資料後，出現程式認定的當前型態與合格路徑，再核對該路徑的目標距離、所需報酬及經濟條件。"
+        ]
+      },
+      {
+        "counterevidence": "近 20 日報酬為 -17.65%，收盤 84 低於 MA20 93.005；11 月 12 日反彈後收低，尚無當前型態。既有高點距離較遠，但本卡沒有合格路徑數值可核對 5 日內重到所需漲幅。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "後續即時行情與成交條件",
+          "11 月 12 日財報公告及其他事件的完整查核",
+          "歷史公司行動與價格資料時點認證"
+        ],
+        "packet_id": "0e14f862a24d92040225cb6573e57987879e4e3683b8887a9b58e799e3aeb604",
+        "selected_route_id": null,
+        "symbol": "1514",
+        "thesis": "急跌後反彈仍待確認。歷史 5 日高點變幅中位數 2.49%、第 75 百分位 3.96%僅描述重疊視窗，不能推算達標機率。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "新完成的交易日形成程式認定的反彈型態及合格路徑時，核對目標距離、所需報酬與歷史變幅。",
+          "完成財報事件與公司行動查核後，重審價格資料的可用性。"
+        ]
+      },
+      {
+        "counterevidence": "20 日平均成交金額 95,848,244.85 元，低於既定 1 億元門檻；近 20 日報酬 -19.91%，收盤 43.65 低於 MA20 49.9475。目前無合格數值路徑。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "後續即時行情與成交條件",
+          "完整公司事件查核",
+          "歷史公司行動與價格資料時點認證"
+        ],
+        "packet_id": "28d5ee6cdec79e33d67bd4cc941b618d02da9908eee8a72c7f32c814c32fa2c3",
+        "selected_route_id": null,
+        "symbol": "3048",
+        "thesis": "目前的可交易反彈假說遭流動性門檻明確否決。歷史 5 日高點變幅中位數 2.13%、第 75 百分位 3.95%；沒有合格路徑的目標距離及所需報酬，不能據此主張期限內可達標。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "新的完整 20 日資料使平均成交金額達既定門檻，且程式產生合格數值路徑時，才重審反彈假說。"
+        ]
+      }
+    ],
+    "role": "researcher"
+  },
+  "usage": {
+    "input_tokens": 20230,
+    "cached_input_tokens": 11136,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1286,
+    "reasoning_output_tokens": 182
+  },
+  "model": "gpt-6-sol",
+  "elapsed_seconds": 27.938,
+  "prompt_characters": 21672,
+  "prompt_sha256": "f417010feae5bde89e3f00b6313c3622e3ea552724dbd692dd96bd1680afb192",
+  "prompt_version": "flow-review-v1",
+  "billing_source": "chatgpt-plan",
+  "additional_api_billed_usd": 0
+}

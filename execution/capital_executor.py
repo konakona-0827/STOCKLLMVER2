@@ -101,6 +101,26 @@ def validate_real_order(symbol, side, quantity, price):
     return sym, side, qty, px
 
 
+def prepare_limit_order(sk, account, *, symbol, side, quantity, price):
+    """Build the native SDK structure only; never connect or submit an order."""
+    sym, side, qty, px = validate_real_order(symbol, side, quantity, price)
+    order = sk.STOCKORDER()
+    order.bstrFullAccount = account
+    order.bstrStockNo = sym
+    order.sPeriod = 4
+    order.sFlag = 0
+    order.sBuySell = 0 if side == Side.BUY else 1
+    order.bstrPrice = format(px, "f")
+    order.nQty = qty
+    if hasattr(order, "sPrime"):
+        order.sPrime = 0
+    if hasattr(order, "nTradeType"):
+        order.nTradeType = 0
+    if hasattr(order, "nSpecialTradeType"):
+        order.nSpecialTradeType = 2
+    return order
+
+
 class CapitalOddLotExecutor:
     def __init__(self, session: CapitalReplySession) -> None:
         self.session = session
@@ -128,20 +148,10 @@ class CapitalOddLotExecutor:
 
         before_tc = self.session.tc_rows_copy()
 
-        order = self.session._sk.STOCKORDER()
-        order.bstrFullAccount = self.session.account
-        order.bstrStockNo = sym
-        order.sPeriod = 4
-        order.sFlag = 0
-        order.sBuySell = 0 if side == Side.BUY else 1
-        order.bstrPrice = format(px, "f")
-        order.nQty = qty
-        if hasattr(order, "sPrime"):
-            order.sPrime = 0
-        if hasattr(order, "nTradeType"):
-            order.nTradeType = 0
-        if hasattr(order, "nSpecialTradeType"):
-            order.nSpecialTradeType = 2
+        order = prepare_limit_order(
+            self.session._sk, self.session.account,
+            symbol=sym, side=side, quantity=qty, price=px,
+        )
 
         stopped=getattr(self,'stopped',None)
         if stopped is not None and stopped():raise CapitalExecutionError('USER_STOPPED_BEFORE_SDK_SEND')

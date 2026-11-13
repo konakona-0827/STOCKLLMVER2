@@ -1,0 +1,99 @@
+{
+  "started_at": "2026-11-13T11:03:02.563455+08:00",
+  "finished_at": "2026-11-13T11:03:32.043253+08:00",
+  "role": "researcher",
+  "status": "VALID",
+  "symbols": [
+    "4904",
+    "1402",
+    "1514"
+  ],
+  "answer": {
+    "opinions": [
+      {
+        "counterevidence": "近5日報酬為-5.26%，收盤108低於5日及20日均線，且已跌破先前110、112支撐。115目標距離2.0 ATR、需上漲6.48%，高於已成熟5日歷史高點變幅第75百分位3.47%；重疊視窗不能當作勝率。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS"
+        ],
+        "execution_missing": [
+          "即時行情及零股報價",
+          "實際價差",
+          "公司事件查核",
+          "公司行動核實及價格基準確認"
+        ],
+        "packet_id": "adc148f851e8540462a321ca431684b6261b53f6b3fd19c83b8316e8d6cbfe70",
+        "selected_route_id": null,
+        "symbol": "4904",
+        "thesis": "108至115的數值路徑合格，但復甦走勢尚未確認，5個交易日內重到目標的依據不足。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "新完成交易日顯示收盤重新站上5日均線，並檢查是否收復110支撐。",
+          "以新完成資料重算路徑後，確認115目標與既有經濟門檻仍成立。"
+        ]
+      },
+      {
+        "counterevidence": "唯一合格路徑須價格回到27.05以下；最近收盤為27.4，尚未符合進場參考條件。28.2目標距離1.9515 ATR、需上漲4.25%，高於已成熟5日歷史高點變幅第75百分位3.70%；重疊視窗不能當作勝率。其他已列路徑均不合格。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_LEVELS"
+        ],
+        "execution_missing": [
+          "即時行情及零股報價",
+          "實際價差",
+          "公司事件查核",
+          "公司行動核實及價格基準確認"
+        ],
+        "packet_id": "9352e867abba692598986202e5101ca938a9ac0ba11395a36c5dca6c833578f7",
+        "selected_route_id": null,
+        "symbol": "1402",
+        "thesis": "27.05回測路徑的數值條件合格，但回測尚未出現，反彈至28.2的時限也需要新價格結構支持。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "新完成價格資料顯示回測27.05或以下，且未破壞該路徑所用的26.65結構停損。",
+          "回測後出現可驗證的回升，並重算既有路徑的經濟條件。"
+        ]
+      },
+      {
+        "counterevidence": "87至101需上漲16.09%、跨越3.3619 ATR；已成熟5日歷史高點變幅中位數為2.45%、第75百分位為3.92%。近20日報酬為-17.14%，收盤仍低於20日均線93.905。這些資料明確削弱目前5日內重到101的復甦假說，但歷史重疊視窗並非經校準預測。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_LEVELS"
+        ],
+        "execution_missing": [
+          "即時行情及零股報價",
+          "實際價差",
+          "公司事件查核",
+          "公司行動核實及價格基準確認"
+        ],
+        "packet_id": "b37a64864115ee9e67689a66649f0a40ea5b2bc5f69c8ac35e6512f9f4e478de",
+        "selected_route_id": null,
+        "symbol": "1514",
+        "thesis": "雖有合格數值路徑，現有價格與已成熟的5日變幅資料反證短期重到101的研究假說。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "新完成交易資料形成足以縮短至101目標距離的價格結構，且重算後仍有合格路徑。",
+          "新完成資料顯示價格收復20日均線後，重新檢查5日研究期限與目標可達性。"
+        ]
+      }
+    ],
+    "role": "researcher"
+  },
+  "usage": {
+    "input_tokens": 20884,
+    "cached_input_tokens": 0,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1337,
+    "reasoning_output_tokens": 357
+  },
+  "model": "gpt-6-sol",
+  "elapsed_seconds": 29.468,
+  "prompt_characters": 24757,
+  "prompt_sha256": "d9a716c881ab1837d67dcd14f7b043dc84122c85246f65743a91474c7bd61b32",
+  "prompt_version": "flow-review-v1",
+  "billing_source": "chatgpt-plan",
+  "additional_api_billed_usd": 0
+}

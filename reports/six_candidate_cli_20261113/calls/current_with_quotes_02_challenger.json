@@ -1,0 +1,99 @@
+{
+  "started_at": "2026-11-13T11:08:18.714915+08:00",
+  "finished_at": "2026-11-13T11:08:54.693679+08:00",
+  "role": "challenger",
+  "status": "VALID",
+  "symbols": [
+    "1402",
+    "1514",
+    "3048"
+  ],
+  "answer": {
+    "opinions": [
+      {
+        "counterevidence": "收盤低於 MA20，近 5 日下跌且量能偏弱；27.7 的既有波段低點已失守。這些是近端壓力，尚不足以判定未形成的研究假說失效。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "需重新取得可交易報價及整股流動性；封包中的報價僅為特定時點零股報價。",
+          "需查核完整公司事件及歷史公司行動；原始未調整價格尚未認證。",
+          "帳戶可用現金為零。"
+        ],
+        "packet_id": "5acafbdcb7797e34436ac54ffd5bce6ee127e7ea52b99cbfe629e21535caddc9",
+        "selected_route_id": null,
+        "symbol": "1402",
+        "thesis": "目前無價量型態或合格數值路徑。28.2 雖是既有高點，但沒有進場、停損及成本後報酬資料，不能由其曾出現推論五個交易日內可重到；歷史高點變幅中位數約 1.43%、第 75 百分位約 3.21%，僅供描述。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續完成的日線形成新型態，且系統產生通過既定成本、報酬與風險門檻的 selected_route 時重審。",
+          "完整事件及公司行動查核完成、價格資料取得時點認證後，重檢歷史形態。"
+        ]
+      },
+      {
+        "counterevidence": "20 日跌幅約 17.65%，收盤明顯低於 MA20；11 月 12 日反彈後再收低。既有高點離目前收盤甚遠，形成明確近端壓力，但無現行路徑可據以判定假說失效。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "需重新取得可交易報價及整股流動性；封包中的報價僅為特定時點零股報價。",
+          "需核對 11 月 12 日財報公告與完整事件資料，並查核歷史公司行動；原始未調整價格尚未認證。",
+          "帳戶可用現金為零。"
+        ],
+        "packet_id": "3a1b5c2d777a9ac0c57df083864e5e6e3fb0e54085760fb5b0e013bb9fd30b16",
+        "selected_route_id": null,
+        "symbol": "1514",
+        "thesis": "目前無型態及合格數值路徑。101 的既有高點不能證明五個交易日內可重到；歷史高點變幅中位數約 2.49%、第 75 百分位約 3.96%，不能當作勝率或預測。缺少路徑的目標距離、必要報酬與成本後結果，無法核准追價。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續完成的日線建立可辨識型態，且系統產生符合既定目標距離、成本後報酬及風險門檻的 selected_route 時重審。",
+          "財報公告影響、完整事件及公司行動查核完成，並認證歷史價格資料後重審。"
+        ]
+      },
+      {
+        "counterevidence": "20 日跌幅約 19.91%，收盤低於 MA20；11 月 12 日從 45.4 高點回落至當日低點收盤。20 日平均成交額約 9,585 萬元，低於既定 1 億元門檻，構成目前篩選條件的明確反證。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "需重新取得可交易報價及整股流動性；封包中的報價僅為特定時點零股報價。",
+          "需查核完整公司事件及歷史公司行動；原始未調整價格尚未認證。",
+          "帳戶可用現金為零。"
+        ],
+        "packet_id": "a8fb02975c443dc0241cb8aea2359ec9163cd4d81519fe1c7ecd2a82a3e79299",
+        "selected_route_id": null,
+        "symbol": "3048",
+        "thesis": "目前流動性未達既定門檻，亦無合格數值路徑。45.45、45.55 雖是近端既有高點，接近目標不等於扣除稅費後合格，也不能證明五個交易日內會重到；歷史高點變幅中位數約 2.13%、第 75 百分位約 3.95%，僅為描述。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "後續 20 日平均成交額達到既定 1 億元門檻，且系統產生通過既定成本、報酬與風險條件的 selected_route 時，重新評估新假說。",
+          "完整事件及公司行動查核、歷史價格資料認證完成後重審資料依據。"
+        ]
+      }
+    ],
+    "role": "challenger"
+  },
+  "usage": {
+    "input_tokens": 20242,
+    "cached_input_tokens": 11136,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1653,
+    "reasoning_output_tokens": 407
+  },
+  "model": "gpt-6-sol",
+  "elapsed_seconds": 35.985,
+  "prompt_characters": 21671,
+  "prompt_sha256": "99eedccf3796a9789d4fb4f47b7fffa10011211df78efbadabf2cffdf8522bd5",
+  "prompt_version": "flow-review-v1",
+  "billing_source": "chatgpt-plan",
+  "additional_api_billed_usd": 0
+}

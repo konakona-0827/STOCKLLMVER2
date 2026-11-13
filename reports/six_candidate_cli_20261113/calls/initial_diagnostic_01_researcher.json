@@ -1,0 +1,94 @@
+{
+  "started_at": "2026-11-13T10:59:35.715298+08:00",
+  "finished_at": "2026-11-13T11:00:05.801525+08:00",
+  "role": "researcher",
+  "status": "VALID",
+  "symbols": [
+    "1402",
+    "1514",
+    "3048"
+  ],
+  "answer": {
+    "opinions": [
+      {
+        "counterevidence": "收盤27.5低於MA20 28.36，近5日及20日報酬均為負；目前沒有成立的型態或合格數值路徑。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情未提供。",
+          "公司事件資訊來源不完整，公司行動與歷史價格調整尚未核實。",
+          "帳戶可用現金為0。"
+        ],
+        "packet_id": "c8b222ef7f94e54d70e357d6604b6db18de4ba15203f98765b697d17dd804532",
+        "selected_route_id": null,
+        "symbol": "1402",
+        "thesis": "近端歷史高點雖在五日歷史高點變幅範圍附近，但曾觸及不代表能在期限內重到；目前只能觀察是否形成新型態。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續已完成交易資料形成可辨識型態，且系統產生通過既定經濟條件的合格路徑時重審。"
+        ]
+      },
+      {
+        "counterevidence": "近20日報酬為負17.65%，收盤84低於MA20 93.005；最近已確認高點101與現價的距離，明顯超過五日歷史高點變幅第75百分位3.96%。11月12日收盤亦由前日87回落至84。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情未提供。",
+          "11月12日財報公告已知，但後續影響及其他公司事件資訊尚未完整核實；公司行動與歷史價格調整尚未核實。",
+          "帳戶可用現金為0。"
+        ],
+        "packet_id": "5093d794d6be24173c595862678cc578b29eee1999cc18299754330cfadad727",
+        "selected_route_id": null,
+        "symbol": "1514",
+        "thesis": "目前的短期反彈至既有高點假說缺乏期限內可達性的支持，也沒有合格路徑。歷史重疊視窗變幅不是勝率或預測。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "若後續已完成交易資料顯示趨勢與型態實質改變，且系統產生通過既定經濟條件的合格路徑，可作為新假說重審。"
+        ]
+      },
+      {
+        "counterevidence": "20日平均成交金額95,848,244.85元，低於既定1億元門檻；近20日報酬為負19.91%，11月12日收盤回落至43.65。目前沒有合格數值路徑。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_DATA_LIMITS",
+          "E_LEVELS"
+        ],
+        "execution_missing": [
+          "即時行情未提供。",
+          "公司事件資訊來源不完整，公司行動與歷史價格調整尚未核實。",
+          "帳戶可用現金為0。"
+        ],
+        "packet_id": "92f3b4b259903911e88c15f1294e2415e7bca44597508d5ed0d2c66ecd1ba7e9",
+        "selected_route_id": null,
+        "symbol": "3048",
+        "thesis": "目前交易機會假說遭既定流動性門檻直接反證；即使歷史上曾出現近端高點，也不能據此推定五日內可重到。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "20日平均成交金額重新達到既定門檻，且新資料使系統產生通過既定經濟條件的合格路徑時重審。"
+        ]
+      }
+    ],
+    "role": "researcher"
+  },
+  "usage": {
+    "input_tokens": 19200,
+    "cached_input_tokens": 0,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1397,
+    "reasoning_output_tokens": 516
+  },
+  "model": "gpt-6-sol",
+  "elapsed_seconds": 30.094,
+  "prompt_characters": 18920,
+  "prompt_sha256": "03731a453104c9321002c763c9233bf6d3245114c5b7316cc8f0d532a47686dd",
+  "prompt_version": "flow-review-v1",
+  "billing_source": "chatgpt-plan",
+  "additional_api_billed_usd": 0
+}

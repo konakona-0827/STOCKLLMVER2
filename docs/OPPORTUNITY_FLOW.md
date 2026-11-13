@@ -120,6 +120,10 @@ flowchart TD
 
 1.2 的全套回歸為 **691 項通過**，新增 17 項舊 UI 重用、持股歸屬及佣金修正測試，詳見 [最新驗證](../reports/opportunity_flow_ui_fee_20261113/README.md)。
 
+11/13 後續已進行真正 CLI 六檔研究、真實券商帳戶／上市及上櫃零股讀取，並以真實 SKCOM 結構檢查 0050 一股買賣欄位。初查因最低保留 NT$10,000 而暫停買進，後依使用者明確指示改為 NT$5,000；12:44 重查預算 READY，六檔帳戶門全部通過，重跑四次 CLI 仍沒有雙方核准的 BUY。選股經濟、損失風險、配置及其他帳戶門檻保持不變。修正 `pending_exit` 匯入、固定股數的下單前上下文，以及原手動測試對拒單的誤報。研究結果、逐股原因、用量及證據邊界見 [六檔實查報告](../reports/six_candidate_cli_20261113/README.md)。
+
+券商讀取新增外層期限：健康查詢 60 秒，行情 `45 秒 + 每 20 檔一批 × SDK timeout`（預設 12 秒／批），包含排隊與連線；逾時或晚回覆後停止新動作並要求重新啟動，不自動重登、重送或切換 COM owner。關閉等待五秒後可回報仍在停止，原 owner 未結束前保留鎖。作業系統暫停時仍無法運作；這項防護不能當作真實委託已受理、成交或撤除的證據。
+
 - [整合驗證、故障對策與費用敏感度](../reports/opportunity_flow_live_20261112/README.md)
 - [機器可讀驗證紀錄](../reports/opportunity_flow_live_20261112/acceptance.json)
 - [完整回歸輸出](../reports/opportunity_flow_live_20261112/regression.txt)
