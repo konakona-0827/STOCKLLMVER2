@@ -280,10 +280,41 @@ class DashboardReuseTests(unittest.TestCase):
     def test_read_only_mode_cannot_change_ownership_or_account_limits(self):
         self.app.args.read_only=True
         with patch('opportunity_flow.dashboard.messagebox.showinfo') as info,\
-             patch('dashboard.Dashboard.save_paper_capital') as capital,patch('dashboard.Dashboard.save_daily_buy_limit') as daily:
-            self.app.position_settings();self.app.save_paper_capital();self.app.save_daily_buy_limit()
-        info.assert_called_once();capital.assert_not_called();daily.assert_not_called()
+             patch('dashboard.Dashboard.save_paper_capital') as capital,patch('dashboard.Dashboard.save_daily_buy_limit') as daily,\
+             patch('dashboard.Dashboard.save_minimum_balance') as minimum:
+            self.app.position_settings();self.app.save_paper_capital();self.app.save_daily_buy_limit();self.app.save_minimum_balance()
+        info.assert_called_once();capital.assert_not_called();daily.assert_not_called();minimum.assert_not_called()
         self.service.controller.configure_position.assert_not_called()
+
+    def test_minimum_balance_control_only_saves_reserve_and_requests_fresh_account(self):
+        import paper_portfolio
+        before=read(self.base/'config/execution_live.json')
+        with patch('dashboard.simpledialog.askinteger',return_value=5000) as dialog:
+            self.app.save_minimum_balance()
+        event=self.app.events.get(timeout=2)
+        self.assertEqual(event,('minimum_balance_saved',5000))
+        self.assertEqual(read(self.base/'config/execution_live.json'),{**before,'min_available_to_buy_twd':5000})
+        self.assertEqual(paper_portfolio.account(self.service.db_path)['capital_limit_cents'],1000000)
+        self.app.events.put(event)
+        with patch('dashboard.messagebox.showinfo'),patch.object(self.root,'after'):
+            self.app.tick()
+        self.app.refresh.assert_any_call(sync_broker=True)
+        self.assertEqual(self.app.minimum_balance_var.get(),'5,000')
+        self.assertEqual(str(self.app.minimum_balance_button.cget('state')),'normal')
+        self.assertEqual(dialog.call_args.kwargs['minvalue'],0)
+
+    def test_flow_cap_is_independent_of_stale_or_smaller_broker_balance(self):
+        import paper_portfolio
+        self.app.last_health.update(broker_one_account_balance_twd=1000,checked_at='2020-01-01T10:00:00+08:00')
+        before=read(self.base/'config/execution_live.json')
+        with patch('dashboard.simpledialog.askinteger',return_value=20000),\
+             patch('dashboard.messagebox.askyesno',return_value=True),patch('dashboard.messagebox.showerror') as error:
+            self.app.save_paper_capital()
+        event=self.app.events.get(timeout=2)
+        self.assertEqual(event[0],'capital_saved')
+        self.assertEqual(paper_portfolio.account(self.service.db_path)['capital_limit_cents'],2000000)
+        self.assertEqual(read(self.base/'config/execution_live.json'),before)
+        error.assert_not_called()
 
     def test_close_waits_for_inflight_ownership_configuration(self):
         self.app.scheduler.scan_lock.acquire();self.app.close()

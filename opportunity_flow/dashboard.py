@@ -95,6 +95,7 @@ class FlowDashboard(Dashboard):
         self.notebook.select(self.flow_page)
         if args.read_only:
             self.paper_capital_button.configure(state='disabled');self.daily_limit_button.configure(state='disabled')
+            self.minimum_balance_button.configure(state='disabled')
             self.action_buttons['設定持倉'].configure(state='disabled')
         self.flow_ready=True;self.refresh()
         if start:root.after(0,self.start_auto)
@@ -280,6 +281,14 @@ class FlowDashboard(Dashboard):
         if self.args.read_only:
             messagebox.showinfo('只讀模式','只讀模式不變更持股歸屬。',parent=self.root);return
         super().position_settings()
+
+    def capital_limit_requires_broker_balance(self):
+        # A configured ceiling stays independent of current broker funds.
+        # The refreshed BUY budget and original executor enforce the smaller amount.
+        return False
+
+    def save_minimum_balance(self):
+        if not self.args.read_only:super().save_minimum_balance()
 
     def save_paper_capital(self):
         if not self.args.read_only:super().save_paper_capital()

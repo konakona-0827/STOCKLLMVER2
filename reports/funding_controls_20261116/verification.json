@@ -1,0 +1,60 @@
+{
+  "base_commit": "522d593e4a083967465c28f5e01b6363232fc654",
+  "requested_semantics": "Independent minimum cash reserve and AI capital ceiling; only effective remaining budget is clipped to verified cash.",
+  "configuration_fields_added": [],
+  "reserve_field": "min_available_to_buy_twd",
+  "ai_cap_source": "formal paper_account.capital_limit_cents",
+  "source_sha256": {
+    "dashboard.py": "8e81dd68e443c86f2f90b7fc3ccf58c958ef3ea1052eb86b9f88684cecc5f721",
+    "opportunity_flow/dashboard.py": "6d6565ea99dd4e92ba3efde7f73e98231a46d21442635e29bf559d39114eba01",
+    "execution/auto_advice_executor.py": "0e3840a00369aed37f5964ab7dbeea582611ffdf32c728bea2ec80d847ed6151",
+    "tests/test_flow_dashboard.py": "b300dc7519cf49768421154530863a29d2e8aa9bbc3c2cfb15a992c0437fb3e1",
+    "tests/test_live_buying_power_recheck.py": "68aa30e3b593af972351e9b78fd9c3b65c61fcc29a5128b6f131797a6dc44b79",
+    "tests/test_minimum_balance_setting.py": "427c2340b4f95e39b297bed79562d02ff67e5f090567bd48dc2df3e04b965839"
+  },
+  "source_hash_basis": "LF normalized repository files",
+  "offline_regression": {
+    "tests": 802,
+    "seconds": 136.177,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": true,
+    "sha256": "c6c676652381017f3fc0d3958a0343b0366442b1836e143684fc25c05a7be27f"
+  },
+  "broker_readonly": {
+    "checked_at": "2026-11-16T17:07:42+08:00",
+    "status": "PENDING_ORDER",
+    "budget_status": "READY",
+    "broker_inventory_verified": true,
+    "inventory_mismatches": 0,
+    "error_count": 0,
+    "analysis_budget_matches_snapshot": true,
+    "configuration_unchanged": true,
+    "submission_calls": 0,
+    "cancellation_calls": 0
+  },
+  "database_checks": {
+    "execution": [
+      "ok"
+    ],
+    "analysis": [
+      "ok"
+    ],
+    "research": [
+      "ok"
+    ]
+  },
+  "frozen_risk_policy_unchanged": true,
+  "private_account_details_published": false,
+  "covered_cases": [
+    "Reserve 5000 to 10000 and back without changing AI cap or daily cap",
+    "Analysis and persisted snapshot take smaller verified cash/AI remaining/daily remaining",
+    "No coupling to book bank balance and no overwrite of AI cap",
+    "Reserve change in UI requests account refresh",
+    "Higher independent AI cap can be configured despite stale or smaller bank balance",
+    "Reserve raised during fresh balance call prevents same order at SDK boundary",
+    "Invalid values, write failure, UTF-8 BOM, read-only controls",
+    "Existing automatic research, pretrade, broker handoff, partial fills and exits"
+  ]
+}

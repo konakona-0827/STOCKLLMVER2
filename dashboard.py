@@ -491,27 +491,35 @@ class Dashboard:
                 limits = ttk.Frame(card)
                 limits.pack(fill='x', pady=(6, 0))
                 limits.columnconfigure(1, weight=1)
+                self.minimum_balance_var = tk.StringVar(value='讀取中')
                 self.paper_limit_var = tk.StringVar(value='尚未設定')
                 self.daily_limit_var = tk.StringVar(value='讀取中')
                 for row, (label, value) in enumerate((
-                        ('資金總上限', self.paper_limit_var),
+                        ('最低保留額', self.minimum_balance_var),
+                        ('AI 資金上限', self.paper_limit_var),
                         ('單日買進上限', self.daily_limit_var))):
                     ttk.Label(limits, text=label).grid(row=row, column=0, sticky='w', pady=2)
                     ttk.Entry(limits, width=12, textvariable=value, state='readonly',
                               style='CapitalReadonly.TEntry').grid(
                                   row=row, column=1, sticky='ew', padx=5, pady=2)
+                self.minimum_balance_button = tk.Button(
+                    limits, text='設定／調整', command=self.save_minimum_balance,
+                    bg='#184D47', fg='white', activebackground='#103B36',
+                    activeforeground='white', relief='flat', padx=8, pady=3,
+                    font=('Microsoft JhengHei UI', 9, 'bold'))
+                self.minimum_balance_button.grid(row=0, column=2, sticky='ew', pady=2)
                 self.paper_capital_button = tk.Button(
                     limits, text='設定／提高', command=self.save_paper_capital,
                     bg='#C62828', fg='white', activebackground='#8E0000',
                     activeforeground='white', relief='flat', padx=8, pady=3,
                     font=('Microsoft JhengHei UI', 9, 'bold'))
-                self.paper_capital_button.grid(row=0, column=2, sticky='ew', pady=2)
+                self.paper_capital_button.grid(row=1, column=2, sticky='ew', pady=2)
                 self.daily_limit_button = tk.Button(
                     limits, text='設定／調整', command=self.save_daily_buy_limit,
                     bg='#184D47', fg='white', activebackground='#103B36',
                     activeforeground='white', relief='flat', padx=8, pady=3,
                     font=('Microsoft JhengHei UI', 9, 'bold'))
-                self.daily_limit_button.grid(row=1, column=2, sticky='ew', pady=2)
+                self.daily_limit_button.grid(row=2, column=2, sticky='ew', pady=2)
         self.spend_text = tk.StringVar(value='正式 AI 委託成交：請重新整理並與券商對帳。')
         self.system_budget_text = tk.StringVar()
         self.system_finance_text = tk.StringVar()
@@ -838,6 +846,33 @@ class Dashboard:
         if not self.closing and self.scheduler.manual(time.time(), time.monotonic()):
             self.launch('MANUAL')
 
+    def capital_limit_requires_broker_balance(self):
+        return True
+
+    def save_minimum_balance(self):
+        config_path = ROOT/'config'/'execution_live.json'
+        try:
+            current = LiveExecutionConfig.load(config_path).min_available_to_buy_twd
+        except Exception as exc:
+            messagebox.showerror('最低保留額讀取失敗', redact(exc), parent=self.root)
+            return
+        amount = simpledialog.askinteger(
+            '設定最低保留額',
+            f'目前最低保留：NT$ {current:,.0f}\n'
+            '只變更券商資金保留額，AI 資金上限與單日上限各自獨立。\n'
+            '實際可新買額取券商扣除保留與未結占用後的可用額、AI 剩餘額度、每日剩餘額度的最小值。',
+            parent=self.root, initialvalue=int(current), minvalue=0)
+        if amount is None:
+            return
+        self.minimum_balance_button.configure(state='disabled')
+        def work():
+            try:
+                LiveExecutionConfig.set_minimum_balance(config_path, amount)
+                self.events.put(('minimum_balance_saved', amount))
+            except Exception as exc:
+                self.events.put(('minimum_balance_error', redact(f'{type(exc).__name__}: {exc}')))
+        threading.Thread(target=work, name='minimum-balance-worker', daemon=True).start()
+
     def save_paper_capital(self):
         current = paper_portfolio.account(self.service.db_path)
         current_cents = current['capital_limit_cents'] if current else 0
@@ -857,27 +892,28 @@ class Dashboard:
         )
         if amount is None:
             return
-        if not settlement_snapshot_current(
+        if self.capital_limit_requires_broker_balance() and not settlement_snapshot_current(
                 (self.last_health or {}).get('checked_at'), now()):
             messagebox.showerror('券商餘額資料逾時',
                                  '請先按「重新整理並與券商對帳」，取得近期一戶通餘額。',
                                  parent=self.root)
             return
-        balance_raw = (self.last_health or {}).get('broker_one_account_balance_twd')
-        try:
-            broker_balance = Decimal(str(balance_raw))
-            if not broker_balance.is_finite():
-                raise ValueError()
-        except (TypeError, ValueError, InvalidOperation):
-            messagebox.showerror('券商餘額未確認',
-                                 '請先按「重新整理並與券商對帳」，確認一戶通餘額後再設定資金總上限。',
-                                 parent=self.root)
-            return
-        if Decimal(amount) > broker_balance:
-            messagebox.showerror('資金總上限高於券商餘額',
-                                 f'目前券商一戶通餘額為 NT$ {broker_balance:,.2f}；'
-                                 '資金總上限不得超過此餘額。', parent=self.root)
-            return
+        if self.capital_limit_requires_broker_balance():
+            balance_raw = (self.last_health or {}).get('broker_one_account_balance_twd')
+            try:
+                broker_balance = Decimal(str(balance_raw))
+                if not broker_balance.is_finite():
+                    raise ValueError()
+            except (TypeError, ValueError, InvalidOperation):
+                messagebox.showerror('券商餘額未確認',
+                                     '請先按「重新整理並與券商對帳」，確認一戶通餘額後再設定資金總上限。',
+                                     parent=self.root)
+                return
+            if Decimal(amount) > broker_balance:
+                messagebox.showerror('資金總上限高於券商餘額',
+                                     f'目前券商一戶通餘額為 NT$ {broker_balance:,.2f}；'
+                                     '資金總上限不得超過此餘額。', parent=self.root)
+                return
         if not messagebox.askyesno(
             '確認資金總上限',
             f'將 AI 交易的資金總上限設定為 NT$ {amount:,}。\n'
@@ -1114,6 +1150,19 @@ class Dashboard:
                     self.root.configure(cursor='')
                     self.paper_capital_button.configure(state='normal')
                     messagebox.showerror('資金總上限設定失敗', payload, parent=self.root)
+                elif kind == 'minimum_balance_saved':
+                    self.minimum_balance_button.configure(state='normal')
+                    self.minimum_balance_var.set(f'{payload:,}')
+                    self.next_health_at = time.time()
+                    self.budget_reason_text.set('最低保留額已更新，正在重新對帳計算可新買資金。')
+                    self.refresh(sync_broker=True)
+                    messagebox.showinfo('最低保留額已更新',
+                                        f'最低保留額：NT$ {payload:,}\n'
+                                        'AI 資金上限及單日上限維持原設定，正在重新對帳。',
+                                        parent=self.root)
+                elif kind == 'minimum_balance_error':
+                    self.minimum_balance_button.configure(state='normal')
+                    messagebox.showerror('最低保留額設定失敗', payload, parent=self.root)
                 elif kind == 'daily_limit_saved':
                     self.daily_limit_button.configure(state='normal')
                     self.daily_limit_var.set(f'{payload:,}')
@@ -1533,10 +1582,11 @@ class Dashboard:
         account = paper_portfolio.account(self.service.db_path)
         self.paper_limit_var.set(f"{account['capital_limit_cents']/100:,.0f}" if account else '尚未設定')
         try:
-            daily_limit = LiveExecutionConfig.load(
-                ROOT/'config'/'execution_live.json').max_daily_buy_twd
-            self.daily_limit_var.set(f'{daily_limit:,.0f}')
+            funding_config = LiveExecutionConfig.load(ROOT/'config'/'execution_live.json')
+            self.minimum_balance_var.set(f'{funding_config.min_available_to_buy_twd:,.0f}')
+            self.daily_limit_var.set(f'{funding_config.max_daily_buy_twd:,.0f}')
         except (OSError, ValueError, InvalidOperation, json.JSONDecodeError):
+            self.minimum_balance_var.set('讀取失敗')
             self.daily_limit_var.set('讀取失敗')
         def money(raw):
             try:

@@ -8,7 +8,10 @@ import json
 import os
 import tempfile
 import time
+from threading import Lock
 from typing import Any
+
+_funding_settings_lock = Lock()
 
 from .account_guard import (
     AccountCheckError,
@@ -133,25 +136,37 @@ class LiveExecutionConfig:
         """Persist the user-selected daily BUY cap without exposing a partial JSON file."""
         if isinstance(amount_twd, bool) or not isinstance(amount_twd, int) or amount_twd <= 0:
             raise ValueError('單日買進上限須為正整數')
+        LiveExecutionConfig._set_funding_amount(path, 'max_daily_buy_twd', amount_twd)
+
+    @staticmethod
+    def set_minimum_balance(path: str | Path, amount_twd: int) -> None:
+        """Change only the cash reserve, independently of AI capital and daily limits."""
+        if isinstance(amount_twd, bool) or not isinstance(amount_twd, int) or amount_twd < 0:
+            raise ValueError('最低保留額須為非負整數')
+        LiveExecutionConfig._set_funding_amount(path, 'min_available_to_buy_twd', amount_twd)
+
+    @staticmethod
+    def _set_funding_amount(path: str | Path, field: str, amount_twd: int) -> None:
         target = Path(path)
-        data = json.loads(target.read_text(encoding='utf-8'))
-        data['max_daily_buy_twd'] = amount_twd
-        temporary = None
-        try:
-            with tempfile.NamedTemporaryFile('w', encoding='utf-8', newline='\n',
-                                             dir=target.parent, prefix=target.name + '.',
-                                             suffix='.tmp', delete=False) as handle:
-                temporary = Path(handle.name)
-                json.dump(data, handle, ensure_ascii=False, indent=2)
-                handle.write('\n')
-            os.replace(temporary, target)
-        finally:
-            if temporary is not None:
-                temporary.unlink(missing_ok=True)
+        with _funding_settings_lock:
+            data = json.loads(target.read_text(encoding='utf-8-sig'))
+            data[field] = amount_twd
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile('w', encoding='utf-8', newline='\n',
+                                                 dir=target.parent, prefix=target.name + '.',
+                                                 suffix='.tmp', delete=False) as handle:
+                    temporary = Path(handle.name)
+                    json.dump(data, handle, ensure_ascii=False, indent=2)
+                    handle.write('\n')
+                os.replace(temporary, target)
+            finally:
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
 
     @classmethod
     def load(cls, path: str | Path) -> "LiveExecutionConfig":
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
         def dec(name, default=None):
             value = data.get(name, default)
@@ -637,6 +652,9 @@ def execute_advice_file(
                 if (not health_order_test and budget_payload.get('strategy_cap_twd') is not None
                         and fresh_buying_power.balance_twd is None):
                     raise AccountCheckError('fresh broker account balance is unavailable')
+                # A reserve edited while research/review was running also
+                # applies to this BUY, without waiting for another scan cycle.
+                current_buy_config = LiveExecutionConfig.load(config_path)
                 effective_available = min(
                     initial_buying_power - reserved_buy_twd,
                     fresh_available,
@@ -648,9 +666,9 @@ def execute_advice_file(
                 item["effective_buying_power_twd"] = str(effective_available)
                 item["required_twd_with_buffer"] = str(required)
                 item["fee_reserve_twd"] = str(fee_reserve)
-                item["min_available_to_buy_twd"] = str(config.min_available_to_buy_twd)
+                item["min_available_to_buy_twd"] = str(current_buy_config.min_available_to_buy_twd)
                 daily_reserved = store.daily_reserved_buy_twd()
-                current_daily_limit = LiveExecutionConfig.load(config_path).max_daily_buy_twd
+                current_daily_limit = current_buy_config.max_daily_buy_twd
                 item["daily_reserved_buy_twd_before"] = str(daily_reserved)
                 item["max_daily_buy_twd"] = str(current_daily_limit)
 
@@ -672,12 +690,12 @@ def execute_advice_file(
                         f"required={required}, limit={effective_cycle_budget}"
                     )
 
-                if effective_available - required < config.min_available_to_buy_twd:
+                if effective_available - required < current_buy_config.min_available_to_buy_twd:
                     raise AccountCheckError(
                         f"BUY would cross minimum broker buying power: "
                         f"effective_available={effective_available}, "
                         f"required_with_buffer={required}, "
-                        f"minimum={config.min_available_to_buy_twd}"
+                        f"minimum={current_buy_config.min_available_to_buy_twd}"
                     )
                 reserved_this_order_twd = required
 

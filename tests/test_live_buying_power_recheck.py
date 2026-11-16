@@ -41,6 +41,12 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
                     connect.assert_not_called()
 
     def test_buy_is_blocked_when_fresh_broker_balance_is_too_low(self):
+        self.check_rejected_buy('100')
+
+    def test_reserve_raised_during_balance_query_blocks_this_buy_before_sdk(self):
+        self.check_rejected_buy('1000',reserve_after_quote=900)
+
+    def check_rejected_buy(self,fresh_amount,reserve_after_quote=None):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             execution_db = root / "isolated_execution.sqlite3"
@@ -109,13 +115,19 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
                 )),
             )
             fresh_power = BuyingPower(
-                True, True, Decimal("100"), Decimal("100"),
-                Decimal("100"), "fresh",
+                True, True, Decimal(fresh_amount), Decimal(fresh_amount),
+                Decimal(fresh_amount), "fresh",
             )
+
+            def query_fresh(unused_session):
+                if reserve_after_quote is not None:
+                    from execution.auto_advice_executor import LiveExecutionConfig
+                    LiveExecutionConfig.set_minimum_balance(config_path,reserve_after_quote)
+                return fresh_power
 
             with patch(
                 "execution.auto_advice_executor.query_buying_power",
-                return_value=fresh_power,
+                side_effect=query_fresh,
             ) as query, patch(
                 "execution.auto_advice_executor.CapitalOddLotExecutor.send_limit_order"
             ) as send:
@@ -132,7 +144,10 @@ class LiveBuyingPowerRecheckTests(unittest.TestCase):
             send.assert_not_called()
             item = report["results"][0]
             self.assertEqual("SKIPPED_CHECK_FAILED", item["status"])
-            self.assertEqual("100", item["fresh_broker_buying_power_twd"])
+            self.assertEqual(fresh_amount, item["fresh_broker_buying_power_twd"])
+            if reserve_after_quote is not None:
+                self.assertEqual(item['min_available_to_buy_twd'],str(reserve_after_quote))
+                self.assertIn('minimum=900',item['reason'])
 
     def test_over_budget_round_is_blocked_before_any_order_attempt(self):
         with tempfile.TemporaryDirectory() as tmp:
