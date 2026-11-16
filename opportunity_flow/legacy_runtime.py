@@ -61,6 +61,8 @@ class LegacyRuntime:
         from execution.auto_advice_executor import LiveExecutionConfig
         self.config=LiveExecutionConfig.load(self.root/'config/execution_live.json')
         self.health,self.snapshot=sync_broker_state(self.root,runtime=self.broker,return_report=True)
+        if getattr(self.broker,'read_quarantined',False) is True:
+            raise RuntimeError('BROKER_READ_RECOVERY_UNVERIFIED')
         return self.snapshot
 
     def market_map(self,symbols,dataset):
@@ -81,6 +83,8 @@ class LegacyRuntime:
         markets=self.market_map(symbols,dataset)
         started=datetime.now(TAIPEI).isoformat()
         raw,errors=self.broker.fetch_quotes_with_markets(symbols,markets,self.audit,self.stopped,timeout=12)
+        if getattr(self.broker,'read_quarantined',False) is True:
+            raise TimeoutError('BROKER_QUOTE_READ_DEADLINE_EXCEEDED')
         for s in list(raw):
             if raw[s].get('venue')!=('TWSE' if markets.get(s)==5 else 'TPEx'):
                 raw.pop(s);errors[s]='BROKER_RETURNED_VENUE_MISMATCH'

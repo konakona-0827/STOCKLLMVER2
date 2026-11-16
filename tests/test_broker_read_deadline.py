@@ -62,9 +62,35 @@ class BrokerReadDeadlineTests(unittest.TestCase):
             with patch('execution.broker_runtime.monotonic', side_effect=lambda:clock[0]):
                 with self.assertRaisesRegex(TimeoutError, 'DEADLINE_EXCEEDED'):
                     runtime.health()
-            with self.assertRaisesRegex(RuntimeError, 'RESTART_REQUIRED'):
-                runtime.health()
+            self.assertEqual('OK', runtime.health()['status'])
+            self.assertTrue(runtime.read_quarantined)  # No verified balance/inventory.
             execute.assert_not_called()
+
+    def test_fresh_health_releases_quarantine_without_new_login_or_replaying_orders(self):
+        release = Event()
+        calls = []
+
+        def health(*args, **kwargs):
+            calls.append(None)
+            if len(calls) == 1:
+                release.wait(2)
+            if len(calls) == 2:
+                return {'status':'ERROR','errors':['GetBalance failed']}
+            return {'status':'OK','inventory_checked':True,'broker_balance_twd':'10000','errors':[]}
+
+        with tempfile.TemporaryDirectory() as root, self.runtime(root, health, release) as (runtime, build, execute):
+            with patch.object(runtime, '_read_wait_seconds', return_value=.02):
+                with self.assertRaisesRegex(TimeoutError, 'DEADLINE_EXCEEDED'):
+                    runtime.health()
+            release.set()
+            self.assertEqual('ERROR', runtime.health()['status'])
+            self.assertTrue(runtime.read_quarantined)
+            with self.assertRaisesRegex(RuntimeError, 'RESTART_REQUIRED'):
+                runtime.execute(Path('discard-this-order.json'))
+            self.assertEqual('OK', runtime.health()['status'])
+            self.assertFalse(runtime.read_quarantined)
+            execute.assert_not_called()
+            build.assert_called_once()
 
     def test_cancelled_queued_quote_is_skipped_without_killing_the_owner(self):
         release, began = Event(), Event()

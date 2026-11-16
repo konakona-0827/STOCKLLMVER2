@@ -40,6 +40,7 @@ class LiveCoordinator:
         self.future=None;self.pending=None;self.last_refresh=0;self.last_quote_refresh=0;self.quote_cursor=0;self.quotes={};self.events={};self.contexts={};self.snapshot={}
         self.lock=threading.RLock();self.closed=False;self.dataset=None
         self.last_maintenance=0
+        self.broker_read_error=None
 
     def publish(self,**extra):
         with self.lock:
@@ -63,9 +64,42 @@ class LiveCoordinator:
 
     def refresh_account(self):
         with self.lock:
-            self.snapshot=self.runtime.refresh();self.last_refresh=time.monotonic()
+            try:
+                self.snapshot=self.runtime.refresh()
+            except (TimeoutError, RuntimeError) as exc:
+                self.record_broker_read_error(exc)
+                raise
+            finally:
+                self.last_refresh=time.monotonic()
+            if self.broker_read_error is not None:
+                self.record_broker_event('BROKER_READ_RECOVERED', checked_at=self.snapshot.get('checked_at'))
+                self.broker_read_error=None
             self.publish()
             return self.snapshot
+
+    def record_broker_event(self, kind, **detail):
+        from .state import Ledger
+        ledger=Ledger(self.state)
+        try:
+            ledger.feed(datetime.now(TAIPEI).isoformat(),kind,detail)
+        finally:
+            ledger.close()
+
+    def record_broker_read_error(self, exc):
+        from config import redact
+        error=redact(f'{type(exc).__name__}: {exc}')
+        self.last_refresh=time.monotonic()
+        changed=error!=self.broker_read_error
+        self.broker_read_error=error
+        self.quotes={}
+        self.pending=None
+        self.snapshot={**self.snapshot,'status':'ERROR','errors':[error],
+                       'inventory_checked':False,'broker_inventory_verified':False,
+                       'buy_sources_verified':False,'budget_status':'BLOCKED',
+                       'current_buy_budget_twd':'0','buy_block_reasons':['BROKER_READ_UNVERIFIED']}
+        self.publish()
+        if changed:
+            self.record_broker_event('BROKER_READ_ERROR',error=error)
 
     def pulse(self,dataset,previous=None):
         from .company_events import current_events,for_symbol
@@ -90,7 +124,12 @@ class LiveCoordinator:
                 rotated=(exploration+exploration)[self.quote_cursor:self.quote_cursor+size]
                 self.quote_cursor=(self.quote_cursor+size)%len(exploration)
             symbols=list(dict.fromkeys(held+urgent+rotated))
-            self.quotes=self.runtime.fetch_quotes(symbols,dataset) if symbols else {}
+            try:
+                self.quotes=self.runtime.fetch_quotes(symbols,dataset) if symbols else {}
+            except (TimeoutError, RuntimeError) as exc:
+                with self.lock:
+                    self.record_broker_read_error(exc)
+                raise
             source=current_events(self.state/'company_events',datetime.now(TAIPEI))
             self.events={}
             for s in symbols:
@@ -108,7 +147,7 @@ class LiveCoordinator:
 
     def offer(self,result,dataset):
         self.drain()
-        if self.stop.is_set():return
+        if self.stop.is_set() or self.broker_read_error:return
         ready=any(c['state']=='RESEARCH_READY' for c in result['candidates'])
         if self.future is not None:
             if ready:self.pending=(deepcopy(result),dataset)
@@ -125,7 +164,7 @@ class LiveCoordinator:
                 error=dict(status='EXECUTION_CYCLE_ERROR',error=type(exc).__name__+':'+str(exc)[:180])
                 save(self.state/'latest_flow_execution.json',error);self.publish(last_execution=error)
             self.future=None
-        if self.future is None and self.pending is not None and not self.stop.is_set():
+        if self.future is None and self.pending is not None and not self.stop.is_set() and not self.broker_read_error:
             result,dataset=self.pending;self.pending=None
             self.future=self.pool.submit(self.bridge.step,result,dataset,datetime.now(TAIPEI))
 

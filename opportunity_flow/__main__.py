@@ -231,6 +231,13 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                     except Exception as exc:print(json.dumps(dict(broker_health_error=type(exc).__name__+':'+str(exc)[:180])),flush=True)
                 pause(min(interval,30))
                 continue
+            if live is not None and getattr(live,'broker_read_error',None):
+                if time.monotonic()-live.last_refresh>=60:
+                    try:live.refresh_account()
+                    except (TimeoutError, RuntimeError):pass
+                if live.broker_read_error:
+                    pause(min(interval,30))
+                    continue
             if args.command=="watch" and args.public_quotes and not args.quotes:
                 from .public_quotes import fetch
                 try:

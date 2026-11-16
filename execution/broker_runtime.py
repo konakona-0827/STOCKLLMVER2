@@ -21,6 +21,7 @@ class BrokerRuntime:
         self._unresponsive = Event()
         self._submission_lock = Lock()
         self._shutdown_future = None
+        self._recovery_future = None
         self._thread = Thread(target=self._run, name="broker-runtime", daemon=True)
         try:
             self._thread.start()
@@ -40,11 +41,17 @@ class BrokerRuntime:
             return 5.0
         return None  # Never turn an uncertain financial action into a retry.
 
+    @property
+    def read_quarantined(self):
+        return self._unresponsive.is_set()
+
     def _submit(self, kind: str, *args):
         wait_seconds = self._read_wait_seconds(kind, args)
         started = monotonic()
         with self._submission_lock:
-            if kind != 'shutdown' and (self._unresponsive.is_set() or self._shutdown_future is not None):
+            recovering = kind == 'health' and self.read_quarantined and self._recovery_future is None
+            if kind != 'shutdown' and (self._shutdown_future is not None or
+                                       (self.read_quarantined and not recovering)):
                 raise RuntimeError('BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED')
             if kind == 'shutdown' and self._shutdown_future is not None:
                 future = self._shutdown_future
@@ -54,6 +61,9 @@ class BrokerRuntime:
                 future._broker_read_deadline = (
                     started + wait_seconds if kind in ('health', 'quotes') else None
                 )
+                future._broker_recovery = recovering
+                if recovering:
+                    self._recovery_future = future
                 if kind == 'shutdown':
                     self._shutdown_future = future
                 future._timing_queued_ns=perf_counter_ns()
@@ -65,6 +75,13 @@ class BrokerRuntime:
                 # Also reject a late successful read after sleep/resume or a
                 # scheduler pause; it is not fresh execution evidence.
                 raise TimeoutError('BROKER_READ_COMPLETED_AFTER_DEADLINE')
+            if recovering and result.get('inventory_checked') is True and (
+                result.get('broker_balance_twd') is not None and not result.get('errors')
+                and result.get('status') != 'ERROR'
+            ):
+                with self._submission_lock:
+                    if self._shutdown_future is None:
+                        self._unresponsive.clear()
             return result
         except TimeoutError as exc:
             if wait_seconds is None:
@@ -74,6 +91,10 @@ class BrokerRuntime:
             self._unresponsive.set()
             future.cancel()  # Only cancels jobs which have not started.
             raise TimeoutError(f'BROKER_READ_DEADLINE_EXCEEDED:{kind}:RESTART_REQUIRED') from exc
+        finally:
+            if recovering:
+                with self._submission_lock:
+                    self._recovery_future = None
 
     def _check_read_deadline(self, future):
         deadline = getattr(future, '_broker_read_deadline', None)
@@ -160,7 +181,10 @@ class BrokerRuntime:
                     queued_ns=getattr(future,'_timing_queued_ns',None)
                     mark('broker_worker_started',job_kind=kind,queue_wait_ms=round((perf_counter_ns()-queued_ns)/1_000_000,3) if queued_ns is not None else 0)
                     self._check_read_deadline(future)
-                    if kind != 'shutdown' and self._unresponsive.is_set():
+                    recovering = getattr(future, '_broker_recovery', False)
+                    if kind != 'shutdown' and self.read_quarantined and not recovering:
+                        raise RuntimeError('BROKER_READ_TIMEOUT_RESTART_REQUIRED')
+                    if recovering and session is None:
                         raise RuntimeError('BROKER_READ_TIMEOUT_RESTART_REQUIRED')
                     if kind == "shutdown":
                         if quote_market is not None:

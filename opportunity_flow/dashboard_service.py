@@ -47,7 +47,10 @@ class FlowController:
             if self.stop_event.is_set():return
             self.coordinator=LiveCoordinator(self.account_root,self.state,p,self.stop_event,read_only=self.args.read_only,on_change=self.view_changed.set)
             if self.stop_event.is_set():return
-            self.coordinator.refresh_account();self.status='RUNNING'
+            try:self.coordinator.refresh_account()
+            except (TimeoutError, RuntimeError):
+                if not self.coordinator.broker_read_error:raise
+            self.status='RUNNING'
             argv=['watch','--dataset',str(self.args.dataset),'--state',str(self.state),'--live','--llm','--public-quotes','--refresh-daily']
             if self.args.model:argv+=['--model',self.args.model]
             if self.args.read_only:argv+=['--read-only']

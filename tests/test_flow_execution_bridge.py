@@ -200,6 +200,26 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(coordinator.bridge.step.call_args.args[0]['candidates'],self.result['candidates'])
         finally:coordinator.close()
 
+    def test_broker_read_failure_replaces_stale_buy_budget_and_discards_pending_research(self):
+        from opportunity_flow.live import LiveCoordinator
+        state=self.root/'broker_recovery'
+        coordinator=LiveCoordinator('unused',state,self.p,runtime=self.runtime)
+        healthy=dict(checked_at=self.now.isoformat(),budget_status='READY',current_buy_budget_twd='10000')
+        self.runtime.refresh=Mock(side_effect=[TimeoutError('broker health timed out'),healthy])
+        coordinator.snapshot=healthy
+        coordinator.pending=(self.result,self.ds)
+        try:
+            with self.assertRaises(TimeoutError):coordinator.refresh_account()
+            self.assertIsNone(coordinator.pending)
+            self.assertFalse(coordinator.snapshot['broker_inventory_verified'])
+            self.assertEqual('0',read(state/'live_status.json')['buy_budget_twd'])
+            coordinator.offer(self.result,self.ds)
+            self.assertIsNone(coordinator.future)
+            coordinator.refresh_account()
+            self.assertIsNone(coordinator.broker_read_error)
+            self.assertEqual('READY',read(state/'live_status.json')['budget_status'])
+        finally:coordinator.close()
+
     def test_ready_research_is_queued_while_position_worker_is_busy(self):
         from concurrent.futures import Future
         from opportunity_flow.live import LiveCoordinator

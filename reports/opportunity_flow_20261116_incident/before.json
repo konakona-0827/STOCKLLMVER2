@@ -1,0 +1,66 @@
+{
+  "as_of": "2026-11-16T10:57:15+08:00",
+  "retained_status": {
+    "checked_at": "2026-11-15T20:19:24+08:00",
+    "budget_status": "READY",
+    "errors": []
+  },
+  "last_health": {
+    "checked_at": "2026-11-15T20:20:29+08:00",
+    "status": "ERROR",
+    "inventory_checked": true,
+    "errors": [
+      "balance: AccountCheckError: GetBalance failed"
+    ]
+  },
+  "flow_counts": {
+    "calls": 0,
+    "cycles": 0,
+    "handoffs": 0
+  },
+  "formal_counts": {
+    "execution_attempts": 25,
+    "execution_events": 93
+  },
+  "feed_counts": {
+    "PUBLIC_QUOTES": 236,
+    "PUBLIC_QUOTES_ERROR": 2
+  },
+  "feed_first": "2026-11-16T08:30:19.786648+08:00",
+  "feed_last": "2026-11-16T10:56:47.873531+08:00",
+  "first_error_context": [
+    "2026-11-15T20:19:24+08:00 HEALTH OK balance=[REDACTED] inventory_checked=True ai_exceeds_broker=0 unattributed_broker=0 unresolved=0 errors=0",
+    "{\"broker_health_error\": \"TimeoutError:BROKER_READ_DEADLINE_EXCEEDED:health:RESTART_REQUIRED\"}",
+    "2026-11-15T20:20:29+08:00 HEALTH ERROR balance=[REDACTED] inventory_checked=True ai_exceeds_broker=0 unattributed_broker=0 unresolved=0 errors=1",
+    "{\"broker_health_error\": \"RuntimeError:BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED\"}",
+    "{\"broker_health_error\": \"RuntimeError:BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED\"}",
+    "{\"broker_health_error\": \"RuntimeError:BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED\"}"
+  ],
+  "log_errors": [
+    {
+      "kind": "broker_health_error",
+      "error": "TimeoutError:BROKER_READ_DEADLINE_EXCEEDED:health:RESTART_REQUIRED",
+      "count": 1
+    },
+    {
+      "kind": "broker_health_error",
+      "error": "RuntimeError:BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED",
+      "count": 1456
+    },
+    {
+      "kind": "cycle_error",
+      "error": "BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED",
+      "count": 238
+    },
+    {
+      "kind": "public_quote_error",
+      "error": "TimeoutError:The read operation timed out",
+      "count": 1
+    },
+    {
+      "kind": "public_quote_error",
+      "error": "URLError:<urlopen error [Errno 11002] getaddrinfo failed>",
+      "count": 1
+    }
+  ]
+}
