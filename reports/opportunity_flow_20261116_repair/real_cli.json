@@ -1,0 +1,218 @@
+{
+  "summary": {
+    "system": "TW Opportunity Flow",
+    "as_of": "2026-11-16T15:09:08.769270+08:00",
+    "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+    "policy_sha256": "cc4e24eebd7499172a3d16eb62167c8455dedbf2c298582934ffca5d754cb61c",
+    "dataset_manifest_sha256": "f3f102bb5d45d5881e4dafd88a512feef2034ca9628cb3fc36b2fde836dc3acc",
+    "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+    "review_scope": [
+      "6245",
+      "6919",
+      "7799"
+    ],
+    "symbols_observed": 1990,
+    "states": {
+      "NO_SETUP": 395,
+      "SCREENED_OUT": 1306,
+      "DATA_BLOCKED": 181,
+      "ECONOMIC_BLOCKED": 105,
+      "RESEARCH_WATCH": 1,
+      "RESEARCH_REJECT": 1,
+      "RESEARCH_READY": 1
+    },
+    "blockers": {
+      "NO_CURRENT_SETUP": 395,
+      "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1306,
+      "RECENT_HISTORY_GAP_OR_INVALID_BAR": 169,
+      "NET_PROFIT_BELOW_FLOOR": 96,
+      "REWARD_RISK_BELOW_FLOOR": 97,
+      "NET_RETURN_BELOW_FLOOR": 78,
+      "INSUFFICIENT_COMPLETED_HISTORY": 12,
+      "CAPITAL_OR_RISK_CAP": 13,
+      "OBSERVED_TARGET_MISSING": 9
+    },
+    "llm_calls": 2,
+    "cached_theses": 0,
+    "usage": {
+      "input_tokens": 41550,
+      "cached_input_tokens": 0,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 3647,
+      "reasoning_output_tokens": 1444
+    },
+    "usage_unknown_calls": 0,
+    "additional_api_billed_usd": 0,
+    "plan_usage_consumed": true,
+    "orders_sent": 0,
+    "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+    "elapsed_seconds": 74.843
+  },
+  "results": [
+    {
+      "symbol": "6245",
+      "state": "RESEARCH_WATCH",
+      "reasons": [],
+      "researcher": {
+        "counterevidence": "五日內觸及目標需上漲12.61%、約1.92 ATR；已成熟歷史視窗的五日高點變幅中位數為4.22%、第75百分位為7.09%。先前出現104.5不代表期限內能重到。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時零股報價與價差未知",
+          "公司事件未查核",
+          "公司行動未驗證",
+          "資料時點尚未認證"
+        ],
+        "packet_id": "175e20189546dfd1d2464c98ff9dc21b3f6b82491c3403aaee71c5e60b831380",
+        "selected_route_id": null,
+        "symbol": "6245",
+        "thesis": "收復走勢已有反彈跡象，且收盤參考路徑數值合格；五日內重到目標的幅度仍缺乏足夠支持。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "新增已完成交易日顯示價格持續站穩收復區，並重新計算合格路徑及五日目標距離",
+          "查核公司事件與公司行動，確認歷史價格可比較"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "復甦形態已有進展，但近五日漲18.67%，追價風險升高；目標距離1.9158 ATR、需漲12.61%，高於已成熟五日歷史高點變幅的中位數4.22%及第75百分位7.09%。這些重疊視窗不能當作勝率或預測，也不足以單獨否定復甦假說。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時價格與零股報價",
+          "實際買賣價差及成交條件",
+          "公司事件查核",
+          "公司行動及原始價格基礎核實",
+          "資料時點認證"
+        ],
+        "packet_id": "175e20189546dfd1d2464c98ff9dc21b3f6b82491c3403aaee71c5e60b831380",
+        "selected_route_id": null,
+        "symbol": "6245",
+        "thesis": "11月13日收盤回到20日均線上方，復甦假說尚存；唯一合格路徑的五日目標幅度相對歷史變幅偏遠，先觀察後續延續性。另兩條回檔路徑受淨利、淨報酬與報酬風險條件阻擋。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續已完成交易日維持在20日均線上方，且更新後的合格路徑仍符合原數值門檻時重審。",
+          "若價格或已確認支撐改變，重新計算目標距離與成本後再評估五日目標。"
+        ]
+      }
+    },
+    {
+      "symbol": "6919",
+      "state": "RESEARCH_REJECT",
+      "reasons": [],
+      "researcher": {
+        "counterevidence": "二十日報酬為負10.47%、五日量比僅0.64；11月10日曾觸及77.4，之後三個收盤仍約在70。收盤參考路徑重到77.3需上漲10.27%、約1.45 ATR，已超過成熟五日高點變幅第75百分位7.70%；另外兩條合格路徑所需漲幅更高。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時零股報價與價差未知",
+          "公司事件未查核",
+          "公司行動未驗證",
+          "資料時點尚未認證"
+        ],
+        "packet_id": "7d8c23a2af8f17ed444428216d6ae3389db21f2d53b4f0a40929534e15a12dcc",
+        "selected_route_id": null,
+        "symbol": "6919",
+        "thesis": "目前以趨勢延續或回測後迅速重到77.3的假說，受到近期價格與量能表現反證；目標曾被觸及不足以支持五日內再達。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "新增已完成交易日出現持續回升及量能改善時，重新檢查趨勢假說、五日目標距離與合格路徑",
+          "查核公司事件與公司行動，確認價格形態仍可比較"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "20日報酬為負10.47%，與趨勢延續假說相抵；11月10日高點77.4後收70.5，11月13日再由74.1收至70.1，顯示77.3附近反覆受壓。合格末收路徑仍需漲10.27%、距離1.4483 ATR，高於已成熟五日歷史高點變幅第75百分位7.70%；重疊視窗不是勝率或預測。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時價格與零股報價",
+          "實際買賣價差及成交條件",
+          "公司事件查核",
+          "公司行動及原始價格基礎核實",
+          "資料時點認證"
+        ],
+        "packet_id": "7d8c23a2af8f17ed444428216d6ae3389db21f2d53b4f0a40929534e15a12dcc",
+        "selected_route_id": null,
+        "symbol": "6919",
+        "thesis": "目前的多頭趨勢延續假說受到中期跌勢及近期衝高回落的明確反證。雖有合格數值路徑，成本合格不會消除形態反證；近期反彈亦不宜追價。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "後續已完成交易日收盤站穩既有77.3壓力、20日報酬轉正，且更新後仍有符合原門檻的合格路徑時，重建假說。"
+        ]
+      }
+    },
+    {
+      "symbol": "7799",
+      "state": "RESEARCH_READY",
+      "reasons": [],
+      "researcher": {
+        "counterevidence": "收盤478的直接路徑報酬風險比僅0.50、淨利25.06元，未達門檻；合格路徑須先回落至456.5。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時零股報價與價差未知",
+          "公司事件未查核",
+          "公司行動未驗證",
+          "資料時點尚未認證"
+        ],
+        "packet_id": "4c1234e86b8e589bcc33a8cc3fab418558d2f480e8d30c4ff41ee37f0323f7ae",
+        "selected_route_id": "0b7efecca0a08280",
+        "symbol": "7799",
+        "thesis": "近期放量上行使回測支撐的假說值得續查。合格路徑從456.5到494需上漲8.21%、約1.40 ATR；已成熟五日高點變幅中位數8.06%、第75百分位11.94%，僅支持研究可能性，並非達標預測。",
+        "verdict": "RESEARCH",
+        "wait_conditions": [
+          "價格回到456.5或以下時，檢查440支撐是否仍有效，並重算該路徑是否合格",
+          "查核公司事件、公司行動及即時零股報價與價差後，再評估執行條件"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "11月13日觸及494後收478，494是近端壓力；近五日已漲17.73%，現價高於合格回檔進場參考456.5，追價不能沿用該路徑經濟條件。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時價格與零股報價，確認是否符合456.5的既有回檔路徑",
+          "實際買賣價差及成交條件",
+          "公司事件查核",
+          "公司行動及原始價格基礎核實",
+          "資料時點認證"
+        ],
+        "packet_id": "4c1234e86b8e589bcc33a8cc3fab418558d2f480e8d30c4ff41ee37f0323f7ae",
+        "selected_route_id": "0b7efecca0a08280",
+        "symbol": "7799",
+        "thesis": "近期上行與放量支持延續研究。既有456.5回檔路徑合格，至494需漲8.21%、距離1.4019 ATR，接近已成熟五日歷史高點變幅中位數8.06%，低於第75百分位11.94%；重疊歷史視窗不構成勝率或期限內觸價保證。RESEARCH僅供續查。",
+        "verdict": "RESEARCH",
+        "wait_conditions": [
+          "價格回到既有456.5進場參考或以下，且440支撐條件與原路徑經濟條件經更新仍成立時重審執行可行性。",
+          "若後續完成交易日突破並守住494，或跌破440，重新檢查假說及既有路徑。"
+        ]
+      }
+    }
+  ],
+  "actual_broker_reads": false,
+  "actual_orders_sent": 0,
+  "funding_scope": "ISOLATED_SCENARIO_NOT_CURRENT_ACCOUNT",
+  "completed_through": "2026-11-13"
+}

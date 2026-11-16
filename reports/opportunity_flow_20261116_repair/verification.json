@@ -1,0 +1,142 @@
+{
+  "base_commit": "55360049549ad8cfe83d0d363b5eb53d7ad8213a",
+  "source_sha256": {
+    "analysis_service.py": "3cc39f03b18add6f52c27b0a8b6faddead578e34afacc955ba0e45eda1e66eb1",
+    "execution/auto_advice_executor.py": "87355edf6c55f7babc37c51668640a73da35c96cbcbc386de7a4aaee23df7c97",
+    "execution/health_monitor.py": "a4881cfdd86a23d179c4c9605ceb179324bf8494f03dd5252499c21576b74ddc",
+    "opportunity_flow/public_quotes.py": "7c37accbf3d258d3c4f30240d82eeb0f48c2a875e54279df643dcd498763cf08",
+    "tests/test_broker_refresh_snapshot.py": "ad0b3ad0abf07f867343cca44bb0f71636efd62df0e7431bf5fa069a43f347f9",
+    "tests/test_live_buy_budget.py": "069660026ee18dead61eacaeb28560abdcf671d7ebf0f186ec6b23722c4dcc24",
+    "tests/test_flow_execution_bridge.py": "3ec32cf65d884c7b0876b7cc115dce2fc17a4b06a2f2ddadc65dcfcb3d957b7c",
+    "tests/test_public_quote_recovery.py": "d3205f2b268e6a5593d541c1593157c8ff5d5be39fe78a057160d8589883a6bf",
+    "tests/test_flow_startup_recovery.py": "84736d359911d427771587ae099b5d193cac00b247251d943c7a3269409ce447"
+  },
+  "risk_policy_unchanged": true,
+  "official_mis": {
+    "home": "https://mis.twse.com.tw/stock/",
+    "fallback_helper": "https://mis.twse.com.tw/stock/assets/tradeFallback-Du5LDleq.js",
+    "fallback_helper_sha256": "a6debd9d7e137ea9085527a179bd24c0a47e0cfd136f385736cbaedcdf6dc255",
+    "response_schema_probe_sha256": "8a3c4efd3d44fe85cf55009aea5322d2d70716fdaf701879b0d9f641dc4cf067",
+    "actual_after_fix": {
+      "retrieved_at": "2026-11-16T15:11:09.796191+08:00",
+      "quotes": 6,
+      "errors": [],
+      "last_trade_fallback_count": 0,
+      "source_sha256": "1d30c8d9034bc8eeb69c1cbb7d4fa93ca0f419ea252c6883300d339856eed951",
+      "scope": "AFTER_CLOSE_PUBLIC_REFERENCE_NOT_INTRADAY_FALLBACK_OR_EXECUTION_PROOF"
+    }
+  },
+  "real_cli": {
+    "summary": {
+      "system": "TW Opportunity Flow",
+      "as_of": "2026-11-16T15:09:08.769270+08:00",
+      "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+      "policy_sha256": "cc4e24eebd7499172a3d16eb62167c8455dedbf2c298582934ffca5d754cb61c",
+      "dataset_manifest_sha256": "f3f102bb5d45d5881e4dafd88a512feef2034ca9628cb3fc36b2fde836dc3acc",
+      "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+      "review_scope": [
+        "6245",
+        "6919",
+        "7799"
+      ],
+      "symbols_observed": 1990,
+      "states": {
+        "NO_SETUP": 395,
+        "SCREENED_OUT": 1306,
+        "DATA_BLOCKED": 181,
+        "ECONOMIC_BLOCKED": 105,
+        "RESEARCH_WATCH": 1,
+        "RESEARCH_REJECT": 1,
+        "RESEARCH_READY": 1
+      },
+      "blockers": {
+        "NO_CURRENT_SETUP": 395,
+        "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1306,
+        "RECENT_HISTORY_GAP_OR_INVALID_BAR": 169,
+        "NET_PROFIT_BELOW_FLOOR": 96,
+        "REWARD_RISK_BELOW_FLOOR": 97,
+        "NET_RETURN_BELOW_FLOOR": 78,
+        "INSUFFICIENT_COMPLETED_HISTORY": 12,
+        "CAPITAL_OR_RISK_CAP": 13,
+        "OBSERVED_TARGET_MISSING": 9
+      },
+      "llm_calls": 2,
+      "cached_theses": 0,
+      "usage": {
+        "input_tokens": 41550,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3647,
+        "reasoning_output_tokens": 1444
+      },
+      "usage_unknown_calls": 0,
+      "additional_api_billed_usd": 0,
+      "plan_usage_consumed": true,
+      "orders_sent": 0,
+      "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+      "elapsed_seconds": 74.843
+    },
+    "scope": "REAL_MODELS_WITH_OFFICIAL_DAILY_DATA_AND_ISOLATED_FUNDING_NO_HANDOFF"
+  },
+  "actual_broker_readonly": {
+    "started_at": "2026-11-16T15:11:58.234581+08:00",
+    "actual_broker_reads": true,
+    "submission_calls": 0,
+    "cancellation_calls": 0,
+    "checked_at": "2026-11-16T15:12:09+08:00",
+    "status": "PENDING_ORDER",
+    "inventory_checked": true,
+    "broker_inventory_verified": true,
+    "budget_status": "READY",
+    "positive_buy_budget": true,
+    "below_cap_reason_absent": true,
+    "buy_block_reasons": [],
+    "error_count": 0,
+    "finished_at": "2026-11-16T15:12:10.681724+08:00"
+  },
+  "launcher": {
+    "command": "OpportunityFlow.cmd launcher: powershell.exe RunOpportunityFlow.ps1 -Mode Check",
+    "exit_code": 0,
+    "stdout_bytes": 506,
+    "stderr_bytes": 0,
+    "actual_broker_login": false,
+    "orders_sent": 0,
+    "tomorrow_0830_refresh_target": "2026-11-16",
+    "tomorrow_current_dataset_needs_no_refresh": true
+  },
+  "dependencies": {
+    "existing_account_reused": true,
+    "dependencies": {
+      "openai": true,
+      "agents": true,
+      "jsonschema": true,
+      "comtypes": true,
+      "tkinter": true
+    },
+    "executor_enabled": true,
+    "planned_limits_enabled": false,
+    "commission_assumption_twd": 1,
+    "broker_login_tested": false,
+    "orders_sent": 0,
+    "ready": true
+  },
+  "offline_regression": {
+    "tests": 796,
+    "seconds": 103.523,
+    "passed": true,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "7eaeac6d041839fa5a72a30131753ac0b3d0a687eae7266351f2af376da00305",
+    "log_normalization": "Line endings normalized to LF; original local run retained"
+  },
+  "limitations": [
+    "Tomorrow services and candidate eligibility cannot be guaranteed.",
+    "Morning raw MIS rows unavailable: exact recoverable fraction is unknown.",
+    "Actual after-close MIS response did not need fallback; fallback verified against official helper and regression.",
+    "Real CLI uses completed November 13 daily bars and isolated funding, not current execution approval.",
+    "Read-only broker check is separate from live decision handoff; no real submissions or cancellations.",
+    "Sender and partial fills tested through original code with fake SDK and isolated ledger."
+  ],
+  "source_hash_basis": "UTF-8 repository bytes normalized to LF; official HTTP helper hash is unmodified response bytes"
+}

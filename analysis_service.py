@@ -45,11 +45,6 @@ def live_buy_budget(broker_health, daily_reserved, strategy_cap, daily_limit):
     strategy_cap = Decimal(str(strategy_cap))
     minimum = Decimal(str(broker_health.get('minimum_balance_twd') or 0))
     balance = broker_health.get('broker_balance_twd')
-    account_balance = broker_health.get('broker_one_account_balance_twd')
-    if account_balance is None:
-        account_balance = balance
-    if account_balance is None or Decimal(str(account_balance)) < strategy_cap:
-        sources_verified = False
     pending_raw = broker_health.get('pending_buy_reserve_twd')
     invested_raw = broker_health.get('ai_committed_capital_twd')
     if None in (balance, pending_raw, invested_raw):

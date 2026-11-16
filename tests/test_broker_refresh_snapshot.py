@@ -49,7 +49,7 @@ class BrokerRefreshSnapshotTests(unittest.TestCase):
                 errors=['session unavailable']))
             self.assertFalse(snapshot['broker_inventory_verified'])
 
-    def test_account_balance_below_cap_blocks_budget_even_if_buying_power_is_high(self):
+    def test_account_balance_below_cap_does_not_create_a_minimum_balance(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             ExecutionStore(root / 'data' / 'execution' / 'live_execution.sqlite3')
@@ -60,9 +60,9 @@ class BrokerRefreshSnapshotTests(unittest.TestCase):
                 daily_buy_reserved_twd='0', strategy_cap_twd='10000',
                 pending_buy_reserve_twd='0', ai_committed_capital_twd='0',
                 inventory_checked=True, errors=[]))
-            self.assertEqual('0', snapshot['current_buy_budget_twd'])
-            self.assertEqual('BLOCKED', snapshot['budget_status'])
-            self.assertIn('BROKER_ACCOUNT_BELOW_CAP', snapshot['buy_block_reasons'])
+            self.assertEqual('10000', snapshot['current_buy_budget_twd'])
+            self.assertEqual('READY', snapshot['budget_status'])
+            self.assertFalse(snapshot['buy_block_reasons'])
 
     def test_settlement_balance_evidence_survives_refresh(self):
         with tempfile.TemporaryDirectory() as tmp:

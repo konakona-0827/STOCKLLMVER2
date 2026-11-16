@@ -25,7 +25,7 @@ class LiveBuyBudgetTests(unittest.TestCase):
             Decimal('0'), Decimal('10000'), Decimal('20000'))
         self.assertEqual(Decimal('5000'), result['available'])
 
-    def test_broker_account_balance_below_configured_cap_blocks_new_buy(self):
+    def test_broker_account_balance_below_cap_does_not_block_verified_buying_power(self):
         result = live_buy_budget(
             dict(status='OK', errors=[], broker_balance_twd='30000',
                  broker_one_account_balance_twd='9000',
@@ -34,8 +34,8 @@ class LiveBuyBudgetTests(unittest.TestCase):
                  strategy_cap_twd='10000', daily_buy_limit_twd='20000',
                  daily_buy_reserved_twd='0'),
             Decimal('0'), Decimal('10000'), Decimal('20000'))
-        self.assertEqual(Decimal('0'), result['available'])
-        self.assertEqual('BLOCKED', result['status'])
+        self.assertEqual(Decimal('10000'), result['available'])
+        self.assertEqual('READY', result['status'])
 
     def test_budget_is_lowest_of_broker_strategy_and_daily_remaining(self):
         result = live_buy_budget(

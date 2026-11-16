@@ -347,6 +347,14 @@ class BridgeTests(unittest.TestCase):
         self.assertFalse(observed['verified']);self.assertIsNone(observed['realized_slippage_bps'])
 
     def test_actual_existing_executor_records_only_confirmed_partial_fill(self):
+        self.check_existing_executor_partial_fill('30000','30000')
+
+    def test_below_cap_balance_reaches_sdk_with_only_available_cash_and_confirmed_fills(self):
+        self.runtime.snapshot.update(current_buy_budget_twd=3373)
+        self.runtime.context['available_cash_twd']=3373
+        self.check_existing_executor_partial_fill('9000','8373')
+
+    def check_existing_executor_partial_fill(self,account_balance,available_cash):
         from execution.auto_advice_executor import execute_advice_file
         from execution.account_guard import BuyingPower
         from execution.account_snapshot import ExecutionAccountSnapshot
@@ -358,7 +366,7 @@ class BridgeTests(unittest.TestCase):
         cfg=root/'config.json';save(cfg,dict(enabled=True,min_available_to_buy_twd=5000,min_buy_fee_reserve_twd=20,
             minimum_commission_twd=1,max_daily_buy_twd=30000,observe_seconds=0))
         advice=root/'advice.json';save(advice,payload)
-        balance=BuyingPower(True,True,Decimal(30000),Decimal(30000),Decimal(30000),'test')
+        balance=BuyingPower(True,True,Decimal(account_balance),Decimal(available_cash),Decimal(available_cash),'test')
         snapshot=ExecutionAccountSnapshot(self.at,buying_power=balance)
         seq='1234567890123';fields=['']*21
         fields[0],fields[1],fields[2],fields[3]=seq,'TC','D','N'
