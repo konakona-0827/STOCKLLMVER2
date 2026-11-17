@@ -148,6 +148,20 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(r["summary"]["cached_theses"],1)
         self.assertEqual(r["summary"]["llm_calls"],0)
 
+    def test_disclosure_refresh_reuses_review_until_content_changes(self):
+        fake=FakeRunner()
+        at=stamp(self.at)
+        folder=self.root/"state"
+        event=dict(status="SOURCE_REVIEW_REQUIRED",checked_at=at.isoformat(),announcements=[],blockers=[])
+        run_cycle(self.ds,at,self.p,folder,runner=fake,use_llm=True,events={"1111":event})
+        later=at+timedelta(minutes=30)
+        refreshed={**event,"checked_at":later.isoformat()}
+        cached=run_cycle(self.ds,later,self.p,folder,runner=fake,use_llm=True,events={"1111":refreshed})
+        self.assertEqual(cached["summary"]["llm_calls"],0)
+        changed={**refreshed,"announcements":[{"title":"New operating update"}]}
+        run_cycle(self.ds,later,self.p,folder,runner=fake,use_llm=True,events={"1111":changed})
+        self.assertEqual(len(fake.calls),4)
+
     def test_policy_change_requires_new_model_review(self):
         fake=FakeRunner()
         run_cycle(self.ds,self.at,self.p,self.root/"state",runner=fake,use_llm=True)

@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import Mock,patch
 
 from opportunity_flow.common import TAIPEI,save,read,policy
-from opportunity_flow.dashboard_service import FlowController,FlowViewService,project_research
+from opportunity_flow.dashboard_service import FlowController,FlowViewService,broker_read_message,project_research
 from opportunity_flow.fees import correct_legacy_capital_fee,fee_status,SOURCE
 
 
@@ -38,6 +38,13 @@ class FakeController:
         self.stop_event=threading.Event();self.status='STOPPED';self.error='';self.running=False;self.coordinator=None
         self.start=Mock(return_value=True);self.stop=Mock();self.request_update=Mock(return_value=True)
         self.configure_position=Mock(return_value=dict(symbol='1111',ai_qty=10,user_qty=20,enabled=True))
+
+
+class BrokerReadMessageTests(unittest.TestCase):
+    def test_timeout_and_recovery_messages_use_current_broker_errors(self):
+        self.assertIn('券商查詢逾時',broker_read_message({'errors':['TimeoutError: BROKER_READ_DEADLINE_EXCEEDED:health:RESTART_REQUIRED']}))
+        self.assertIn('券商重新核對尚未通過',broker_read_message({'errors':['BROKER_READ_RECOVERY_UNVERIFIED']}))
+        self.assertEqual(broker_read_message({'errors':[]}), '')
 
 
 class FakeView:

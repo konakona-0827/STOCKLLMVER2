@@ -73,6 +73,7 @@ class BridgeTests(unittest.TestCase):
             account_context={'1111':self.context})
         self.c=next(c for c in self.result['candidates'] if c['symbol']=='1111')
         self.runtime=FakeRuntime(self.p,self.at,self.quote,self.context)
+        self.runtime.disclosures={'1111':event}
         self.bridge=ExecutionBridge(self.runtime,self.root/'live',self.p,clock=lambda:self.now)
 
     def validate(self,c=None,q=None,s=None,context=None,**kwargs):
@@ -131,6 +132,40 @@ class BridgeTests(unittest.TestCase):
         for update in ({'source_market_number':6},{'is_trial':True},{'quote_status':'PUBLIC_REFERENCE'},
                        {'quote_timestamp':(self.now-timedelta(seconds=121)).isoformat()}):
             with self.subTest(update=update),self.assertRaises(ValueError):self.validate(q={**self.quote,**update})
+
+    def test_formal_quote_failure_saves_status_and_skips_pretrade(self):
+        self.runtime.quote.update(quote_status='TRIAL',is_trial=True)
+        self.runtime.pretrade=Mock(wraps=self.runtime.pretrade)
+        blocked=self.bridge.step(self.result,self.ds,self.now)['blocked'][0]
+        self.assertEqual(blocked['reason'],'LIVE_NON_TRIAL_QUOTE_REQUIRED')
+        self.assertEqual(blocked['quote_evidence']['quote_status'],'TRIAL')
+        self.assertIs(blocked['quote_evidence']['is_trial'],True)
+        self.runtime.pretrade.assert_not_called()
+        self.assertFalse(self.runtime.sent)
+
+    def test_fresh_equivalent_disclosures_keep_the_original_review_valid(self):
+        c=deepcopy(self.c);packet=c['review']['packet']
+        frozen=packet['evidence'][3]['facts']['event_check']
+        frozen['checked_at']=(self.now-timedelta(minutes=75)).isoformat()
+        from opportunity_flow.common import digest
+        packet['packet_id']=digest({k:v for k,v in packet.items() if k!='packet_id'})
+        for role in ('researcher','challenger'):c['review'][role]['packet_id']=packet['packet_id']
+        with self.assertRaisesRegex(ValueError,'COMPANY_EVENT_EVIDENCE_STALE'):self.validate(c=c)
+        fresh=self.runtime.disclosures['1111']
+        self.assertTrue(self.validate(c=c,current_event=fresh)['eligible'])
+
+    def test_company_disclosure_changed_during_pretrade_blocks_dispatch(self):
+        original=self.runtime.pretrade
+
+        def review(decisions,candidates):
+            self.runtime.disclosures['1111']={**self.runtime.disclosures['1111'],
+                'blockers':['UPCOMING_CORPORATE_ACTION_REQUIRES_NEW_PLAN']}
+            return original(decisions,candidates)
+
+        self.runtime.pretrade=review
+        blocked=self.bridge.step(self.result,self.ds,self.now)['blocked'][0]
+        self.assertEqual(blocked['reason'],'COMPANY_EVENT_CHANGED_REQUIRES_REVIEW')
+        self.assertFalse(self.runtime.sent)
 
     def test_review_expiry_and_session_change_are_visible(self):
         c=deepcopy(self.c);c['review']['reviewed_at']=(self.now-timedelta(seconds=14401)).isoformat()

@@ -33,6 +33,7 @@ REASONS = {
     'CROSSED_QUOTE': ('券商回傳的買一高於賣一，價差無法使用。', '等買賣價重新核對。'),
     'FROZEN_PLAN_ECONOMICS_CHANGED_REQUIRES_REVIEW': ('刷新行情後，原計畫的費後收益或風險已不符。', '用新行情重新驗證計畫。'),
     'COMPANY_EVENTS_AND_TRADING_STATUS_NOT_CHECKED': ('研究資料仍缺少完整的公司事件與交易狀態核對。', '等公司事件與交易狀態更新後再核對。'),
+    'COMPANY_EVENT_CHANGED_REQUIRES_REVIEW': ('下單前的公司事件資料與研究時不同。', '依最新公司事件重新研究原計畫。'),
     'CORPORATE_ACTIONS_NOT_VERIFIED': ('研究卡的歷史價格尚未完成公司行動驗證。', ''),
     'EVENT_CHECK_STALE_OR_FUTURE': ('公司事件查核時間已過期或異常。', '等公司事件查核更新。'),
     'EVENT_CHECK_TIME_INVALID': ('公司事件查核時間無法辨識。', '等公司事件資料重新取得。'),

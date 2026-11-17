@@ -13,6 +13,11 @@ SOURCES={
 }
 
 
+def event_facts(event):
+    """Compare disclosure content separately from the time it was fetched."""
+    return {key:value for key,value in (event or {}).items() if key!='checked_at'}
+
+
 def action_date(value):
     s=str(value).strip().replace('/','').replace('-','')
     if len(s)==7 and s.isdigit():
@@ -78,5 +83,5 @@ def for_symbol(snapshot,symbol,exchange,at,holding_days):
         source_urls=[snapshot['sources'][k] for k in keys],announcements=news,upcoming_actions=actions,
         blockers=sorted(set(missing+hazards)),historical_corporate_actions_verified=False,
         limitations=['CURRENT_DISCLOSURE_FEED_NOT_COMPLETE_NEWS_HISTORY','RAW_UNADJUSTED_HISTORY_REMAINS_UNCERTIFIED'])
-    facts['evidence_id']='EVENTS:'+digest({k:v for k,v in facts.items() if k!='checked_at'})[:20]
+    facts['evidence_id']='EVENTS:'+digest(event_facts(facts))[:20]
     return facts

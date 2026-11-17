@@ -147,6 +147,15 @@ class FlowController:
         return self.runtime_action(work,write=True)
 
 
+def broker_read_message(health):
+    errors=(health or {}).get('errors') or []
+    if any('BROKER_READ_DEADLINE_EXCEEDED' in str(error) for error in errors):
+        return '券商查詢逾時，新買暫停。系統會重新核對帳務，成功後重算可用額。'
+    if any('BROKER_READ_RECOVERY_UNVERIFIED' in str(error) for error in errors):
+        return '券商重新核對尚未通過，新買暫停。等待可驗證的餘額及庫存。'
+    return ''
+
+
 def project_research(flow,names=None):
     """Display-only old Dashboard shape; never an advice/execution payload."""
     names=names or {};summary=flow.get('summary',{})

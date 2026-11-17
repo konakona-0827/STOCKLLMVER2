@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 
 from .common import TAIPEI,canonical,digest,save,stamp
+from .company_events import event_facts
 from .data import validate_quote
 from .engine import economics
 from .review import combine,validate,verify_packet
@@ -27,7 +28,7 @@ def verified_snapshot(snapshot,at,*,need_buying_power=True):
         raise ValueError('CURRENT_ACCOUNT_ALLOWANCE_PAUSED')
 
 
-def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,support_policy='advisory'):
+def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,support_policy='advisory',current_event=None):
     """Return the exact reviewed route after fresh account/book checks, not a BUY guess."""
     review=candidate.get('review') or {};packet=review.get('packet')
     if not packet:raise ValueError('FROZEN_RESEARCH_MISSING')
@@ -56,9 +57,13 @@ def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,su
     if support_policy!='advisory' and not (facts.get('point_in_time_certified') and facts.get('corporate_actions_verified')):
         raise ValueError('EXISTING_STRICT_RESEARCH_POLICY_NOT_SATISFIED')
     events=facts.get('event_check') or {}
+    if current_event is not None:
+        if event_facts(current_event)!=event_facts(events):
+            raise ValueError('COMPANY_EVENT_CHANGED_REQUIRES_REVIEW')
+        events=current_event
     if events.get('status') not in ('SOURCE_REVIEW_REQUIRED','CHECKED_CLEAR') or events.get('blockers'):
         raise ValueError('CURRENT_COMPANY_EVENT_CHECK_REQUIRED')
-    if not events.get('source_url') or not 0<=(stamp(at)-stamp(events['checked_at'])).total_seconds()<=3600:
+    if not events.get('source_url') or not events.get('checked_at') or not 0<=(stamp(at)-stamp(events['checked_at'])).total_seconds()<=3600:
         raise ValueError('COMPANY_EVENT_EVIDENCE_STALE')
     route=next((r for r in packet['evidence'][2]['facts'] if r['route_id']==route_id and r['eligible']),None)
     if not route:raise ValueError('REVIEWED_ROUTE_NOT_ELIGIBLE')
@@ -289,11 +294,14 @@ class ExecutionBridge:
         for candidate in result['candidates']:
             if candidate['state']!='RESEARCH_READY':continue
             symbol=candidate['symbol']
+            quotes={}
             try:
                 quotes=runtime.fetch_quotes([symbol],dataset)
                 context=runtime.contexts(dataset,quotes)[symbol]
+                events=runtime.disclosures.get(symbol,{})
                 route=validate_buy(candidate,quotes.get(symbol),runtime.snapshot,context,p,self.now(),
-                    planned_limits=runtime.config.planned_limits_enabled,support_policy=runtime.support_policy)
+                    planned_limits=runtime.config.planned_limits_enabled,support_policy=runtime.support_policy,
+                    current_event=events)
                 c=runtime.candidates([symbol],quotes,dataset)[0]
                 c.update(flow_plan=dict(packet_id=candidate['review']['packet']['packet_id'],route_id=route['route_id'],
                     limit_cap=route['entry'],policy=p,expected_ai_qty=context['held_qty'],
@@ -302,7 +310,7 @@ class ExecutionBridge:
                     handoff_key=digest([candidate['review']['packet']['packet_id'],route['route_id']]),
                     max_buy_qty=route['economics']['quantity'],
                     pricing_policy='PLANNED_LIMIT' if runtime.config.planned_limits_enabled else 'AT_QUOTE',
-                    independent_plan_reviews=candidate['review'],company_disclosures=candidate['review']['packet']['evidence'][3]['facts']['event_check'])
+                    independent_plan_reviews=candidate['review'],company_disclosures=events)
                 decision=buy_decision(candidate,route,quotes[symbol])
                 from execution.timing import current_trace,mark
                 if current_trace() is not None:current_trace().enable(getattr(runtime,'root',self.state))
@@ -317,12 +325,20 @@ class ExecutionBridge:
                 runtime.refresh();quotes=runtime.fetch_quotes([symbol],dataset)
                 context=runtime.contexts(dataset,quotes)[symbol]
                 validate_buy(candidate,quotes.get(symbol),runtime.snapshot,context,runtime.effective_policy(self.policy),self.now(),
-                    planned_limits=runtime.config.planned_limits_enabled,support_policy=runtime.support_policy)
+                    planned_limits=runtime.config.planned_limits_enabled,support_policy=runtime.support_policy,
+                    current_event=runtime.disclosures.get(symbol,{}))
                 current=runtime.candidates([symbol],quotes,dataset)[0]
                 current.update({k:c[k] for k in ('flow_plan','handoff_key','pricing_policy')})
                 decisions[0]['reference_price']=current['last_price']
                 reports.append(self.dispatch(payload_for(decisions,[current],runtime.account(),self.now(),review=review)))
                 break  # Next BUY uses a newly reconciled account, not this budget snapshot.
             except (ValueError,KeyError,TypeError,ArithmeticError) as exc:
-                blocked.append(dict(symbol=symbol,reason=str(exc)))
+                reason=str(exc)
+                block=dict(symbol=symbol,reason=reason)
+                if reason in {'ODDLOT_QUOTE_MISSING','LIVE_NON_TRIAL_QUOTE_REQUIRED','VERIFIED_ODDLOT_QUOTE_BASIS_REQUIRED',
+                              'QUOTE_SYMBOL_OR_EXCHANGE_MISMATCH','QUOTE_STALE_OR_FUTURE','CROSSED_QUOTE','BROKER_MARKET_NOT_VERIFIED'}:
+                    quote=quotes.get(symbol) or {}
+                    block['quote_evidence']={key:quote.get(key) for key in ('quote_status','is_trial','quote_timestamp',
+                        'quote_basis','data_age_seconds','source_market_number','retrieval_method')}
+                blocked.append(block)
         return dict(reports=reports,blocked=blocked,account_checked_at=(runtime.snapshot or {}).get('checked_at'))

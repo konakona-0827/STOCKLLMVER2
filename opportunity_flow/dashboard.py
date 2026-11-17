@@ -11,7 +11,7 @@ from tkinter import ttk,messagebox
 from dashboard import Dashboard,update_detail_text
 from .candidate_explanation import display_plan,explain,research_card
 from .common import TAIPEI,policy,read
-from .dashboard_service import FlowViewService,STATE_LABELS
+from .dashboard_service import FlowViewService,STATE_LABELS,broker_read_message
 
 
 class FlowDashboard(Dashboard):
@@ -330,12 +330,14 @@ class FlowDashboard(Dashboard):
         health=self.last_health or {};summary=self.service.flow.get('summary',{})
         mode='只讀演練' if self.args.read_only else '正式執行器'
         error=self.controller.error or self.last_error
+        broker_message=broker_read_message(health)
         self.status_text.set(f'{datetime.now(TAIPEI):%m/%d %H:%M:%S} 台灣時間｜{mode}｜FLOW {status}｜研究資料 {summary.get("as_of") or "待建立"}\n'
-            f'券商核對 {health.get("checked_at") or "尚未核對"}｜新買可用額 {health.get("current_buy_budget_twd","待核對")}｜最近錯誤：{error or "無"}')
+            f'券商核對 {health.get("checked_at") or "尚未核對"}｜新買可用額 {health.get("current_buy_budget_twd","待核對")}｜最近錯誤：{error or broker_message or "無"}'
+            + (f'\n{broker_message}' if error and broker_message else ''))
         self.system_status_text.set('FLOW 主輪詢約30秒；全母體數值約60秒或輸入更新時重算；券商／持倉約60秒。\n'
             '每批最多3檔、兩個獨立角色；持倉各自重審60～3600秒。\n'
             '畫面依工作完成通知更新，5秒檢查補漏；健康檢查由按鈕主動執行。\n'
-            f'狀態：{status}；錯誤：{error or "無"}；UI讀取錯誤：{"；".join(self.service.read_errors) or "無"}\n'
+            f'狀態：{status}；錯誤：{error or "無"}；券商核對錯誤：{"；".join(map(str,health.get("errors") or [])) or "無"}；UI讀取錯誤：{"；".join(self.service.read_errors) or "無"}\n'
             f'CLI累計用量：{json.dumps(self.service.usage,ensure_ascii=False)}')
         self.run_button.configure(state='disabled' if self.controller.status=='STOPPING' else 'normal')
         self.action_buttons['開始自動掃描'].configure(state='disabled' if self.controller.running else 'normal')

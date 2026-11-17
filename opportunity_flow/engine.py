@@ -6,6 +6,7 @@ from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
 import math
 
 from .common import canonical, digest, stamp
+from .company_events import event_facts
 from .data import validate_quote,validate_reference
 
 
@@ -219,10 +220,13 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
         source_lineage_sha256=digest(source_rows), source_history_sha256=digest(bars),
         decision_scope="RESEARCH_ONLY_NOT_ORDER_PERMISSION", selected_routes=[r["route_id"] for r in eligible])
     packet = {**core, "packet_id": digest(core)}
-    # Quote time, last-trade volume and sub-threshold price noise do not retrigger an LLM.
-    material = dict(structure=digest({**core,"evidence":evidence[:2]+evidence[3:]}),
+    # Keep the timestamp in the frozen packet for audit, but ignore it for repeat research.
+    limits = evidence[3]
+    stable_limits = {**limits, "facts": {**limits["facts"],
+        "event_check": event_facts(limits["facts"]["event_check"])}}
+    material = dict(structure=digest({**core,"evidence":[*evidence[:2],stable_limits]}),
         price_band=math.floor(math.log((q["ask"] if q else price_reference["price"])/f["close"])/math.log(1+p["material_price_change_fraction"])) if q or price_reference else "NO_QUOTE",
-        eligible_routes=[r["kind"] for r in eligible], quote_problem=quote_error, event=event)
+        eligible_routes=[r["kind"] for r in eligible], quote_problem=quote_error)
     base.update(packet=packet, material_key=digest(material), quote=q, quote_problem=quote_error,
                 hypothetical_reference=q is None, input_characters=len(canonical(packet)))
     return base
