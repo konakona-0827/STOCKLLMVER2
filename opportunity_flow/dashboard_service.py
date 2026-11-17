@@ -16,7 +16,7 @@ STATE_LABELS={
     'ECONOMIC_BLOCKED':'費後／風險未過','REVIEW_PENDING':'等待研究','REVIEW_IN_FLIGHT':'研究進行中',
     'REVIEW_ERROR':'研究錯誤','REVIEW_ERROR_BACKOFF':'研究錯誤退避','REVIEW_SERVICE_BACKOFF':'模型服務退避',
     'REVIEW_DEFERRED_SERVICE_ERROR':'模型服務失敗延後','RESEARCH_READY':'雙方研究通過',
-    'RESEARCH_WATCH':'研究觀察','RESEARCH_REJECT':'研究否決',
+    'RESEARCH_WATCH':'研究觀察','RESEARCH_REJECT':'研究否決','PLAN_DISAGREEMENT':'研究計畫分歧',
 }
 
 

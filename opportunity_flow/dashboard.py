@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import ttk,messagebox
 
 from dashboard import Dashboard,update_detail_text
+from .candidate_explanation import display_plan,explain,research_card
 from .common import TAIPEI,policy,read
 from .dashboard_service import FlowViewService,STATE_LABELS
 
@@ -46,21 +47,30 @@ class FlowDashboard(Dashboard):
         ttk.Label(filters,text='顯示：').pack(side='left')
         self.flow_filter=tk.StringVar(value='具型態')
         selector=ttk.Combobox(filters,textvariable=self.flow_filter,state='readonly',width=18,
-            values=('具型態','全部','等待研究','雙方研究通過','費後／風險未過','資料待補','研究錯誤'))
+            values=('具型態','全部','等待研究','雙方研究通過','研究觀察','研究否決','研究計畫分歧',
+                    '費後／風險未過','資料待補','帳戶條件阻擋','研究錯誤'))
         selector.pack(side='left',padx=5);selector.bind('<<ComboboxSelected>>',lambda e:self.render_flow_rows())
         ttk.Label(filters,text='代號／名稱：').pack(side='left',padx=(12,0))
         self.flow_search=tk.StringVar();ttk.Entry(filters,textvariable=self.flow_search,width=20).pack(side='left',padx=5)
         self.flow_search.trace_add('write',lambda *a:self.render_flow_rows())
-        ttk.Label(filters,text='雙擊研究卡查看兩方理由、固定計畫與未通過原因。').pack(side='left',padx=12)
+        ttk.Label(filters,text='選取股票看說明，雙擊查看完整研究卡。').pack(side='left',padx=12)
         grid=ttk.Frame(self.flow_page);grid.pack(fill='both',expand=True,padx=10,pady=(0,10))
-        columns=('symbol','name','state','rank','entry','stop','target','qty','reason')
+        columns=('symbol','name','state','rank','entry','stop','target','qty','reason','wait')
         self.flow_tree=ttk.Treeview(grid,columns=columns,show='headings')
-        for key,label,width in zip(columns,('代號','名稱','FLOW 狀態','排序分數','固定入場','失效價','目標價','股數','未過原因／等待條件'),(80,130,150,95,90,90,90,65,450)):
-            self.flow_tree.heading(key,text=label);self.flow_tree.column(key,width=width,minwidth=60,stretch=key=='reason')
+        labels=('代號','名稱','FLOW 狀態','排序分數','入場','失效價','目標價','股數','目前情況','重新評估條件')
+        for key,label,width in zip(columns,labels,(72,105,132,85,74,74,74,78,320,320)):
+            self.flow_tree.heading(key,text=label)
+            self.flow_tree.column(key,width=width,minwidth=60,stretch=key in ('reason','wait'))
         y=ttk.Scrollbar(grid,orient='vertical',command=self.flow_tree.yview);x=ttk.Scrollbar(grid,orient='horizontal',command=self.flow_tree.xview)
         self.flow_tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
         grid.columnconfigure(0,weight=1);grid.rowconfigure(0,weight=1)
         self.flow_tree.grid(row=0,column=0,sticky='nsew');y.grid(row=0,column=1,sticky='ns');x.grid(row=1,column=0,sticky='ew')
+        self.flow_selection=tk.StringVar()
+        explanation=ttk.Label(self.flow_page,textvariable=self.flow_selection,justify='left',padding=(10,6))
+        explanation.pack(fill='x',padx=10,pady=(0,6))
+        self.flow_page.bind('<Configure>',lambda event:explanation.configure(wraplength=max(320,event.width-40)))
+        self.flow_tree.bind('<<TreeviewSelect>>',self.update_flow_selection)
+        self.update_flow_selection()
         self.flow_tree.bind('<Double-1>',self.show_research_card)
         self.health_page=ttk.Frame(self.notebook);self.notebook.add(self.health_page,text='健康檢查')
         self.health_summary=tk.StringVar(value='尚未執行健康檢查。檢查會核對券商、帳本及流程狀態；平時畫面同步不會執行這項檢查。')
@@ -406,15 +416,26 @@ class FlowDashboard(Dashboard):
             if choice=='具型態' and not c.get('packet'):continue
             if choice=='研究錯誤' and not ('ERROR' in state or 'BACKOFF' in state):continue
             if choice not in ('具型態','全部','研究錯誤') and choice!=label:continue
-            packet=(c.get('review') or {}).get('packet') or c.get('packet') or {}
-            routes=(packet.get('evidence') or [{},{},{}])[2].get('facts',[]) if len(packet.get('evidence',[]))>2 else []
-            route=next((r for r in routes if r.get('route_id')==c.get('selected_route_id')),None) or next((r for r in routes if r.get('eligible')),None) or (routes[0] if routes else {})
-            reasons=list(c.get('reasons',[]))
-            for role in ('researcher','challenger'):reasons.extend(((c.get('review') or {}).get(role) or {}).get('wait_conditions',[]))
+            packet,route,_=display_plan(c)
+            reasons,waiting=explain(c,route,packet.get('policy') or {})
+            qty='無合格股數' if 'CAPITAL_OR_RISK_CAP' in route.get('blockers',[]) else (route.get('economics') or {}).get('quantity','--')
             self.flow_tree.insert('','end',iid=symbol,values=(symbol,name,label,c.get('rank_score','--'),route.get('entry','--'),
-                (route.get('stop') or {}).get('price','--'),(route.get('target') or {}).get('price','--'),
-                (route.get('economics') or {}).get('quantity','--'),'；'.join(reasons)))
+                (route.get('stop') or {}).get('price','--'),(route.get('target') or {}).get('price','--'),qty,reasons[0],waiting[0]))
         if selected and self.flow_tree.exists(selected):self.flow_tree.selection_set(selected)
+        self.update_flow_selection()
+
+    def update_flow_selection(self,event=None):
+        selected=self.flow_tree.selection()
+        if not selected or selected[0] not in self.flow_rows:
+            self.flow_selection.set('選取一檔股票，這裡會顯示目前情況及重新評估條件。')
+            return
+        symbol=selected[0]
+        candidate=self.flow_rows[symbol]
+        packet,route,_=display_plan(candidate)
+        reasons,waiting=explain(candidate,route,packet.get('policy') or {})
+        name=self.service.names.get(symbol,'')
+        self.flow_selection.set(f"{symbol} {name}　目前情況　{' '.join(reasons[:2])}\n"
+                                f"重新評估條件　{waiting[0]}")
 
     def flow_detail(self):
         return ('TW Opportunity Flow：研究、模型錯誤與正式委託分開記錄。\n\n'
@@ -427,7 +448,12 @@ class FlowDashboard(Dashboard):
     def show_research_card(self,event=None):
         selected=self.flow_tree.selection()
         if not selected:return
-        self.show_text('研究卡｜'+selected[0],json.dumps(self.flow_rows[selected[0]],ensure_ascii=False,indent=2))
+        symbol=selected[0]
+        candidate=self.flow_rows[symbol]
+        label=STATE_LABELS.get(candidate['state'],candidate['state'])
+        window=self.show_text('研究卡｜'+symbol,research_card(symbol,self.service.names.get(symbol,''),label,candidate))
+        ttk.Button(window,text='查看原始研究紀錄',command=lambda:self.show_text(
+            '原始研究紀錄｜'+symbol,json.dumps(candidate,ensure_ascii=False,indent=2))).pack(side='bottom',pady=6)
 
     def show_text(self,title,content):
         window=tk.Toplevel(self.root);window.title(title);window.geometry('1050x720')

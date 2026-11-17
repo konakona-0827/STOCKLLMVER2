@@ -20,12 +20,16 @@ def scene():
     at=datetime.now(TAIPEI).isoformat()
     route=dict(route_id='fixture-route',entry=100,stop=dict(price=98),target=dict(price=108),eligible=True,
         economics=dict(quantity=10),blockers=[])
-    packet=dict(evidence=[{},{},dict(facts=[route])])
+    packet=dict(evidence=[{},{},dict(evidence_id='E_ECONOMICS',facts=[route])])
+    rejected=deepcopy(packet)
+    rejected['policy']={'minimum_net_profit_twd':50}
+    rejected['evidence'][2]['facts'][0].update(eligible=False,blockers=['NET_PROFIT_BELOW_FLOOR'],
+                                              economics=dict(quantity=10,net_profit_twd=23.5))
     return dict(summary=dict(as_of=at,symbols_observed=3,states=dict(RESEARCH_READY=1,ECONOMIC_BLOCKED=1,DATA_BLOCKED=1)),
         candidates=[dict(symbol='1111',state='RESEARCH_READY',packet=deepcopy(packet),rank_score=.15,reasons=[],selected_route_id='fixture-route',
             quote=dict(last_price=100,bid=99.9,ask=100,quote_timestamp=at),
             review=dict(packet=deepcopy(packet),researcher=dict(thesis='支撐確認',wait_conditions=[]),challenger=dict(thesis='風險已列明',wait_conditions=[]))),
-            dict(symbol='2222',state='ECONOMIC_BLOCKED',packet=deepcopy(packet),rank_score=.08,reasons=['NET_PROFIT_BELOW_FLOOR']),
+            dict(symbol='2222',state='ECONOMIC_BLOCKED',packet=rejected,rank_score=.08,reasons=['NET_PROFIT_BELOW_FLOOR']),
             dict(symbol='3333',state='DATA_BLOCKED',packet=None,reasons=['RECENT_HISTORY_GAP_OR_INVALID_BAR'])])
 
 
@@ -266,6 +270,32 @@ class DashboardReuseTests(unittest.TestCase):
         first=self.app.top_tree.item(self.app.top_tree.get_children()[0],'values')
         self.assertEqual(first[6],'雙方研究通過');self.assertEqual(first[7],'--')
         self.assertEqual(self.app.result['decision']['decisions'],[])
+
+    def test_rejected_plan_shows_its_value_and_recheck_threshold_instead_of_a_code(self):
+        values=self.app.flow_tree.item('2222','values')
+        self.assertIn('費後淨利 NT$ 23.50，低於門檻 NT$ 50.00',values[-2])
+        self.assertIn('須達 NT$ 50.00',values[-1])
+        self.app.flow_tree.selection_set('2222')
+        self.app.update_flow_selection()
+        self.assertIn('目前情況',self.app.flow_selection.get())
+        self.app.show_research_card()
+        card=next(w for w in self.root.winfo_children() if isinstance(w,tk.Toplevel))
+        content=next(w for w in card.winfo_children() if isinstance(w,tk.Text)).get('1.0','end')
+        self.assertIn('本輪試算範例',content)
+        self.assertIn('原始檢查紀錄\nNET_PROFIT_BELOW_FLOOR',content)
+        self.assertTrue(any(w.winfo_class()=='TButton' and w.cget('text')=='查看原始研究紀錄' for w in card.winfo_children()))
+
+    def test_wait_condition_uses_review_and_pending_order_has_its_own_explanation(self):
+        from opportunity_flow.candidate_explanation import display_plan,explain
+        watcher=deepcopy(self.service.flow['candidates'][0])
+        watcher.update(state='RESEARCH_WATCH',selected_route_id=None)
+        watcher['review']['challenger'].update(verdict='WATCH',wait_conditions=['賣一回到 100 元時重審'])
+        packet,route,_=display_plan(watcher)
+        self.assertEqual(explain(watcher,route,packet.get('policy',{}))[1][0],'賣一回到 100 元時重審')
+        pending=dict(state='ACCOUNT_BLOCKED',reasons=['PENDING_BROKER_ORDER'])
+        reasons,waiting=explain(pending,{},{})
+        self.assertIn('委託待核對',reasons[0])
+        self.assertIn('成交、撤單或到期',waiting[0])
 
     def test_holdings_editor_uses_existing_total_quantity_and_new_handoff_backend(self):
         self.app.configure_ai_holding('1111',15,Decimal('99'))
