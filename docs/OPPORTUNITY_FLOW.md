@@ -166,6 +166,16 @@ NT$10,000 是 AI 資金投入上限，沒有要求券商帳面餘額必須先達
 
 收據、心跳及守護日誌位於原帳戶目錄 `data/health/flow_recovery/`：`task-registration.json` 列實際安裝方式與觸發、`supervisor_status.json` 列目前程序／對帳狀態、`supervisor.jsonl` 列啟動與恢復事件。完整測試及實測邊界見[11/18 驗證紀錄](../reports/opportunity_flow_recovery_20261118/README.txt)。
 
+### 正式入口的實機檢查與自動匯出
+
+交易電腦更新後，原 `OpportunityFlow.cmd` 正式入口依序安裝／修復恢復設定、啟動守護程序、讀回目前 Windows 排程／捷徑，再等待本次程序的新對帳與研究運行。CLI 模式亦在每日資料更新前先進行初次券商對帳。檢查使用原流程留下的心跳與事件，不增加另一個券商 COM owner，也不另派驗收委託。
+
+啟動視窗最多等待 180 秒，背景檢查會繼續。每 60 秒讀回 Windows 設定，報告每 30 秒或狀態改變時更新；包括盤外、資料下載、對帳阻擋、版本不同、手動停止及存活異常。原帳戶目錄的 `data/health/flow_recovery/runtime-audit.json` 保留副本；程式目錄自動匯出 `reports/opportunity_flow_runtime/latest.json`／`latest.txt` 與各次執行的 `runs/*.json`。若 Git 目錄無法寫入，帳戶副本明列匯出錯誤。
+
+「已確認」須同時符合實際啟動物件有效、目前子程序 PID／run_id 正確、執行版本一致、本次啟動後重新對帳及有效研究迴圈。`AUTOMATION_ACTIVE` 另須已觀測數值研究掃描；`WAITING_RESEARCH_WINDOW` 表示盤外正常等候。兩者都不代表已買進；送單、成交及持股管理事件分開列示，只有實際經過原流程才記錄。資料更新或新錯誤不會被較早的成功掃描遮蔽。
+
+研究與成交紀錄只匯出白名單欄位，包括時間、階段、計數、股票代碼及原風控阻擋代碼；不匯出帳號、憑證、私人路徑、模型原文或原始 SDK 回覆。資金卡列最低保留額、獨立 AI 上限、最後對帳的新買可用額與日額，須連同對帳時間閱讀。檢查寫檔故障不會改變已完成送單的結果或觸發重送。啟動器不自動操作 Git 提交／推送；匯出檔可隨交易電腦原本的提交保存到遠端。報告格式見[實機匯出說明](../reports/opportunity_flow_runtime/README.txt)。
+
 - [整合驗證、故障對策與費用敏感度](../reports/opportunity_flow_live_20261112/README.md)
 - [機器可讀驗證紀錄](../reports/opportunity_flow_live_20261112/acceptance.json)
 - [完整回歸輸出](../reports/opportunity_flow_live_20261112/regression.txt)

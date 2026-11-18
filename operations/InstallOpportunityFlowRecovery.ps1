@@ -7,7 +7,8 @@ param(
     [ValidatePattern('^[A-Za-z0-9_.:/-]+$')][string]$Model,
     [switch]$Headless,
     [switch]$RegisterOnly,
-    [switch]$ValidateOnly
+    [switch]$ValidateOnly,
+    [switch]$InspectOnly
 )
 $ErrorActionPreference = 'Stop'
 $codeRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
@@ -106,11 +107,45 @@ function Test-FlowRecoveryDefinition($old) {
 }
 $unchanged = $existing -and (Test-FlowRecoveryDefinition $existing.Definition)
 $audit = Join-Path $accountRoot 'data/health/flow_recovery'
-[IO.Directory]::CreateDirectory($audit) | Out-Null
 $sha = [Security.Cryptography.SHA256]::Create()
 try { $key = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($accountRoot.ToLowerInvariant())))).Replace('-','').Substring(0,12) }
 finally { $sha.Dispose() }
 $startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) ('STOCKLLM FLOW Recovery-' + $key + '.lnk')
+if ($InspectOnly) {
+    # Inspect the current OS objects, not the previous installation receipt.
+    $shortcutValid = $false
+    if (Test-Path -LiteralPath $startupLink -PathType Leaf) {
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($startupLink)
+        $shortcutValid = ($shortcut.TargetPath -eq $python -and $shortcut.Arguments -eq $arguments -and
+            $shortcut.WorkingDirectory -eq $codeRoot)
+    }
+    $conflict = $existing -and -not $unchanged -and $existing.Enabled -and $existing.Definition.Triggers.Count -gt 0
+    $bootAt = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString('o')
+    $effective = @()
+    if ($unchanged) { $effective = @('BOOT','OWNER_LOGON','EVERY_MINUTE') }
+    elseif ($shortcutValid -and -not $conflict) { $effective = @('OWNER_LOGON') }
+    [ordered]@{
+        inspected_at = (Get-Date).ToUniversalTime().ToString('o')
+        boot_at = $bootAt
+        startup_verified = [bool](($unchanged -or $shortcutValid) -and -not $conflict)
+        task_present = [bool]$existing
+        task_definition_verified = [bool]$unchanged
+        task_enabled = [bool]($existing -and $existing.Enabled)
+        task_trigger_count = $(if ($existing) { $existing.Definition.Triggers.Count } else { 0 })
+        task_last_result = $(if ($existing) { $existing.LastTaskResult } else { $null })
+        task_last_run_at = $(if ($existing -and $existing.LastRunTime.Year -gt 2000) { $existing.LastRunTime.ToUniversalTime().ToString('o') } else { $null })
+        shortcut_verified = $shortcutValid
+        conflicting_task = [bool]$conflict
+        effective_triggers = $effective
+        requires_logged_on_owner = $true
+        current_session_is_interactive = ((Get-Process -Id $PID).SessionId -gt 0)
+        credentials_saved = $false
+        automatic_force_kill = $false
+    } | ConvertTo-Json -Depth 4
+    exit 0
+}
+[IO.Directory]::CreateDirectory($audit) | Out-Null
 $registeredTask = $false
 try {
     if (-not $unchanged) {

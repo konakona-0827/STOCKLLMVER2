@@ -13,6 +13,7 @@ from .data import validate_quote
 from .engine import economics
 from .review import combine,validate,verify_packet
 from .state import Ledger
+from .recovery import observe,observe_execution
 
 
 def verified_snapshot(snapshot,at,*,need_buying_power=True):
@@ -176,15 +177,18 @@ class ExecutionBridge:
             path=self.state/'handoffs'/(payload['run_id']+'.json')
             try:
                 save(path,payload)
+                observe('EXECUTOR_DISPATCHED',count=len(ids))
                 report=self.runtime.execute(payload,path)
             except Exception as exc:
                 report=dict(status='DISPATCH_UNKNOWN_DO_NOT_RETRY',error=type(exc).__name__+':'+str(exc)[:180],automatic_retry=False)
             ledger.finish_handoff(ids,report)
             save(path.with_suffix('.execution.json'),report)
+            observe_execution(report)
             return report
         finally:ledger.close()
 
     def review_positions(self,dataset,at,reports,blocked):
+        observe('POSITION_MANAGEMENT')
         runtime=self.runtime
         runtime.refresh()
         held={s:q for s,q in runtime.store.ai_positions().items() if q>0}
@@ -253,7 +257,9 @@ class ExecutionBridge:
                 else:d['suggested_price']=c.get('bid')
                 d['reference_price']=c['last_price']
                 valid.append(d)
+            observe('PRETRADE_STARTED',side='SELL',count=len(valid))
             final,review=runtime.pretrade(valid,current)
+            observe('PRETRADE_COMPLETED',side='SELL')
             if review['status'] in ('VALID','NOT_NEEDED'):
                 approved=[d for d in final if d['decision']=='SELL']
                 if approved:
@@ -278,6 +284,7 @@ class ExecutionBridge:
         with trace_scope() as trace:
             with span('flow_cycle'):
                 report=self._step(result,dataset,at)
+            for block in report.get('blocked',[]):observe('EXECUTION_BLOCKED',reason=block.get('reason'))
             report['execution_timing']=trace.export()
             return report
 
@@ -316,7 +323,9 @@ class ExecutionBridge:
                 if current_trace() is not None:current_trace().enable(getattr(runtime,'root',self.state))
                 mark('buy_proposal',symbol=symbol,side='BUY',research_reviewed_at=candidate['review']['reviewed_at'],
                      quote_timestamp=quotes[symbol]['quote_timestamp'],bid=quotes[symbol]['bid'],ask=quotes[symbol]['ask'])
+                observe('PRETRADE_STARTED',side='BUY',symbol=symbol)
                 decisions,review=runtime.pretrade([decision],[c])
+                observe('PRETRADE_COMPLETED',side='BUY',symbol=symbol)
                 if review['status']!='VALID' or decisions[0]['decision']!='BUY':
                     blocked.append(dict(symbol=symbol,reason='PRETRADE_VETO_OR_ERROR'));continue
                 expected=buy_decision(candidate,route,quotes[symbol])

@@ -1,0 +1,100 @@
+{
+  "recorded_at": "2026-11-18T08:15:33.871826+00:00",
+  "baseline_commit": "a906407a9e73a9f5785a6f5126032e581720a8e8",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "full_regression": {
+    "tests": 846,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 110.945,
+    "external_network_disabled": true,
+    "real_codex_disabled": true,
+    "real_orders_sent": 0,
+    "output_normalization": "UTF-8 LF; no content removed",
+    "output_sha256": "63b13fb10b396f714b4dfd660de18d050684659bc31818c224cda647f44092fa"
+  },
+  "native_windows_inspection": {
+    "missing_actual_objects_rejected": true,
+    "real_isolated_registration_inspected": true,
+    "removed_startup_with_old_receipt_rejected": true,
+    "temporary_os_items_cleaned_up": true,
+    "production_task_modified": false
+  },
+  "real_child_protocol_test": {
+    "actual_process": true,
+    "current_run_heartbeat_exported": true,
+    "automation_active_observed": true,
+    "manual_pause_preserved": true,
+    "real_broker": false,
+    "real_model": false
+  },
+  "lifecycle_test": {
+    "original_executor_used": true,
+    "new_reconciliation_before_research": true,
+    "automatic_buy_pretrade_fill_management_sell": true,
+    "order_sent_events": 2,
+    "fill_confirmed_events": 2,
+    "manual_dispatch": false,
+    "ai_remaining_quantity": 0,
+    "manual_shares_preserved": 3
+  },
+  "headless_initial_reconciliation_before_daily_collection": true,
+  "unknown_dispatch_separately_reported": true,
+  "diagnostic_failure_does_not_retry_orders": true,
+  "source_sensitive_fields_allowlisted": true,
+  "git_export_failure_preserves_account_copy": true,
+  "actual_cmd_check": {
+    "exit_code": 0,
+    "ready": true,
+    "broker_login_tested": false,
+    "orders_sent": 0
+  },
+  "unchanged_risk_policy_and_runtime_files": [
+    "config",
+    "opportunity_flow/policy.json",
+    "execution/auto_advice_executor.py",
+    "execution/account_guard.py",
+    "pretrade_policy.py",
+    "strategy_experiment.py",
+    "strategy_catalog.py"
+  ],
+  "execution_bridge_change": "observation events only; original gates and dispatch unchanged",
+  "regression_reliability_fix": {
+    "test": "test_versioned_accounts_pause_and_forward_start",
+    "root_cause": "same Windows clock tick plus random ID display order; test assumed row index was account identity",
+    "change": "lookup by created account IDs; explicitly test equal timestamps",
+    "production_logic_changed": false
+  },
+  "deployment": {
+    "entry": "OpportunityFlow.cmd",
+    "additional_user_parameters_required": false,
+    "outputs": [
+      "reports/opportunity_flow_runtime/latest.txt",
+      "reports/opportunity_flow_runtime/latest.json",
+      "reports/opportunity_flow_runtime/runs/*.json",
+      "account:data/health/flow_recovery/runtime-audit.json"
+    ],
+    "windows_inspection_seconds": 60,
+    "report_seconds": 30,
+    "startup_console_wait_seconds": 180,
+    "automatic_git_commit_or_push": false,
+    "requires_owner_logged_on": true,
+    "remote_trading_pc_modified": false,
+    "actual_trading_pc_reboot_tested": false
+  },
+  "source_sha256_lf": {
+    "OpportunityFlow.cmd": "deba31a5432f28ef7d9b60d434c7a61dbb5d3074cceb1f8c2734ccc87a189d0c",
+    "operations/InstallOpportunityFlowRecovery.ps1": "809176139a262f447a98f171042f016630217fa23629183268f2cd8387a8443d",
+    "operations/flow_supervisor.py": "74ed1210513891a3500ed58920f33b0bf3b41bf288fd9011bf86e10dde20adb4",
+    "operations/flow_runtime_audit.py": "e10ba2205ce27dedf2dea6bd780906fb414b571159da0b15d397606041143f91",
+    "opportunity_flow/__main__.py": "9eb218cbdaad6270c9de268095160d466f6b6aeb25a39b5a016d0bfcf1a6d0b4",
+    "opportunity_flow/live.py": "554e5ff96f09bcb8e09a114c761345066c0613c8283fcd26100be2f548089554",
+    "opportunity_flow/execution_bridge.py": "ff5e440ad488dcc13d368243b5fb3e1eb883be22efc287056474c3cacb2ac7de",
+    "opportunity_flow/recovery.py": "5e94afa5640f02bcd56ece16eae7430efb381288f2b09ef69707c9e8ac6b1929",
+    "tests/test_flow_recovery.py": "d8c651c449aa84d18bc54c136956f3bc5c81d8e9dbd5740989b6296ea33e466e",
+    "tests/test_flow_runtime_audit.py": "cc5cb8193b434b5f0401515681d165fd33c030fce6ddef2d4be0b83e2518de42",
+    "tests/test_flow_recovery_lifecycle.py": "cc14c4dcd49e68ca045598bd329e2ddf98eca054bc36c9ea3e3600508a0ee5f0",
+    "tests/test_strategy_experiment.py": "2ae446a202eb766e6387e2c1e5add4a231bb4ab4b57b183113ea0df1dea630c3"
+  }
+}

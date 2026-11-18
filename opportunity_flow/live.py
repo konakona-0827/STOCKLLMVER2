@@ -8,6 +8,7 @@ import threading
 import time
 
 from .common import ROOT,TAIPEI,read,save,stamp
+from .recovery import observe
 
 
 def resolve_account_root(explicit=None):
@@ -64,9 +65,11 @@ class LiveCoordinator:
 
     def refresh_account(self):
         with self.lock:
+            observe('ACCOUNT_CHECK_STARTED')
             try:
                 self.snapshot=self.runtime.refresh()
             except (TimeoutError, RuntimeError) as exc:
+                observe('ACCOUNT_CHECK_FAILED')
                 self.record_broker_read_error(exc)
                 raise
             finally:
@@ -75,6 +78,9 @@ class LiveCoordinator:
                 self.record_broker_event('BROKER_READ_RECOVERED', checked_at=self.snapshot.get('checked_at'))
                 self.broker_read_error=None
             self.publish()
+            observe('ACCOUNT_RECONCILED' if self.snapshot.get('inventory_checked') is True
+                and not self.snapshot.get('errors') and not self.snapshot.get('reconciliation_errors')
+                else 'ACCOUNT_CHECK_FAILED')
             return self.snapshot
 
     def record_broker_event(self, kind, **detail):

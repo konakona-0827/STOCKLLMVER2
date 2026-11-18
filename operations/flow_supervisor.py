@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 from opportunity_flow.common import read, save
 from opportunity_flow.recovery import folder, heartbeat_reason, intent, set_intent
 from state_lock import StateLease
+from operations.flow_runtime_audit import RuntimeAudit, wait_for_startup
 
 
 def record(root, event, **detail):
@@ -78,6 +79,14 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
         lease = StateLease(root, 'flow-supervisor').acquire()
     except RuntimeError:
         record(root, 'SUPERVISOR_ALREADY_RUNNING')
+        try:
+            exported=read(target/'runtime-audit.json')
+            from opportunity_flow.recovery import code_revision
+            fresh=datetime.fromisoformat(exported['exported_at']).timestamp()
+            existing_audit=exported.get('source_revision')==code_revision() and 0<=time.time()-fresh<60
+        except (OSError,ValueError,TypeError,KeyError):existing_audit=False
+        if not existing_audit:
+            RuntimeAudit(root,dataset,state,headless=headless,model=model).publish('EXISTING_ACCOUNT_OWNER',force=True)
         return 0
     try:
         history = read(target / 'restart_history.json')
@@ -88,21 +97,31 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
         recent.append(time.time())
         save(target / 'restart_history.json',list(recent))
     child = None
+    alive=False
+    last_row={};last_pid=None;last_run=None;last_launched=None
+    audit=RuntimeAudit(root,dataset,state,headless=headless,model=model)
+    def publish(state,**detail):
+        status(root,state,**detail)
+        try:
+            audit.publish(state,row=last_row,pid=last_pid,run_id=last_run,
+                          launched_at=last_launched,process_alive=alive)
+        except Exception as exc:
+            record(root,'RUNTIME_EXPORT_FAILED',error=type(exc).__name__)
     try:
         record(root, 'SUPERVISOR_START', code_root=str(ROOT), headless=headless)
         while not stop.is_set():
             if not intent(root):
-                status(root, 'MANUALLY_PAUSED')
+                publish('MANUALLY_PAUSED')
                 return 0
             if not broker_owner_absent(root):
-                status(root, 'EXISTING_ACCOUNT_OWNER', automatic_duplicate_start=False)
+                publish('EXISTING_ACCOUNT_OWNER', automatic_duplicate_start=False)
                 stop.wait(poll_seconds)
                 continue
             now = time.time()
             while recent and now - recent[0] > 600:
                 recent.popleft()
             if len(recent) >= 3:
-                status(root, 'RESTART_BACKOFF', next_retry_at=recent[0] + 600)
+                publish('RESTART_BACKOFF', next_retry_at=recent[0] + 600)
                 stop.wait(poll_seconds)
                 continue
             run_id = uuid4().hex
@@ -120,6 +139,10 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                     stop.wait(poll_seconds)
                     continue
                 record(root, 'FLOW_STARTED', child_pid=child.pid, run_id=run_id)
+                alive=True
+                last_pid,last_run,last_launched=child.pid,run_id,launched
+                last_row={}
+                publish('AWAITING_FRESH_ACCOUNT',child_pid=child.pid,run_id=run_id)
                 requested = None
                 while True:
                     try:
@@ -130,6 +153,8 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                             row = read(target / f'runtime-{child.pid}.json')
                         except (OSError, ValueError):
                             row = {}
+                        if not isinstance(row,dict):row={}
+                        last_row=row
                         reason = heartbeat_reason(row, child.pid, run_id, launched, time.time())
                         if stop.is_set():
                             reason = 'SUPERVISOR_STOP'
@@ -139,7 +164,7 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                                  reason=reason, requested_at=requested))
                             record(root, 'GRACEFUL_RECOVERY_REQUESTED', child_pid=child.pid, reason=reason)
                         stalled = requested is not None and time.time() - requested > 300
-                        status(root, 'MANUALLY_PAUSED' if not intent(root) else
+                        publish('MANUALLY_PAUSED' if not intent(root) else
                                'STALLED_OWNER_WAITING' if stalled else 'RECOVERING' if requested else
                                'RUNNING' if row.get('account_verified') and row.get('controller_status') == 'RUNNING'
                                else 'AWAITING_FRESH_ACCOUNT',
@@ -148,9 +173,12 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                         # Even after a stall, do not kill an uncertain financial
                         # action, release its lease, or launch a second COM owner.
                 record(root, 'FLOW_EXITED', child_pid=child.pid, run_id=run_id, exit_code=exit_code)
+                alive=False
+                try:last_row=read(target/f'runtime-{child.pid}.json')
+                except (OSError,ValueError):last_row={}
                 child = None
             if stop.is_set() or not intent(root):
-                status(root, 'MANUALLY_PAUSED' if not intent(root) else 'STOPPED')
+                publish('MANUALLY_PAUSED' if not intent(root) else 'STOPPED')
                 return 0
             failed_launch()
             stop.wait(poll_seconds)
@@ -182,7 +210,13 @@ def main(argv=None):
             command.append('-Headless')
         if args.model:
             command.extend(['-Model', args.model])
-        subprocess.run(command, check=True, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        try:
+            subprocess.run(command, check=True,capture_output=True,
+                           creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        except (OSError,subprocess.SubprocessError):
+            RuntimeAudit(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,
+                         model=args.model).publish('INSTALLATION_FAILED',force=True)
+            raise
     if args.resume:
         set_intent(root, True, 'EXPLICIT_LIVE_LAUNCH')
     if args.install:
@@ -204,9 +238,16 @@ def main(argv=None):
             finally:
                 signal.signal(signal.SIGINT, previous)
         # Closing OpportunityFlow.cmd's console must not kill supervision.
-        pid=launch_detached(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,model=args.model)
+        requested_at=time.time()
+        try:
+            pid=launch_detached(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,model=args.model)
+        except OSError:
+            RuntimeAudit(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,
+                         model=args.model).publish('LAUNCH_FAILED',force=True)
+            raise
         print(json.dumps(dict(status='RECOVERY_LAUNCHED',supervisor_pid=pid,
                               fresh_broker_reconciliation_required=True)))
+        wait_for_startup(root,not_before=requested_at)
         return 0
     return supervise(root, args.dataset.resolve(), args.state.resolve(), headless=args.headless, model=args.model)
 

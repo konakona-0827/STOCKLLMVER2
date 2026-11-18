@@ -1,6 +1,7 @@
 import tempfile
 import json
 import sqlite3
+from datetime import datetime
 from contextlib import closing
 from decimal import Decimal
 from pathlib import Path
@@ -50,9 +51,13 @@ class StrategyExperimentTests(unittest.TestCase):
     def test_versioned_accounts_pause_and_forward_start(self):
         old = self.store.strategies()[0]
         self.prompt.write_text('第二版策略',encoding='utf-8')
-        second = self.store.add_strategy(self.prompt)
-        self.assertNotEqual(old['version'],self.store.strategies()[1]['version'])
-        self.assertEqual(self.store.strategies()[0]['prompt'],'第一版策略')
+        # Windows can assign both imports the same clock tick; random IDs then
+        # determine display order. Check the intended accounts by their IDs.
+        with patch('strategy_experiment.now',return_value=datetime.fromisoformat(old['started_at'])):
+            second = self.store.add_strategy(self.prompt)
+        accounts={row['id']:row for row in self.store.strategies()}
+        self.assertNotEqual(old['version'],accounts[second]['version'])
+        self.assertEqual(accounts[self.first]['prompt'],'第一版策略')
         self.store.set_active(self.first,False)
         self.store.set_active(self.first,True)
         self.assertEqual(self.store.summary(self.first)['cash_twd'],100000)

@@ -165,8 +165,9 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             from .live import LiveCoordinator,resolve_account_root
             live=LiveCoordinator(resolve_account_root(args.state_root),args.state,p,stop_event,read_only=args.read_only)
     previous_result=None
-    from .recovery import get_probe,intent
+    from .recovery import get_probe,intent,observe
     recovery=get_probe() if live is not None else None
+    if recovery is not None:observe('WATCH_STARTED')
     data_executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='flow-daily-data') if live is not None else None
     data_worker=None
     data_retry_after=0
@@ -175,6 +176,9 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
         elif live is not None:stop_event.wait(seconds)
         else:time.sleep(seconds)
     try:
+        if recovery is not None and not live.snapshot:
+            try:live.refresh_account()
+            except (TimeoutError,RuntimeError):pass
         while not stop_event.is_set():
             if recovery is not None:
                 recovery.update(loop=True,coordinator=live,controller_status='RUNNING')
@@ -186,9 +190,11 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             if worker is not None and worker.done():
                 try:
                     reviewed=worker.result()
+                    if recovery is not None:observe('RESEARCH_REVIEW_COMPLETED',count=len(reviewed.get('candidates',[])))
                     print(json.dumps(dict(background_review=reviewed["summary"]),ensure_ascii=False),flush=True)
                     if live is not None:live.offer(reviewed,live.dataset or load_dataset(args.dataset))
                 except Exception as exc:
+                    if recovery is not None:observe('RESEARCH_ERROR')
                     print(json.dumps(dict(background_review_error=type(exc).__name__+":"+str(exc)[:180])),flush=True)
                 worker=None
             at=stamp(args.as_of) if args.command=="cycle" else datetime.now(TAIPEI)
@@ -211,6 +217,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                 except (ValueError,OSError):manifest={}
                 target=refresh_due(at,manifest)
                 if target:
+                    if recovery is not None:observe('WAITING_DAILY_DATA')
                     from .collector import collect as download
                     try:
                         if data_executor is not None:
@@ -233,6 +240,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                         continue
                 at=datetime.now(TAIPEI)
             if args.command=="watch" and not (at.weekday()<5 and "08:30"<=at.strftime("%H:%M")<="13:30"):
+                if recovery is not None:observe('WAITING_RESEARCH_WINDOW')
                 if live is not None and time.monotonic()-live.last_refresh>=60:
                     try:live.refresh_account()
                     except Exception as exc:print(json.dumps(dict(broker_health_error=type(exc).__name__+':'+str(exc)[:180])),flush=True)
@@ -250,6 +258,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                 try:
                     ds=load_dataset(args.dataset)
                 except (ValueError,RuntimeError,OSError) as exc:
+                    if recovery is not None:observe('RESEARCH_ERROR')
                     record_feed(args.state,"DATASET_READ_ERROR",dict(error=str(exc)[:180]))
                     if live is not None:live.maintenance(force=True)
                     print(json.dumps(dict(dataset_error=str(exc)[:180])),flush=True)
@@ -313,6 +322,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                         use_llm=args.llm and args.command=="cycle",diagnose_blocked=args.diagnose_blocked,review_symbols=args.review_symbols,
                         account_context=account_context)
                 except (ValueError,RuntimeError,OSError) as exc:
+                    if recovery is not None:observe('RESEARCH_ERROR')
                     if args.command!="watch":
                         raise
                     print(json.dumps(dict(cycle_error=str(exc)[:180])),flush=True)
@@ -333,12 +343,16 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                         def review_job(ds=ds,at=at,observed_quotes=observed_quotes,events=events,selected=selected,
                                        account_context=account_context,p=dict(p)):
                             from .review import CodexRunner
+                            if recovery is not None:observe('RESEARCH_REVIEW_STARTED',count=len(selected))
                             with live.activity.track('RESEARCH', '兩方 CLI 研究') if live is not None else nullcontext():
                                 return run_cycle(ds,at,p,args.state,observed_quotes,events,
                                     runner=CodexRunner(p["model"],p["model_timeout_seconds"],stop_event),use_llm=True,
                                     diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False,account_context=account_context)
                         worker=executor.submit(review_job)
                 if live is not None:live.offer(result,ds)
+                if recovery is not None:observe('RESEARCH_CYCLE_COMPLETED',count=len(result.get('candidates',[])),
+                    eligible_count=sum(c['state']=='REVIEW_PENDING' for c in result.get('candidates',[])),
+                    ready_count=sum(c['state']=='RESEARCH_READY' for c in result.get('candidates',[])))
                 previous_result=result
                 print(json.dumps(dict(summary=result["summary"],output=result["output"]),ensure_ascii=False),flush=True)
                 last_signature,last_numeric=signature,time.monotonic()

@@ -67,6 +67,10 @@ class RecoveryLifecycleTests(unittest.TestCase):
         power=BuyingPower(True,True,Decimal(30000),Decimal(30000),Decimal(30000),'isolated')
         began=time.monotonic()
         instant=lambda:at+timedelta(seconds=time.monotonic()-began)
+        from opportunity_flow.recovery import RecoveryProbe
+        probe=RecoveryProbe(root,'lifecycle',clock=lambda:instant().timestamp())
+        self.enterContext(patch('opportunity_flow.recovery.get_probe',return_value=probe))
+        runtime.config.enabled=True
         class Clock(datetime):
             @classmethod
             def now(cls,tz=None):
@@ -131,6 +135,14 @@ class RecoveryLifecycleTests(unittest.TestCase):
         self.assertLess(stages.index('SDK_BUY'),stages.index('POSITION_MANAGEMENT'))
         self.assertLess(stages.index('POSITION_MANAGEMENT'),stages.index('PRETRADE_SELL'))
         self.assertLess(stages.index('PRETRADE_SELL'),stages.index('SDK_SELL'))
+        observed=probe.row['stages']
+        for stage in ('ACCOUNT_RECONCILED','WATCH_STARTED','RESEARCH_CYCLE_COMPLETED','RESEARCH_REVIEW_STARTED',
+                      'RESEARCH_REVIEW_COMPLETED','PRETRADE_STARTED','PRETRADE_COMPLETED','POSITION_MANAGEMENT'):
+            self.assertIn(stage,observed)
+        self.assertEqual(observed['ORDER_SENT']['count'],2)
+        self.assertEqual(observed['FILL_CONFIRMED']['count'],2)
+        self.assertEqual(observed['FILL_CONFIRMED']['detail']['side'],'SELL')
+        self.assertNotIn('isolated-test',str(probe.row['events']))
 
 
 if __name__=='__main__':unittest.main()

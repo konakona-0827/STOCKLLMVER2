@@ -1,11 +1,83 @@
 """Account-scoped recovery intent and liveness; never authorizes a trade."""
 from datetime import datetime, timezone
+from decimal import Decimal,InvalidOperation
 import os
+from functools import lru_cache
 from pathlib import Path
+import subprocess
 import threading
 import time
 
 from .common import read, save
+
+
+@lru_cache(maxsize=1)
+def code_revision():
+    try:
+        value = subprocess.check_output(['git','rev-parse','HEAD'],cwd=Path(__file__).resolve().parents[1],
+            stderr=subprocess.DEVNULL,timeout=3,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        revision=value.decode().strip()
+        return revision if len(revision)==40 and all(c in '0123456789abcdef' for c in revision) else None
+    except (OSError,subprocess.SubprocessError):
+        return None
+
+
+STAGES = frozenset(('ACCOUNT_CHECK_STARTED','ACCOUNT_RECONCILED','ACCOUNT_CHECK_FAILED','WATCH_STARTED',
+    'WAITING_RESEARCH_WINDOW','WAITING_DAILY_DATA','RESEARCH_CYCLE_COMPLETED','RESEARCH_REVIEW_STARTED',
+    'RESEARCH_REVIEW_COMPLETED','RESEARCH_ERROR','PRETRADE_STARTED','PRETRADE_COMPLETED',
+    'EXECUTOR_DISPATCHED','EXECUTOR_RETURNED','ORDER_SENT','FILL_CONFIRMED','POSITION_MANAGEMENT','EXECUTION_BLOCKED',
+    'DISPATCH_UNKNOWN'))
+
+BLOCK_REASONS=frozenset(('USER_STOPPED_OR_OUTSIDE_TRADING_SESSION','PRETRADE_VETO_OR_ERROR',
+    'BROKER_ACCOUNT_UNVERIFIED','BROKER_ACCOUNT_STALE','BROKER_INVENTORY_UNVERIFIED','CURRENT_ACCOUNT_ALLOWANCE_PAUSED',
+    'LIVE_NON_TRIAL_QUOTE_REQUIRED','ODDLOT_QUOTE_MISSING','VERIFIED_ODDLOT_QUOTE_BASIS_REQUIRED',
+    'QUOTE_STALE_OR_FUTURE','CROSSED_QUOTE','BROKER_MARKET_NOT_VERIFIED','WAITING_FOR_REVIEWED_ENTRY',
+    'FRESH_CAPITAL_OR_ALLOCATION_INSUFFICIENT','FRESH_TRADE_ECONOMICS_FAILED','TWO_RESEARCH_APPROVALS_REQUIRED',
+    'RESEARCH_REVIEW_STALE','PENDING_ORDER_OR_AI_DISABLED','SELL_PENDING_ORDER_REQUIRES_RECONCILIATION'))
+
+
+def money(value):
+    try:
+        number=Decimal(str(value))
+        return str(number) if number.is_finite() and number>=0 else None
+    except (InvalidOperation,ValueError,TypeError):return None
+
+
+def safe_details(detail):
+    # Never export raw broker replies, model prose, account identity or paths.
+    if not isinstance(detail,dict):return {}
+    result={}
+    for key in ('count','blocked_count','filled_quantity','eligible_count','ready_count'):
+        value=detail.get(key)
+        if type(value) is int and value>=0:result[key]=value
+    if detail.get('side') in ('BUY','SELL'):result['side']=detail['side']
+    if isinstance(detail.get('reason'),str) and detail['reason'] in BLOCK_REASONS:result['reason']=detail['reason']
+    symbol=detail.get('symbol')
+    if isinstance(symbol,str) and 4<=len(symbol)<=6 and symbol.isascii() and symbol.isdigit():result['symbol']=symbol
+    return result
+
+
+def observe(stage, **detail):
+    try:
+        probe=get_probe()
+        if probe is not None:probe.event(stage,**detail)
+    except Exception:
+        # A diagnostic write must never turn a completed send into a retry.
+        return
+
+
+def observe_execution(report):
+    observe('EXECUTOR_RETURNED')
+    if isinstance(report,dict) and report.get('status')=='DISPATCH_UNKNOWN_DO_NOT_RETRY':
+        observe('DISPATCH_UNKNOWN')
+    if not isinstance(report,dict) or not isinstance(report.get('results'),list):return
+    for result in report['results']:
+        if not isinstance(result,dict):continue
+        detail=dict(symbol=result.get('symbol'),side=result.get('side'),filled_quantity=result.get('filled_quantity'))
+        if result.get('status')=='UNCONFIRMED':observe('DISPATCH_UNKNOWN',**detail)
+        if result.get('broker_order_sent') is True:observe('ORDER_SENT',**detail)
+        if type(result.get('filled_quantity')) is int and result['filled_quantity']>0:
+            observe('FILL_CONFIRMED',**detail)
 
 
 def folder(root):
@@ -41,8 +113,21 @@ class RecoveryProbe:
         self.pid = os.getpid() if pid is None else pid
         self.path = folder(root) / f'runtime-{self.pid}.json'
         self.lock = threading.Lock()
-        self.row = dict(pid=self.pid, run_id=run_id, started_at=clock())
+        self.row = dict(pid=self.pid, run_id=run_id, started_at=clock(),code_revision=code_revision(),stages={},events=[])
         self.last_saved = 0
+
+    def event(self, stage, **detail):
+        if stage not in STAGES:return
+        now=self.clock()
+        with self.lock:
+            stages=self.row['stages']
+            previous=stages.get(stage,{})
+            stages[stage]=dict(first_at=previous.get('first_at',now),last_at=now,
+                               count=previous.get('count',0)+1,detail=safe_details(detail))
+            self.row['events']=(self.row['events']+[dict(at=now,stage=stage,**safe_details(detail))])[-100:]
+            self.row.update(at=now,desired_running=intent(self.root))
+            save(self.path,self.row)
+            self.last_saved=now
 
     def update(self, *, gui=False, loop=False, coordinator=None, controller_status=None, force=False):
         now = self.clock()
@@ -65,6 +150,16 @@ class RecoveryProbe:
                     and snapshot.get('status') != 'ERROR')
                 self.row['account_checked_at'] = snapshot.get('checked_at')
                 self.row['broker_read_blocked'] = bool(getattr(coordinator, 'broker_read_error', None))
+                runtime=getattr(coordinator,'runtime',None)
+                self.row['read_only'] = getattr(runtime,'read_only',None) is not False
+                self.row['executor_enabled'] = getattr(getattr(runtime,'config',None),'enabled',None) is True
+                self.row['budget_ready'] = snapshot.get('budget_status') == 'READY'
+                cfg=getattr(runtime,'config',None)
+                self.row['budget']={key:money(value) for key,value in dict(
+                    cash_reserve_twd=getattr(cfg,'min_available_to_buy_twd',None),
+                    ai_cap_twd=snapshot.get('strategy_cap_twd'),
+                    current_buy_budget_twd=snapshot.get('current_buy_budget_twd'),
+                    daily_buy_cap_twd=getattr(cfg,'max_daily_buy_twd',None)).items()}
             if force or now - self.last_saved >= 5:
                 self.row.update(at=now, desired_running=intent(self.root))
                 save(self.path, self.row)

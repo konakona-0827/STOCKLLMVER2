@@ -94,6 +94,10 @@ class RecoveryStateTests(unittest.TestCase):
 
 
 class FlowSupervisorTests(unittest.TestCase):
+    def setUp(self):
+        native=patch.object(supervisor,'RuntimeAudit')
+        native.start();self.addCleanup(native.stop)
+
     def test_unexpected_process_exit_restarts_but_manual_close_does_not(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);first=Mock(pid=11);first.wait.return_value=1
