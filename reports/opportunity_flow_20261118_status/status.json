@@ -1,0 +1,150 @@
+{
+  "observed_at": "2026-11-18T13:43:00.6116984+09:00",
+  "trade_date_taipei": "2026-11-18",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "source_code_commit": "1bcabb196dd0b3afd5d98814d9001e7ae9e01c28",
+  "observed_process_state": "STOPPED",
+  "automatic_runtime_process_count": 0,
+  "today_counts": {
+    "numeric_and_research_cycles": 0,
+    "model_calls": 0,
+    "feed_events": 0,
+    "formal_order_attempts": 0,
+    "formal_order_events": 0,
+    "broker_health_snapshots": 163
+  },
+  "today_account_health": {
+    "first_checked_at": "2026-11-18T00:00:06+08:00",
+    "last_checked_at": "2026-11-18T03:27:46+08:00",
+    "status_counts": {
+      "OK": 163
+    },
+    "error_snapshot_count": 0
+  },
+  "last_saved_account": {
+    "checked_at": "2026-11-18T03:27:46+08:00",
+    "status": "OK",
+    "inventory_checked": true,
+    "broker_inventory_verified": true,
+    "buy_sources_verified": true,
+    "budget_status": "READY",
+    "current_buy_budget_twd": "10000",
+    "strategy_cap_twd": "10000",
+    "buy_block_reasons": [],
+    "reconciliation_errors": [],
+    "errors": [],
+    "source_record_checked_at": "2026-11-18T03:27:46+08:00",
+    "fresh_at_export": false
+  },
+  "last_saved_live_status": {
+    "checked_at": "2026-11-18T03:27:46+08:00",
+    "budget_status": "READY",
+    "buy_budget_twd": "10000",
+    "read_only": false,
+    "stopping": false,
+    "execution_running": false,
+    "errors": []
+  },
+  "last_completed_scan": {
+    "system": "TW Opportunity Flow",
+    "as_of": "2026-11-17T13:30:56.009338+08:00",
+    "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+    "policy_sha256": "e295dc9d546a95617cbe484299853437a0506aba812db94796a69bce828ed6cb",
+    "dataset_manifest_sha256": "02cd8bb8bbeef6d227212303b14a516a40218d000e26d66891ff9bbd51285579",
+    "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+    "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+    "symbols_observed": 1990,
+    "states": {
+      "NO_SETUP": 430,
+      "SCREENED_OUT": 1312,
+      "DATA_BLOCKED": 183,
+      "ECONOMIC_BLOCKED": 65
+    },
+    "blockers": {
+      "NO_CURRENT_SETUP": 430,
+      "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1312,
+      "RECENT_HISTORY_GAP_OR_INVALID_BAR": 172,
+      "NET_PROFIT_BELOW_FLOOR": 55,
+      "REWARD_RISK_BELOW_FLOOR": 59,
+      "NET_RETURN_BELOW_FLOOR": 36,
+      "INSUFFICIENT_COMPLETED_HISTORY": 11,
+      "CAPITAL_OR_RISK_CAP": 8,
+      "OBSERVED_TARGET_MISSING": 6
+    },
+    "llm_calls": 0,
+    "cached_theses": 0,
+    "usage": {},
+    "usage_unknown_calls": 0,
+    "additional_api_billed_usd": 0,
+    "plan_usage_consumed": false,
+    "orders_sent": 0,
+    "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+    "elapsed_seconds": 0.903
+  },
+  "last_model_call": {
+    "at": "2026-11-17T13:08:47.046750+08:00",
+    "role": "challenger",
+    "status": "VALID",
+    "symbols": [
+      "3693"
+    ]
+  },
+  "last_execution_gate": {
+    "account_checked_at": "2026-11-17T09:59:02+08:00",
+    "blocked": [
+      {
+        "symbol": "2466",
+        "reason": "LIVE_NON_TRIAL_QUOTE_REQUIRED"
+      }
+    ],
+    "reports": []
+  },
+  "execution_config": {
+    "enabled": true,
+    "min_available_to_buy_twd": 5000,
+    "max_daily_buy_twd": 30000,
+    "planned_limits_enabled": true
+  },
+  "current_confirmed_ai_positions": [],
+  "daily_data": {
+    "start": "2026-08-12",
+    "end": "2026-11-17",
+    "calendar_verified_through": "2026-11-17",
+    "http_requests": 5,
+    "cache_hits": 131
+  },
+  "last_order_attempt": {
+    "symbol": "7799",
+    "side": "BUY",
+    "status": "EXPIRED",
+    "at": "2026-11-16T11:28:20.681128+08:00",
+    "quantity": 2,
+    "filled_quantity": 0,
+    "limit_price": "456.5",
+    "broker_order_sent": true,
+    "order_trade_date": "2026-11-16",
+    "time_in_force": "ROD"
+  },
+  "last_order_event": {
+    "status": "ROD_EXPIRED",
+    "at": "2026-11-17T00:00:54+08:00",
+    "symbol": "7799",
+    "side": "BUY",
+    "quantity": 2,
+    "filled_quantity": 0,
+    "limit_price": "456.5",
+    "broker_order_sent": true,
+    "order_trade_date": "2026-11-16",
+    "time_in_force": "ROD"
+  },
+  "actions_in_this_export": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "REPORT_EXPORT",
+    "GIT_COMMIT_AND_PUSH"
+  ],
+  "evidence_limitations": [
+    "Account and inventory freshness ends at the last saved snapshot.",
+    "Formal execution ledger covers orders managed by this application.",
+    "The exact process exit instant and trigger are not recorded in the application log."
+  ]
+}
