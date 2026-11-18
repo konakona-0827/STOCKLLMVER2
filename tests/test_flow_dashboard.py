@@ -107,6 +107,36 @@ class DashboardReuseTests(unittest.TestCase):
         self.app.action_buttons['開始自動掃描'].invoke();self.service.controller.start.assert_called_once()
         self.app.action_buttons['停止自動掃描'].invoke();self.service.controller.stop.assert_called_once()
         self.service.run.assert_not_called()
+
+    def test_supervised_manual_stop_is_persistent_and_never_auto_resumed(self):
+        from opportunity_flow.recovery import RecoveryProbe,intent,set_intent
+        self.app.recovery=RecoveryProbe(self.base,'test')
+        set_intent(self.base,True,'START')
+        self.app.stop_auto()
+        self.assertFalse(intent(self.base))
+        self.app.recovery_tick()
+        self.controller_start=self.service.controller.start
+        self.controller_start.assert_not_called()
+        self.app.start_auto()
+        self.assertTrue(intent(self.base))
+        self.controller_start.assert_called_once()
+
+    def test_supervised_dead_controller_restarts_with_backoff(self):
+        from opportunity_flow.recovery import RecoveryProbe,set_intent
+        self.app.recovery=RecoveryProbe(self.base,'test')
+        set_intent(self.base,True,'START')
+        self.app.recovery_tick();self.app.recovery_tick()
+        self.service.controller.start.assert_called_once()
+
+    def test_windows_shutdown_close_keeps_recovery_armed_but_user_close_pauses(self):
+        from opportunity_flow.recovery import RecoveryProbe,intent,set_intent
+        self.app.recovery=RecoveryProbe(self.base,'test')
+        set_intent(self.base,True,'START')
+        with patch('opportunity_flow.recovery.windows_shutting_down',return_value=True):self.app.close()
+        self.assertTrue(intent(self.base))
+        self.app.closing=False
+        with patch('opportunity_flow.recovery.windows_shutting_down',return_value=False):self.app.close()
+        self.assertFalse(intent(self.base))
         self.assertEqual(self.app.mode_selector.winfo_manager(),'')
 
     def test_default_dashboard_starts_flow_without_a_button_or_trade_confirmation(self):

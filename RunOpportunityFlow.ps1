@@ -31,6 +31,15 @@ try {
         if ($ReadOnly) { $flowArgs += '--read-only' }
         if ($Headless) { $flowArgs += '--headless' }
         if ($Model) { $flowArgs += @('--model',$Model) }
+        if (-not $ReadOnly) {
+            # This same entry point installs/repairs recovery, then supervises
+            # the existing live entry. Scheduled launches do not recurse here.
+            $flowArgs = @('-m','operations.flow_supervisor','--install','--resume',
+                '--dataset',$Dataset,'--state',$liveState)
+            if ($StateRoot) { $flowArgs += @('--state-root',$StateRoot) }
+            if ($Headless) { $flowArgs += '--headless' }
+            if ($Model) { $flowArgs += @('--model',$Model) }
+        }
     } elseif ($Mode -eq 'Demo') {
         $flowArgs += @('--output',('local_data/flow_demo_' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff')))
     } elseif ($Mode -eq 'Collect') {

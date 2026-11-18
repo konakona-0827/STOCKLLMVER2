@@ -16,6 +16,11 @@ from .dashboard_service import FlowViewService,STATE_LABELS,broker_read_message
 
 class FlowDashboard(Dashboard):
     def __init__(self,root,args,*,start=True,service=None):
+        from .recovery import get_probe
+        self.recovery = get_probe()
+        self._recovery_restart = False
+        self._recovery_retry_at = 0
+        self._recovery_failures = 0
         self.args=args;self.flow_ready=False;self.flow_tick=0;self.flow_rows={};self._flow_signature=None
         self.flow_events=Queue();self._last_local_poll=0;self._local_sync_at=None;self._ui_read_error=''
         self._rendered_revision=None;self._last_status_update=0;self._progress_busy=False;self._view_refresh_requested=False
@@ -277,9 +282,38 @@ class FlowDashboard(Dashboard):
             self.controller.request_update();self.refresh_text.set('已要求更新研究；既有研究快取與風控仍然適用。')
 
     def start_auto(self):
-        if not self.closing:self.controller.start()
+        if not self.closing:
+            if self.recovery:self.recovery.manual_start()
+            self._recovery_failures=0;self._recovery_retry_at=0
+            self.controller.start()
 
-    def stop_auto(self):self.controller.stop()
+    def stop_auto(self):
+        if self.recovery:self.recovery.manual_stop()
+        self.controller.stop()
+
+    def recovery_tick(self):
+        if not self.recovery:return
+        from .recovery import intent
+        if self.recovery.restart_requested():
+            self._recovery_restart=True
+            self.close()
+        wanted=intent(self.recovery.root)
+        if not wanted and self.controller.running:self.controller.stop()
+        self.recovery.update(gui=True,coordinator=self.controller.coordinator,
+                             controller_status=self.controller.status)
+        if self.closing or not wanted:return
+        moment=time.monotonic()
+        if self.controller.running:
+            if self.controller.status=='RUNNING':self._recovery_failures=0
+            return
+        previous=self.controller.coordinator
+        broker=getattr(getattr(previous,'runtime',None),'broker',None)
+        owner=getattr(broker,'_thread',None)
+        if owner is not None and owner.is_alive():return
+        if moment>=self._recovery_retry_at:
+            self._recovery_failures+=1
+            self._recovery_retry_at=moment+min(300,30*2**min(4,self._recovery_failures-1))
+            self.controller.start()
 
     def configure_ai_holding(self,symbol,quantity,unit_cost):
         return self.controller.configure_position(symbol,quantity,unit_cost)
@@ -310,6 +344,7 @@ class FlowDashboard(Dashboard):
         self._drain_flow_events()
         if not self.flow_ready:
             self.root.after(100,self.tick);return
+        self.recovery_tick()
         if self.closing:
             if not self.controller.running and not self.refresh_pending and not self.health_pending and not self.scheduler.scan_lock.locked():
                 if self.simulation_window and not self.simulation_window.closed:self.simulation_window.close()
@@ -482,6 +517,9 @@ class FlowDashboard(Dashboard):
 
     def close(self):
         if self.closing:return
+        if self.recovery and not self._recovery_restart:
+            from .recovery import windows_shutting_down
+            if not windows_shutting_down():self.recovery.manual_stop('USER_WINDOW_CLOSE')
         self.closing=True;self.controller.stop()
 
 

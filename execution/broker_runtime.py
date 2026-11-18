@@ -330,6 +330,11 @@ _lock = Lock()
 def get_broker_runtime(project_root: str | Path) -> BrokerRuntime:
     root = Path(project_root).resolve()
     with _lock:
+        previous = _runtimes.get(root)
+        if previous is not None and not previous._thread.is_alive():
+            # A completed shutdown may finish after the GUI's bounded wait.
+            # Only an actually dead owner can be replaced; quarantine is not death.
+            _runtimes.pop(root)
         if root not in _runtimes:
             _runtimes[root] = BrokerRuntime(root)
         return _runtimes[root]

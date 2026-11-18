@@ -165,6 +165,8 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             from .live import LiveCoordinator,resolve_account_root
             live=LiveCoordinator(resolve_account_root(args.state_root),args.state,p,stop_event,read_only=args.read_only)
     previous_result=None
+    from .recovery import get_probe,intent
+    recovery=get_probe() if live is not None else None
     data_executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='flow-daily-data') if live is not None else None
     data_worker=None
     data_retry_after=0
@@ -174,6 +176,11 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
         else:time.sleep(seconds)
     try:
         while not stop_event.is_set():
+            if recovery is not None:
+                recovery.update(loop=True,coordinator=live,controller_status='RUNNING')
+                if recovery.restart_requested() or not intent(recovery.root):
+                    stop_event.set()
+                    break
             if external_wake is not None and external_wake.is_set():
                 external_wake.clear();last_numeric=0;last_signature=None
             if worker is not None and worker.done():
@@ -339,6 +346,9 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                 break
             pause(min(interval,30))
     except KeyboardInterrupt:
+        if recovery is not None:
+            from .recovery import windows_shutting_down
+            if not windows_shutting_down():recovery.manual_stop('USER_KEYBOARD_INTERRUPT')
         print("TW Opportunity Flow 已停止。")
     finally:
         stop_event.set()
