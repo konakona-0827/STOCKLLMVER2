@@ -82,6 +82,9 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             cmd.add_argument('--state-root')
             cmd.add_argument('--read-only',action='store_true',help='可連券商查詢，但不送委託或撤單')
     args=parser.parse_args(argv)
+    if sys.platform=='win32' and args.command in ('collect','quotes','live','watch'):
+        import truststore
+        truststore.inject_into_ssl()
     if args.command=='doctor':
         from .live import doctor
         print(json.dumps(doctor(args.state_root),ensure_ascii=False,indent=2));return 0
