@@ -12,6 +12,7 @@ from .common import TAIPEI,policy,read
 
 
 STATE_LABELS={
+    'REVIEW_DEFERRED_EVENT_SOURCE':'公司事件來源待恢復',
     'DATA_BLOCKED':'資料待補','ACCOUNT_BLOCKED':'帳戶條件阻擋','SCREENED_OUT':'流動性未達','NO_SETUP':'無目前型態',
     'ECONOMIC_BLOCKED':'費後／風險未過','REVIEW_PENDING':'等待研究','REVIEW_IN_FLIGHT':'研究進行中',
     'REVIEW_ERROR':'研究錯誤','REVIEW_ERROR_BACKOFF':'研究錯誤退避','REVIEW_SERVICE_BACKOFF':'模型服務退避',

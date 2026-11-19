@@ -87,16 +87,24 @@ catch {
     while ($failure.InnerException) { $failure = $failure.InnerException }
     if ($failure.HResult -ne -2147024894) { throw }
 }
-function Test-FlowRecoveryDefinition($old) {
+function Test-CurrentOwner($userId) {
+    try {
+        if ($userId -like 'S-1-*') { return $userId -eq $sid }
+        $account = New-Object Security.Principal.NTAccount($userId)
+        return $account.Translate([Security.Principal.SecurityIdentifier]).Value -eq $sid
+    } catch { return $false }
+}
+function Test-FlowRecoveryDefinition($old,[switch]$OwnerOnly) {
     $types = @($old.Triggers | ForEach-Object { [int]$_.Type })
     $period = @($old.Triggers | Where-Object { $_.Type -eq 1 })
     $logons = @($old.Triggers | Where-Object { $_.Type -eq 9 })
     $disabled = @($old.Triggers | Where-Object { -not $_.Enabled })
     return ($old.Actions.Count -eq 1 -and $old.Actions.Item(1).Path -eq $python -and
         $old.Actions.Item(1).Arguments -eq $arguments -and $old.Actions.Item(1).WorkingDirectory -eq $codeRoot -and
-        $old.Principal.UserId -eq $sid -and $old.Principal.LogonType -eq 3 -and $old.Principal.RunLevel -eq 0 -and
-        $old.Triggers.Count -eq 3 -and $types -contains 8 -and $types -contains 9 -and
-        $disabled.Count -eq 0 -and $logons.Count -eq 1 -and $logons[0].UserId -eq $sid -and
+        (Test-CurrentOwner $old.Principal.UserId) -and $old.Principal.LogonType -eq 3 -and $old.Principal.RunLevel -eq 0 -and
+        $old.Triggers.Count -eq $(if ($OwnerOnly) { 2 } else { 3 }) -and
+        $(if ($OwnerOnly) { $types -notcontains 8 } else { $types -contains 8 }) -and $types -contains 9 -and
+        $disabled.Count -eq 0 -and $logons.Count -eq 1 -and (Test-CurrentOwner $logons[0].UserId) -and
         $period.Count -eq 1 -and $period[0].Repetition.Interval -eq 'PT1M' -and
         -not $period[0].Repetition.StopAtDurationEnd -and
         $old.Settings.Enabled -and $old.Settings.AllowDemandStart -and
@@ -105,7 +113,9 @@ function Test-FlowRecoveryDefinition($old) {
         -not $old.Settings.DisallowStartIfOnBatteries -and -not $old.Settings.StopIfGoingOnBatteries -and
         -not $old.Settings.AllowHardTerminate -and $old.Settings.ExecutionTimeLimit -eq 'PT0S')
 }
-$unchanged = $existing -and (Test-FlowRecoveryDefinition $existing.Definition)
+$fullUnchanged = $existing -and (Test-FlowRecoveryDefinition $existing.Definition)
+$ownerUnchanged = $existing -and (Test-FlowRecoveryDefinition $existing.Definition -OwnerOnly)
+$unchanged = $fullUnchanged -or $ownerUnchanged
 $audit = Join-Path $accountRoot 'data/health/flow_recovery'
 $sha = [Security.Cryptography.SHA256]::Create()
 try { $key = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($accountRoot.ToLowerInvariant())))).Replace('-','').Substring(0,12) }
@@ -123,7 +133,8 @@ if ($InspectOnly) {
     $conflict = $existing -and -not $unchanged -and $existing.Enabled -and $existing.Definition.Triggers.Count -gt 0
     $bootAt = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString('o')
     $effective = @()
-    if ($unchanged) { $effective = @('BOOT','OWNER_LOGON','EVERY_MINUTE') }
+    if ($fullUnchanged) { $effective = @('BOOT','OWNER_LOGON','EVERY_MINUTE') }
+    elseif ($ownerUnchanged) { $effective = @('OWNER_LOGON','EVERY_MINUTE') }
     elseif ($shortcutValid -and -not $conflict) { $effective = @('OWNER_LOGON') }
     [ordered]@{
         inspected_at = (Get-Date).ToUniversalTime().ToString('o')
@@ -154,15 +165,26 @@ try {
                 $existing.Xml, [Text.Encoding]::Unicode)
         }
         # Updating a definition does not forcibly stop an existing broker owner.
-        $existing = $taskFolder.RegisterTaskDefinition($TaskName,$definition,6,$sid,$null,3,$null)
+        try { $existing = $taskFolder.RegisterTaskDefinition($TaskName,$definition,6,$sid,$null,3,$null) }
+        catch {
+            $failure = $_.Exception
+            while ($failure.InnerException) { $failure = $failure.InnerException }
+            if ($failure.HResult -ne -2147024891) { throw }
+            # Boot triggers can require administrator rights. Try the owner's
+            # logon + minute task before falling back to a Startup shortcut.
+            $definition.Triggers.Remove(1)
+            $existing = $taskFolder.RegisterTaskDefinition($TaskName,$definition,6,$sid,$null,3,$null)
+        }
     }
     $installed = $taskFolder.GetTask($TaskName).Definition
-    if (-not (Test-FlowRecoveryDefinition $installed)) {
+    if (-not ((Test-FlowRecoveryDefinition $installed) -or (Test-FlowRecoveryDefinition $installed -OwnerOnly))) {
         throw 'Scheduled task verification failed.'
     }
     $registeredTask = $true
-    $plan['registration_method'] = 'WINDOWS_TASK_SCHEDULER'
-    $plan['effective_triggers'] = @('BOOT','OWNER_LOGON','EVERY_MINUTE')
+    $plan['registration_method'] = $(if ($installed.Triggers.Count -eq 3) { 'WINDOWS_TASK_SCHEDULER' } else { 'WINDOWS_OWNER_TASK_SCHEDULER' })
+    $plan['effective_triggers'] = $(if ($installed.Triggers.Count -eq 3) { @('BOOT','OWNER_LOGON','EVERY_MINUTE') } else { @('OWNER_LOGON','EVERY_MINUTE') })
+    $plan['trigger_count'] = $installed.Triggers.Count
+    $plan['trigger_types'] = $plan['effective_triggers']
     if (Test-Path -LiteralPath $startupLink -PathType Leaf) { Remove-Item -LiteralPath $startupLink }
 } catch {
     $failure = $_.Exception

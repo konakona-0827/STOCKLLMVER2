@@ -68,6 +68,11 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             exchange=bars[-1]["exchange"] if bars else None
             event=events.get(symbol)
             c=build(symbol,dataset,at,p,quotes.get((exchange,symbol)),event,(account_context or {}).get(symbol))
+            if (c.get('packet') and (account_context or {}).get(symbol,{}).get('source')=='LIVE_ACCOUNT_CONTEXT'
+                    and (not event or event.get('status') in ('NOT_CHECKED','SOURCE_UNAVAILABLE'))):
+                # A feed outage is not new market evidence. Keep the frozen
+                # research in the ledger; do not pay to re-review degraded input.
+                c.update(state='REVIEW_DEFERRED_EVENT_SOURCE',reasons=['COMPANY_EVENT_SOURCE_UNAVAILABLE'])
             candidates.append(c)
         queue=sorted([c for c in candidates if c["state"] == "REVIEW_PENDING" or
             (diagnose_blocked and c["state"] == "ECONOMIC_BLOCKED")],

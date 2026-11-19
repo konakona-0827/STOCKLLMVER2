@@ -26,7 +26,7 @@ STAGES = frozenset(('ACCOUNT_CHECK_STARTED','ACCOUNT_RECONCILED','ACCOUNT_CHECK_
     'WAITING_RESEARCH_WINDOW','WAITING_DAILY_DATA','RESEARCH_CYCLE_COMPLETED','RESEARCH_REVIEW_STARTED',
     'RESEARCH_REVIEW_COMPLETED','RESEARCH_ERROR','PRETRADE_STARTED','PRETRADE_COMPLETED',
     'EXECUTOR_DISPATCHED','EXECUTOR_RETURNED','ORDER_SENT','FILL_CONFIRMED','POSITION_MANAGEMENT','EXECUTION_BLOCKED',
-    'DISPATCH_UNKNOWN'))
+    'DISPATCH_UNKNOWN','BROKER_SESSION_RESTART_REQUESTED','SUPERVISOR_RECOVERY_REQUESTED'))
 
 BLOCK_REASONS=frozenset(('USER_STOPPED_OR_OUTSIDE_TRADING_SESSION','PRETRADE_VETO_OR_ERROR',
     'BROKER_ACCOUNT_UNVERIFIED','BROKER_ACCOUNT_STALE','BROKER_INVENTORY_UNVERIFIED','CURRENT_ACCOUNT_ALLOWANCE_PAUSED',
@@ -115,6 +115,41 @@ class RecoveryProbe:
         self.lock = threading.Lock()
         self.row = dict(pid=self.pid, run_id=run_id, started_at=clock(),code_revision=code_revision(),stages={},events=[])
         self.last_saved = 0
+        self._local_restart=False
+        self._supervision_checked=-float('inf')
+        self._supervision_lock=threading.Lock()
+
+    def request_restart(self,reason):
+        # Scope every request to this launch. No manual intent is changed.
+        self._local_restart=True
+        save(folder(self.root)/'restart_request.json',dict(pid=self.pid,run_id=self.run_id,
+             reason=reason,requested_at=self.clock()))
+
+    def ensure_supervision(self):
+        dataset=os.environ.get('FLOW_RECOVERY_DATASET')
+        state=os.environ.get('FLOW_RECOVERY_STATE')
+        if not dataset or not state or self._local_restart:return
+        if time.monotonic()-self._supervision_checked<10:return
+        if not self._supervision_lock.acquire(blocking=False):return
+        try:
+            self._supervision_checked=time.monotonic()
+            if not intent(self.root) or windows_shutting_down():return
+            from state_lock import StateLease
+            try:
+                lease=StateLease(self.root,'flow-supervisor').acquire()
+            except RuntimeError:return  # A live guardian still owns the OS lease.
+            lease.close()
+            from operations.flow_supervisor import launch_detached
+            launch_detached(self.root,Path(dataset),Path(state),
+                headless=os.environ.get('FLOW_RECOVERY_HEADLESS')=='1',
+                model=os.environ.get('FLOW_RECOVERY_MODEL') or None)
+            self.event('SUPERVISOR_RECOVERY_REQUESTED')
+            self.request_restart('SUPERVISOR_LOST')
+            # The new guardian waits for the existing dashboard/broker leases.
+        except (OSError,ValueError,RuntimeError):
+            # Keep the current owner; a later tick retries diagnostics/recovery.
+            return
+        finally:self._supervision_lock.release()
 
     def event(self, stage, **detail):
         if stage not in STAGES:return
@@ -164,8 +199,10 @@ class RecoveryProbe:
                 self.row.update(at=now, desired_running=intent(self.root))
                 save(self.path, self.row)
                 self.last_saved = now
+        self.ensure_supervision()
 
     def restart_requested(self):
+        if self._local_restart:return True
         path = folder(self.root) / 'restart_request.json'
         try:
             request = read(path)

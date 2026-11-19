@@ -1,0 +1,118 @@
+{
+  "recorded_at": "2026-11-19T10:02:22.708702+00:00",
+  "baseline_commit": "2ed2121c690aa1c53d3b5a78ef670761d37fbf05",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "original_incident": "reports/opportunity_flow_20261119_status",
+  "full_regression": {
+    "tests": 860,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 165.458,
+    "external_python_network_disabled": true,
+    "real_codex_disabled": true,
+    "real_broker_orders_sent": 0,
+    "output_normalization": "UTF-8 LF; no content removed",
+    "output_sha256": "73ac334c5bb928ce2a762041db2c41af5a742a8a64829132d32a9fb233c76bff"
+  },
+  "reply_reset": {
+    "consecutive_failed_reports_before_rebuild": 3,
+    "clears_stale_pending_research": true,
+    "same_launch_graceful_stop_only": true,
+    "fresh_account_before_resume": true,
+    "repeated_failures_use_original_restart_backoff": true,
+    "manual_pause_preserved": true
+  },
+  "lifecycle": {
+    "variants": [
+      "read deadline recovery",
+      "three rc9999 replies then rebuilt coordinator and new run"
+    ],
+    "original_watch_and_execution_bridge": true,
+    "original_execute_advice_file": true,
+    "automatic_stages": [
+      "fresh reconciliation",
+      "two-role research",
+      "BUY pretrade",
+      "SDK simulated fill",
+      "AI ledger update",
+      "position management",
+      "SELL pretrade",
+      "SDK simulated fill"
+    ],
+    "manual_dispatch": false,
+    "ai_final_quantity": 0,
+    "manual_shares_preserved": 3
+  },
+  "uncertain_order_test": {
+    "rebuilt_coordinator_uses_persistent_claim": true,
+    "duplicate_result": "SKIPPED_DUPLICATE_HANDOFF",
+    "executor_call_count": 1,
+    "claims_cleared": false
+  },
+  "guardian": {
+    "real_isolated_child_and_replacement_processes": true,
+    "simulated_disappearance": "release of account-scoped guardian OS lease",
+    "new_child_waits_for_old_broker_and_dashboard_leases": true,
+    "known_orphan_handoff_scoped_to_current_pid_and_run": true,
+    "unknown_owners_untouched": true,
+    "status_and_log_disk_errors_do_not_stop_monitoring": true,
+    "broker_force_kill": false,
+    "final_old_run_report_saved_before_restart": true
+  },
+  "windows": {
+    "full_boot_registration_requires_permission": true,
+    "owner_logon_and_every_minute_task_registration_observed": true,
+    "sid_name_normalization_verified": true,
+    "actual_native_register_inspect_cleanup_test": true,
+    "startup_shortcut_remains_last_fallback": true,
+    "production_task_modified": false
+  },
+  "disclosures": {
+    "full_universe_independent_of_quote_rotation": true,
+    "index_by_company_code": true,
+    "unchanged_facts_reuse_frozen_review": true,
+    "degraded_source_defers_paid_review": true,
+    "source_recovery_reuses_existing_cache": true,
+    "stale_or_failed_sources_not_marked_clear": true
+  },
+  "unchanged_production_risk_files": [
+    "config",
+    "opportunity_flow/policy.json",
+    "opportunity_flow/execution_bridge.py",
+    "execution/auto_advice_executor.py",
+    "execution/execution_store.py",
+    "execution/account_guard.py",
+    "execution/capital_reply_session.py",
+    "execution/broker_runtime.py",
+    "pretrade_policy.py"
+  ],
+  "cmd_check": {
+    "exit_code": 0,
+    "ready": true,
+    "broker_login_tested": false,
+    "orders_sent": 0
+  },
+  "deployment": {
+    "entry": "OpportunityFlow.cmd",
+    "new_user_parameters_required": false,
+    "actual_trading_pc_modified": false,
+    "actual_windows_reboot_tested": false,
+    "real_live_reconnect_tested": false,
+    "report_outputs": "reports/opportunity_flow_runtime/ plus original account runtime-audit.json"
+  },
+  "source_sha256_lf": {
+    "operations/InstallOpportunityFlowRecovery.ps1": "2b887d0e236314ec874bc59004e28f0a9e0daec1f6c713defcd0206b327fe3f8",
+    "operations/flow_supervisor.py": "45fd2a145c8e25b072b1bb6ee8fa9db193ce4ae8431bb2f74dc3f7292afe296e",
+    "opportunity_flow/company_events.py": "398451872bdc5fc63cbf42b52377c3f8cf7b0024971cfdc3cb01bdca07a9a8e0",
+    "opportunity_flow/dashboard_service.py": "9b2de96cca8f0cab0422dee36a70088940e7d17ff34faf06809ac6ad599b7707",
+    "opportunity_flow/live.py": "c52913bfc823658bca9afb638b1718084c48b752c553018cdb1b398e2ff398b5",
+    "opportunity_flow/pipeline.py": "40cc8372c60a582ed21dfa052e3d72c59621de65e29edfec19e7e0de69f6b848",
+    "opportunity_flow/recovery.py": "4977aa29d57a73073446128dbafe13df097c11536c3c26febb63063aa6715eb1",
+    "tests/test_flow_incident_recovery.py": "94791c31d1b5210fc30f302391c69d8978f3e5a98146d268628c48178865741c",
+    "tests/test_flow_execution_bridge.py": "b10e641f1224e31b67c2f880830fa4d3c32865777cb265185e3ced9956cb237d",
+    "tests/test_flow_recovery.py": "32a92e4a31b0bee557f2b06f6dd14e347b36d86b5b5ca1ac8fc3b9902df08df8",
+    "tests/test_flow_recovery_lifecycle.py": "f8468b08b7cbe35c7f1a3f22390c897af58957ff2bf905e1dcf04e4cfa92bb23",
+    "tests/test_flow_runtime_audit.py": "9b6c25295bd3876a123b86a1e7e7880d1bb162948bde8636bc5075a6d9907ac5"
+  }
+}

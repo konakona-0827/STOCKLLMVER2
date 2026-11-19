@@ -19,6 +19,12 @@ from test_opportunity_flow import FakeRunner
 
 class RecoveryLifecycleTests(unittest.TestCase):
     def test_reconcile_before_research_then_buy_fill_and_exit_without_manual_dispatch(self):
+        self.recovered_lifecycle()
+
+    def test_rc9999_rebuild_reconciles_then_automatically_buys_manages_and_sells(self):
+        self.recovered_lifecycle(reset_reply=True)
+
+    def recovered_lifecycle(self,reset_reply=False):
         from execution.account_guard import BuyingPower,InventoryRow
         from execution.account_snapshot import ExecutionAccountSnapshot
         from execution.auto_advice_executor import execute_advice_file
@@ -99,6 +105,21 @@ class RecoveryLifecycleTests(unittest.TestCase):
         runtime.execute=execute
         stop=threading.Event();wait=stop.wait;polls=[]
         coordinator=LiveCoordinator('unused',root/'watch',fixture.p,stop,runtime=runtime)
+        with self.assertRaises(TimeoutError):coordinator.refresh_account()
+        self.assertIsNone(coordinator.future)
+        if reset_reply:
+            failed=dict(runtime.snapshot,status='ERROR',inventory_checked=False,budget_status='UNVERIFIED',
+                current_buy_budget_twd=None,errors=['session: CapitalReplySessionError: Reply reset failed: rc=9999'])
+            with patch.object(runtime,'refresh',side_effect=lambda:deepcopy(failed)):
+                for _ in range(3):coordinator.refresh_account()
+            self.assertTrue(probe.restart_requested())
+            self.assertFalse(runtime.sent)
+            coordinator.close()
+            stop=threading.Event();wait=stop.wait
+            probe=RecoveryProbe(root,'after-rc9999-rebuild',clock=lambda:instant().timestamp())
+            self.enterContext(patch('opportunity_flow.recovery.get_probe',return_value=probe))
+            self.assertFalse(probe.restart_requested())
+            coordinator=LiveCoordinator('unused',root/'watch',fixture.p,stop,runtime=runtime)
         coordinator.bridge.now=instant
         latest=[];step=coordinator.bridge.step
         def completed(*args,**kwargs):
@@ -106,8 +127,6 @@ class RecoveryLifecycleTests(unittest.TestCase):
             if len(latest)<3:latest.append(result)
             return result
         coordinator.bridge.step=completed
-        with self.assertRaises(TimeoutError):coordinator.refresh_account()
-        self.assertIsNone(coordinator.future)
         coordinator.last_refresh=0
         def tick(seconds):
             wait(.02);polls.append(seconds)

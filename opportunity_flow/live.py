@@ -42,6 +42,25 @@ class LiveCoordinator:
         self.lock=threading.RLock();self.closed=False;self.dataset=None
         self.last_maintenance=0
         self.broker_read_error=None
+        self.session_reset_failures=0
+        self.session_recovery_requested=False
+
+    def check_session_recovery(self,errors):
+        failed=any('CapitalReplySessionError' in str(error) and 'Reply reset failed: rc=9999' in str(error)
+                   for error in (errors or []))
+        if not failed:
+            self.session_reset_failures=0
+            return False
+        self.session_reset_failures+=1
+        self.record_broker_read_error(RuntimeError('BROKER_REPLY_RESET_FAILED:rc=9999'))
+        if self.session_reset_failures>=3 and not self.session_recovery_requested:
+            from .recovery import get_probe
+            probe=get_probe()
+            if probe is not None:
+                self.session_recovery_requested=True
+                observe('BROKER_SESSION_RESTART_REQUESTED')
+                probe.request_restart('BROKER_REPLY_RESET_FAILED')
+        return True
 
     def publish(self,**extra):
         with self.lock:
@@ -71,12 +90,20 @@ class LiveCoordinator:
             except (TimeoutError, RuntimeError) as exc:
                 observe('ACCOUNT_CHECK_FAILED')
                 self.record_broker_read_error(exc)
+                self.check_session_recovery([str(exc)])
                 raise
             finally:
                 self.last_refresh=time.monotonic()
+            if self.check_session_recovery(self.snapshot.get('errors')):
+                return self.snapshot
             if self.broker_read_error is not None:
+                if (self.snapshot.get('inventory_checked') is not True or self.snapshot.get('errors')
+                        or self.snapshot.get('reconciliation_errors')):
+                    self.publish()
+                    return self.snapshot
                 self.record_broker_event('BROKER_READ_RECOVERED', checked_at=self.snapshot.get('checked_at'))
                 self.broker_read_error=None
+                self.session_recovery_requested=False
             self.publish()
             observe('ACCOUNT_RECONCILED' if self.snapshot.get('inventory_checked') is True
                 and not self.snapshot.get('errors') and not self.snapshot.get('reconciliation_errors')
@@ -108,7 +135,7 @@ class LiveCoordinator:
             self.record_broker_event('BROKER_READ_ERROR',error=error)
 
     def pulse(self,dataset,previous=None):
-        from .company_events import current_events,for_symbol
+        from .company_events import current_events,for_symbols
         self.dataset=dataset
         if time.monotonic()-self.last_refresh>=60 or not self.snapshot:self.refresh_account()
         if time.monotonic()-self.last_quote_refresh>=60:
@@ -137,13 +164,11 @@ class LiveCoordinator:
                     self.record_broker_read_error(exc)
                 raise
             source=current_events(self.state/'company_events',datetime.now(TAIPEI))
-            self.events={}
+            markets={s:(dataset.get('master',{}).get(s) or {}).get('exchange') or bars[-1]['exchange']
+                     for s,bars in dataset['grouped'].items() if bars}
             for s in symbols:
-                if not dataset['grouped'].get(s):continue
-                try:self.events[s]=for_symbol(source,s,(dataset.get('master',{}).get(s) or {}).get('exchange') or
-                    dataset['grouped'][s][-1]['exchange'],datetime.now(TAIPEI),self.policy['holding_sessions'])
-                except (ValueError,KeyError,TypeError):
-                    self.events[s]=dict(status='SOURCE_UNAVAILABLE',blockers=['COMPANY_EVENT_PARSE_ERROR'])
+                if s not in markets:markets[s]=(self.quotes.get(s) or {}).get('exchange')
+            self.events=for_symbols(source,markets,datetime.now(TAIPEI),self.policy['holding_sessions'])
             self.last_quote_refresh=time.monotonic()
         self.runtime.disclosures=deepcopy(self.events)
         # Reconcile context after any fills/handoff; quote errors never use MIS as execution evidence.

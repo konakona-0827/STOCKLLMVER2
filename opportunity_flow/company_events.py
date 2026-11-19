@@ -85,3 +85,24 @@ def for_symbol(snapshot,symbol,exchange,at,holding_days):
         limitations=['CURRENT_DISCLOSURE_FEED_NOT_COMPLETE_NEWS_HISTORY','RAW_UNADJUSTED_HISTORY_REMAINS_UNCERTIFIED'])
     facts['evidence_id']='EVENTS:'+digest(event_facts(facts))[:20]
     return facts
+
+
+def for_symbols(snapshot,markets,at,holding_days):
+    """Index once so disclosure coverage is independent of the quote rotation."""
+    grouped={}
+    for key,rows in snapshot.get('rows',{}).items():
+        index={}
+        for row in rows:
+            if key.endswith('_NEWS'):
+                code=str(row.get('公司代號',row.get('SecuritiesCompanyCode',''))).strip()
+            else:
+                code=str(row.get('Code',row.get('SecuritiesCompanyCode',row.get('StockCode','')))).strip()
+            index.setdefault(code,[]).append(row)
+        grouped[key]=index
+    result={}
+    for symbol,exchange in markets.items():
+        view={**snapshot,'rows':{key:index.get(symbol,[]) for key,index in grouped.items()}}
+        try:result[symbol]=for_symbol(view,symbol,exchange,at,holding_days)
+        except (KeyError,ValueError,TypeError):
+            result[symbol]=dict(status='SOURCE_UNAVAILABLE',blockers=['COMPANY_EVENT_PARSE_ERROR'])
+    return result

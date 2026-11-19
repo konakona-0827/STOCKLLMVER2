@@ -1,6 +1,6 @@
 # Opportunity Flow 1.2 流程參考
 
-更新日期：2026-11-18。適用分支：`codex/new-system-tw-opportunity-flow`。1.2 沿用完整舊 Dashboard，並依官方標準修正最低佣金；[介面與費用驗證](../reports/opportunity_flow_ui_fee_20261113/README.md)。11/16 已修正資金上限誤作最低餘額與 MIS 最近成交欄位處理，見[修復及啟動驗證](../reports/opportunity_flow_20261116_repair/README.txt)。11/18 新增 Windows 重開機與程序退出恢復，見[恢復驗證](../reports/opportunity_flow_recovery_20261118/README.txt)。原 1.1 執行器串接基線為 `be8db41`。
+更新日期：2026-11-19。適用分支：`codex/new-system-tw-opportunity-flow`。1.2 沿用完整舊 Dashboard，並依官方標準修正最低佣金；[介面與費用驗證](../reports/opportunity_flow_ui_fee_20261113/README.md)。11/16 已修正資金上限誤作最低餘額與 MIS 最近成交欄位處理，見[修復及啟動驗證](../reports/opportunity_flow_20261116_repair/README.txt)。11/18 新增 Windows 重開機與程序退出恢復，見[恢復驗證](../reports/opportunity_flow_recovery_20261118/README.txt)。11/19 修正 Reply 重設故障、守護遺失及事件資料輪替，見[故障恢復驗證](../reports/opportunity_flow_repair_20261119/README.txt)。原 1.1 執行器串接基線為 `be8db41`。
 
 本版使用官方免費資料與既有 Codex CLI 研究台股，並接上原 STOCKLLM 執行器的買進、賣出、成交核對與持倉管理。以下時間皆為 **台灣時間（UTC+8）**；日本時間加一小時。程式須保持開啟，電腦不能休眠。
 
@@ -167,6 +167,14 @@ NT$10,000 是 AI 資金投入上限，沒有要求券商帳面餘額必須先達
 收據、心跳及守護日誌位於原帳戶目錄 `data/health/flow_recovery/`：`task-registration.json` 列實際安裝方式與觸發、`supervisor_status.json` 列目前程序／對帳狀態、`supervisor.jsonl` 列啟動與恢復事件。完整測試及實測邊界見[11/18 驗證紀錄](../reports/opportunity_flow_recovery_20261118/README.txt)。
 
 ### 正式入口的實機檢查與自動匯出
+
+11/19 恢復補強：連續三次券商健康回報 `CapitalReplySessionError: Reply reset failed: rc=9999` 時，停止舊研究交接、清掉待執行提案並請求目前程序正常退出。守護仍按既有退避啟動原 Live 入口，建立新 COM 會話，先重新對帳再恢復研究、複核及持股管理；庫存或對帳未核實時不解除阻擋。這不會清除帳本中的未結／不明委託，也不重送舊 advice。
+
+守護與 FLOW 互相檢查：FLOW 在心跳時嘗試帳戶專屬 `flow-supervisor` OS 鎖（至少間隔 10 秒；忙碌時待心跳恢復），只有確認原守護不再持鎖才補起新守護，並要求自身正常退出。新守護等待 Dashboard／券商鎖都釋放才建立新程序；重新啟動入口也能對目前已知的孤立 FLOW 發送相同 PID／run_id 的正常交接要求，不干預不明或其他程式 owner。使用者停止與 Windows 關機時不補起守護。守護的狀態／日誌暫時寫入失敗不再直接終止監看，異常退出留下事件及本機錯誤輸出。
+
+Windows 安裝依序嘗試完整開機＋登入＋每分鐘排程、本人登入＋每分鐘排程，最後才退回 Startup 捷徑；收據與檢查列出實際生效的觸發。Windows 回傳的帳號名稱會先轉成 SID 比對，避免把同一使用者誤認成設定不符。
+
+公司事件改為與零股行情輪替分開的全母體索引；只載入該公司的公告及公司行動，保留完整的來源錯誤與時效檢查。正式帳戶事件來源變成未檢查／不可用時，狀態為 `REVIEW_DEFERRED_EVENT_SOURCE`，停止付費重審、不覆蓋先前有效研究；來源恢復且事實沒變時沿用凍結研究，有新公告等實質變化時照原規則重審。
 
 交易電腦更新後，原 `OpportunityFlow.cmd` 正式入口依序安裝／修復恢復設定、啟動守護程序、讀回目前 Windows 排程／捷徑，再等待本次程序的新對帳與研究運行。CLI 模式亦在每日資料更新前先進行初次券商對帳。檢查使用原流程留下的心跳與事件，不增加另一個券商 COM owner，也不另派驗收委託。
 

@@ -112,6 +112,7 @@ class FlowSupervisorTests(unittest.TestCase):
                  patch.object(stop,'wait',return_value=False):
                 self.assertEqual(supervisor.supervise(root,root/'dataset',root/'state',stop=stop),0)
             self.assertEqual(launch.call_count,2)
+            self.assertIn('STOPPED',[call.args[0] for call in supervisor.RuntimeAudit.return_value.publish.call_args_list])
             first.terminate.assert_not_called();second.terminate.assert_not_called()
             self.assertEqual(read(folder(root)/'supervisor_status.json')['state'],'MANUALLY_PAUSED')
             self.assertEqual(launch.call_args.kwargs['env']['TRADING_STATE_ROOT'],str(root))

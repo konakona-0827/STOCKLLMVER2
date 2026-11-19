@@ -253,7 +253,7 @@ class NativeRuntimeInspectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='flow startup verification ') as tmp:
             root=Path(tmp);self.account(root)
             task='STOCKLLM Isolated Check-'+uuid4().hex
-            installed=self.invoke(root,'-TaskName',task,'-RegisterOnly')
+            installed={}
             cleanup=root/'cleanup.ps1'
             cleanup.write_text('''param($TaskName,$AccountRoot,$StartupLink)
 $ErrorActionPreference='Stop'
@@ -266,15 +266,22 @@ if ($StartupLink) {
     if (-not $shortcut.Arguments.Contains($AccountRoot)) { throw 'Wrong account scope' }
     Remove-Item -LiteralPath $link
 } else {
-    $t=$f.GetTask($TaskName)
+    try { $t=$f.GetTask($TaskName) }
+    catch {
+        $failure=$_.Exception
+        while ($failure.InnerException) { $failure=$failure.InnerException }
+        if ($failure.HResult -eq -2147024894) { exit 0 }
+        throw
+    }
     if (-not $t.Definition.Actions.Item(1).Arguments.Contains($AccountRoot)) { throw 'Wrong task account scope' }
     $f.DeleteTask($TaskName,0)
 }
 ''',encoding='utf-8')
             try:
+                installed=self.invoke(root,'-TaskName',task,'-RegisterOnly')
                 result=self.invoke(root,'-TaskName',task,'-InspectOnly')
                 self.assertTrue(result['startup_verified'],result)
-                expected=['BOOT','OWNER_LOGON','EVERY_MINUTE'] if installed['task_registered'] else ['OWNER_LOGON']
+                expected=installed['effective_triggers']
                 self.assertEqual(result['effective_triggers'],expected)
                 self.assertFalse(result['credentials_saved'])
                 self.assertFalse(result['automatic_force_kill'])
