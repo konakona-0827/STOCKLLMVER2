@@ -24,6 +24,33 @@ from state_lock import StateLease
 
 
 class FlowIncidentTests(unittest.TestCase):
+    def test_heartbeat_write_failure_keeps_gui_and_watch_alive_and_retries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            clock=Mock(return_value=1000)
+            probe=RecoveryProbe(tmp,'write-contention',clock=clock)
+            with patch('opportunity_flow.recovery.save',side_effect=PermissionError('sharing violation')),\
+                 patch.object(probe,'ensure_supervision') as supervision:
+                probe.update(gui=True,controller_status='RUNNING',force=True)
+                probe.event('WATCH_STARTED')
+                clock.return_value=1001
+                probe.update(loop=True)
+                self.assertEqual(probe.row['gui_at'],1000)
+                self.assertEqual(probe.row['loop_at'],1001)
+                self.assertEqual(supervision.call_count,2)
+            clock.return_value=1006
+            probe.update(gui=True,loop=True)
+            persisted=read(probe.path)
+            self.assertEqual(persisted['gui_at'],1006)
+            self.assertEqual(persisted['loop_at'],1006)
+            self.assertEqual(persisted['stages']['WATCH_STARTED']['count'],1)
+
+    def test_restart_request_survives_a_denied_diagnostic_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            probe=RecoveryProbe(tmp,'restart-contention')
+            with patch('opportunity_flow.recovery.save',side_effect=PermissionError('sharing violation')):
+                probe.request_restart('BROKER_REPLY_RESET_FAILED')
+                self.assertTrue(probe.restart_requested())
+
     def setUp(self):
         fixture=fixture_module.BridgeTests('test_approved_research_reaches_existing_interface_without_chasing')
         fixture.setUp();self.addCleanup(fixture.doCleanups)

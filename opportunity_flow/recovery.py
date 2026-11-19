@@ -122,8 +122,20 @@ class RecoveryProbe:
     def request_restart(self,reason):
         # Scope every request to this launch. No manual intent is changed.
         self._local_restart=True
-        save(folder(self.root)/'restart_request.json',dict(pid=self.pid,run_id=self.run_id,
-             reason=reason,requested_at=self.clock()))
+        try:
+            save(folder(self.root)/'restart_request.json',dict(pid=self.pid,run_id=self.run_id,
+                 reason=reason,requested_at=self.clock()))
+        except OSError:
+            pass  # The current process still observes its in-memory request.
+
+    def save_heartbeat(self,now):
+        self.last_saved=now
+        try:
+            save(self.path,self.row)
+        except OSError:
+            # Diagnostic contention must not stop Tk callbacks or the watch loop.
+            # Keep the accumulated events in memory for the next scheduled write.
+            pass
 
     def ensure_supervision(self):
         dataset=os.environ.get('FLOW_RECOVERY_DATASET')
@@ -161,8 +173,7 @@ class RecoveryProbe:
                                count=previous.get('count',0)+1,detail=safe_details(detail))
             self.row['events']=(self.row['events']+[dict(at=now,stage=stage,**safe_details(detail))])[-100:]
             self.row.update(at=now,desired_running=intent(self.root))
-            save(self.path,self.row)
-            self.last_saved=now
+            self.save_heartbeat(now)
 
     def update(self, *, gui=False, loop=False, coordinator=None, controller_status=None, force=False):
         now = self.clock()
@@ -197,8 +208,7 @@ class RecoveryProbe:
                     daily_buy_cap_twd=getattr(cfg,'max_daily_buy_twd',None)).items()}
             if force or now - self.last_saved >= 5:
                 self.row.update(at=now, desired_running=intent(self.root))
-                save(self.path, self.row)
-                self.last_saved = now
+                self.save_heartbeat(now)
         self.ensure_supervision()
 
     def restart_requested(self):
