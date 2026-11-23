@@ -389,7 +389,7 @@ class BridgeTests(unittest.TestCase):
         self.runtime.context['available_cash_twd']=3373
         self.check_existing_executor_partial_fill('9000','8373')
 
-    def check_existing_executor_partial_fill(self,account_balance,available_cash):
+    def check_existing_executor_partial_fill(self,account_balance,available_cash,*,planned_limits_enabled=False):
         from execution.auto_advice_executor import execute_advice_file
         from execution.account_guard import BuyingPower
         from execution.account_snapshot import ExecutionAccountSnapshot
@@ -399,7 +399,8 @@ class BridgeTests(unittest.TestCase):
         self.bridge.step(self.result,self.ds,self.now);payload=self.runtime.sent[0]
         root=self.root/'executor';root.mkdir();store=ExecutionStore(root/'isolated.sqlite3')
         cfg=root/'config.json';save(cfg,dict(enabled=True,min_available_to_buy_twd=5000,min_buy_fee_reserve_twd=20,
-            minimum_commission_twd=1,max_daily_buy_twd=30000,observe_seconds=0))
+            minimum_commission_twd=1,max_daily_buy_twd=30000,observe_seconds=0,
+            planned_limits_enabled=planned_limits_enabled))
         advice=root/'advice.json';save(advice,payload)
         balance=BuyingPower(True,True,Decimal(account_balance),Decimal(available_cash),Decimal(available_cash),'test')
         snapshot=ExecutionAccountSnapshot(self.at,buying_power=balance)

@@ -79,6 +79,22 @@ class ExecutablePlanTests(unittest.TestCase):
         self.f.result=result
         self.f.check_existing_executor_partial_fill('30000','30000')
 
+    def test_current_planned_mode_and_4080_budget_reach_original_sdk_at_frozen_limit(self):
+        self.context.update(pricing_policy='PLANNED_LIMIT',available_cash_twd=4080)
+        result,candidate=self.research();self.prepare_runtime()
+        self.f.runtime.config.planned_limits_enabled=True
+        self.f.runtime.snapshot['current_buy_budget_twd']=4080
+        self.f.runtime.quote.update(last_price=100.5,bid=100.0,ask=100.5)
+        self.f.result=result
+        # Use the real current reserve/cash relation and original executor's
+        # enabled planned-price guard, not just the bridge's fake sender.
+        self.f.check_existing_executor_partial_fill('9080','9080',planned_limits_enabled=True)
+        recommendation=self.f.runtime.sent[0]['recommendations'][0]
+        self.assertEqual(recommendation['suggested_price'],100)
+        self.assertEqual(recommendation['entry_plan']['limit_price'],100)
+        self.assertEqual(recommendation['pricing_policy'],'PLANNED_LIMIT')
+        self.assertEqual(candidate['execution']['missing'],[])
+
     def test_all_breached_stops_are_blocked_before_model_review(self):
         self.quote['low']=89
         runner=FakeRunner();_,candidate=self.research(runner)
