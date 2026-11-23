@@ -132,10 +132,14 @@ class CapitalReplySession:
         self._skR = None
         self._reply_conn = None
         self._order_conn = None
+        self._center_conn = None
         self._connected = False
         self._owner_thread_id: int | None = None
         self._center_login_attempted = False
         self._reply_needs_reset = False
+        self._reply_startup_pending = False
+        self._agreement_retry_at = 0.0
+        self._agreement_error = ''
 
     @property
     def connected(self) -> bool:
@@ -144,6 +148,10 @@ class CapitalReplySession:
     @property
     def center_login_attempted(self) -> bool:
         return self._center_login_attempted
+
+    @property
+    def reply_startup_pending(self) -> bool:
+        return self._reply_startup_pending
 
     def connect(
         self,
@@ -240,8 +248,18 @@ class CapitalReplySession:
                 else:
                     state.real_balance_rows.append(raw)
 
+        class CenterEvents:
+            def OnShowAgreement(_self, bstrData):
+                # The payload may contain identity or unrelated market terms.
+                # Receipt alone is not proof of securities API authorization.
+                record_capital_event(self.project_root,session_id=self.session_id,
+                    call_site='CapitalReplySession.CenterEvents',event='AGREEMENT_STATUS_RECEIVED',
+                    object_type='SKCenterLib',object_id=hex(id(self._skC)),
+                    api_name='OnShowAgreement',return_code='RECEIVED')
+
         self._reply_conn = comtypes.client.GetEvents(self._skR, ReplyEvents())
         self._order_conn = comtypes.client.GetEvents(self._skO, OrderEvents())
+        self._center_conn = comtypes.client.GetEvents(self._skC, CenterEvents())
 
         # If the call or a later setup step fails, do not retry Center login
         # in this process: it may already have succeeded at the broker.
@@ -302,27 +320,75 @@ class CapitalReplySession:
         else:
             raise CapitalReplySessionError("Multiple TS accounts; set CAPITAL_ACCOUNT.")
 
-        rc = self._skR.SKReplyLib_ConnectByID(self.user)
+        return self._complete_reply_startup(replay_wait_seconds,replay_grace_seconds)
+
+    def _connect_reply_with_agreement_fallback(self, *, agreement_wait_seconds=3.0):
+        """Refresh a failed permission lookup once, without another Center login."""
+        if time.monotonic()<getattr(self,'_agreement_retry_at',0):
+            return 2018
+
+        def connect_once():
+            rc=self._skR.SKReplyLib_ConnectByID(self.user)
+            record_capital_event(self.project_root,session_id=self.session_id,
+                call_site='CapitalReplySession._connect_reply_with_agreement_fallback',event='API_CALL',
+                object_type='SKReplyLib',object_id=hex(id(self._skR)),
+                api_name='SKReplyLib_ConnectByID',return_code=rc)
+            return rc
+
+        rc=connect_once()
+        if rc==2018:
+            # Official 2.13.59 docs also list failed status retrieval/TLS as a
+            # cause of 2018. RequestAgreement queries; it cannot sign anything.
+            refresh=getattr(self._skC,'SKCenterLib_RequestAgreement',None)
+            refresh_rc='UNAVAILABLE'
+            if callable(refresh):
+                try:refresh_rc=refresh(self.user)
+                except Exception as exc:refresh_rc='EXCEPTION:'+type(exc).__name__
+            record_capital_event(self.project_root,session_id=self.session_id,
+                call_site='CapitalReplySession._connect_reply_with_agreement_fallback',event='AGREEMENT_REFRESH',
+                object_type='SKCenterLib',object_id=hex(id(self._skC)),
+                api_name='SKCenterLib_RequestAgreement',return_code=refresh_rc)
+            if refresh_rc==0:
+                end=time.monotonic()+agreement_wait_seconds
+                while time.monotonic()<end:
+                    self._comtypes.PumpEvents(min(.25,max(0,end-time.monotonic())))
+                self.snapshot.begin_replay()
+                rc=connect_once()
+            if rc==2018:
+                self._agreement_error=f'BROKER_API_AGREEMENT_UNVERIFIED; agreement_refresh_rc={refresh_rc}; retry_after_seconds=60'
+                self._agreement_retry_at=time.monotonic()+60
+        if rc!=2018:
+            self._agreement_error=''
+            self._agreement_retry_at=0.0
+        return rc
+
+    def _complete_reply_startup(self,replay_wait_seconds=20.0,replay_grace_seconds=1.0):
+        # Retain the existing login only for this known post-login failure.
+        # A nonzero ConnectByID is never accepted as an authorized connection.
+        self.snapshot.begin_replay()
+        rc=self._connect_reply_with_agreement_fallback()
+        self._reply_startup_pending=rc==2018
         if rc != 0:
-            raise CapitalReplySessionError(f"SKReplyLib_ConnectByID failed: rc={rc}")
+            detail=('; '+self._agreement_error) if rc==2018 else ''
+            raise CapitalReplySessionError(f"SKReplyLib_ConnectByID failed: rc={rc}{detail}")
 
         end = time.time() + replay_wait_seconds
-        while time.time() < end and not state.replay_complete:
-            comtypes.client.PumpEvents(0.25)
+        while time.time() < end and not self.snapshot.replay_complete:
+            self._comtypes.PumpEvents(0.25)
 
-        if not state.replay_complete:
+        if not self.snapshot.replay_complete:
             raise CapitalReplySessionError("No OnComplete; replay is not trustworthy.")
 
         end = time.time() + max(0.0, replay_grace_seconds)
         while time.time() < end:
-            comtypes.client.PumpEvents(0.25)
+            self._comtypes.PumpEvents(0.25)
 
         self._connected = True
         self._owner_thread_id = get_ident()
-        return state.copy()
+        return self.snapshot.copy()
 
     def pump(self, seconds: float) -> ReplySnapshot:
-        if not self._connected or self._comtypes is None:
+        if (not self._connected and not self._reply_startup_pending) or self._comtypes is None:
             raise CapitalReplySessionError("Session is not connected.")
         end = time.time() + max(0.0, seconds)
         while time.time() < end:
@@ -465,15 +531,12 @@ class CapitalReplySession:
         # ConnectByID replays historical orders again. Keeping the prior rows
         # would count the same fills once per quote-driven Reply reconnect.
         self.snapshot.begin_replay()
-        rc = self._skR.SKReplyLib_ConnectByID(self.user)
-        record_capital_event(self.project_root,session_id=self.session_id,
-            call_site='CapitalReplySession._reconnect_reply_only',event='API_CALL',
-            object_type='SKReplyLib',object_id=hex(id(self._skR)),
-            api_name='SKReplyLib_ConnectByID',return_code=rc)
+        rc = self._connect_reply_with_agreement_fallback()
         if rc != 0:
-            self._reply_needs_reset=True
+            self._reply_needs_reset=rc!=2018
+            detail=('; '+self._agreement_error) if rc==2018 else ''
             raise CapitalReplySessionError(
-                f"SKReplyLib_ConnectByID reconnect failed: rc={rc}"
+                f"SKReplyLib_ConnectByID reconnect failed: rc={rc}{detail}"
             )
 
         end = time.time() + replay_wait_seconds
@@ -504,6 +567,10 @@ class CapitalReplySession:
         - Never blindly call SKCenterLib_Login a second time.
         - If a full login would be required, raise and let the action fail/skip.
         """
+        if getattr(self,'_reply_startup_pending',False):
+            if not allow_reply_reconnect:
+                raise CapitalReplySessionError('BROKER_API_AGREEMENT_UNVERIFIED; reconnect disabled.')
+            self._complete_reply_startup()
         health = self.health_check()
         if health.ready:
             return health

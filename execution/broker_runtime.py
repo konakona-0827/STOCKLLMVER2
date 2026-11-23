@@ -211,7 +211,10 @@ class BrokerRuntime:
                                 session = candidate
                                 login_error = None
                             except Exception as exc:
-                                session = None
+                                # Preserve the authenticated COM owner after a
+                                # failed agreement lookup. Health can retry the
+                                # Reply step; never repeat Center login.
+                                session = candidate if getattr(candidate,'reply_startup_pending',False) is True else None
                                 connection_error = (
                                     f"broker connection: {type(exc).__name__}: {exc}"
                                 )
@@ -222,6 +225,8 @@ class BrokerRuntime:
                                     # setup failure. Another login could return 2003.
                                     login_blocked = True
                                     login_error = connection_error
+                        if getattr(session,'reply_startup_pending',False) is True and kind!='health':
+                            raise RuntimeError('BROKER_API_AGREEMENT_UNVERIFIED: health reconciliation required')
                         if kind in ('execute','health_order_test'):
                             if session is None:
                                 raise RuntimeError(connection_error)

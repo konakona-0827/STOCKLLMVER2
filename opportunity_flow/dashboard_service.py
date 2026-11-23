@@ -151,6 +151,9 @@ class FlowController:
 
 def broker_read_message(health):
     errors=(health or {}).get('errors') or []
+    if any('BROKER_API_AGREEMENT_UNVERIFIED' in str(error) or
+           ('SKReplyLib_ConnectByID' in str(error) and 'rc=2018' in str(error)) for error in errors):
+        return '證券 API 權限狀態尚未核實（2018），交易暫停。可能尚未簽署，或券商／網路未能取得狀態；系統約每分鐘重新查核。此流程不啟用期貨。'
     if any('BROKER_READ_DEADLINE_EXCEEDED' in str(error) for error in errors):
         return '券商查詢逾時，新買暫停。系統會重新核對帳務，成功後重算可用額。'
     if any('BROKER_READ_RECOVERY_UNVERIFIED' in str(error) for error in errors):
