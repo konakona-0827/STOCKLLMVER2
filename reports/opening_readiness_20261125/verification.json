@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "exported_at": "2026-11-24T01:01:44.492404+08:00",
+  "target_open_taipei": "2026-11-25T09:00:00+08:00",
+  "target_open_japan": "2026-11-25T10:00:00+09:00",
+  "source_revision": "40a5b8814de50f9b2340db310d5a63b355461f5b",
+  "acceptance": "ENGINEERING_PATH_VERIFIED_AWAITING_TARGET_SESSION_DATA",
+  "full_regression": {
+    "tests": 885,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "external_network_disabled": true,
+    "real_model_disabled": true,
+    "isolated_accounts": true
+  },
+  "integration_scope": {
+    "two_independent_reviews": true,
+    "pretrade_review": true,
+    "original_executor": true,
+    "broker": "MOCK",
+    "confirmed_partial_fill_quantity": 2,
+    "ledger_write_verified": true,
+    "duplicate_send_blocked": true,
+    "real_test_orders_sent": 0
+  },
+  "runtime": {
+    "state": "WAITING_RESEARCH_WINDOW",
+    "checks": {
+      "startup_verified": true,
+      "current_process_heartbeat": true,
+      "running_version_verified": true,
+      "fresh_account_reconciled": true,
+      "watch_loop_running": true,
+      "automatic_execution_enabled": true,
+      "research_cycle_observed": false
+    },
+    "exported_at": "2026-11-23T17:01:14.994676+00:00",
+    "supervisor_pid": 20196,
+    "runtime_pid": 4032,
+    "code_revision": "40a5b8814de50f9b2340db310d5a63b355461f5b",
+    "runtime_code_compatible": true,
+    "heartbeat_age_seconds": 8.0,
+    "stages": {
+      "ACCOUNT_CHECK_STARTED": 1,
+      "ACCOUNT_RECONCILED": 1,
+      "WATCH_STARTED": 1,
+      "WAITING_RESEARCH_WINDOW": 2
+    },
+    "account": {
+      "checked_at": "2026-11-23T17:00:19+00:00",
+      "budget_ready": true,
+      "cash_reserve_twd": "5000",
+      "ai_cap_twd": "10000",
+      "current_buy_budget_twd": "10000",
+      "daily_buy_cap_twd": "30000"
+    },
+    "live_errors": [],
+    "live_account_checked_at": "2026-11-24T01:00:19+08:00",
+    "windows": {
+      "startup_verified": true,
+      "task_present": true,
+      "task_definition_verified": true,
+      "task_enabled": true,
+      "shortcut_verified": false,
+      "conflicting_task": false,
+      "requires_logged_on_owner": true,
+      "current_session_is_interactive": true,
+      "credentials_saved": false,
+      "automatic_force_kill": false,
+      "task_trigger_count": 2,
+      "task_last_result": 0,
+      "inspected_at": "2026-11-23T17:01:01.142309+00:00",
+      "boot_at": "2026-11-21T12:01:49.500000+00:00",
+      "task_last_run_at": "2026-11-23T17:00:27+00:00",
+      "effective_triggers": [
+        "OWNER_LOGON",
+        "EVERY_MINUTE"
+      ]
+    }
+  },
+  "local_health": {
+    "checked_at": "2026-11-24T01:01:40.782977+08:00",
+    "status": "WARN",
+    "checks": [
+      {
+        "key": "execution_db",
+        "label": "正式交易帳本",
+        "status": "PASS",
+        "detail": "SQLite 完整性通過"
+      },
+      {
+        "key": "analysis_db",
+        "label": "持股歸屬／資金帳本",
+        "status": "PASS",
+        "detail": "SQLite 完整性通過"
+      },
+      {
+        "key": "research_db",
+        "label": "FLOW 研究帳本",
+        "status": "PASS",
+        "detail": "SQLite 完整性通過"
+      },
+      {
+        "key": "broker",
+        "label": "券商查詢",
+        "status": "PASS",
+        "detail": "資料時間 2026-11-24T01:00:19+08:00；年齡 81 秒"
+      },
+      {
+        "key": "inventory",
+        "label": "券商庫存與 AI 歸屬",
+        "status": "PASS",
+        "detail": "已核對 14 檔；差異 0 檔"
+      },
+      {
+        "key": "quotes",
+        "label": "持股行情",
+        "status": "WARN",
+        "detail": "部分行情過期、試撮或尚未取得；送單前仍須取得有效報價"
+      },
+      {
+        "key": "orders",
+        "label": "未結／未確認委託",
+        "status": "PASS",
+        "detail": "未結紀錄 0 筆；沒有本次查出的未確認結果"
+      },
+      {
+        "key": "buy_budget",
+        "label": "新增買進額度",
+        "status": "PASS",
+        "detail": "帳戶買進額度可用，仍須通過逐筆研究與風控"
+      },
+      {
+        "key": "flow",
+        "label": "自動流程",
+        "status": "PASS",
+        "detail": "FLOW 運行中"
+      },
+      {
+        "key": "dataset",
+        "label": "官方日線資料",
+        "status": "PASS",
+        "detail": "資料可讀；1990 檔、65 個交易日"
+      },
+      {
+        "key": "research",
+        "label": "研究進度",
+        "status": "PASS",
+        "detail": "目前非交易時段；等待下一個研究時段"
+      },
+      {
+        "key": "models",
+        "label": "近期模型工作",
+        "status": "PASS",
+        "detail": "檢查 2 種角色的最後結果；本檢查不呼叫模型"
+      },
+      {
+        "key": "executor",
+        "label": "原執行器設定",
+        "status": "PASS",
+        "detail": "原執行器已啟用；送單仍由正式流程負責"
+      },
+      {
+        "key": "timing",
+        "label": "執行計時紀錄",
+        "status": "PASS",
+        "detail": "最近執行已有分段計時"
+      }
+    ],
+    "expected_pending_check": "Outside-market live odd-lot quote is not yet available"
+  },
+  "codex_auth": {
+    "checked": true,
+    "chatgpt_login_valid": true,
+    "exit_code": 0,
+    "model_call_count": 0
+  },
+  "dataset": {
+    "end": "2026-11-23",
+    "calendar_verified_through": "2026-11-23",
+    "rows": 126951,
+    "rejected_rows": 1503,
+    "universe": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP"
+  },
+  "target_calendar": {
+    "date": "2026-11-25",
+    "closed_reason": null
+  },
+  "scheduled_refresh": {
+    "2026-11-24T18:00:00+08:00": "2026-11-24",
+    "2026-11-25T08:30:00+08:00": "2026-11-24"
+  },
+  "numeric_preflight": {
+    "2026-11-24": {
+      "states": {
+        "NO_SETUP": 374,
+        "SCREENED_OUT": 1326,
+        "DATA_BLOCKED": 172,
+        "ECONOMIC_BLOCKED": 82,
+        "REVIEW_PENDING": 36
+      },
+      "reasons": {
+        "NO_CURRENT_SETUP": 374,
+        "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1326,
+        "RECENT_HISTORY_GAP_OR_INVALID_BAR": 164,
+        "NET_PROFIT_BELOW_FLOOR": 41,
+        "REWARD_RISK_BELOW_FLOOR": 62,
+        "CAPITAL_OR_RISK_CAP": 33,
+        "NET_RETURN_BELOW_FLOOR": 16,
+        "STRUCTURAL_STOP_MISSING": 4,
+        "INSUFFICIENT_COMPLETED_HISTORY": 8
+      },
+      "simulated_timestamp": "2026-11-24T09:00:00+08:00",
+      "quote_basis": "NONE_NUMERIC_PREFLIGHT_ONLY",
+      "llm_calls": 0
+    },
+    "2026-11-25": {
+      "states": {
+        "DATA_BLOCKED": 1990
+      },
+      "reasons": {
+        "CALENDAR_COVERAGE_NOT_CURRENT": 1990
+      },
+      "simulated_timestamp": "2026-11-25T09:00:00+08:00",
+      "quote_basis": "NONE_NUMERIC_PREFLIGHT_ONLY",
+      "llm_calls": 0
+    }
+  },
+  "numeric_budget_context": {
+    "checked_at": "2026-11-24T00:50:39+08:00",
+    "current_buy_budget_twd": "10000",
+    "strategy_cap_twd": "10000",
+    "broker_balance_twd": "18395",
+    "minimum_balance_twd": "5000"
+  },
+  "recovered_incident": {
+    "at": "2026-11-23T22:06:59+08:00",
+    "error": "GetRealBalanceReport has 1 unparsed rows; inventory is not trustworthy",
+    "subsequent_reconciliation_recovered": true
+  },
+  "formal_ledger": {
+    "2026-11-23": {
+      "execution_attempts": [],
+      "execution_events": []
+    },
+    "2026-11-24": {
+      "execution_attempts": [],
+      "execution_events": []
+    },
+    "unresolved_count": 0
+  },
+  "schedules": [
+    {
+      "id": "automation-2",
+      "name": "台股盤中執行與交易紀錄推送",
+      "status": "ACTIVE",
+      "kind": "heartbeat",
+      "timezone": "Asia/Tokyo",
+      "effective_taipei_date": "2026-11-25",
+      "weekdays": "MONDAY_TO_FRIDAY_WITH_TRADING_DAY_CHECK",
+      "japan_time": "12:30",
+      "taipei_time": "11:30",
+      "report_type": "INTRADAY_AS_OF"
+    },
+    {
+      "id": "automation",
+      "name": "台股收盤執行與交易紀錄推送",
+      "status": "ACTIVE",
+      "kind": "heartbeat",
+      "timezone": "Asia/Tokyo",
+      "effective_taipei_date": "2026-11-25",
+      "weekdays": "MONDAY_TO_FRIDAY_WITH_TRADING_DAY_CHECK",
+      "japan_time": "15:00",
+      "taipei_time": "14:00",
+      "report_type": "AFTER_CLOSE_AS_OF"
+    },
+    {
+      "id": "11-25",
+      "name": "11月25日開盤一小時健康檢查與修正",
+      "status": "ACTIVE",
+      "kind": "heartbeat",
+      "timezone": "Asia/Tokyo",
+      "effective_taipei_date": "2026-11-25",
+      "weekdays": "ONE_TIME_2026_11_25",
+      "japan_time": "11:00",
+      "taipei_time": "10:00",
+      "report_type": "OPENING_HOUR_REVIEW_AND_FIX"
+    }
+  ],
+  "report_destination": "reports/trading_daily/YYYY-MM-DD/unique_timestamp",
+  "limitations": [
+    "Nov 24 completed daily bars are not yet available; automatic evening collection and preopen retry are required before Nov 25.",
+    "The numerical preflight contains no live quote or actual model decision.",
+    "US market prices/news are not connected as research input fields.",
+    "Model quota and future broker connectivity are not guaranteed by a login-status check."
+  ]
+}
