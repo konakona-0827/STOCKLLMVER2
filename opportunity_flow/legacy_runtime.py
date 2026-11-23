@@ -195,6 +195,8 @@ class LegacyRuntime:
                         try:risks[str(float(stop['price']))]=float(existing_position_risk(c,stop['price'],self.config))
                         except (ValueError,ArithmeticError):reason='EXISTING_POSITION_RISK_UNKNOWN'
             context[symbol]=dict(source='LIVE_ACCOUNT_CONTEXT',account_identity=self.account_identity,
+                research_support_policy=getattr(self,'support_policy','strict'),
+                pricing_policy='PLANNED_LIMIT' if getattr(self.config,'planned_limits_enabled',False) else 'AT_QUOTE',
                 available_cash_twd=float(snapshot.get('current_buy_budget_twd') or 0),
                 held_qty=int(held.get(symbol,0)),average_cost_twd=basis.get('average_unit_cost_twd'),risk_by_stop=risks,
                 trading_enabled=settings.get(symbol,{}).get('enabled',True),pending_execution=symbol in pending,

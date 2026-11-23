@@ -98,10 +98,28 @@ def validate_quote(q, symbol, exchange, at, max_age):
         bid, ask, last = (number(q[k], True) for k in ("bid", "ask", "last_price"))
         if bid > ask:
             raise ValueError("CROSSED_QUOTE")
-        return dict(bid=bid, ask=ask, last_price=last, quote_timestamp=when.isoformat(),
-                    source=q.get("source", "CAPITAL_SKCOM")), None
+        result = dict(bid=bid, ask=ask, last_price=last, quote_timestamp=when.isoformat(),
+                      source=q.get("source", "CAPITAL_SKCOM"))
+        for field in ('open','high','low'):
+            if q.get(field) is not None:
+                result[field]=number(q[field],True)
+        if result.get('high') is not None and result.get('low') is not None and result['low']>result['high']:
+            raise ValueError('QUOTE_SESSION_RANGE_INVALID')
+        return result, None
     except (ValueError, TypeError, KeyError) as exc:
         return None, str(exc)
+
+
+def plan_quote_problem(route,quote):
+    """Use the same market invalidation rules in research and execution."""
+    stop=route['stop']['price']
+    if quote['bid']<=stop or quote.get('last_price',quote['bid'])<=stop:
+        return 'REVIEWED_PLAN_INVALIDATED'
+    if quote.get('low') is not None and quote['low']<=stop:
+        return 'REVIEWED_PLAN_INVALIDATED_THIS_SESSION'
+    if quote['ask']>=route['target']['price']:
+        return 'REVIEWED_TARGET_ALREADY_REACHED'
+    return None
 
 
 def validate_reference(q,symbol,exchange,at,max_age):

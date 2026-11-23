@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from opportunity_flow.common import read, save
-from opportunity_flow.recovery import folder, heartbeat_reason, intent, set_intent
+from opportunity_flow.recovery import folder, heartbeat_reason, intent, set_intent,runtime_code_matches
 from state_lock import StateLease
 from operations.flow_runtime_audit import RuntimeAudit, wait_for_startup
 
@@ -109,7 +109,7 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
             exported=read(target/'runtime-audit.json')
             from opportunity_flow.recovery import code_revision
             fresh=datetime.fromisoformat(exported['exported_at']).timestamp()
-            existing_audit=exported.get('source_revision')==code_revision() and 0<=time.time()-fresh<60
+            existing_audit=runtime_code_matches(code_revision(),exported.get('source_revision')) and 0<=time.time()-fresh<60
         except (OSError,ValueError,TypeError,KeyError):existing_audit=False
         if not existing_audit:
             RuntimeAudit(root,dataset,state,headless=headless,model=model).publish('EXISTING_ACCOUNT_OWNER',force=True)

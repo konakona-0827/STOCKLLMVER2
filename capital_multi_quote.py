@@ -103,8 +103,9 @@ class MultiCapitalMarket(CapitalMarket):
                 'batch_count': batch_count,
             })
         wanted, quotes, errors = set(ordered_symbols), {}, {}
+        ready=set()
         deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline and set(quotes) != wanted and not self.stopped():
+        while time.monotonic() < deadline and ready != wanted and not self.stopped():
             self.pump(.1)
             for market, index in list(self.pending_indices):
                 self.pending_indices.discard((market, index))
@@ -117,10 +118,14 @@ class MultiCapitalMarket(CapitalMarket):
                     if q['symbol'] in wanted:
                         q['venue']='TPEx' if int(market)==6 else 'TWSE'
                         quotes[q['symbol']] = q
+                        if snapshot(q['symbol'],q,at=now())['data_quality']!='UNAVAILABLE':
+                            ready.add(q['symbol'])
+                        else:
+                            ready.discard(q['symbol'])
                 except Exception as exc:
                     self.event('BATCH_CALLBACK_ERROR', error_info(exc))
         for symbol in ordered_symbols:
-            if symbol in quotes or self.stopped():
+            if symbol in ready or self.stopped():
                 continue
             try:
                 stock = self.sk.SKSTOCKLONG()

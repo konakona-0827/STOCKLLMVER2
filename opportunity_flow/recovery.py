@@ -22,6 +22,22 @@ def code_revision():
         return None
 
 
+@lru_cache(maxsize=32)
+def runtime_code_matches(expected,actual,code_root=None):
+    if expected and expected==actual:return True
+    if any(not isinstance(value,str) or len(value)!=40 or any(c not in '0123456789abcdef' for c in value)
+           for value in (expected,actual)):
+        return False
+    try:
+        result=subprocess.run(['git','diff','--quiet',expected,actual,'--','.',
+            ':(exclude)reports/**',':(exclude)docs/**',':(exclude)README*'],
+            cwd=code_root or Path(__file__).resolve().parents[1],stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,timeout=3,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        return result.returncode==0
+    except (OSError,subprocess.SubprocessError):
+        return False
+
+
 STAGES = frozenset(('ACCOUNT_CHECK_STARTED','ACCOUNT_RECONCILED','ACCOUNT_CHECK_FAILED','WATCH_STARTED',
     'WAITING_RESEARCH_WINDOW','WAITING_DAILY_DATA','RESEARCH_CYCLE_COMPLETED','RESEARCH_REVIEW_STARTED',
     'RESEARCH_REVIEW_COMPLETED','RESEARCH_ERROR','PRETRADE_STARTED','PRETRADE_COMPLETED',

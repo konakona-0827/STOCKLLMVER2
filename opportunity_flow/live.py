@@ -141,7 +141,7 @@ class LiveCoordinator:
         if time.monotonic()-self.last_quote_refresh>=60:
             held=[s for s,q in self.runtime.store.ai_positions().items() if q>0]
             research=sorted([c for c in (previous or {}).get('candidates',[]) if c.get('packet')],
-                key=lambda c:(c['state'] not in ('RESEARCH_READY','REVIEW_PENDING','REVIEW_IN_FLIGHT'),-c.get('rank_score',0),c['symbol']))
+                key=lambda c:(c['state'] not in ('RESEARCH_READY','REVIEW_PENDING','REVIEW_IN_FLIGHT','REVIEW_DEFERRED_LIVE_QUOTE'),-c.get('rank_score',0),c['symbol']))
             if not research:
                 from .engine import build
                 p=self.runtime.effective_policy(self.policy)

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .common import TAIPEI,canonical,digest,save,stamp
 from .company_events import event_facts
-from .data import validate_quote
+from .data import validate_quote,plan_quote_problem
 from .engine import economics
 from .review import combine,validate,verify_packet
 from .state import Ledger
@@ -47,6 +47,8 @@ def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,su
             or original.get('account_identity')!=context.get('account_identity')):
         raise ValueError('LIVE_ACCOUNT_RESEARCH_REQUIRED')
     if original.get('held_qty')!=context.get('held_qty'):raise ValueError('POSITION_CHANGED_SINCE_RESEARCH')
+    if original.get('pricing_policy') is not None and original['pricing_policy']!=context.get('pricing_policy'):
+        raise ValueError('EXECUTION_POLICY_CHANGED')
     if context.get('pending_execution') or context.get('trading_enabled') is False or context.get('buy_block_reason'):
         raise ValueError(context.get('buy_block_reason') or 'PENDING_ORDER_OR_AI_DISABLED')
     if packet['policy']!=p:raise ValueError('EXECUTION_POLICY_CHANGED')
@@ -68,11 +70,8 @@ def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,su
         raise ValueError('COMPANY_EVENT_EVIDENCE_STALE')
     route=next((r for r in packet['evidence'][2]['facts'] if r['route_id']==route_id and r['eligible']),None)
     if not route:raise ValueError('REVIEWED_ROUTE_NOT_ELIGIBLE')
-    if q['bid']<=route['stop']['price'] or q['last_price']<=route['stop']['price']:
-        raise ValueError('REVIEWED_PLAN_INVALIDATED')
-    if quote.get('low') is not None and quote['low']<=route['stop']['price']:
-        raise ValueError('REVIEWED_PLAN_INVALIDATED_THIS_SESSION')
-    if q['ask']>=route['target']['price']:raise ValueError('REVIEWED_TARGET_ALREADY_REACHED')
+    market_problem=plan_quote_problem(route,q)
+    if market_problem:raise ValueError(market_problem)
     if not planned_limits and q['ask']>route['entry']:raise ValueError('WAITING_FOR_REVIEWED_ENTRY')
     qty=route['economics']['quantity']
     e=economics(route['entry'],route['stop']['price'],route['target']['price'],qty,q['ask']-q['bid'],p)
@@ -327,7 +326,11 @@ class ExecutionBridge:
                 decisions,review=runtime.pretrade([decision],[c])
                 observe('PRETRADE_COMPLETED',side='BUY',symbol=symbol)
                 if review['status']!='VALID' or decisions[0]['decision']!='BUY':
-                    blocked.append(dict(symbol=symbol,reason='PRETRADE_VETO_OR_ERROR'));continue
+                    blocked.append(dict(symbol=symbol,reason='PRETRADE_VETO_OR_ERROR',
+                        pretrade_status=review.get('status'),
+                        pretrade_reviews=[{k:row.get(k) for k in ('symbol','approved','reason')}
+                            for row in review.get('reviews',[]) if isinstance(row,dict)],
+                        decision=decisions[0].get('decision'),decision_reason=decisions[0].get('reason')));continue
                 expected=buy_decision(candidate,route,quotes[symbol])
                 if any(decisions[0].get(k)!=expected[k] for k in ('symbol','suggested_qty','suggested_price','target_price','invalidation_price','holding_days')):
                     blocked.append(dict(symbol=symbol,reason='PRETRADE_ALTERED_FROZEN_PLAN'));continue
@@ -345,9 +348,15 @@ class ExecutionBridge:
                 reason=str(exc)
                 block=dict(symbol=symbol,reason=reason)
                 if reason in {'ODDLOT_QUOTE_MISSING','LIVE_NON_TRIAL_QUOTE_REQUIRED','VERIFIED_ODDLOT_QUOTE_BASIS_REQUIRED',
-                              'QUOTE_SYMBOL_OR_EXCHANGE_MISMATCH','QUOTE_STALE_OR_FUTURE','CROSSED_QUOTE','BROKER_MARKET_NOT_VERIFIED'}:
+                              'QUOTE_SYMBOL_OR_EXCHANGE_MISMATCH','QUOTE_STALE_OR_FUTURE','CROSSED_QUOTE','BROKER_MARKET_NOT_VERIFIED',
+                              'QUOTE_SESSION_RANGE_INVALID','REVIEWED_PLAN_INVALIDATED','REVIEWED_PLAN_INVALIDATED_THIS_SESSION',
+                              'REVIEWED_TARGET_ALREADY_REACHED','WAITING_FOR_REVIEWED_ENTRY'}:
                     quote=quotes.get(symbol) or {}
                     block['quote_evidence']={key:quote.get(key) for key in ('quote_status','is_trial','quote_timestamp',
-                        'quote_basis','data_age_seconds','source_market_number','retrieval_method')}
+                        'quote_basis','data_age_seconds','source_market_number','retrieval_method','bid','ask','last_price','low','high','warnings')}
+                    if candidate.get('selected_route_id'):
+                        frozen=candidate['review']['packet']
+                        block['reviewed_plan']=next((r for r in frozen['evidence'][2]['facts']
+                            if r['route_id']==candidate['selected_route_id']),None)
                 blocked.append(block)
         return dict(reports=reports,blocked=blocked,account_checked_at=(runtime.snapshot or {}).get('checked_at'))

@@ -7,7 +7,7 @@ import math
 
 from .common import canonical, digest, stamp
 from .company_events import event_facts
-from .data import validate_quote,validate_reference
+from .data import validate_quote,validate_reference,plan_quote_problem
 
 
 def economics(entry, stop, target, quantity, spread, p):
@@ -97,10 +97,14 @@ def routes(bars, f, q, p, price_reference=None, account=None):
     funding=min(allocation,float(account.get('available_cash_twd',allocation)))
     for entry, kind in entries:
         stops = [r for r in supports if r["price"] < entry and entry-r["price"] >= max(p["minimum_stop_atr"] * f["atr14"], 2*spread)]
+        session_low=q.get('low') if q else None
+        unbroken_stops=[r for r in stops if session_low is None or r['price']<session_low]
+        stop_problem='SESSION_STRUCTURAL_STOP_BREACHED' if stops and not unbroken_stops else 'STRUCTURAL_STOP_MISSING'
+        stops=unbroken_stops
         overhead = [r for r in targets if r["price"] > entry]
         if not stops or not overhead:
             result.append(dict(route_id=digest([entry, kind])[:16], entry=entry, kind=kind,
-                eligible=False, blockers=["STRUCTURAL_STOP_MISSING" if not stops else "OBSERVED_TARGET_MISSING"],
+                eligible=False, blockers=[stop_problem if not stops else "OBSERVED_TARGET_MISSING"],
                 waiting_for="NEW_COMPLETED_PRICE_STRUCTURE", economics=None))
             continue
         stop, target = stops[0], overhead[0]
@@ -131,6 +135,10 @@ def routes(bars, f, q, p, price_reference=None, account=None):
             target_required_return=round(target["price"]/entry-1,6),
             eligible=not blocks, blockers=blocks,
             waiting_for="PRICE_AT_OR_BELOW_ENTRY" if entry < reference else "RESEARCH_AND_EXECUTION_DATA")
+        market_problem=plan_quote_problem(route,q) if q else None
+        if market_problem:
+            blocks.append(market_problem)
+            route.update(eligible=False,waiting_for='NEW_VALID_MARKET_STRUCTURE')
         route["route_id"] = digest(route)[:16]
         result.append(route)
     return result
@@ -211,7 +219,15 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
                     older_history_gaps=older_gaps,
                     price_reference_basis="ODDLOT_QUOTE" if q else "PUBLIC_BOARD_LOT_REFERENCE" if price_reference else "LAST_COMPLETED_CLOSE",
                     spread_known=q is not None,
-                    quote_problem=quote_error, event_check=event or {"status":"NOT_CHECKED"}))]
+                    quote_problem=quote_error, event_check=event or {"status":"NOT_CHECKED"})),
+                dict(evidence_id='E_INTRADAY',facts=dict(session_date=day,
+                    quote_basis='VERIFIED_ODDLOT' if q else 'PUBLIC_REFERENCE' if price_reference else 'UNAVAILABLE',
+                    quote_timestamp=q['quote_timestamp'] if q else (raw_quote or {}).get('quote_timestamp'),
+                    bid=q['bid'] if q else None,ask=q['ask'] if q else None,
+                    last_price=q['last_price'] if q else observed_price,
+                    open=q.get('open') if q else None,high=q.get('high') if q else None,low=q.get('low') if q else None,
+                    levels=thresholds,level_states=trigger_states,
+                    stop_rule='STRICTLY_BELOW_VERIFIED_SESSION_LOW_WHEN_AVAILABLE'))]
     core = dict(schema_version=1, system="TW Opportunity Flow", policy=p, symbol=symbol, exchange=exchange,
         decision_session=day, completed_through=bars[-1]["date"], setup_families=families,
         trigger_states=trigger_states,

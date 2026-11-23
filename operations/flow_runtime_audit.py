@@ -10,7 +10,7 @@ import threading
 import time
 
 from opportunity_flow.common import read, save
-from opportunity_flow.recovery import STAGES, code_revision, folder, money, safe_details
+from opportunity_flow.recovery import STAGES, code_revision, folder, money, safe_details,runtime_code_matches
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -88,7 +88,7 @@ def assess(native,row,*,pid,run_id,launched_at,now,process_alive,revision,proces
         and 'ACCOUNT_RECONCILED' in stages)
     loop=epoch(row.get('loop_at'))
     watch=bool(alive and row.get('controller_status')=='RUNNING' and loop is not None and 0<=now-loop<=120)
-    same_code=bool(revision and row.get('code_revision')==revision)
+    same_code=runtime_code_matches(revision,row.get('code_revision'))
     inspected=epoch(native.get('inspected_at'))
     startup=bool(native.get('startup_verified') is True and inspected is not None and 0<=now-inspected<=180
                  and native.get('current_session_is_interactive') is True)

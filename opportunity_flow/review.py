@@ -12,7 +12,7 @@ import time
 
 from .common import canonical, digest
 
-PROMPT_VERSION = "flow-review-v1"
+PROMPT_VERSION = "flow-review-v2-executable-plan"
 ROLE_TASKS = {
     "researcher": "檢查交易假說是否值得繼續研究、可推翻它的證據與下一個可驗證條件。",
     "challenger": "獨立檢查反證、近端壓力、追價、成本與資料限制；沒有明確反證時不要把尚待執行查核誤寫成假說失效。",
@@ -25,6 +25,8 @@ RESEARCH 的 selected_route_id 必須是該 packet.selected_routes 之一。
 WATCH 表示尚未確認或需要新資料；REJECT 必須有針對目前假說的明確反證。
 即時行情、公司事件與公司行動未知，分開放入 execution_missing，不要把它們誤認成歷史價格形態不存在。
 沒有合格數值路徑時只能 WATCH 或 REJECT，不能覆寫經濟條件。
+E_INTRADAY 提供當前盤中價格、日內高低價與已觸及的均線／前高；E_FEATURES.close 是上一個已完成日線收盤。必須分別解讀，盤中 level_states 已為 ABOVE 時，不得把舊收盤低於該價位描述為當前仍未收復。
+合格路徑已按可取得的當日低點選擇尚未被跌破的失效位置並重算股數。RESEARCH 須同意該路徑的入場、股數、失效與目標；若需要盤中持續確認，WATCH 必須說明要維持的既有價位、可核對的時間尺度及失效條件。缺少分鐘資料時明列所缺資料，不把下一根日線作為所有盤中機會的固定要求。
 wait_conditions 必須說清楚下一次何種事實改變值得重審；不要只寫等待更多確認。
 只能引用本 packet 的 evidence_id。使用繁體中文，理由簡潔，不執行工具或存取帳戶。"""
 

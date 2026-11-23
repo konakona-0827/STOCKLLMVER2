@@ -6,11 +6,12 @@ import time
 
 from .common import digest, save, stamp
 from .engine import build,economics
+from .data import plan_quote_problem
 from .review import CodexRunner, combine, validate
 from .state import Ledger
 
 
-def execution_readiness(candidate, reviewed_packet, route_id, at, event, p):
+def execution_readiness(candidate, reviewed_packet, route_id, at, event, p,*,support_policy='strict',planned_limits=False):
     if route_id is None:
         return dict(state="NO_APPROVED_RESEARCH_ROUTE",missing=[])
     route = next(r for r in reviewed_packet["evidence"][2]["facts"] if r["route_id"] == route_id)
@@ -21,23 +22,26 @@ def execution_readiness(candidate, reviewed_packet, route_id, at, event, p):
     if not q:
         missing.append(candidate.get("quote_problem") or "ODDLOT_QUOTE_MISSING")
     limits = reviewed_packet["evidence"][3]["facts"]
-    if not limits["corporate_actions_verified"]:
+    advisory=support_policy=='advisory'
+    if not advisory and not limits["corporate_actions_verified"]:
         missing.append("CORPORATE_ACTIONS_NOT_VERIFIED")
-    if (not event or event.get("status") != "CHECKED_CLEAR" or not event.get("source_url")
+    allowed_events=('CHECKED_CLEAR','SOURCE_REVIEW_REQUIRED') if advisory else ('CHECKED_CLEAR',)
+    if (not event or event.get("status") not in allowed_events or event.get('blockers') or not event.get("source_url")
             or not event.get("checked_at")):
         missing.append("COMPANY_EVENTS_AND_TRADING_STATUS_NOT_CHECKED")
     else:
         try:
             age=(stamp(at)-stamp(event["checked_at"])).total_seconds()
-            if not 0 <= age <= 86400:
+            if not 0 <= age <= (3600 if advisory else 86400):
                 missing.append("EVENT_CHECK_STALE_OR_FUTURE")
         except (ValueError,TypeError):
             missing.append("EVENT_CHECK_TIME_INVALID")
     if q:
-        if q["bid"] <= route["stop"]["price"]:
-            return dict(state="INVALIDATED",missing=missing)
-        if q["ask"] >= route["target"]["price"]:
+        market_problem=plan_quote_problem(route,q)
+        if market_problem=='REVIEWED_TARGET_ALREADY_REACHED':
             return dict(state="TARGET_ALREADY_REACHED",missing=missing)
+        if market_problem:
+            return dict(state="INVALIDATED",missing=missing,reason=market_problem)
         # Freeze the reviewed entry/stop/target/quantity. Quote noise must not
         # chase the ask or silently substitute today's newly generated route.
         e=economics(route["entry"],route["stop"]["price"],route["target"]["price"],
@@ -49,11 +53,11 @@ def execution_readiness(candidate, reviewed_packet, route_id, at, event, p):
             missing.append("FROZEN_PLAN_ECONOMICS_CHANGED_REQUIRES_REVIEW")
         if missing:
             return dict(state="EXECUTION_DATA_NEEDED",missing=missing)
-        if q["ask"] > route["entry"]:
+        if not planned_limits and q["ask"] > route["entry"]:
             return dict(state="WAITING_FOR_PLANNED_ENTRY",missing=[])
     if missing:
         return dict(state="EXECUTION_DATA_NEEDED",missing=missing)
-    return dict(state="PAPER_REVIEW_READY",missing=[],orders_permitted=False)
+    return dict(state="EXECUTION_REVIEW_READY" if advisory else "PAPER_REVIEW_READY",missing=[],orders_permitted=False)
 
 
 def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_llm=False,diagnose_blocked=False,review_symbols=None,publish_latest=True,account_context=None):
@@ -68,6 +72,11 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             exchange=bars[-1]["exchange"] if bars else None
             event=events.get(symbol)
             c=build(symbol,dataset,at,p,quotes.get((exchange,symbol)),event,(account_context or {}).get(symbol))
+            context=(account_context or {}).get(symbol,{})
+            if (c['state']=='REVIEW_PENDING' and context.get('source')=='LIVE_ACCOUNT_CONTEXT'
+                    and context.get('pricing_policy') in ('AT_QUOTE','PLANNED_LIMIT')
+                    and (not c.get('quote') or c['quote'].get('low') is None)):
+                c.update(state='REVIEW_DEFERRED_LIVE_QUOTE',reasons=['LIVE_INTRADAY_PLAN_DATA_REQUIRED'])
             if (c.get('packet') and (account_context or {}).get(symbol,{}).get('source')=='LIVE_ACCOUNT_CONTEXT'
                     and (not event or event.get('status') in ('NOT_CHECKED','SOURCE_UNAVAILABLE'))):
                 # A feed outage is not new market evidence. Keep the frozen
@@ -152,7 +161,9 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             state,route=combine(r["packet"],r["researcher"],r["challenger"])
             c.update(state=state,selected_route_id=route,
                 execution=execution_readiness(c,r["packet"],route,
-                    at+timedelta(seconds=time.monotonic()-started),events.get(c["symbol"]),p))
+                    at+timedelta(seconds=time.monotonic()-started),events.get(c["symbol"]),p,
+                    support_policy=(account_context or {}).get(c['symbol'],{}).get('research_support_policy','strict'),
+                    planned_limits=(account_context or {}).get(c['symbol'],{}).get('pricing_policy')=='PLANNED_LIMIT'))
         states=Counter(c["state"] for c in candidates)
         blockers=Counter(reason for c in candidates for reason in c["reasons"])
         usage=Counter()

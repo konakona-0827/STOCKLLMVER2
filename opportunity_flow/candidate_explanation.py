@@ -3,6 +3,7 @@ from .common import stamp
 
 
 REASONS = {
+    'LIVE_INTRADAY_PLAN_DATA_REQUIRED': ('已找到初步路徑，正在補齊券商即時零股報價與當日低點。', '取得行情後重算有效失效價及股數，再交兩位代理敲定計畫。'),
     'COMPLETED_CALENDAR_MISSING': ('尚無可核對的交易日資料。', '等交易日曆與完成日線補齊。'),
     'CALENDAR_COVERAGE_NOT_CURRENT': ('交易日曆尚未更新到所需日期。', '等官方日曆更新後重算。'),
     'INSUFFICIENT_COMPLETED_HISTORY': ('已完成的日 K 筆數不足。', '等日線補齊至策略要求的筆數。'),
@@ -19,6 +20,9 @@ REASONS = {
     'BUY_REENTRY_COOLDOWN': ('這檔仍在重新進場的冷卻期。', '等冷卻期結束，再用最新資料評估。'),
     'BUY_SESSION_UNKNOWN': ('尚未核實這檔的交易日期或紀錄。', '等交易紀錄核對完成。'),
     'STRUCTURAL_STOP_MISSING': ('找不到距入場價合理、可核對的失效位置。', '等新支撐形成，或價差變動後出現合格失效價。'),
+    'SESSION_STRUCTURAL_STOP_BREACHED': ('既有失效位置已被今天低點碰到或跌破，尚無符合風險距離的替代位置。', '用未被今天低點跌破的支撐重算股數、費後收益與風險。'),
+    'REVIEWED_PLAN_INVALIDATED_THIS_SESSION': ('研究後取得的當日低點已碰到或跌破原計畫失效價。', '依最新日內低點重新制定失效位置與股數，再交兩位代理審查。'),
+    'QUOTE_SESSION_RANGE_INVALID': ('券商日內高低價的範圍無法核實。', '等券商重新回傳有效的日內高低價。'),
     'OBSERVED_TARGET_MISSING': ('入場價上方缺少已觀測的目標價。', '等新價格結構提供可核對的上方目標。'),
     'CAPITAL_OR_RISK_CAP': ('目前找不到同時符合資金與損失風險限制的股數。', '等資金、入場位置或風險距離改變後重算。'),
     'NET_RETURN_BELOW_FLOOR': ('試算的費後報酬率偏低。', '等入場價、價差或目標變動，使費後報酬率達標。'),
@@ -40,6 +44,7 @@ REASONS = {
 }
 
 STATE_TEXT = {
+    'REVIEW_DEFERRED_LIVE_QUOTE': ('初步機會已列入券商取價佇列。', '等即時零股報價與當日低點核對後，進入正式計畫研究。'),
     'REVIEW_PENDING': ('數值條件已通過，等待研究員與反證員。', '等兩位代理完成對同一計畫的審查。'),
     'REVIEW_IN_FLIGHT': ('這檔已交給代理研究。', '等兩份意見完成，再核對是否同意同一條路徑。'),
     'RESEARCH_WATCH': ('至少一位代理認為證據仍不足，先觀察。', '等研究意見所列的條件出現後再評估。'),
@@ -123,8 +128,11 @@ def explain(candidate, route, policy):
         reasons.insert(0, '研究已通過，當時賣一仍高於計畫入場價。')
         waiting.insert(0, f"觀察賣一是否回落到 {_price(route.get('entry'))} 或以下，再核對最新計畫。")
     elif stage == 'INVALIDATED':
-        reasons.insert(0, f"當時買一已到達或跌破失效價 {_price((route.get('stop') or {}).get('price'))}。")
-        waiting = ['等有新結構支持的新計畫。']
+        if execution.get('reason')=='REVIEWED_PLAN_INVALIDATED_THIS_SESSION':
+            reasons.insert(0, f"當日最低價已到達或跌破失效價 {_price((route.get('stop') or {}).get('price'))}。")
+        else:
+            reasons.insert(0, f"當時買一已到達或跌破失效價 {_price((route.get('stop') or {}).get('price'))}。")
+        waiting = ['依最新日內低點與有效支撐重算計畫。']
     elif stage == 'TARGET_ALREADY_REACHED':
         reasons.insert(0, f"當時賣一已到達或超過目標價 {_price((route.get('target') or {}).get('price'))}。")
         waiting = ['等新的入場位置與費後空間出現，再評估新計畫。']
