@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "exported_at": "2026-11-23T19:59:39.284183+08:00",
+  "timezone": "Asia/Taipei",
+  "source_revision": "3a83c24534b71414da6c42a9097e2b82b80ab0e3",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "acceptance": "BLOCKED_BY_BROKER_API_AGREEMENT",
+  "today": {
+    "trade_date": "2026-11-23",
+    "calls": [
+      {
+        "role": "challenger",
+        "status": "VALID",
+        "count": 49
+      },
+      {
+        "role": "researcher",
+        "status": "VALID",
+        "count": 49
+      }
+    ],
+    "paired_research_states": {
+      "RESEARCH_WATCH": 112,
+      "RESEARCH_REJECT": 23,
+      "RESEARCH_READY": 1
+    },
+    "reviewed_plans": [
+      {
+        "symbol": "3023",
+        "packet_id": "b66eef049194dc80bdfd3485a0d1022aa2908121a3a45e4a6f046c286d8d98ad",
+        "route_id": "c54cba3d40c4c1ca",
+        "reviewed_at": "2026-11-23T13:14:03.755265+08:00",
+        "entry": 279.5,
+        "stop": {
+          "date": "2026-10-27",
+          "kind": "CONFIRMED_SWING_LOW",
+          "known_on": "2026-10-28",
+          "price": 270.0
+        },
+        "target": {
+          "date": "2026-10-22",
+          "kind": "OBSERVED_20D_HIGH",
+          "known_on": "2026-11-20",
+          "price": 311.0
+        },
+        "economics": {
+          "entry": 279.5,
+          "invested_twd": 1120.118,
+          "modeled_loss_twd": 48.196,
+          "net_profit_twd": 115.64,
+          "net_return": 0.103239,
+          "quantity": 4,
+          "reward_risk": 2.399369,
+          "slippage_bps_each_side": 10,
+          "spread_reserve": 0.5,
+          "stop": 270.0,
+          "target": 311.0
+        }
+      }
+    ],
+    "cycles": {
+      "count": 149,
+      "first_at": "2026-11-23T11:59:13.052732+08:00",
+      "last_at": "2026-11-23T13:30:48.851853+08:00"
+    },
+    "formal_ledger": {
+      "execution_attempts": [],
+      "execution_events": [],
+      "ai_ledger_total_shares": 0
+    },
+    "last_execution": {
+      "account_checked_at": "2026-11-23T13:29:37+08:00",
+      "blocked": [
+        {
+          "symbol": "3023",
+          "reason": "REVIEWED_PLAN_INVALIDATED_THIS_SESSION"
+        }
+      ],
+      "reports_count": 0
+    }
+  },
+  "tests": {
+    "focused": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "full": {
+      "tests": 873,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "external_network_disabled": true,
+    "real_model_disabled": true,
+    "isolated_accounts": true,
+    "integration": {
+      "original_executor_used": true,
+      "broker": "MOCK",
+      "confirmed_partial_fill_quantity": 2,
+      "duplicate_submit_blocked": true,
+      "real_test_orders_sent": 0
+    }
+  },
+  "deployment": {
+    "old_processes_exited": true,
+    "old_account_leases_released": true,
+    "entry": "RunOpportunityFlow.ps1 -Mode Live",
+    "supervisor_pid": 28616,
+    "runtime_pid": 28116,
+    "run_id": "5f8f90e343f840e091781ccb05715102",
+    "supervisor_state": "AWAITING_FRESH_ACCOUNT",
+    "runtime_state": "AWAITING_FRESH_ACCOUNT",
+    "checks": {
+      "startup_verified": true,
+      "current_process_heartbeat": true,
+      "running_version_verified": true,
+      "fresh_account_reconciled": false,
+      "watch_loop_running": true,
+      "automatic_execution_enabled": false,
+      "research_cycle_observed": false
+    },
+    "windows": {
+      "startup_verified": true,
+      "task_present": true,
+      "task_definition_verified": true,
+      "task_enabled": true,
+      "shortcut_verified": false,
+      "conflicting_task": false,
+      "requires_logged_on_owner": true,
+      "current_session_is_interactive": true,
+      "credentials_saved": false,
+      "automatic_force_kill": false,
+      "task_trigger_count": 2,
+      "task_last_result": 0,
+      "inspected_at": "2026-11-23T11:59:09.889736+00:00",
+      "boot_at": "2026-11-21T12:01:49.500000+00:00",
+      "task_last_run_at": "2026-11-23T11:58:27+00:00",
+      "effective_triggers": [
+        "OWNER_LOGON",
+        "EVERY_MINUTE"
+      ]
+    },
+    "account": {
+      "checked_at": "2026-11-23T11:58:33+00:00",
+      "budget_ready": false,
+      "cash_reserve_twd": "5000",
+      "ai_cap_twd": "10000",
+      "current_buy_budget_twd": null,
+      "daily_buy_cap_twd": "30000"
+    },
+    "order_evidence": {
+      "sent_events": 0,
+      "fill_events": 0,
+      "unknown_events": 0
+    },
+    "observed_at": "2026-11-23T11:59:38.750273+00:00",
+    "runtime_code_revision": "3a83c24534b71414da6c42a9097e2b82b80ab0e3",
+    "broker_errors": [
+      "broker connection: CapitalReplySessionError: SKReplyLib_ConnectByID failed: rc=2018"
+    ],
+    "broker_error_definition": {
+      "code": 2018,
+      "name": "SK_WARNING_SIGN_STOCK_OR_FUTURE_API_AGREEMENT_FIRST",
+      "source": "Installed broker SDK SKCenterLib_GetReturnCodeMessage(2018), no login performed for this lookup",
+      "action": "Account owner must verify API agreement and activation with broker, then reconnect and reconcile"
+    }
+  },
+  "dataset": {
+    "end": "2026-11-23",
+    "calendar_verified_through": "2026-11-23",
+    "rows": 126951,
+    "universe": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+    "point_in_time_certified": false,
+    "corporate_actions_verified": false
+  }
+}
