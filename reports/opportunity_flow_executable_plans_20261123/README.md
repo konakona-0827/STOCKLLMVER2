@@ -2,6 +2,8 @@
 
 本次修正讓兩位代理審查的交易計畫先符合當前盤中行情，再使用原有複核、執行器與帳本流程。873 項離線回歸全部通過，包含新增 11 項針對性驗證。程式修正提交為 `3a83c24534b71414da6c42a9097e2b82b80ab0e3`。
 
+補充交易範圍核對：使用者明確排除期貨及選擇權，目前也沒有已啟用的衍生品交易選項。今日 136 組配對研究中，95 組為 TWSE、41 組為 TPEX，涵蓋 31 檔股票，沒有期貨推薦。連線端的 `OnAccount` 只採用 `TS` 證券帳戶，原執行器使用 `STOCKORDER` 與 `SendStockOddLotOrder`。下述錯誤發生在登入後建立回報通道時，尚未送出交易請求；錯誤碼名稱中的「證券／期貨」是券商共用說明，不足以判定缺少哪個權限。應確認證券 API 同意書及啟用狀態，無須為本系統啟用或簽署期貨交易服務。
+
 實機已透過原 `RunOpportunityFlow.ps1 -Mode Live` 重啟新版，但新的券商連線在 `SKReplyLib_ConnectByID` 回傳 `2018`。券商 SDK 的 `SKCenterLib_GetReturnCodeMessage(2018)` 回覆 `SK_WARNING_SIGN_STOCK_OR_FUTURE_API_AGREEMENT_FIRST`，目前仍未取得有效的新對帳，因此**交易維持封鎖，尚未完成可交易驗收**。須由帳戶持有人在群益官方網站確認 API 同意書及啟用狀態後，重新連線及對帳。官方申請與同意書說明：https://www.capital.com.tw/campaign/stock/API/index.html 。沒有修改認證設定或將錯誤碼當作成功。
 
 ## 今日觀察
