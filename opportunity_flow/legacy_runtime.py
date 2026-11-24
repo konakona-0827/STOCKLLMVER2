@@ -78,11 +78,13 @@ class LegacyRuntime:
         return markets
 
     @tracked('BROKER_QUOTES', '取得券商零股行情')
-    def fetch_quotes(self,symbols,dataset):
+    def fetch_quotes(self,symbols,dataset,*,require_complete_buy=False):
         from capital_multi_quote import multi_snapshot
         markets=self.market_map(symbols,dataset)
         started=datetime.now(TAIPEI).isoformat()
-        raw,errors=self.broker.fetch_quotes_with_markets(symbols,markets,self.audit,self.stopped,timeout=12)
+        options=dict(timeout=12)
+        if require_complete_buy:options['require_complete_buy']=True
+        raw,errors=self.broker.fetch_quotes_with_markets(symbols,markets,self.audit,self.stopped,**options)
         if getattr(self.broker,'read_quarantined',False) is True:
             raise TimeoutError('BROKER_QUOTE_READ_DEADLINE_EXCEEDED')
         for s in list(raw):
@@ -99,7 +101,25 @@ class LegacyRuntime:
                         quote_status='LIVE',is_trial=False,retrieval_mode='BROKER'))
                     self.observations[q['symbol']]=history[-60:]
         self.quotes_received_at=datetime.now(TAIPEI).isoformat()
+        from .data import validate_quote
+        diagnostics=[]
+        for q in result['quotes']:
+            _,problem=validate_quote(q,q['symbol'],q['exchange'],datetime.now(TAIPEI),120)
+            if problem is None and q.get('low') is None:problem='LIVE_INTRADAY_PLAN_DATA_REQUIRED'
+            row={k:q.get(k) for k in ('symbol','exchange','quote_status','is_trial','last_price','bid','ask',
+                'open','high','low','quote_timestamp','quote_basis','retrieval_method','data_age_seconds')}
+            row.update(problem=problem,**{k:(raw.get(q['symbol']) or {}).get(k) for k in ('bid_size','ask_size','previous_close')})
+            diagnostics.append(row)
+        try:
+            save(self.output/('latest_buy_quotes.json' if require_complete_buy else 'latest_quotes.json'),
+                dict(checked_at=self.quotes_received_at,require_complete_buy=require_complete_buy,quotes=diagnostics))
+            self.quote_diagnostic_error=None
+        except OSError as exc:
+            self.quote_diagnostic_error=type(exc).__name__
         return {q['symbol']:q for q in result['quotes']}
+
+    def fetch_buy_quotes(self,symbols,dataset):
+        return self.fetch_quotes(symbols,dataset,require_complete_buy=True)
 
     def candidates(self,symbols,quotes,dataset):
         from analysis_service import apply_live_position_context

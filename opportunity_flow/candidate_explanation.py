@@ -3,6 +3,9 @@ from .common import stamp
 
 
 REASONS = {
+    'ODDLOT_BID_MISSING': ('券商尚未回傳可用買一價。', '等買賣盤欄位補齊後重新核對；目前不形成可執行買單。'),
+    'ODDLOT_ASK_MISSING': ('券商尚未回傳可用賣一價，無法核對目前可買進的報價。', '等有效賣一價；缺價本身不足以判定券商故障或漲停。'),
+    'ODDLOT_LAST_PRICE_MISSING': ('券商尚未回傳可核對的最新成交價。', '等非試撮成交及完整行情補齊。'),
     'LIVE_INTRADAY_PLAN_DATA_REQUIRED': ('已找到初步路徑，正在補齊券商即時零股報價與當日低點。', '取得行情後重算有效失效價及股數，再交兩位代理敲定計畫。'),
     'COMPLETED_CALENDAR_MISSING': ('尚無可核對的交易日資料。', '等交易日曆與完成日線補齊。'),
     'CALENDAR_COVERAGE_NOT_CURRENT': ('交易日曆尚未更新到所需日期。', '等官方日曆更新後重算。'),
@@ -101,6 +104,9 @@ def explain(candidate, route, policy):
         reason, wait = STATE_TEXT[state]
         reasons.append(reason)
         waiting.append(wait)
+    if state=='REVIEW_DEFERRED_LIVE_QUOTE' and candidate.get('quote_problem') in REASONS:
+        reason,wait=REASONS[candidate['quote_problem']]
+        reasons.append(reason);waiting.append(wait)
     codes = candidate.get('reasons', [])
     codes = list(dict.fromkeys([*route.get('blockers', []), *codes])) if state == 'ECONOMIC_BLOCKED' else codes
     for code in codes:

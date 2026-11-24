@@ -158,7 +158,8 @@ class LiveCoordinator:
                 self.quote_cursor=(self.quote_cursor+size)%len(exploration)
             symbols=list(dict.fromkeys(held+urgent+rotated))
             try:
-                self.quotes=self.runtime.fetch_quotes(symbols,dataset) if symbols else {}
+                from .execution_bridge import fetch_buy_quotes
+                self.quotes=fetch_buy_quotes(self.runtime,symbols,dataset) if symbols else {}
             except (TimeoutError, RuntimeError) as exc:
                 with self.lock:
                     self.record_broker_read_error(exc)

@@ -12,7 +12,7 @@ from contextlib import nullcontext
 
 from . import SYSTEM,VERSION
 from .common import TAIPEI,policy,read,save,stamp,number
-from .data import load_dataset,quote_map
+from .data import load_dataset,quote_map,merge_research_quotes
 from .pipeline import run_cycle
 from .engine import build
 
@@ -318,7 +318,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                     account_context=None
                     if live is not None:
                         p,broker_quotes,event_facts,account_context=live.pulse(ds,previous_result)
-                        observed_quotes.update({(q['exchange'],s):q for s,q in broker_quotes.items()})
+                        observed_quotes=merge_research_quotes(observed_quotes,broker_quotes,datetime.now(TAIPEI),p['quote_max_age_seconds'])
                         events.update(event_facts)
                         at=datetime.now(TAIPEI)
                     result=run_cycle(ds,at,p,args.state,observed_quotes,events,

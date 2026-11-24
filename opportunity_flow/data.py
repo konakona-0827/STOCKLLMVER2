@@ -95,6 +95,9 @@ def validate_quote(q, symbol, exchange, at, max_age):
         age = (stamp(at) - when).total_seconds()
         if when.date() != stamp(at).date() or not 0 <= age <= max_age:
             raise ValueError("QUOTE_STALE_OR_FUTURE")
+        for field in ('bid','ask','last_price'):
+            if q.get(field) is None:
+                raise ValueError('ODDLOT_'+field.upper()+'_MISSING')
         bid, ask, last = (number(q[k], True) for k in ("bid", "ask", "last_price"))
         if bid > ask:
             raise ValueError("CROSSED_QUOTE")
@@ -134,3 +137,16 @@ def validate_reference(q,symbol,exchange,at,max_age):
         return dict(price=number(q["last_price"],True),basis=q["quote_basis"])
     except (ValueError,TypeError,KeyError):
         return None
+
+
+def merge_research_quotes(references,broker_quotes,at,max_age):
+    """Keep a valid public screening reference when formal quote data is missing."""
+    result=dict(references)
+    for symbol,q in broker_quotes.items():
+        key=(q.get('exchange'),symbol)
+        valid,error=validate_quote(q,symbol,key[0],at,max_age)
+        if valid is None and validate_reference(result.get(key),symbol,key[0],at,max_age):
+            result[key]={**result[key],'broker_quote_problem':error}
+        else:
+            result[key]=q
+    return result

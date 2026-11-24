@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import Mock,patch
 
 from opportunity_flow.common import stamp
-from opportunity_flow.data import validate_quote
+from opportunity_flow.data import validate_quote,merge_research_quotes
 from opportunity_flow.execution_bridge import validate_buy
 from opportunity_flow.pipeline import execution_readiness,run_cycle
 from opportunity_flow.recovery import runtime_code_matches
@@ -140,6 +140,29 @@ class ExecutablePlanTests(unittest.TestCase):
         self.assertEqual(candidate['state'],'REVIEW_DEFERRED_LIVE_QUOTE')
         self.assertFalse(runner.calls)
 
+    def test_partial_broker_quote_preserves_public_screening_but_still_defers_llm(self):
+        partial={**self.quote,'ask':None}
+        public={**self.quote,'quote_status':'PUBLIC_REFERENCE','quote_basis':'TWSE_MIS_BOARD_LOT_NOT_ODDLOT','source':'TWSE_MIS'}
+        merged=merge_research_quotes({('TWSE','1111'):public},{'1111':partial},self.f.at,120)
+        self.quote=merged[('TWSE','1111')]
+        self.assertEqual(self.quote['source'],'TWSE_MIS')
+        self.assertEqual(self.quote['broker_quote_problem'],'ODDLOT_ASK_MISSING')
+        runner=FakeRunner();_,candidate=self.research(runner)
+        self.assertEqual(candidate['state'],'REVIEW_DEFERRED_LIVE_QUOTE')
+        self.assertIsNone(candidate['quote'])
+        self.assertEqual(candidate['packet']['evidence'][-1]['facts']['quote_basis'],'PUBLIC_REFERENCE')
+        self.assertFalse(runner.calls)
+
+    def test_complete_broker_quote_replaces_reference_and_stale_reference_is_not_used(self):
+        public={**self.quote,'quote_status':'PUBLIC_REFERENCE','quote_basis':'TWSE_MIS_BOARD_LOT_NOT_ODDLOT','source':'TWSE_MIS'}
+        key=('TWSE','1111')
+        merged=merge_research_quotes({key:public},{'1111':self.quote},self.f.at,120)
+        self.assertEqual(merged[key]['source'],'CAPITAL_SKCOM')
+        public['quote_timestamp']='2026-01-01T09:00:00+08:00'
+        partial={**self.quote,'ask':None}
+        merged=merge_research_quotes({key:public},{'1111':partial},self.f.at,120)
+        self.assertEqual(merged[key],partial)
+
     def test_pretrade_veto_reason_is_saved_without_its_request(self):
         result,_=self.research();self.prepare_runtime()
 
@@ -156,6 +179,44 @@ class ExecutablePlanTests(unittest.TestCase):
 
 
 class QuoteCompletionTests(unittest.TestCase):
+    def test_buy_waits_for_book_and_session_low_after_partial_live_callback(self):
+        from capital_multi_quote import MultiCapitalMarket
+        market=MultiCapitalMarket.__new__(MultiCapitalMarket)
+        market.subscribed=('1111',);market.pending_indices=set();market.callback_times={}
+        market.stopped=lambda:False;market.event=Mock();market.flow_require_complete_buy=True
+        sdk=Mock();market.objects={'SKQuoteLib':sdk};market.sk=SimpleNamespace(SKSTOCKLONG=Mock())
+        at=stamp('2026-11-24T10:00:00+08:00')
+        partial=dict(symbol='1111',source='CAPITAL_SKCOM',exchange_time=at.isoformat(),price=100,bid=99.9,ask=None,is_trial=False)
+        complete={**partial,'ask':100,'low':99,'high':101}
+        pumps=[]
+        def pump(delay):pumps.append(delay);market.pending_indices.add((5,1))
+        market.pump=pump
+        with patch('capital_multi_quote.normalize_stock',side_effect=[partial,complete]),\
+             patch('capital_multi_quote.read_stock'),patch('capital_multi_quote.now',return_value=at):
+            quotes,errors=market._fetch_one_batch(('1111',),timeout=1,batch_index=1,batch_count=1)
+        self.assertEqual(len(pumps),2)
+        self.assertEqual((quotes['1111']['ask'],quotes['1111']['low']),(100,99))
+        self.assertEqual(errors,{})
+        sdk.SKQuoteLib_GetStockByMarketAndNo.assert_not_called()
+
+    def test_strict_readiness_rejects_trial_missing_low_and_stale_but_sell_can_use_bid(self):
+        from capital_multi_quote import buy_quote_complete
+        from main import snapshot
+        at=stamp('2026-11-24T10:00:00+08:00')
+        q=dict(symbol='1111',source='CAPITAL_SKCOM',exchange_time=at.isoformat(),price=100,bid=99.9,ask=100,is_trial=False,low=99)
+        self.assertTrue(buy_quote_complete(q,at))
+        for change in [dict(ask=None),dict(low=None),dict(is_trial=True),dict(exchange_time='2026-11-24T09:00:00+08:00')]:
+            self.assertFalse(buy_quote_complete({**q,**change},at))
+        self.assertEqual(snapshot('1111',{**q,'ask':None},at=at)['data_quality'],'LIVE')
+
+    def test_broker_buy_flag_is_forwarded_without_changing_default_quote_contract(self):
+        from execution.broker_runtime import BrokerRuntime
+        runtime=BrokerRuntime.__new__(BrokerRuntime);runtime._submit=Mock(return_value=({},{}))
+        runtime.fetch_quotes_with_markets(['2330'],{'2330':5},None,lambda:False)
+        self.assertEqual(runtime._submit.call_args.args[-1],5)
+        runtime.fetch_quotes_with_markets(['2330'],{'2330':5},None,lambda:False,require_complete_buy=True)
+        self.assertEqual(runtime._submit.call_args.args[-2:],(5,True))
+
     def test_empty_first_callback_waits_for_a_valid_second_update(self):
         from capital_multi_quote import MultiCapitalMarket
         market=MultiCapitalMarket.__new__(MultiCapitalMarket)

@@ -1,5 +1,6 @@
 """One login/monitor/subscription; per-symbol failures do not abort the batch."""
 import time
+import math
 from datetime import datetime
 from capital import CapitalMarket, normalize_stock
 from capital_check import unpack, error_info
@@ -8,6 +9,16 @@ from main import snapshot
 from execution.capital_session_audit import record_capital_event
 
 MAX_ODDLOT_QUOTE_SYMBOLS = 20
+
+
+def buy_quote_complete(q,at):
+    """Do not finish a BUY lookup on an early price-only callback."""
+    if snapshot(q['symbol'],q,at=at)['data_quality']!='LIVE' or q.get('is_trial') is not False:
+        return False
+    if any(type(q.get(k)) not in (int,float) or not math.isfinite(q[k]) or q[k]<=0
+           for k in ('price','bid','ask','low')):
+        return False
+    return q['bid']<=q['ask'] and (q.get('high') is None or q['low']<=q['high'])
 
 
 def read_stock(result, original):
@@ -118,7 +129,9 @@ class MultiCapitalMarket(CapitalMarket):
                     if q['symbol'] in wanted:
                         q['venue']='TPEx' if int(market)==6 else 'TWSE'
                         quotes[q['symbol']] = q
-                        if snapshot(q['symbol'],q,at=now())['data_quality']!='UNAVAILABLE':
+                        complete=(buy_quote_complete(q,now()) if getattr(self,'flow_require_complete_buy',False)
+                                  else snapshot(q['symbol'],q,at=now())['data_quality']!='UNAVAILABLE')
+                        if complete:
                             ready.add(q['symbol'])
                         else:
                             ready.discard(q['symbol'])

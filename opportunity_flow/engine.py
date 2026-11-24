@@ -189,6 +189,8 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
         return base
     q, quote_error = validate_quote(raw_quote, symbol, exchange, at, p["quote_max_age_seconds"])
     price_reference=validate_reference(raw_quote,symbol,exchange,at,p["quote_max_age_seconds"])
+    if q is None and raw_quote:
+        quote_error=raw_quote.get('broker_quote_problem') or quote_error
     families = setups(bars, f)
     observed_price=q["ask"] if q else price_reference["price"] if price_reference else None
     thresholds=dict(ma5=f["ma5"],ma20=f["ma20"],previous_high=bars[-1]["high"],previous_low=bars[-1]["low"],

@@ -16,6 +16,11 @@ from .state import Ledger
 from .recovery import observe,observe_execution
 
 
+def fetch_buy_quotes(runtime,symbols,dataset):
+    fetch=runtime.fetch_buy_quotes if callable(getattr(type(runtime),'fetch_buy_quotes',None)) else runtime.fetch_quotes
+    return fetch(symbols,dataset)
+
+
 def verified_snapshot(snapshot,at,*,need_buying_power=True):
     if not snapshot or (need_buying_power and (snapshot.get('errors') or snapshot.get('status')=='ERROR')):
         raise ValueError('BROKER_ACCOUNT_UNVERIFIED')
@@ -302,7 +307,7 @@ class ExecutionBridge:
             symbol=candidate['symbol']
             quotes={}
             try:
-                quotes=runtime.fetch_quotes([symbol],dataset)
+                quotes=fetch_buy_quotes(runtime,[symbol],dataset)
                 context=runtime.contexts(dataset,quotes)[symbol]
                 events=runtime.disclosures.get(symbol,{})
                 route=validate_buy(candidate,quotes.get(symbol),runtime.snapshot,context,p,self.now(),
@@ -334,7 +339,7 @@ class ExecutionBridge:
                 expected=buy_decision(candidate,route,quotes[symbol])
                 if any(decisions[0].get(k)!=expected[k] for k in ('symbol','suggested_qty','suggested_price','target_price','invalidation_price','holding_days')):
                     blocked.append(dict(symbol=symbol,reason='PRETRADE_ALTERED_FROZEN_PLAN'));continue
-                runtime.refresh();quotes=runtime.fetch_quotes([symbol],dataset)
+                runtime.refresh();quotes=fetch_buy_quotes(runtime,[symbol],dataset)
                 context=runtime.contexts(dataset,quotes)[symbol]
                 validate_buy(candidate,quotes.get(symbol),runtime.snapshot,context,runtime.effective_policy(self.policy),self.now(),
                     planned_limits=runtime.config.planned_limits_enabled,support_policy=runtime.support_policy,

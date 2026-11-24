@@ -117,13 +117,14 @@ class BrokerRuntime:
     def fetch_quotes(self, symbols, audit, stopped, timeout=12):
         return self._submit("quotes", tuple(symbols), audit, stopped, timeout)
 
-    def fetch_quotes_with_markets(self, symbols, markets, audit, stopped, timeout=12):
+    def fetch_quotes_with_markets(self, symbols, markets, audit, stopped, timeout=12,*,require_complete_buy=False):
         quotes,errors={},{}
         for market in (5,6):
             group=tuple(s for s in dict.fromkeys(symbols) if markets.get(s)==market)
             if not group:continue
             try:
-                found,failed=self._submit('quotes',group,audit,stopped,timeout,market)
+                args=(group,audit,stopped,timeout,market)
+                found,failed=self._submit('quotes',*args,*((True,) if require_complete_buy else ()))
                 quotes.update(found);errors.update(failed)
             except Exception as exc:
                 errors.update({s:f'{type(exc).__name__}: {exc}' for s in group})
@@ -284,6 +285,7 @@ class BrokerRuntime:
                                 })
                             try:
                                 quote_market.flow_market_override=args[4] if len(args)>4 else None
+                                quote_market.flow_require_complete_buy=args[5] if len(args)>5 else False
                                 result = quote_market.fetch_batch(
                                     requested_symbols, timeout=args[3],
                                 )
