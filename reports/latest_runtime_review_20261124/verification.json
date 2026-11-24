@@ -1,0 +1,109 @@
+{
+  "exported_at": "2026-11-24T20:33:39.451582+09:00",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "updated_remote_baseline": "978d8cd",
+  "running_source_revision": "41669b3f91d5713f8a4897b9f20d88ce60389da9",
+  "source_fingerprint": "34b21c22bee0b7e79143724554c0ec28057dda8a88ab7344a069feef84145d54",
+  "source_matches_live": true,
+  "tests": {
+    "full": {
+      "tests": 934,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "focused": {
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "isolation": "temporary_account_mock_sdk_network_and_real_codex_disabled"
+  },
+  "today": {
+    "model_calls": 40,
+    "calls_by_role": {
+      "researcher": 20,
+      "challenger": 20
+    },
+    "calls_by_status": {
+      "VALID": 40
+    },
+    "prompt_versions": {
+      "flow-review-v2-executable-plan": 40
+    },
+    "paired_reviews": 21,
+    "paired_statuses": {
+      "RESEARCH_WATCH": 19,
+      "RESEARCH_REJECT": 2
+    },
+    "symbols": {
+      "6919": 3,
+      "4915": 5,
+      "6472": 4,
+      "1795": 3,
+      "2356": 1,
+      "2377": 1,
+      "3006": 4
+    },
+    "formal_execution_attempts_by_status": {},
+    "unresolved_attempts": 0
+  },
+  "health": {
+    "checked_at": "2026-11-24T19:33:25+08:00",
+    "status": "OK",
+    "inventory_checked": true,
+    "budget_status": "READY",
+    "current_buy_budget_twd": "10000",
+    "minimum_balance_twd": "5000",
+    "daily_buy_limit_twd": "30000",
+    "strategy_cap_twd": "10000",
+    "errors": []
+  },
+  "tomorrow_daily_only_preflight": {
+    "as_of": "2026-11-25T09:00:00+08:00",
+    "basis": "LATEST_COMPLETED_DAILY_ONLY_NOT_LIVE_TRADE",
+    "llm_calls": 0,
+    "orders_sent": 0,
+    "dataset": {
+      "end": "2026-11-24",
+      "calendar_verified_through": "2026-11-24",
+      "rows": 126987,
+      "rejected_rows": 1483
+    },
+    "symbols": 1990,
+    "states": {
+      "NO_SETUP": 435,
+      "ECONOMIC_BLOCKED": 48,
+      "SCREENED_OUT": 1341,
+      "DATA_BLOCKED": 159,
+      "REVIEW_PENDING": 7
+    },
+    "reasons": {
+      "NO_CURRENT_SETUP": 435,
+      "NET_PROFIT_BELOW_FLOOR": 46,
+      "REWARD_RISK_BELOW_FLOOR": 48,
+      "STRUCTURAL_STOP_MISSING": 7,
+      "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1341,
+      "RECENT_HISTORY_GAP_OR_INVALID_BAR": 154,
+      "NET_RETURN_BELOW_FLOOR": 29,
+      "INSUFFICIENT_COMPLETED_HISTORY": 5,
+      "CAPITAL_OR_RISK_CAP": 3
+    },
+    "refresh_required": null
+  },
+  "automation": {
+    "opening_hour": "2026-11-25 11:00 Asia/Tokyo",
+    "recurring_reports_japan": [
+      "12:30",
+      "15:00"
+    ],
+    "opening_hour_prompt_updated": true
+  },
+  "limitations": [
+    "No new intraday model decisions observed after this outside-session deployment.",
+    "Installed tick-history API confirmed; actual new intraday tick/minute delivery requires market-session observation.",
+    "No real test orders; offline test success is not a broker order/fill acceptance.",
+    "WATCH/REJECT remain valid when supported by specific evidence and original risk gates."
+  ]
+}
