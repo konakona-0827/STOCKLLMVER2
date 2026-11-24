@@ -251,6 +251,24 @@ class ResearchDeliveryTests(unittest.TestCase):
         self.assertEqual(c['research_information_gaps'][0]['origin'],'SYSTEM_NOT_REQUESTED')
         self.assertIn('不能解讀為市場沒有資料',research_card('1111','test','觀望',c))
 
+    def test_watch_rechecks_new_completed_window_after_minute_count_is_saturated(self):
+        state=self.root/'rolling-window';cache=IntradayEvidence(self.root/'rolling.json')
+        runner=FakeRunner(verdict='WATCH')
+        def cycle(at,first_minute):
+            q={**self.q,'quote_timestamp':at.isoformat()}
+            points=[tick(at.replace(minute=minute,second=0),minute+1,q['ask'])
+                    for minute in range(first_minute,first_minute+5)]
+            cache.record([{**q,'intraday_ticks':points,'tick_history_status':'RECEIVED_TICKS_PARTIAL_COVERAGE'}],at)
+            q['intraday_evidence']=cache.evidence('1111',at)
+            return run_cycle(self.ds,at,self.p,state,quotes={('TWSE','1111'):q},
+                runner=runner,use_llm=True,review_symbols={'1111'})
+        cycle(self.at,0)
+        self.assertEqual(len(runner.calls),2)
+        cycle(self.at+timedelta(minutes=5),5)
+        self.assertEqual(len(runner.calls),4)
+        cycle(self.at+timedelta(minutes=5,seconds=10),5)
+        self.assertEqual(len(runner.calls),4)
+
     def test_real_adapter_passes_raw_quote_provenance_and_history_to_research(self):
         runtime=LegacyRuntime.__new__(LegacyRuntime);runtime.output=self.root/'broker';runtime.audit=Mock()
         runtime.observations={};runtime.stop_event=None;runtime.market_map=lambda *a:{'1111':5}

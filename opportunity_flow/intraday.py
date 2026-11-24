@@ -161,7 +161,9 @@ def material_history(history,levels,at):
     at=stamp(at);rows=(history.get('minute_bars') or {}).get('rows',[])
     start=at.replace(second=0,microsecond=0)-timedelta(minutes=5)
     recent=[r for r in rows if start<=stamp(r[0])<at.replace(second=0,microsecond=0)]
+    latest=max((stamp(r[0]) for r in rows if stamp(r[0])<at.replace(second=0,microsecond=0)),default=None)
     return dict(has_ticks=bool(history.get('tick_count')),completed_minutes=min(len(rows),5),
+        latest_completed_5m_window=int(latest.timestamp()//300) if latest else None,
         recent_minutes=min(len(recent),5),levels={name:'UNOBSERVED' if not recent else
             'ALL_RECEIVED_LOWS_ABOVE' if min(r[3] for r in recent)>price else 'RECEIVED_LOW_AT_OR_BELOW'
             for name,price in levels.items()})
