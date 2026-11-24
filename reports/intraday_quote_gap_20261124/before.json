@@ -1,0 +1,188 @@
+{
+  "captured_at": "2026-11-24T10:25:32.066251+08:00",
+  "phase": "BEFORE_FIX_DEPLOYMENT",
+  "source_revision": "49e004c514129127f196ffa234a21c820eb5911f",
+  "summary": {
+    "system": "TW Opportunity Flow",
+    "as_of": "2026-11-24T10:24:43.584079+08:00",
+    "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+    "policy_sha256": "e295dc9d546a95617cbe484299853437a0506aba812db94796a69bce828ed6cb",
+    "dataset_manifest_sha256": "0f4bc01da44818999b3ee5cce511a73ded697faf5d8d9a62d689a6b59e08d4cf",
+    "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+    "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+    "symbols_observed": 1990,
+    "states": {
+      "NO_SETUP": 373,
+      "SCREENED_OUT": 1326,
+      "DATA_BLOCKED": 172,
+      "ECONOMIC_BLOCKED": 86,
+      "REVIEW_DEFERRED_LIVE_QUOTE": 33
+    },
+    "blockers": {
+      "NO_CURRENT_SETUP": 373,
+      "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1326,
+      "RECENT_HISTORY_GAP_OR_INVALID_BAR": 164,
+      "NET_PROFIT_BELOW_FLOOR": 45,
+      "REWARD_RISK_BELOW_FLOOR": 66,
+      "CAPITAL_OR_RISK_CAP": 33,
+      "LIVE_INTRADAY_PLAN_DATA_REQUIRED": 33,
+      "NET_RETURN_BELOW_FLOOR": 17,
+      "STRUCTURAL_STOP_MISSING": 4,
+      "INSUFFICIENT_COMPLETED_HISTORY": 8
+    },
+    "llm_calls": 0,
+    "cached_theses": 0,
+    "usage": {},
+    "usage_unknown_calls": 0,
+    "additional_api_billed_usd": 0,
+    "plan_usage_consumed": false,
+    "orders_sent": 0,
+    "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+    "elapsed_seconds": 1.114
+  },
+  "quote_problems": {
+    "LIVE_NON_TRIAL_QUOTE_REQUIRED": 25,
+    "could not convert string to float: 'None'": 8
+  },
+  "calls": [
+    {
+      "role": "challenger",
+      "status": "VALID",
+      "count": 2,
+      "first_at": "2026-11-24T09:34:30.359743+08:00",
+      "last_at": "2026-11-24T10:02:24.103598+08:00"
+    },
+    {
+      "role": "researcher",
+      "status": "VALID",
+      "count": 2,
+      "first_at": "2026-11-24T09:34:30.359743+08:00",
+      "last_at": "2026-11-24T10:02:24.103598+08:00"
+    }
+  ],
+  "reviews": [
+    {
+      "symbol": "6919",
+      "reviewed_at": "2026-11-24T09:35:19.466815+08:00",
+      "researcher": {
+        "counterevidence": "前一完成日線收於62.8，近5日跌幅7.92%；目前盤中雖已站上67.51，但尚低於69.14。合格路徑至75.0的所需漲幅為12.78%至12.95%、距離為1.49至1.51 ATR，高於已成熟五日歷史高點變幅的第75百分位7.70%；歷史視窗不能當作達標機率。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_INTRADAY",
+          "E_ECONOMICS",
+          "E_LEVELS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "決策時的最新盤中報價及可成交價",
+          "後續分鐘或逐筆走勢，以核對67.51的盤中維持情形",
+          "公司事件及公司行動的完整核驗"
+        ],
+        "packet_id": "7d280f0c42096661f6330cacb0f406bad82dd3984a5716c846ec1620d862d70a",
+        "selected_route_id": null,
+        "symbol": "6919",
+        "thesis": "盤中已收復前高64.4與20日均線67.51，值得追蹤，但現價尚未到達既有合格回檔路徑的66.5或66.4入場價；盤中收復能否維持也尚未驗證。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得後續分鐘或逐筆資料，核對盤中價格能否維持在既有20日均線67.51之上；跌回該線下方即推翻目前的盤中收復訊號。",
+          "若價格回到既有入場價66.5或66.4以下，重審相應路徑是否仍合格；其既有失效價為62.5，跌破即否定該路徑。",
+          "核驗最新報價、公司事件與公司行動後，再評估五個交易日內到達75.0的假說。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "盤中已站上前高64.4與MA20 67.51，不能沿用昨日收盤62.8稱為當前未收復；但仍低於MA5 69.14，且兩條合格路徑都尚未到入場價。目標75.0距合格入場價約1.49–1.51 ATR，須上漲約12.78%–12.95%；已成熟五日歷史高點變幅的第75百分位為7.70%。這些重疊視窗只顯示目標較遠，不構成勝率或明確反證。當前賣價67.7的路徑未達報酬風險門檻。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_LEVELS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "可核對盤中收復是否持續的分鐘資料",
+          "入場時的即時可成交報價與價差",
+          "完整公司事件及公司行動查核；歷史價格基準尚未認證"
+        ],
+        "packet_id": "7d280f0c42096661f6330cacb0f406bad82dd3984a5716c846ec1620d862d70a",
+        "selected_route_id": null,
+        "symbol": "6919",
+        "thesis": "盤中收復前高與MA20提供反彈研究線索，但單次報價不足以確認持續性；現價追入路徑不合格，合格回落路徑尚待價格到達。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得分鐘資料後，重審盤中價格能否持續維持在既有MA20 67.51及前高64.4之上；若跌回其下，收復線索須重新評估。",
+          "若價格回落至既有合格入場價66.5或66.4，核對即時報價及盤中走勢，並確認對應失效價62.5仍未被跌破，再重審目標75.0與原定股數各10股的路徑。",
+          "完成公司事件、公司行動及歷史價格基準查核後重審；若出現影響價格可比性或五日目標的事實，重新評估假說。"
+        ]
+      }
+    },
+    {
+      "symbol": "6919",
+      "reviewed_at": "2026-11-24T10:03:12.310084+08:00",
+      "researcher": {
+        "counterevidence": "盤中已站上前日高點64.4，但仍低於20日線67.51及5日線69.14；上一完成日收盤62.8不能當作目前仍未收復64.4。75目標距合格入場約1.49至1.51 ATR，所需漲幅12.78%至12.95%，高於已成熟五日歷史高點變幅中位數2.84%及第75百分位7.70%。重疊歷史視窗不代表勝率或期限內可達目標。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "需更新即時奇零股報價，核對66.5或66.4是否實際觸及及當時買賣價。",
+          "缺少分鐘價格序列，無法核對回測後能否在盤中持續站穩既有前日高點64.4。",
+          "需核實即時公司事件及公司行動；現有揭露來源與未調整歷史資料尚未完成認證。"
+        ],
+        "packet_id": "07e82db6156df57a7b8549d24d69c444f91a5369b8699e2fcd0c44cc34106272",
+        "selected_route_id": null,
+        "symbol": "6919",
+        "thesis": "盤中收復前日高點，值得追蹤回測既有支撐的機會；目前低點67.2尚未觸及合格的66.5或66.4入場。現價67.2路徑的報酬風險比1.303低於門檻，不能採用。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "若盤中回測66.5或66.4，以分鐘價格與即時報價核對觸價後能否維持在前日高點64.4之上，且未跌破既有失效價62.5，再重審相應合格路徑；若跌破62.5，該路徑失效。",
+          "若更新的事件或公司行動資料改變未調整歷史價位的可比性，重審假說與既有路徑。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "盤中已站上前一日高點64.4，假說尚無明確反證；但67.2的現價路徑因報酬風險比不足而不合格。合格回測路徑尚未到價，且75.0目標距離約1.49至1.51 ATR、需上漲約12.8%至13.0%，高於已成熟五日歷史高點變幅的第75百分位7.70%；歷史視窗重疊，不能當作期限內達標機率。上方仍有67.51與69.14的近端壓力。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_ECONOMICS",
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "10:02:08後的即時零股報價與當日低點",
+          "可核對盤中是否持續守住64.4的分鐘資料",
+          "完整公司公告、事件及公司行動核查；原始未調整歷史仍未認證"
+        ],
+        "packet_id": "07e82db6156df57a7b8549d24d69c444f91a5369b8699e2fcd0c44cc34106272",
+        "selected_route_id": null,
+        "symbol": "6919",
+        "thesis": "前高64.4已於盤中收復，回測假說可追蹤；目前報價67.2不符合成本與報酬風險條件，既有合格路徑須等66.5或66.4的入場價。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得後續分鐘資料，核對回測過程的5分鐘價格是否維持在既有前高64.4之上；缺少分鐘資料時不能宣稱已持續站穩。",
+          "經核實的盤中價格到達66.5或66.4且當日低點仍高於既定失效價62.5時，按相應既有路徑重審；若跌破62.5，該路徑失效。",
+          "取得完整事件與公司行動資料，並重新評估75.0目標在五個交易日內的可達性。"
+        ]
+      }
+    }
+  ],
+  "live": {
+    "checked_at": "2026-11-24T10:24:02+08:00",
+    "budget_status": "READY",
+    "buy_budget_twd": "10000",
+    "execution_running": false,
+    "broker_quote_count": 20,
+    "errors": []
+  },
+  "first_observation": {
+    "as_of": "2026-11-24T10:19:00.821627+08:00",
+    "deferred_quote_candidates": 35,
+    "valid_research_calls": 4,
+    "reviewed_symbols": [
+      "6919"
+    ],
+    "formal_attempts": 0
+  }
+}
