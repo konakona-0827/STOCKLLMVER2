@@ -164,6 +164,8 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
                     at+timedelta(seconds=time.monotonic()-started),events.get(c["symbol"]),p,
                     support_policy=(account_context or {}).get(c['symbol'],{}).get('research_support_policy','strict'),
                     planned_limits=(account_context or {}).get(c['symbol'],{}).get('pricing_policy')=='PLANNED_LIMIT'))
+            from .intraday import requested_gaps
+            c['research_information_gaps']=requested_gaps(c,r)
         states=Counter(c["state"] for c in candidates)
         blockers=Counter(reason for c in candidates for reason in c["reasons"])
         usage=Counter()
@@ -179,6 +181,7 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             review_scope="ALL_ELIGIBLE_CANDIDATES" if review_symbols is None else sorted(review_symbols),
             symbols_observed=len(candidates),states=dict(states),blockers=dict(blockers),
             llm_calls=len(calls),cached_theses=cached,usage=dict(usage),usage_unknown_calls=unknown,
+            information_gap_origins=dict(Counter(g['origin'] for c in candidates for g in c.get('research_information_gaps',[]))),
             additional_api_billed_usd=0,plan_usage_consumed=bool(calls),orders_sent=0,
             decision_scope="LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF" if account_context is not None else "SHADOW_RESEARCH_NO_BROKER_OR_ACCOUNT_ACCESS",
             elapsed_seconds=round(time.monotonic()-started,3))

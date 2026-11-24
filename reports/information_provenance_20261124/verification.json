@@ -1,0 +1,135 @@
+{
+  "recorded_at": "2026-11-24T10:40:47.372405+00:00",
+  "baseline_commit": "caf6eb6721857ec2bbe9030df189441b1393a99e",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "full_regression": {
+    "tests": 933,
+    "seconds": 119.351,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "32e0bcd0b4348590c38a1524e01dfb04eddf219fa43429ff72c0a056e1bb2c62"
+  },
+  "new_information_tests": {
+    "tests": 22,
+    "seconds": 0.392,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "0b70be7cde66fa926e6252d41cdcf098a40b87949a24204e83e6655c2860a4a2"
+  },
+  "external_python_network_disabled": true,
+  "real_model_disabled": true,
+  "real_orders_sent": 0,
+  "test_environment": "GIT_CONFIG_COUNT removed only in isolated test shell to retain Windows empty-value compatibility",
+  "launcher_check": {
+    "entry": "OpportunityFlow.cmd -Mode Check",
+    "ready": true,
+    "exit_code": 0,
+    "broker_login_tested": false
+  },
+  "source_evidence": {
+    "sdk_document_name": "策略王COM元件使用說明_V2.13.59.docx",
+    "sdk_document_sha256": "23ddf164839d84a1ded541a4ec9baea4f5877167f50884cdcbcf4ba1b25d6fa2",
+    "sections": [
+      "4-4-34 RequestTicksWithMarketNo",
+      "OnNotifyHistoryTicksLONG",
+      "OnNotifyTicksLONG",
+      "4-4-1 LeaveMonitor"
+    ],
+    "tick_pages": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "maximum_tick_symbols_per_connection": 10,
+    "official_quote_documentation": "https://www.capital.com.tw/apiforum/docs/apiCOM/quoteObj_SKQuoteLib",
+    "official_tick_documentation": "https://www.capital.com.tw/apiforum/docs/atlObjFunction/domesticQuote/realTimeQuotesForOddLot/getQuoteTicksWithMarketNo"
+  },
+  "source_schema_inspection": {
+    "date": "2026-11-24",
+    "performed_during_this_review": true,
+    "TWSE_NEWS": {
+      "rows": 110,
+      "company_field": "公司代號",
+      "date_field": "發言日期",
+      "title_field": "主旨 "
+    },
+    "TPEX_NEWS": {
+      "rows": 23,
+      "company_field": "SecuritiesCompanyCode",
+      "date_field": "發言日期",
+      "title_field": "主旨"
+    },
+    "TWSE_ACTIONS": {
+      "rows": 28,
+      "company_field": "Code",
+      "date_field": "Date"
+    },
+    "TPEX_ACTIONS": {
+      "rows": 66,
+      "company_field": "SecuritiesCompanyCode",
+      "date_field": "ExRrightsExDividendDate"
+    }
+  },
+  "acceptance": {
+    "source_empty_not_market_absence": true,
+    "positive_source_delivery_loss_identified": true,
+    "all_usable_daily_bars_delivered_to_both_roles": true,
+    "same_owner_tick_subscription": true,
+    "tick_trial_identity_date_checks": true,
+    "no_filled_missing_minutes": true,
+    "no_forming_minute_as_completed": true,
+    "cross_restart_same_day_cache": true,
+    "new_minutes_trigger_review_without_price_change": true,
+    "late_history_after_fast_quote_waits_within_original_timeout": true,
+    "cached_ticks_do_not_hide_current_source_or_decode_errors": true,
+    "duplicate_data_does_not_repeat_model_call": true,
+    "source_schema_failure_is_not_clear_events": true,
+    "public_reference_cannot_authorize_order": true,
+    "original_buy_fill_manage_sell_and_unknown_order_tests_pass": true
+  },
+  "protected_paths_unchanged": [
+    "config",
+    "opportunity_flow/policy.json",
+    "opportunity_flow/execution_bridge.py",
+    "execution/auto_advice_executor.py",
+    "execution/execution_store.py",
+    "pretrade_policy.py"
+  ],
+  "source_fingerprint": "73aa945e59861153b4bd54ad4e6ee14b0f2c110bb16835aec9db78667ccbe8c0",
+  "source_sha256_lf": {
+    "capital.py": "1fd6dee0e2ff50b6ca5200537ce7769c3a97039c0fc3ff6254722037f5154e33",
+    "capital_multi_quote.py": "fb54771015494abce1f330d066cfed671019af0ab57f6b0d71c24e915981b373",
+    "execution/broker_runtime.py": "08287b567481244124dbfae0ca33ebf06455db3616a256adbca12ad94dc9a6f5",
+    "opportunity_flow/candidate_explanation.py": "8671d449986166f45e41f1be34f6c02643999e60111259b394bd2e9220bbc9da",
+    "opportunity_flow/company_events.py": "847fa0cbf682ed17ea5f7d1d310d200e80c1c1b92506fba143799bfb4306da5d",
+    "opportunity_flow/data.py": "d5604294cae519019b8611aaeecc3c376c4059ac47a406b56a847af82447d539",
+    "opportunity_flow/engine.py": "2a75e39752461ea916382d099555ac0761884505f1b24f30bc891216c5941d99",
+    "opportunity_flow/intraday.py": "6df61ef4634138b84e2d33fde38bd3f04ac49fe145ac6ddd4956de016943f87b",
+    "opportunity_flow/legacy_runtime.py": "1496db08b8cc519871a9254e101bfd0a64c31fbcb957db6f63bd5704ac45eea9",
+    "opportunity_flow/pipeline.py": "009fe11d132f1ac769da2756941a96ae475a9c013a076265cfde795a5b35c944",
+    "opportunity_flow/review.py": "b02a2d25dfc6ebc1ecb0e6c137096e2e06521f2ad95200872b4af9ffb3a3c46d",
+    "position_analyzer.py": "a25ae3787655f9431baa8f7402cfa6c4a83badfe0c653a286f94467e3fab0986",
+    "position_manager.py": "aa000ba10039460c8d920688127e65e38d6dce84bf1fcd9da3b4f45b7fbd4c03",
+    "tests/test_flow_information_provenance.py": "a860183e6464a31a09a4a95ab1c6586c7b5a95a5aa40e721b355e2098a374ff4"
+  },
+  "unresolved_capabilities": [
+    "Historical adjusted-price certification",
+    "Complete news history",
+    "Certified complete tick coverage"
+  ],
+  "deployment": {
+    "trading_pc_accessed": false,
+    "live_new_tick_history_verified": false,
+    "historical_missing_ask_cause_reconstructed": false,
+    "requires_trading_pc_pull_and_original_launcher": true
+  }
+}

@@ -146,7 +146,8 @@ def merge_research_quotes(references,broker_quotes,at,max_age):
         key=(q.get('exchange'),symbol)
         valid,error=validate_quote(q,symbol,key[0],at,max_age)
         if valid is None and validate_reference(result.get(key),symbol,key[0],at,max_age):
-            result[key]={**result[key],'broker_quote_problem':error}
+            result[key]={**result[key],'broker_quote_problem':error,
+                **{k:q[k] for k in ('information_trace','intraday_evidence') if k in q}}
         else:
             result[key]=q
     return result

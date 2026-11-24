@@ -33,6 +33,7 @@ def plan_request(candidate, account, previous=None):
         required_data=dict(type='array',items=dict(type='string',enum=['LIVE_ODDLOT','DAILY_STRUCTURE','RECENT_OBSERVATIONS']))))
     instructions = '''你是持倉管理子代理，每次只負責輸入的一檔 AI 持倉，其他代理繼續尋找新股票。
 用最新可成交零股買價、成本、原計畫、完成日線和真實觀測，決定續抱、賣出、預掛停利或研究加倉。
+intraday_evidence.minute_bars 若存在，是已收到的非試撮零股成交彙整；observations／market_history 是抽樣快照，不是完整分鐘K。缺分鐘未補值，來源覆蓋未認證完整。information_trace 說明來源空欄位或系統缺口，不能概括聲稱市場沒有資訊。
 只要扣除雙邊費用與賣出稅後仍有正收益，且已有具體回落、近端壓力或動能轉弱證據，
 可提前賣出，不必等原目標；單次跌價不等於已形成轉折。不要把普通交易 K 線當成零股成交證明。
 風險退出可虧損；max_sell_qty=0、人工持股、未知成本或未結單不可冒充可獲利成交。

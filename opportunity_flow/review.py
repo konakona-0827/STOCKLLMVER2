@@ -12,7 +12,7 @@ import time
 
 from .common import canonical, digest
 
-PROMPT_VERSION = "flow-review-v2-executable-plan"
+PROMPT_VERSION = "flow-review-v3-information-provenance"
 ROLE_TASKS = {
     "researcher": "檢查交易假說是否值得繼續研究、可推翻它的證據與下一個可驗證條件。",
     "challenger": "獨立檢查反證、近端壓力、追價、成本與資料限制；沒有明確反證時不要把尚待執行查核誤寫成假說失效。",
@@ -26,6 +26,10 @@ WATCH 表示尚未確認或需要新資料；REJECT 必須有針對目前假說�
 即時行情、公司事件與公司行動未知，分開放入 execution_missing，不要把它們誤認成歷史價格形態不存在。
 沒有合格數值路徑時只能 WATCH 或 REJECT，不能覆寫經濟條件。
 E_INTRADAY 提供當前盤中價格、日內高低價與已觸及的均線／前高；E_FEATURES.close 是上一個已完成日線收盤。必須分別解讀，盤中 level_states 已為 ABOVE 時，不得把舊收盤低於該價位描述為當前仍未收復。
+E_DAILY_HISTORY 是本次可用的完整連續完成日線，columns/rows 逐列對應；recent_bars 僅為近八根摘要，不能因此聲稱系統沒有提供較長日線。
+E_DATA_LIMITS.information_availability 列出每種資料的來源與傳遞狀態。SYSTEM 開頭是系統未取得／未串接／轉換遺失，PROVIDER 或 SOURCE 是券商／來源未提供有效回覆，兩者都不能推論市場不存在該資訊。原始欄位為零也不能據此宣稱全市場沒有掛單。sdk_value 是未縮放整數，須依 sdk_price_decimals 解讀，不可當作已換算報價。
+E_INTRADAY.history.observations 是實際抽樣快照，不是分鐘K。minute_bars 是已收到的非試撮成交明細彙整，形成中分鐘已排除；缺分鐘不補值，未認證涵蓋全部成交，不可聲稱完整連續站穩。已有分鐘彙整時先檢查其列數、時段及覆蓋限制，不得概括說完全沒有分鐘資料。
+需要系統未提供或來源未回傳的資料時，execution_missing 明列 SYSTEM_DATA_GAP 或 SOURCE_DATA_GAP 及欄位；不可寫成市場自然尚未達標。只根據已給定資料判斷，不能因補齊欄位而自動批准，也不能把無法觀測的確認條件當成已完成。
 合格路徑已按可取得的當日低點選擇尚未被跌破的失效位置並重算股數。RESEARCH 須同意該路徑的入場、股數、失效與目標；若需要盤中持續確認，WATCH 必須說明要維持的既有價位、可核對的時間尺度及失效條件。缺少分鐘資料時明列所缺資料，不把下一根日線作為所有盤中機會的固定要求。
 wait_conditions 必須說清楚下一次何種事實改變值得重審；不要只寫等待更多確認。
 只能引用本 packet 的 evidence_id。使用繁體中文，理由簡潔，不執行工具或存取帳戶。"""

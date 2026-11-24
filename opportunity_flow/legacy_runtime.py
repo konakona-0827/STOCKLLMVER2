@@ -57,6 +57,8 @@ class LegacyRuntime:
         self.account_identity=digest(str(selected))
         self.snapshot=None
         self.observations={};self.disclosures={}
+        from .intraday import IntradayEvidence
+        self.intraday=IntradayEvidence(self.output/'intraday_evidence.json')
         from config import CODE_ROOT
         self.support_policy=json.loads((CODE_ROOT/'config/support_agents.json').read_text(encoding='utf-8-sig'))['policy']
 
@@ -103,15 +105,20 @@ class LegacyRuntime:
             if raw[s].get('venue')!=('TWSE' if markets.get(s)==5 else 'TPEx'):
                 raw.pop(s);errors[s]='BROKER_RETURNED_VENUE_MISMATCH'
         result=multi_snapshot(symbols,raw,errors,started,datetime.now(TAIPEI).isoformat())
+        from .intraday import IntradayEvidence,quote_trace
+        if not hasattr(self,'intraday'):self.intraday=IntradayEvidence(self.output/'intraday_evidence.json')
         for q in result['quotes']:
             q['exchange']='TWSE' if markets.get(q['symbol'])==5 else 'TPEX' if markets.get(q['symbol'])==6 else None
             q['source_market_number']=markets.get(q['symbol'])
-            if q['quote_status']=='LIVE' and q.get('is_trial') is False:
-                history=self.observations.setdefault(q['symbol'],[])
-                if not history or (stamp(q['quote_timestamp'])-stamp(history[-1]['exchange_time'])).total_seconds()>=60:
-                    history.append(dict(symbol=q['symbol'],exchange_time=q['quote_timestamp'],price=q['last_price'],
-                        quote_status='LIVE',is_trial=False,retrieval_mode='BROKER'))
-                    self.observations[q['symbol']]=history[-60:]
+            source=raw.get(q['symbol']) or {}
+            q['information_trace']=quote_trace(q,source,errors.get(q['symbol']))
+            q['intraday_ticks']=source.get('intraday_ticks',[])
+            q['tick_history_status']=source.get('tick_history_status','SYSTEM_NOT_REQUESTED')
+        self.intraday.record(result['quotes'],datetime.now(TAIPEI))
+        for q in result['quotes']:
+            q['intraday_evidence']=self.intraday.evidence(q['symbol'],datetime.now(TAIPEI))
+            q.pop('intraday_ticks',None)
+            self.observations[q['symbol']]=deepcopy(q['intraday_evidence']['observations'])
         self.quotes_received_at=datetime.now(TAIPEI).isoformat()
         from .data import validate_quote
         diagnostics=[]
@@ -121,6 +128,8 @@ class LegacyRuntime:
             row={k:q.get(k) for k in ('symbol','exchange','quote_status','is_trial','last_price','bid','ask',
                 'open','high','low','quote_timestamp','quote_basis','retrieval_method','data_age_seconds')}
             row.update(problem=problem,**{k:(raw.get(q['symbol']) or {}).get(k) for k in ('bid_size','ask_size','previous_close')})
+            row.update(information_trace=q['information_trace'],intraday_history={
+                k:q['intraday_evidence'][k] for k in ('history_status','tick_count','observation_count','coverage','storage_error')})
             diagnostics.append(row)
         try:
             save(self.output/('latest_buy_quotes.json' if require_complete_buy else 'latest_quotes.json'),

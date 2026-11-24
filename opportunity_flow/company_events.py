@@ -13,6 +13,19 @@ SOURCES={
 }
 
 
+def validate_source_schema(key,rows):
+    """A changed source schema must not look like zero company announcements."""
+    if not isinstance(rows,list) or any(not isinstance(r,dict) for r in rows):
+        raise ValueError('DISCLOSURE_SOURCE_SCHEMA_CHANGED')
+    code_fields=('公司代號','SecuritiesCompanyCode') if key.endswith('_NEWS') else ('Code','SecuritiesCompanyCode','StockCode')
+    date_fields=('發言日期',) if key.endswith('_NEWS') else ('Date','ExRrightsExDividendDate','ExrightDate','ExDividendDate')
+    for row in rows:
+        if (not any(row.get(k) is not None and str(row[k]).strip() for k in code_fields)
+                or not any(row.get(k) for k in date_fields)
+                or (key.endswith('_NEWS') and not any(isinstance(row.get(k),str) and row[k].strip() for k in ('主旨','主旨 ')))):
+            raise ValueError('DISCLOSURE_SOURCE_SCHEMA_CHANGED')
+
+
 def event_facts(event):
     """Compare disclosure content separately from the time it was fetched."""
     return {key:value for key,value in (event or {}).items() if key!='checked_at'}
@@ -29,9 +42,12 @@ def current_events(folder,at,fetch=None):
     from pathlib import Path
     folder=Path(folder);path=folder/'current.json';at=stamp(at)
     if path.exists():
-        old=read(path)
-        if 0<=(at-stamp(old['checked_at'])).total_seconds()<1800 and stamp(old['checked_at']).date()==at.date():
-            return old
+        try:
+            old=read(path)
+            for key,rows in old.get('rows',{}).items():validate_source_schema(key,rows)
+            if 0<=(at-stamp(old['checked_at'])).total_seconds()<1800 and stamp(old['checked_at']).date()==at.date():
+                return old
+        except (OSError,ValueError,TypeError,KeyError,AttributeError):pass
     results={};errors={}
     for key,url in SOURCES.items():
         try:
@@ -41,8 +57,7 @@ def current_events(folder,at,fetch=None):
                     rows=json.loads(response.read())
             else:
                 rows=fetch(url)
-            if not isinstance(rows,list) or any(not isinstance(r,dict) for r in rows):
-                raise ValueError('DISCLOSURE_SOURCE_SCHEMA_CHANGED')
+            validate_source_schema(key,rows)
             results[key]=rows
             save(folder/(key+'_'+at.strftime('%Y%m%d_%H%M')+'.json'),dict(url=url,checked_at=at.isoformat(),rows=rows))
         except Exception as exc:

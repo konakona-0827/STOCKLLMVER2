@@ -169,6 +169,28 @@ def research_card(symbol, name, label, candidate):
     sections = [f'{symbol} {name}｜{label}', f'評估時間（台灣時間） {at}',
                 '目前情況\n' + '\n'.join(reasons),
                 '重新評估條件\n' + '\n'.join(f'• {line}' for line in waiting)]
+    information=candidate.get('information_availability') or {}
+    trace=information.get('oddlot_quote') or {}
+    details=[]
+    labels={'bid':'買一','ask':'賣一','last_price':'成交價','low':'日內低點'}
+    for field,row in trace.get('fields',{}).items():
+        origin=row.get('origin')
+        if origin=='PRESENT':continue
+        explanation={'SYSTEM_TRANSFORM_LOSS':'券商原始值存在，系統轉換遺失，屬程式缺失',
+            'PROVIDER_EMPTY_FIELD':'券商原始欄位為空值／零值，尚不能認定市場沒有資料',
+            'SOURCE_NO_RESPONSE':'本次已請求，但來源沒有有效回覆',
+            'SOURCE_REQUEST_OR_VALIDATION_ERROR':'來源請求或資料核對失敗',
+            'SOURCE_VALIDATION_REJECTED':'原始價格存在，但時間或資料身分驗證未通過',
+            'SOURCE_TRACE_UNAVAILABLE':'尚無原始欄位證據，無法歸因為市場缺資料',
+            'PROVIDER_FIELD_UNAVAILABLE':'券商回覆沒有可核對的欄位'}.get(origin,origin)
+        details.append(f"{labels.get(field,field)}：{explanation}。")
+    history=information.get('intraday_history') or {}
+    if history:
+        details.append(f"已交研究：{history.get('observation_count',0)} 筆盤中快照、{history.get('ticks_delivered',0)} 筆成交明細、{history.get('minute_bars_delivered',0)} 根已結束分鐘彙整；未認證完整連續成交。")
+        if history.get('origin')=='SYSTEM_NOT_REQUESTED':details.append('分鐘成交資料本次尚未由系統取得，不能解讀為市場沒有資料。')
+        elif history.get('origin')=='SOURCE_RESPONSE_INCOMPLETE':details.append('已向券商請求，但尚未收到足夠的有效成交明細，不能認定市場沒有資料。')
+        elif str(history.get('origin','')).startswith('SYSTEM_'):details.append('分鐘資料有系統取得或解析缺口，需修復後重查，不能當成一般市場觀望。')
+    if details:sections.append('資料來源與缺口\n'+'\n'.join(details))
     if route:
         title = '雙方選定的研究計畫' if chosen else '本輪試算範例'
         qty = (route.get('economics') or {}).get('quantity')

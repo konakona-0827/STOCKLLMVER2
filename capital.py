@@ -150,6 +150,12 @@ class CapitalMarket:
                 owner.pending_indices.add((int(market), int(index)))
                 owner.callback_times[(int(market), int(index))] = now().isoformat()
 
+            def OnNotifyHistoryTicksLONG(self,market,index,ptr,day,hms,micros,bid,ask,close,qty,trial):
+                owner.queue_intraday_tick('HISTORY_TICK',market,index,ptr,day,hms,micros,bid,ask,close,qty,trial)
+
+            def OnNotifyTicksLONG(self,market,index,ptr,day,hms,micros,bid,ask,close,qty,trial):
+                owner.queue_intraday_tick('LIVE_TICK',market,index,ptr,day,hms,micros,bid,ask,close,qty,trial)
+
         if self.login_session is not None:
             self.sinks = [QuoteEvents()]
             self.connections = [client.GetEvents(self.objects['SKQuoteLib'], self.sinks[0])]
@@ -157,6 +163,15 @@ class CapitalMarket:
             self.sinks = [ReplyEvents(), QuoteEvents()]
             self.connections = [client.GetEvents(self.objects[name], sink) for name, sink in zip(
                 ('SKReplyLib', 'SKQuoteLib'), self.sinks)]
+
+    def queue_intraday_tick(self,source,*fields):
+        # COM callbacks only enqueue data. SDK lookups stay in the owning loop.
+        queue=getattr(self,'intraday_tick_events',None)
+        if queue is None or not getattr(self,'collect_intraday_ticks',False):return
+        try:
+            if len(queue)==queue.maxlen:self.intraday_tick_overflow=True
+            queue.append((source,*(int(value) for value in fields)))
+        except (ValueError,TypeError):self.intraday_tick_invalid=True
 
     def connect(self):
         if self.connected:

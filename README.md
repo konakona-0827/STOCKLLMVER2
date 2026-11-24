@@ -16,6 +16,8 @@
 
 完整的流程圖、資料來源、取得時點、掃描間隔、模型決策及持倉管理，請參閱 [Opportunity Flow 流程參考](docs/OPPORTUNITY_FLOW.md)。最新介面與費率修正見 [1.2 檢討與驗證](reports/opportunity_flow_ui_fee_20261113/README.md)。
 
+11/24 另修正研究模型未收到已存盤中快照及完整可用日線的缺口，串接同會話零股成交回補，新增來源空值／系統缺口／驗證失敗的逐欄歸因與資料補齊後重審。成交彙整不冒充完整連續資料，原風控保持生效，詳見 [缺資訊來源檢討與修正](reports/information_provenance_20261124/README.md)。
+
 11/13 已完成 [六檔真正 CLI 研究、券商只讀及 SDK 介面驗證](reports/six_candidate_cli_20261113/README.md)：依使用者指示將最低保留金額改為 NT$5,000，重查後正式預算 READY，六檔帳戶門均通過；四次新 CLI 仍沒有雙方核准的 BUY。已修正實接會崩潰的匯入、下單前股數上下文及無限讀取等待，正式交易沿用原執行器。尚無正式 FLOW 實盤受理／成交／回寫證據，不能將只讀及回歸測試當作實盤驗收。
 
 這是使用官方免費資料與既有 Codex CLI 的獨立研究流程。新入口是 **`OpportunityFlow.cmd` / `RunOpportunityFlow.ps1`**，程式位於 `opportunity_flow/`。原 STOCKLLM 說明保存在 [README_STOCKLLM_LEGACY.md](README_STOCKLLM_LEGACY.md)。1.1 版已接上現有正式帳本、群益券商執行器及最新 `codex/profit-exit-strategy` 分支的持倉與退出控制。

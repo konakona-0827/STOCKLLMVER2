@@ -212,6 +212,9 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
         reasons=[] if eligible else sorted({r for s in scenarios for r in s["blockers"]}),
         setup_families=families, rank_score=round(f["return_20d"] + .1*f["return_5d"], 6))
     source_rows = [dict(date=b["date"], sha256=b["source_sha256"], source=b["source"]) for b in bars]
+    from .intraday import availability,material_history
+    intraday=(raw_quote or {}).get('intraday_evidence') or {}
+    input_availability=availability(raw_quote,bars,event,intraday)
     evidence = [dict(evidence_id="E_FEATURES", facts={k: round(v,6) if isinstance(v,float) else v for k,v in f.items()}),
                 dict(evidence_id="E_LEVELS", facts=dict(zip(("supports", "targets"), levels(bars)))),
                 dict(evidence_id="E_ECONOMICS", facts=scenarios),
@@ -221,7 +224,13 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
                     older_history_gaps=older_gaps,
                     price_reference_basis="ODDLOT_QUOTE" if q else "PUBLIC_BOARD_LOT_REFERENCE" if price_reference else "LAST_COMPLETED_CLOSE",
                     spread_known=q is not None,
-                    quote_problem=quote_error, event_check=event or {"status":"NOT_CHECKED"})),
+                    quote_problem=quote_error, event_check=event or {"status":"NOT_CHECKED"},
+                    information_availability=input_availability)),
+                dict(evidence_id='E_DAILY_HISTORY',facts=dict(
+                    columns=['date','open','high','low','close','volume','turnover_twd'],
+                    rows=[[b.get(k) for k in ('date','open','high','low','close','volume','turnover_twd')] for b in bars],
+                    price_basis=bars[-1]['price_basis'],completed_through=bars[-1]['date'],
+                    source_history_sha256=digest(bars))),
                 dict(evidence_id='E_INTRADAY',facts=dict(session_date=day,
                     quote_basis='VERIFIED_ODDLOT' if q else 'PUBLIC_REFERENCE' if price_reference else 'UNAVAILABLE',
                     quote_timestamp=q['quote_timestamp'] if q else (raw_quote or {}).get('quote_timestamp'),
@@ -229,7 +238,8 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
                     last_price=q['last_price'] if q else observed_price,
                     open=q.get('open') if q else None,high=q.get('high') if q else None,low=q.get('low') if q else None,
                     levels=thresholds,level_states=trigger_states,
-                    stop_rule='STRICTLY_BELOW_VERIFIED_SESSION_LOW_WHEN_AVAILABLE'))]
+                    stop_rule='STRICTLY_BELOW_VERIFIED_SESSION_LOW_WHEN_AVAILABLE',
+                    history=intraday))]
     core = dict(schema_version=1, system="TW Opportunity Flow", policy=p, symbol=symbol, exchange=exchange,
         decision_session=day, completed_through=bars[-1]["date"], setup_families=families,
         trigger_states=trigger_states,
@@ -240,11 +250,13 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
     packet = {**core, "packet_id": digest(core)}
     # Keep the timestamp in the frozen packet for audit, but ignore it for repeat research.
     limits = evidence[3]
-    stable_limits = {**limits, "facts": {**limits["facts"],
-        "event_check": event_facts(limits["facts"]["event_check"])}}
+    stable_limits = {**limits, "facts": {k:v for k,v in limits['facts'].items() if k!='information_availability'}}
+    stable_limits['facts']['event_check']=event_facts(limits['facts']['event_check'])
     material = dict(structure=digest({**core,"evidence":[*evidence[:2],stable_limits]}),
         price_band=math.floor(math.log((q["ask"] if q else price_reference["price"])/f["close"])/math.log(1+p["material_price_change_fraction"])) if q or price_reference else "NO_QUOTE",
-        eligible_routes=[r["kind"] for r in eligible], quote_problem=quote_error)
+        eligible_routes=[r["kind"] for r in eligible], quote_problem=quote_error,
+        intraday_time_evidence=material_history(intraday,thresholds,at))
     base.update(packet=packet, material_key=digest(material), quote=q, quote_problem=quote_error,
-                hypothetical_reference=q is None, input_characters=len(canonical(packet)))
+                hypothetical_reference=q is None, input_characters=len(canonical(packet)),
+                information_availability=input_availability)
     return base

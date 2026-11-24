@@ -1,6 +1,7 @@
 """One login/monitor/subscription; per-symbol failures do not abort the batch."""
 import time
 import math
+from collections import deque
 from datetime import datetime
 from capital import CapitalMarket, normalize_stock
 from capital_check import unpack, error_info
@@ -9,6 +10,7 @@ from main import snapshot
 from execution.capital_session_audit import record_capital_event
 
 MAX_ODDLOT_QUOTE_SYMBOLS = 20
+MAX_ODDLOT_HISTORY_SYMBOLS = 10
 
 
 def buy_quote_complete(q,at):
@@ -42,7 +44,8 @@ class MultiCapitalMarket(CapitalMarket):
         groups=[]
         for market_no in (5,6):
             names=tuple(s for s in ordered_symbols if resolve_market(s)==market_no)
-            groups.extend(names[i:i+MAX_ODDLOT_QUOTE_SYMBOLS] for i in range(0,len(names),MAX_ODDLOT_QUOTE_SYMBOLS))
+            limit=MAX_ODDLOT_HISTORY_SYMBOLS if getattr(self,'flow_require_complete_buy',False) else MAX_ODDLOT_QUOTE_SYMBOLS
+            groups.extend(names[i:i+limit] for i in range(0,len(names),limit))
         quotes, errors = {}, {}
         for group_index, group in enumerate(groups, start=1):
             self.oddlot_market_no=resolve_market(group[0])
@@ -68,6 +71,7 @@ class MultiCapitalMarket(CapitalMarket):
         # switch. That switch crashed in the COM message pump immediately after
         # re-entering the monitor (2026-10-28 09:05).
         # Retain the logged-in COM objects and event sink for the next scan.
+        self.collect_intraday_ticks=False
         self.leave_monitor()
         return quotes, errors
 
@@ -114,15 +118,41 @@ class MultiCapitalMarket(CapitalMarket):
                 'batch_count': batch_count,
             })
         wanted, quotes, errors = set(ordered_symbols), {}, {}
+        strict=getattr(self,'flow_require_complete_buy',False)
+        self.intraday_tick_events=deque(maxlen=20000)
+        self.intraday_tick_overflow=self.intraday_tick_invalid=False
+        self.collect_intraday_ticks=strict
+        histories={s:[] for s in ordered_symbols};history_status={};stock_cache={}
+        requested=set()
+        if strict:
+            for page,symbol in enumerate(ordered_symbols[:MAX_ODDLOT_HISTORY_SYMBOLS]):
+                try:
+                    rc=unpack(quote.SKQuoteLib_RequestTicksWithMarketNo(page,getattr(self,'oddlot_market_no',5),symbol))
+                    history_status[symbol]='REQUEST_ACCEPTED_NO_EVENTS' if rc==0 else 'PROVIDER_REQUEST_REJECTED:'+str(rc)
+                    if rc==0:requested.add(symbol)
+                except AttributeError:
+                    history_status[symbol]='SYSTEM_SDK_HISTORY_METHOD_UNAVAILABLE'
+                except (TypeError,ValueError):
+                    history_status[symbol]='SYSTEM_HISTORY_REQUEST_RESULT_INVALID'
+                except Exception as exc:
+                    history_status[symbol]='SOURCE_HISTORY_REQUEST_ERROR:'+type(exc).__name__
+                self.event('ODDLOT_HISTORY_REQUEST',dict(symbol=symbol,status=history_status[symbol]))
         ready=set()
         deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline and ready != wanted and not self.stopped():
+        # History has no completion event. Keep a bounded response window and
+        # explicitly report partial coverage; never certify an empty response.
+        last_tick_received=None
+        while time.monotonic() < deadline and not self.stopped():
+            history_waiting=bool(requested and (not all(histories[s] for s in requested)
+                or last_tick_received is None or time.monotonic()-last_tick_received<.5))
+            if ready==wanted and not history_waiting:break
             self.pump(.1)
             for market, index in list(self.pending_indices):
                 self.pending_indices.discard((market, index))
                 try:
                     stock = self.sk.SKSTOCKLONG()
                     stock = read_stock(quote.SKQuoteLib_GetStockByIndexLONG(market, index, stock), stock)
+                    stock_cache[(market,index)]=stock
                     q = normalize_stock(stock, now())
                     q['callback_received_at'] = self.callback_times.get((market, index))
                     q['retrieval_method'] = 'BATCH_CALLBACK'
@@ -137,6 +167,25 @@ class MultiCapitalMarket(CapitalMarket):
                             ready.discard(q['symbol'])
                 except Exception as exc:
                     self.event('BATCH_CALLBACK_ERROR', error_info(exc))
+            from opportunity_flow.intraday import decode_tick
+            while self.intraday_tick_events:
+                event=self.intraday_tick_events.popleft();_,market,index,*_=event
+                try:
+                    if market!=getattr(self,'oddlot_market_no',5):continue
+                    stock=stock_cache.get((market,index))
+                    if stock is None:
+                        original=self.sk.SKSTOCKLONG()
+                        stock=read_stock(quote.SKQuoteLib_GetStockByIndexLONG(market,index,original),original)
+                        stock_cache[(market,index)]=stock
+                    symbol=str(stock.bstrStockNo)
+                    if symbol not in requested:continue
+                    if event[-1]!=0:continue  # Trial ticks are expected, not trades.
+                    tick=decode_tick(event,stock,symbol,market,now())
+                    histories[symbol].append(tick)
+                    last_tick_received=time.monotonic()
+                    if len(histories[symbol])>3000:histories[symbol]=histories[symbol][-3000:]
+                    history_status[symbol]='RECEIVED_TICKS_PARTIAL_COVERAGE'
+                except Exception:self.intraday_tick_invalid=True
         for symbol in ordered_symbols:
             if symbol in ready or self.stopped():
                 continue
@@ -154,6 +203,13 @@ class MultiCapitalMarket(CapitalMarket):
             except Exception as exc:
                 errors[symbol] = type(exc).__name__ + ':' + str(error_info(exc))
                 self.event('BATCH_SYMBOL_ERROR', {'symbol': symbol, **error_info(exc)})
+        if strict:
+            for symbol in ordered_symbols:
+                if symbol in quotes:
+                    quotes[symbol].update(intraday_ticks=histories[symbol],
+                        tick_history_status='RESPONSE_DROPPED_OR_INVALID' if self.intraday_tick_overflow or self.intraday_tick_invalid else
+                            history_status.get(symbol,'SYSTEM_NOT_REQUESTED'))
+            self.collect_intraday_ticks=False
         return quotes, errors
 
 

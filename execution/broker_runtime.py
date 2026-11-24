@@ -34,9 +34,11 @@ class BrokerRuntime:
         if kind == 'health':
             return 60.0
         if kind == 'quotes':
-            # SDK timeout applies separately to each group of 20. Include
+            # History uses groups of 10; ordinary snapshots use groups of 20.
+            # Each group has its own SDK timeout. Include
             # initial login, Reply recovery and queue time in the outer limit.
-            return 45.0 + max(1, ceil(len(args[0]) / 20)) * max(0.0, float(args[3]))
+            batch_size=10 if len(args)>5 and args[5] is True else 20
+            return 45.0 + max(1, ceil(len(args[0]) / batch_size)) * max(0.0, float(args[3]))
         if kind == 'shutdown':
             return 5.0
         return None  # Never turn an uncertain financial action into a retry.
