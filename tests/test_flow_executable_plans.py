@@ -179,6 +179,28 @@ class ExecutablePlanTests(unittest.TestCase):
 
 
 class QuoteCompletionTests(unittest.TestCase):
+    def test_eligible_quote_candidates_rotate_within_two_batches_without_pinning_missing_books(self):
+        from opportunity_flow.live import quote_rotation
+        active=[dict(symbol=str(1000+i),state='REVIEW_DEFERRED_LIVE_QUOTE',packet=dict(selected_routes=['route'])) for i in range(32)]
+        blocked=[dict(symbol=str(2000+i),state='ECONOMIC_BLOCKED',packet=dict(selected_routes=[])) for i in range(80)]
+        priority=explore=0;seen=set()
+        for _ in range(2):
+            chosen,priority,explore=quote_rotation(active+blocked,priority,explore)
+            self.assertEqual(len(chosen),20)
+            self.assertEqual(len(set(chosen)),20)
+            self.assertEqual(sum(s in {c['symbol'] for c in active} for s in chosen),16)
+            seen.update(chosen)
+        self.assertTrue({c['symbol'] for c in active}<=seen)
+
+    def test_reviewed_plan_stays_first_and_blocked_research_uses_spare_capacity(self):
+        from opportunity_flow.live import quote_rotation
+        ready=dict(symbol='1111',state='RESEARCH_READY',packet=dict(selected_routes=['approved']))
+        blocked=[dict(symbol=str(2000+i),state='ECONOMIC_BLOCKED',packet=dict(selected_routes=[])) for i in range(25)]
+        chosen,priority,explore=quote_rotation([ready]+blocked,0,0)
+        self.assertEqual(chosen[0],'1111');self.assertEqual(len(chosen),20)
+        next_batch,_,_=quote_rotation([ready]+blocked,priority,explore)
+        self.assertTrue({c['symbol'] for c in blocked}<=set(chosen+next_batch))
+
     def test_buy_waits_for_book_and_session_low_after_partial_live_callback(self):
         from capital_multi_quote import MultiCapitalMarket
         market=MultiCapitalMarket.__new__(MultiCapitalMarket)

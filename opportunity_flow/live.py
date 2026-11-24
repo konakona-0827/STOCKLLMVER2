@@ -26,6 +26,25 @@ def doctor(explicit=None):
         broker_login_tested=False,orders_sent=0,ready=all(deps.values()) and cfg.get('enabled') is True)
 
 
+def quote_rotation(research,priority_cursor,explore_cursor,limit=20):
+    """Keep reviewed plans first; rotate other eligible plans ahead of blocked research."""
+    ready=[c['symbol'] for c in research if c['state']=='RESEARCH_READY'][:limit]
+    preferred=[c['symbol'] for c in research if c['symbol'] not in ready
+               and isinstance(c.get('packet'),dict) and c['packet'].get('selected_routes')]
+    other=[c['symbol'] for c in research if c['symbol'] not in ready and c['symbol'] not in preferred]
+    capacity=limit-len(ready)
+    reserve=min(4,len(other),max(0,capacity-1)) if preferred else capacity
+
+    def rotate(items,cursor,size):
+        if not items:return [],0
+        cursor%=len(items);size=min(size,len(items))
+        return (items+items)[cursor:cursor+size],(cursor+size)%len(items)
+
+    active,priority_cursor=rotate(preferred,priority_cursor,capacity-reserve)
+    explore,explore_cursor=rotate(other,explore_cursor,capacity-len(active))
+    return ready+active+explore,priority_cursor,explore_cursor
+
+
 class LiveCoordinator:
     def __init__(self,account_root,state,p,stop_event=None,*,read_only=False,runtime=None,on_change=None):
         from .legacy_runtime import LegacyRuntime
@@ -41,6 +60,7 @@ class LiveCoordinator:
         self.future=None;self.pending=None;self.last_refresh=0;self.last_quote_refresh=0;self.quote_cursor=0;self.quotes={};self.events={};self.contexts={};self.snapshot={}
         self.lock=threading.RLock();self.closed=False;self.dataset=None
         self.last_maintenance=0
+        self.priority_quote_cursor=0
         self.broker_read_error=None
         self.session_reset_failures=0
         self.session_recovery_requested=False
@@ -148,15 +168,9 @@ class LiveCoordinator:
                 research=[build(s,dataset,datetime.now(TAIPEI),p) for s in dataset['grouped']]
                 research=sorted([c for c in research if c['state'] in ('REVIEW_PENDING','ECONOMIC_BLOCKED')],
                     key=lambda c:(c['state']!='REVIEW_PENDING',-c.get('rank_score',0),c['symbol']))
-            urgent=[c['symbol'] for c in research[:12]]
-            exploration=[c['symbol'] for c in research[12:]]
-            rotated=[]
-            if exploration:
-                self.quote_cursor%=len(exploration)
-                size=min(20-len(urgent),len(exploration))
-                rotated=(exploration+exploration)[self.quote_cursor:self.quote_cursor+size]
-                self.quote_cursor=(self.quote_cursor+size)%len(exploration)
-            symbols=list(dict.fromkeys(held+urgent+rotated))
+            selected,self.priority_quote_cursor,self.quote_cursor=quote_rotation(
+                research,getattr(self,'priority_quote_cursor',0),self.quote_cursor)
+            symbols=list(dict.fromkeys(held+selected))
             try:
                 from .execution_bridge import fetch_buy_quotes
                 self.quotes=fetch_buy_quotes(self.runtime,symbols,dataset) if symbols else {}
