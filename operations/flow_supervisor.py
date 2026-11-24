@@ -16,9 +16,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from opportunity_flow.common import read, save
-from opportunity_flow.recovery import folder, heartbeat_reason, intent, set_intent,runtime_code_matches
+from opportunity_flow.recovery import folder, heartbeat_reason, intent, set_intent
 from state_lock import StateLease
 from operations.flow_runtime_audit import RuntimeAudit, wait_for_startup
+from operations.flow_startup_handoff import pending_token,prepare_handoff,wait_for_handoff
 
 
 def record(root, event, **detail):
@@ -79,7 +80,7 @@ def child_command(root, dataset, state, *, headless=False, model=None):
     return command
 
 
-def launch_detached(root,dataset,state,*,headless=False,model=None):
+def launch_detached(root,dataset,state,*,headless=False,model=None,handoff_token=None):
     executable=Path(sys.executable)
     if os.name=='nt' and executable.with_name('pythonw.exe').is_file():
         executable=executable.with_name('pythonw.exe')
@@ -87,6 +88,7 @@ def launch_detached(root,dataset,state,*,headless=False,model=None):
              '--dataset',str(dataset),'--state',str(state)]
     if headless:command.append('--headless')
     if model:command.extend(['--model',model])
+    if handoff_token:command.extend(['--handoff-token',handoff_token])
     target=folder(root);target.mkdir(parents=True,exist_ok=True)
     with (target/'supervisor_output.log').open('ab') as output:
         child=subprocess.Popen(command,cwd=ROOT,stdout=output,stderr=subprocess.STDOUT,
@@ -105,14 +107,8 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
         lease = StateLease(root, 'flow-supervisor').acquire()
     except RuntimeError:
         record(root, 'SUPERVISOR_ALREADY_RUNNING')
-        try:
-            exported=read(target/'runtime-audit.json')
-            from opportunity_flow.recovery import code_revision
-            fresh=datetime.fromisoformat(exported['exported_at']).timestamp()
-            existing_audit=runtime_code_matches(code_revision(),exported.get('source_revision')) and 0<=time.time()-fresh<60
-        except (OSError,ValueError,TypeError,KeyError):existing_audit=False
-        if not existing_audit:
-            RuntimeAudit(root,dataset,state,headless=headless,model=model).publish('EXISTING_ACCOUNT_OWNER',force=True)
+        # The current lease owner is the only publisher of live acceptance.
+        # A periodic duplicate must not replace its report with an empty one.
         return 0
     try:
         history = read(target / 'restart_history.json')
@@ -127,13 +123,14 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
     except (OSError,ValueError):previous_owner={}
     alive=False
     last_row={};last_pid=None;last_run=None;last_launched=None
+    heartbeat_read_degraded=False
     audit=None
     def publish(state,**detail):
         status(root,state,**detail)
         try:
             if audit is None:return
             audit.publish(state,row=last_row,pid=last_pid,run_id=last_run,
-                          launched_at=last_launched,process_alive=alive)
+                          launched_at=last_launched,process_alive=alive,heartbeat_read_degraded=heartbeat_read_degraded)
         except Exception as exc:
             record(root,'RUNTIME_EXPORT_FAILED',error=type(exc).__name__)
     try:
@@ -174,6 +171,7 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                     continue
                 record(root, 'FLOW_STARTED', child_pid=child.pid, run_id=run_id)
                 alive=True
+                heartbeat_read_degraded=False
                 last_pid,last_run,last_launched=child.pid,run_id,launched
                 last_row={}
                 publish('AWAITING_FRESH_ACCOUNT',child_pid=child.pid,run_id=run_id)
@@ -184,11 +182,19 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                         break
                     except subprocess.TimeoutExpired:
                         try:
-                            row = read(target / f'runtime-{child.pid}.json')
+                            candidate = read(target / f'runtime-{child.pid}.json')
                         except (OSError, ValueError):
-                            row = {}
-                        if not isinstance(row,dict):row={}
-                        last_row=row
+                            candidate = None
+                        valid=(isinstance(candidate,dict) and candidate.get('pid')==child.pid
+                               and candidate.get('run_id')==run_id)
+                        if valid:
+                            if heartbeat_read_degraded:record(root,'HEARTBEAT_READ_RECOVERED',child_pid=child.pid)
+                            row=last_row=candidate
+                            heartbeat_read_degraded=False
+                        else:
+                            if not heartbeat_read_degraded:record(root,'HEARTBEAT_READ_UNAVAILABLE',child_pid=child.pid)
+                            heartbeat_read_degraded=True
+                            row=last_row  # Its original timestamps continue to age.
                         reason = heartbeat_reason(row, child.pid, run_id, launched, time.time())
                         if stop.is_set():
                             reason = 'SUPERVISOR_STOP'
@@ -236,6 +242,7 @@ def main(argv=None):
     parser.add_argument('--model')
     parser.add_argument('--install', action='store_true')
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--handoff-token',help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     from opportunity_flow.live import resolve_account_root
     root = resolve_account_root(args.state_root)
@@ -257,8 +264,10 @@ def main(argv=None):
             RuntimeAudit(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,
                          model=args.model).publish('INSTALLATION_FAILED',force=True)
             raise
+    handoff=args.handoff_token or pending_token(root)
     if args.resume:
-        set_intent(root, True, 'EXPLICIT_LIVE_LAUNCH')
+        handoff=prepare_handoff(root) if args.install else handoff
+        if handoff is None:set_intent(root, True, 'EXPLICIT_LIVE_LAUNCH')
     if args.install:
         if args.headless:
             # Preserve foreground Ctrl+C for the CLI while scheduled recovery
@@ -273,6 +282,7 @@ def main(argv=None):
                 stop.set()
             previous = signal.signal(signal.SIGINT, pause)
             try:
+                if handoff and not wait_for_handoff(root,handoff,stop=stop):return 0
                 return supervise(root,args.dataset.resolve(),args.state.resolve(),
                                  headless=True,model=args.model,stop=stop)
             finally:
@@ -280,7 +290,8 @@ def main(argv=None):
         # Closing OpportunityFlow.cmd's console must not kill supervision.
         requested_at=time.time()
         try:
-            pid=launch_detached(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,model=args.model)
+            extra=dict(handoff_token=handoff) if handoff else {}
+            pid=launch_detached(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,model=args.model,**extra)
         except OSError:
             RuntimeAudit(root,args.dataset.resolve(),args.state.resolve(),headless=args.headless,
                          model=args.model).publish('LAUNCH_FAILED',force=True)
@@ -289,6 +300,7 @@ def main(argv=None):
                               fresh_broker_reconciliation_required=True)))
         wait_for_startup(root,not_before=requested_at)
         return 0
+    if handoff and not wait_for_handoff(root,handoff):return 0
     return supervise(root, args.dataset.resolve(), args.state.resolve(), headless=args.headless, model=args.model)
 
 

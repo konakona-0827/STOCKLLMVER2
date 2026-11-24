@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import time
 from uuid import uuid4
 
 TAIPEI = timezone(timedelta(hours=8))
@@ -30,15 +31,30 @@ def digest(value):
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
-def save(path, value):
+def atomic_write_text(path, text):
+    """Keep the old complete file until replacement; retry only bounded Windows contention."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name+'.'+uuid4().hex+'.tmp')
     try:
-        tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8",newline="\n")
-        tmp.replace(path)
+        tmp.write_text(text, encoding="utf-8",newline="\n")
+        waits=(.01,.025,.05)
+        for attempt in range(len(waits)+1):
+            try:
+                tmp.replace(path)
+                break
+            except OSError as exc:
+                if (getattr(exc,'winerror',None) not in (5,32,33)
+                        or attempt==len(waits)):
+                    raise
+                time.sleep(waits[attempt])
     finally:
-        tmp.unlink(missing_ok=True)
+        try:tmp.unlink(missing_ok=True)
+        except OSError:pass  # Cleanup must not hide the actual write outcome.
+
+
+def save(path, value):
+    atomic_write_text(path,json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
 
 
 def number(value, positive=False):

@@ -43,6 +43,9 @@ class FlowIncidentTests(unittest.TestCase):
             self.assertEqual(persisted['gui_at'],1006)
             self.assertEqual(persisted['loop_at'],1006)
             self.assertEqual(persisted['stages']['WATCH_STARTED']['count'],1)
+            self.assertEqual(persisted['diagnostics']['heartbeat_write_failures'],2)
+            self.assertEqual(persisted['diagnostics']['last_write_failed_at'],1000)
+            self.assertEqual(persisted['diagnostics']['last_write_succeeded_at'],1006)
 
     def test_restart_request_survives_a_denied_diagnostic_write(self):
         with tempfile.TemporaryDirectory() as tmp:

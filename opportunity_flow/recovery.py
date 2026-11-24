@@ -2,6 +2,8 @@
 from datetime import datetime, timezone
 from decimal import Decimal,InvalidOperation
 import os
+import hashlib
+import json
 from functools import lru_cache
 from pathlib import Path
 import subprocess
@@ -15,7 +17,7 @@ from .common import read, save
 def code_revision():
     try:
         value = subprocess.check_output(['git','rev-parse','HEAD'],cwd=Path(__file__).resolve().parents[1],
-            stderr=subprocess.DEVNULL,timeout=3,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            env=dict(os.environ),stderr=subprocess.DEVNULL,timeout=3,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         revision=value.decode().strip()
         return revision if len(revision)==40 and all(c in '0123456789abcdef' for c in revision) else None
     except (OSError,subprocess.SubprocessError):
@@ -32,17 +34,48 @@ def runtime_code_matches(expected,actual,code_root=None):
         result=subprocess.run(['git','diff','--quiet',expected,actual,'--','.',
             ':(exclude)reports/**',':(exclude)docs/**',':(exclude)README*'],
             cwd=code_root or Path(__file__).resolve().parents[1],stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,timeout=3,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            env=dict(os.environ),stderr=subprocess.DEVNULL,timeout=3,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         return result.returncode==0
     except (OSError,subprocess.SubprocessError):
         return False
+
+
+def source_fingerprint(root):
+    """Tracked executable/policy content; report and test commits are excluded."""
+    root=Path(root).resolve()
+    try:
+        raw=subprocess.check_output(['git','ls-files','-z','--','*.py','*.ps1','*.cmd','*.json',
+            'requirements*.txt','pyproject.toml','strategies/*.md','prompts/*.md','prompt*.md','skills/*.md'],cwd=root,
+            env=dict(os.environ),stderr=subprocess.DEVNULL,timeout=5,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        files=[]
+        for name in sorted(raw.decode('utf-8').split('\0')):
+            if not name or name.startswith(('reports/','tests/','docs/')):continue
+            path=(root/name).resolve()
+            if not path.is_relative_to(root):return None
+            files.append((name,hashlib.sha256(path.read_bytes().replace(b'\r\n',b'\n')).hexdigest()))
+        return hashlib.sha256(json.dumps(files,separators=(',',':')).encode()).hexdigest() if files else None
+    except (OSError,ValueError,UnicodeError,subprocess.SubprocessError):return None
+
+
+@lru_cache(maxsize=1)
+def runtime_fingerprint():
+    return source_fingerprint(Path(__file__).resolve().parents[1])
+
+
+def same_runtime_code(revision,left,right_revision,right):
+    def valid(value,size):
+        return isinstance(value,str) and len(value)==size and all(c in '0123456789abcdef' for c in value)
+    if left is not None and right is not None:
+        return valid(left,64) and valid(right,64) and left==right
+    return runtime_code_matches(revision,right_revision)
 
 
 STAGES = frozenset(('ACCOUNT_CHECK_STARTED','ACCOUNT_RECONCILED','ACCOUNT_CHECK_FAILED','WATCH_STARTED',
     'WAITING_RESEARCH_WINDOW','WAITING_DAILY_DATA','RESEARCH_CYCLE_COMPLETED','RESEARCH_REVIEW_STARTED',
     'RESEARCH_REVIEW_COMPLETED','RESEARCH_ERROR','PRETRADE_STARTED','PRETRADE_COMPLETED',
     'EXECUTOR_DISPATCHED','EXECUTOR_RETURNED','ORDER_SENT','FILL_CONFIRMED','POSITION_MANAGEMENT','EXECUTION_BLOCKED',
-    'DISPATCH_UNKNOWN','BROKER_SESSION_RESTART_REQUESTED','SUPERVISOR_RECOVERY_REQUESTED'))
+    'DISPATCH_UNKNOWN','BROKER_SESSION_RESTART_REQUESTED','SUPERVISOR_RECOVERY_REQUESTED',
+    'PRETRADE_APPROVED','PRETRADE_VETOED','PRETRADE_REVIEW_ERROR'))
 
 BLOCK_REASONS=frozenset(('USER_STOPPED_OR_OUTSIDE_TRADING_SESSION','PRETRADE_VETO_OR_ERROR',
     'BROKER_ACCOUNT_UNVERIFIED','BROKER_ACCOUNT_STALE','BROKER_INVENTORY_UNVERIFIED','CURRENT_ACCOUNT_ALLOWANCE_PAUSED',
@@ -129,8 +162,12 @@ class RecoveryProbe:
         self.pid = os.getpid() if pid is None else pid
         self.path = folder(root) / f'runtime-{self.pid}.json'
         self.lock = threading.Lock()
-        self.row = dict(pid=self.pid, run_id=run_id, started_at=clock(),code_revision=code_revision(),stages={},events=[])
+        self.row = dict(pid=self.pid, run_id=run_id, started_at=clock(),code_revision=code_revision(),
+                        runtime_fingerprint=runtime_fingerprint(),stages={},events=[])
         self.last_saved = 0
+        self.write_failures=0
+        self.last_write_failure=None
+        self.last_write_success=None
         self._local_restart=False
         self._supervision_checked=-float('inf')
         self._supervision_lock=threading.Lock()
@@ -146,12 +183,18 @@ class RecoveryProbe:
 
     def save_heartbeat(self,now):
         self.last_saved=now
+        self.row['diagnostics']=dict(heartbeat_write_failures=self.write_failures,
+            last_write_failed_at=self.last_write_failure,last_write_succeeded_at=now)
         try:
             save(self.path,self.row)
+            self.last_write_success=now
         except OSError:
             # Diagnostic contention must not stop Tk callbacks or the watch loop.
             # Keep the accumulated events in memory for the next scheduled write.
-            pass
+            self.write_failures+=1
+            self.last_write_failure=now
+            self.row['diagnostics']=dict(heartbeat_write_failures=self.write_failures,
+                last_write_failed_at=now,last_write_succeeded_at=self.last_write_success)
 
     def ensure_supervision(self):
         dataset=os.environ.get('FLOW_RECOVERY_DATASET')

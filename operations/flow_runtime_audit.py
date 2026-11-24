@@ -9,8 +9,8 @@ import sys
 import threading
 import time
 
-from opportunity_flow.common import read, save
-from opportunity_flow.recovery import STAGES, code_revision, folder, money, safe_details,runtime_code_matches
+from opportunity_flow.common import atomic_write_text,read,save
+from opportunity_flow.recovery import STAGES,code_revision,folder,money,runtime_fingerprint,safe_details,same_runtime_code
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -61,7 +61,7 @@ def public_native(value):
     return result
 
 
-def assess(native,row,*,pid,run_id,launched_at,now,process_alive,revision,process_state):
+def assess(native,row,*,pid,run_id,launched_at,now,process_alive,revision,process_state,fingerprint=None,heartbeat_read_degraded=False):
     native=public_native(native)
     current=isinstance(row,dict) and row.get('pid')==pid and row.get('run_id')==run_id
     row=row if current else {}
@@ -88,7 +88,7 @@ def assess(native,row,*,pid,run_id,launched_at,now,process_alive,revision,proces
         and 'ACCOUNT_RECONCILED' in stages)
     loop=epoch(row.get('loop_at'))
     watch=bool(alive and row.get('controller_status')=='RUNNING' and loop is not None and 0<=now-loop<=120)
-    same_code=runtime_code_matches(revision,row.get('code_revision'))
+    same_code=same_runtime_code(revision,fingerprint,row.get('code_revision'),row.get('runtime_fingerprint'))
     inspected=epoch(native.get('inspected_at'))
     startup=bool(native.get('startup_verified') is True and inspected is not None and 0<=now-inspected<=180
                  and native.get('current_session_is_interactive') is True)
@@ -117,10 +117,20 @@ def assess(native,row,*,pid,run_id,launched_at,now,process_alive,revision,proces
                'RESEARCH_BLOCKED' if error>last_cycle else
                'AUTOMATION_ACTIVE' if research else 'AWAITING_RESEARCH_CYCLE')
     budget=row.get('budget') if isinstance(row.get('budget'),dict) else {}
+    io=row.get('diagnostics') if isinstance(row.get('diagnostics'),dict) else {}
+    diagnostics={}
+    diagnostics['heartbeat_read_degraded']=bool(heartbeat_read_degraded)
+    failures=io.get('heartbeat_write_failures')
+    diagnostics['heartbeat_write_failures']=failures if type(failures) is int and failures>=0 else None
+    for key in ('last_write_failed_at','last_write_succeeded_at'):
+        value=epoch(io.get(key))
+        diagnostics[key]=(datetime.fromtimestamp(value,timezone.utc).isoformat()
+                          if value is not None and launched_at<=value<=now else None)
     return dict(state=state,checks=dict(startup_verified=startup,current_process_heartbeat=alive,
         running_version_verified=same_code,fresh_account_reconciled=account,watch_loop_running=watch,
         automatic_execution_enabled=automation,research_cycle_observed=research),
-        windows=native,stages=stages,events=events,
+        windows=native,stages=stages,events=events,diagnostics=diagnostics,
+        runtime_source_revision=row.get('code_revision') if current else None,
         account=dict(checked_at=datetime.fromtimestamp(checked,timezone.utc).isoformat() if checked is not None else None,
             budget_ready=row.get('budget_ready') is True,
             **{key:money(budget.get(key)) for key in ('cash_reserve_twd','ai_cap_twd','current_buy_budget_twd','daily_buy_cap_twd')}),
@@ -153,6 +163,10 @@ def text_report(report):
                       ('current_buy_budget_twd','最近對帳的新買可用額'),('daily_buy_cap_twd','單日買進上限')):
         lines.append(f"{label}：{report['account'].get(key) or '尚未確認'}")
     if report['execution_block_reasons']:lines.append('執行阻擋：'+', '.join(report['execution_block_reasons']))
+    count=report.get('diagnostics',{}).get('heartbeat_write_failures')
+    if count is not None:lines.append(f'本次重試後仍失敗的心跳寫入累計：{count}；歷史寫入錯誤不代表目前交易已失敗。')
+    if report.get('diagnostics',{}).get('heartbeat_read_degraded'):
+        lines.append('本次心跳讀取暫時失敗；保留上次心跳與對帳時間，待下次讀取，未刷新資料時效。')
     if report['order_evidence']['unknown_events']:
         lines.append(f"本次曾有 {report['order_evidence']['unknown_events']} 個委託回覆不明事件；不可解讀為未送單，須依原帳本重新對帳，不自動重送。")
     return '\n'.join(lines)+'\n'
@@ -164,6 +178,7 @@ class RuntimeAudit:
         self.code_root,self.clock=Path(code_root),clock
         self.headless,self.model=headless,model
         self.revision=code_revision()
+        self.fingerprint=runtime_fingerprint()
         self.native={};self.native_thread=None;self.native_at=-float('inf');self.last_saved=-float('inf')
         self.last_signature=None
 
@@ -171,17 +186,18 @@ class RuntimeAudit:
         self.native=native_inspection(self.root,self.dataset,self.state,headless=self.headless,
                                       model=self.model,code_root=self.code_root)
 
-    def publish(self,process_state,*,row=None,pid=None,run_id=None,launched_at=None,process_alive=False,force=False):
+    def publish(self,process_state,*,row=None,pid=None,run_id=None,launched_at=None,process_alive=False,force=False,heartbeat_read_degraded=False):
         now=self.clock()
         if now-self.native_at>=60 and (self.native_thread is None or not self.native_thread.is_alive()):
             self.native_at=now
             self.native_thread=threading.Thread(target=self._refresh_native,name='flow-windows-inspection',daemon=True)
             self.native_thread.start()
         report=assess(self.native,row or {},pid=pid,run_id=run_id,launched_at=launched_at or now,now=now,
-                      process_alive=process_alive,revision=self.revision,process_state=process_state)
+                      process_alive=process_alive,revision=self.revision,process_state=process_state,
+                      fingerprint=self.fingerprint,heartbeat_read_degraded=heartbeat_read_degraded)
         report.update(schema_version=1,source='LIVE_RUNTIME_OBSERVATION',source_revision=self.revision,
             exported_at=datetime.fromtimestamp(now,timezone.utc).isoformat(),
-            supervisor_pid=__import__('os').getpid(),runtime_pid=pid,run_id=run_id)
+            supervisor_pid=__import__('os').getpid(),runtime_pid=pid,run_id=run_id,source_fingerprint=self.fingerprint)
         signature=(report['state'],tuple(report['checks'].values()),len(report['events']),
                    tuple(report['order_evidence'].values()))
         if not force and now-self.last_saved<30 and signature==self.last_signature:return report
@@ -192,9 +208,7 @@ class RuntimeAudit:
         try:
             target=self.code_root/'reports/opportunity_flow_runtime'
             save(target/'latest.json',report)
-            text_path=target/'latest.txt'
-            temporary=text_path.with_suffix('.txt.tmp')
-            temporary.write_text(text_report(report),encoding='utf-8',newline='\n');temporary.replace(text_path)
+            atomic_write_text(target/'latest.txt',text_report(report))
             if run_id:
                 name=hashlib.sha256(str(run_id).encode()).hexdigest()[:24]
                 save(target/'runs'/(name+'.json'),report)
@@ -212,7 +226,8 @@ def wait_for_startup(root,*,timeout=180,not_before=0,clock=time.time,pause=time.
         try:
             value=read(folder(root)/'runtime-audit.json')
             exported=epoch(value.get('exported_at'))
-            if exported is not None and exported>=not_before and value.get('source_revision')==code_revision():
+            if (exported is not None and exported>=not_before and same_runtime_code(value.get('source_revision'),
+                    value.get('source_fingerprint'),code_revision(),runtime_fingerprint())):
                 report=value
                 if report.get('state') in ('AUTOMATION_ACTIVE','WAITING_RESEARCH_WINDOW','STARTUP_CONFIGURATION_BLOCKED',
                     'STARTUP_INSPECTION_UNAVAILABLE','MANUALLY_PAUSED','EXISTING_ACCOUNT_OWNER','RUNNING_VERSION_UNVERIFIED',

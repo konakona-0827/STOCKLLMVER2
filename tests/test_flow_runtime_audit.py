@@ -42,6 +42,17 @@ class RuntimeAcceptanceTests(unittest.TestCase):
         self.assertFalse(report['position_management_observed'])
         self.assertEqual(report['windows']['effective_triggers'],['OWNER_LOGON'])
 
+    def test_diagnostic_write_failures_are_visible_without_exposing_paths_or_authorizing_orders(self):
+        self.row['diagnostics']=dict(heartbeat_write_failures=2,last_write_failed_at=970,
+            last_write_succeeded_at=999,path='PRIVATE_ACCOUNT_PATH',error='PRIVATE_REPLY')
+        report=self.assess()
+        self.assertEqual(report['state'],'AUTOMATION_ACTIVE')
+        self.assertEqual(report['diagnostics']['heartbeat_write_failures'],2)
+        self.assertEqual(report['order_evidence']['sent_events'],0)
+        self.assertNotIn('PRIVATE_',str(report))
+        self.row['at']=1
+        self.assertFalse(self.assess()['checks']['fresh_account_reconciled'])
+
     def test_existing_snapshot_before_this_launch_cannot_pass_even_if_marked_verified(self):
         self.row['account_checked_at']=datetime.fromtimestamp(899,timezone.utc).isoformat()
         self.assertEqual(self.assess()['state'],'AWAITING_FRESH_ACCOUNT')

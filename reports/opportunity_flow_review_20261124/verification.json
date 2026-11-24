@@ -1,0 +1,76 @@
+{
+  "recorded_at": "2026-11-24T10:05:40.553645+00:00",
+  "baseline_commit": "a4c9086b5e28d25b6bbdd084693d61f00d2ea3b9",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "evidence_snapshot": "reports/intraday_quote_gap_20261124/after.json",
+  "actual_evidence_as_of_taipei": "2026-11-24T10:45:01+08:00",
+  "full_regression": {
+    "tests": 911,
+    "seconds": 82.916,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "external_python_network_disabled": true,
+    "real_model_disabled": true,
+    "real_broker_orders_sent": 0,
+    "inherited_git_config_count_removed_only_in_isolated_test_process": true,
+    "first_run": {
+      "tests": 911,
+      "failures": 0,
+      "errors": 2,
+      "cause": "Windows empty GIT_CONFIG_VALUE_0 lost after environment mock restoration; isolated Git fixtures failed"
+    },
+    "output_normalization": "UTF-8 LF; workspace path redacted; no test results removed",
+    "output_sha256": "4598ebbfff6ce9d8746ca97c1db8be8db5e7d8f9baaa1500e6a0927911802571"
+  },
+  "launcher_check": {
+    "entry": "OpportunityFlow.cmd -Mode Check",
+    "exit_code": 0,
+    "ready": true,
+    "broker_login_tested": false,
+    "orders_sent": 0,
+    "local_settings_not_copied_to_trading_pc": true
+  },
+  "acceptance": {
+    "native_windows_sharing_locks": true,
+    "real_isolated_process_handoff": true,
+    "all_three_old_owner_leases_released_before_resume": true,
+    "manual_stop_cancels_resume": true,
+    "duplicate_guardian_never_overwrites_owner_report": true,
+    "stale_heartbeat_not_refreshed": true,
+    "persistent_staleness_still_recovers": true,
+    "review_transport_success_not_approval": true,
+    "pretrade_veto_reason_persisted": true,
+    "original_buy_fill_manage_sell_regression": true,
+    "original_unknown_order_and_persistent_duplicate_protection": true
+  },
+  "protected_paths_unchanged_from_remote": [
+    "config",
+    "opportunity_flow/policy.json",
+    "opportunity_flow/execution_bridge.py",
+    "execution",
+    "pretrade_policy.py",
+    "position_analyzer.py",
+    "capital_multi_quote.py",
+    "opportunity_flow/live.py"
+  ],
+  "source_fingerprint": "b25de4563250e2abe998ecfce88e2cb6499e69b63f2426e79161922fb8df90af",
+  "source_sha256_lf": {
+    "operations/flow_runtime_audit.py": "2a4f940c2b1e80c8bf5cb3c733cb5d98ab04b334494695d6fa3617aea0ac38c5",
+    "operations/flow_startup_handoff.py": "4854355508ad50408c5f434a042f54aca43de45297515a32ba18a0dd531b4ed7",
+    "operations/flow_supervisor.py": "003bd4a87222c61661a0f86ea0145fbe9b9961e4658cbb7cc9c126d615f40df4",
+    "opportunity_flow/common.py": "609760d96f1230d9b2e3f6fa168e48da731cfbf14a7409d5adcde51669cbc4ff",
+    "opportunity_flow/legacy_runtime.py": "f2211dec8bbddb010f72042e48078d54760fcd4d8e1c151438f88c0757f2e808",
+    "opportunity_flow/recovery.py": "b168110cf7bde379eb58cdba09a20863922f8e65a4ea22dbba48698b0c08a170",
+    "tests/test_flow_atomic_writes.py": "ea4fc91f4771eb142458aea27d98553c328987e4ed53d9a2acfc95c91c76aa82",
+    "tests/test_flow_evidence_consistency.py": "2c514c7445f11718f66e2f7f7cc4284006b846d6915a512b3689e1bd56d14c7b",
+    "tests/test_flow_incident_recovery.py": "58e08e9e1271b0dced5944f9f936a04e7822bbf505ab862317ee6e3819023627",
+    "tests/test_flow_runtime_audit.py": "bdc3292c1c53100522d23750b4077c13df6ba3deccb1f4b7c698da9e3a595719"
+  },
+  "deployment": {
+    "local_code_only": true,
+    "trading_pc_restart_performed": false,
+    "real_sdk_access_violation_root_cause_resolved": false,
+    "requires_trading_pc_pull_and_original_launcher": true
+  }
+}

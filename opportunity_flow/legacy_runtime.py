@@ -15,6 +15,18 @@ from .common import TAIPEI,digest,save,stamp
 from .activity import tracked
 
 
+def review_evidence_rows(rows):
+    from config import redact
+    result=[]
+    for row in rows if isinstance(rows,list) else []:
+        if not isinstance(row,dict):continue
+        symbol=row.get('symbol')
+        result.append(dict(symbol=symbol if isinstance(symbol,str) and symbol.isascii() and symbol.isdigit() and 4<=len(symbol)<=6 else None,
+            approved=row.get('approved') if type(row.get('approved')) is bool else None,
+            reason=redact(row.get('reason',''))[:2000]))
+    return result
+
+
 class LegacyRuntime:
     def __init__(self,state_root,output,model,*,read_only=False,stop_event=None):
         from runtime_paths import validate_state_root
@@ -274,7 +286,15 @@ class LegacyRuntime:
         try:
             response=CodexClient(timeout=180).responses.create(**request)
             usage=response.usage.model_dump()
-            ledger.call(datetime.now(TAIPEI).isoformat(),role,'VALID',dict(usage=usage,elapsed_seconds=time.monotonic()-began,model=self.model))
+            detail=dict(usage=usage,elapsed_seconds=time.monotonic()-began,model=self.model,
+                        validation_phase='TRANSPORT_ONLY')
+            if role=='pretrade':
+                try:
+                    answer=json.loads(response.output_text)
+                    rows=answer.get('reviews')
+                    detail['answer']=dict(reviews=review_evidence_rows(rows)) if isinstance(rows,list) else None
+                except (ValueError,TypeError,AttributeError):detail['answer_error']='INVALID_REVIEW_JSON'
+            ledger.call(datetime.now(TAIPEI).isoformat(),role,'VALID',detail)
             return response.output_text,dict(runtime='codex-cli',billing_source='chatgpt-plan',api_fallback=False,usage=usage)
         except Exception as exc:
             ledger.call(datetime.now(TAIPEI).isoformat(),role,'ERROR',dict(usage=None,error=type(exc).__name__))
@@ -326,6 +346,21 @@ class LegacyRuntime:
             paper_account=self.account(),paper_simulation_rules=dict(minimum_commission_twd=float(self.config.economic_minimum_commission_twd),commission_rate=.001425)),ensure_ascii=False))
         result=dict(market_view='TW Opportunity Flow 執行前複核',decisions=decisions)
         review=position_analyzer.review_trades(result,request,self.provider)
+        # Persist the validator outcome, not the account-bearing model request.
+        from config import redact
+        from .state import Ledger
+        evidence=dict(status=review.get('status'),reviews=review_evidence_rows(review.get('reviews')),
+            decisions=[dict(symbol=d.get('symbol'),decision=d.get('decision')) for d in result['decisions']])
+        from .recovery import observe
+        approved=sum(d.get('decision') in ('BUY','SELL') for d in result['decisions'])
+        observe('PRETRADE_REVIEW_ERROR' if review.get('status')=='ERROR' else
+                'PRETRADE_APPROVED' if approved else 'PRETRADE_VETOED',count=approved)
+        if review.get('error'):evidence['error']=redact(review['error'])[:1000]
+        try:
+            ledger=Ledger(self.output.parent)
+            try:ledger.feed(datetime.now(TAIPEI).isoformat(),'PRETRADE_REVIEW_RESULT',evidence)
+            finally:ledger.close()
+        except (OSError,sqlite3.Error):pass  # Diagnostics never repeat a model call or a send.
         return result['decisions'],review
 
     @tracked('EXECUTOR_HANDOFF', '原執行器／券商送單核對')
