@@ -12,7 +12,7 @@ from contextlib import nullcontext
 
 from . import SYSTEM,VERSION
 from .common import TAIPEI,policy,read,save,stamp,number
-from .data import load_dataset,quote_map,merge_research_quotes
+from .data import DatasetReader,load_dataset,quote_map,merge_research_quotes
 from .pipeline import run_cycle
 from .engine import build
 
@@ -168,6 +168,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             from .live import LiveCoordinator,resolve_account_root
             live=LiveCoordinator(resolve_account_root(args.state_root),args.state,p,stop_event,read_only=args.read_only)
     previous_result=None
+    dataset_reader=DatasetReader(args.dataset)
     from .recovery import get_probe,intent,observe
     recovery=get_probe() if live is not None else None
     if recovery is not None:observe('WATCH_STARTED')
@@ -195,7 +196,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                     reviewed=worker.result()
                     if recovery is not None:observe('RESEARCH_REVIEW_COMPLETED',count=len(reviewed.get('candidates',[])))
                     print(json.dumps(dict(background_review=reviewed["summary"]),ensure_ascii=False),flush=True)
-                    if live is not None:live.offer(reviewed,live.dataset or load_dataset(args.dataset))
+                    if live is not None:live.offer(reviewed,live.dataset or dataset_reader.get())
                 except Exception as exc:
                     if recovery is not None:observe('RESEARCH_ERROR')
                     print(json.dumps(dict(background_review_error=type(exc).__name__+":"+str(exc)[:180])),flush=True)
@@ -203,7 +204,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             at=stamp(args.as_of) if args.command=="cycle" else datetime.now(TAIPEI)
             if live is not None:
                 if live.dataset is None:
-                    try:live.dataset=load_dataset(args.dataset)
+                    try:live.dataset=dataset_reader.get()
                     except (OSError,ValueError):pass
                 live.maintenance(force=True)
             if args.command=="watch" and args.refresh_daily:
@@ -259,7 +260,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             if args.command=="watch" and args.public_quotes and not args.quotes:
                 from .public_quotes import fetch
                 try:
-                    ds=load_dataset(args.dataset)
+                    ds=dataset_reader.get()
                 except (ValueError,RuntimeError,OSError) as exc:
                     if recovery is not None:observe('RESEARCH_ERROR')
                     record_feed(args.state,"DATASET_READ_ERROR",dict(error=str(exc)[:180]))
@@ -310,10 +311,11 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                 active_quote=str(public_path) if public_path.exists() else None
             paths += [Path(x) for x in (active_quote,args.events) if x]
             signature=tuple((str(x),x.stat().st_mtime_ns if x.exists() else None) for x in paths)
-            if args.command=="cycle" or signature!=last_signature or time.monotonic()-last_numeric>=p["numeric_recheck_seconds"]:
+            if (args.command=="cycle" or signature!=last_signature or time.monotonic()-last_numeric>=p["numeric_recheck_seconds"]
+                    or (live is not None and getattr(live,'research_refresh_required',False))):
                 events=read(args.events) if args.events else {}
                 try:
-                    ds=load_dataset(args.dataset)
+                    ds=dataset_reader.get()
                     observed_quotes=quote_map(active_quote)
                     account_context=None
                     if live is not None:
@@ -324,6 +326,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                     result=run_cycle(ds,at,p,args.state,observed_quotes,events,
                         use_llm=args.llm and args.command=="cycle",diagnose_blocked=args.diagnose_blocked,review_symbols=args.review_symbols,
                         account_context=account_context)
+                    if live is not None:live.research_refresh_required=False
                 except (ValueError,RuntimeError,OSError) as exc:
                     if recovery is not None:observe('RESEARCH_ERROR')
                     if args.command!="watch":
@@ -350,7 +353,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                             with live.activity.track('RESEARCH', '兩方 CLI 研究') if live is not None else nullcontext():
                                 return run_cycle(ds,at,p,args.state,observed_quotes,events,
                                     runner=CodexRunner(p["model"],p["model_timeout_seconds"],stop_event),use_llm=True,
-                                    diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False,account_context=account_context)
+                                    diagnose_blocked=args.diagnose_blocked,review_symbols=selected,publish_latest=False,account_context=account_context,focus_only=True)
                         worker=executor.submit(review_job)
                 if live is not None:live.offer(result,ds)
                 if recovery is not None:observe('RESEARCH_CYCLE_COMPLETED',count=len(result.get('candidates',[])),

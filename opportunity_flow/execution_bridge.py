@@ -16,6 +16,12 @@ from .state import Ledger
 from .recovery import observe,observe_execution
 
 
+class FreshEconomicsError(ValueError):
+    def __init__(self,evidence):
+        super().__init__('FRESH_TRADE_ECONOMICS_FAILED')
+        self.evidence=evidence
+
+
 def fetch_buy_quotes(runtime,symbols,dataset):
     fetch=runtime.fetch_buy_quotes if callable(getattr(type(runtime),'fetch_buy_quotes',None)) else runtime.fetch_quotes
     return fetch(symbols,dataset)
@@ -87,10 +93,20 @@ def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,su
     allocation=p['capital_twd']*p['allocation_fraction']-int(context.get('held_qty',0))*max(q['ask'],float(context.get('average_cost_twd') or q['ask']))
     if max(funding,e['invested_twd'])>min(float(snapshot['current_buy_budget_twd']),allocation):
         raise ValueError('FRESH_CAPITAL_OR_ALLOCATION_INSUFFICIENT')
-    if (e['net_profit_twd']<p['minimum_net_profit_twd'] or e['net_return']<p['minimum_net_return']
-            or e['reward_risk'] is None or e['reward_risk']<p['minimum_reward_risk']
-            or e['modeled_loss_twd']+oldrisk>p['capital_twd']*p['maximum_position_risk_fraction']):
-        raise ValueError('FRESH_TRADE_ECONOMICS_FAILED')
+    checks=dict(net_profit=e['net_profit_twd']>=p['minimum_net_profit_twd'],
+        net_return=e['net_return']>=p['minimum_net_return'],
+        reward_risk=e['reward_risk'] is not None and e['reward_risk']>=p['minimum_reward_risk'],
+        total_risk=e['modeled_loss_twd']+oldrisk<=p['capital_twd']*p['maximum_position_risk_fraction'])
+    if not all(checks.values()):
+        raise FreshEconomicsError(dict(route_id=route_id,quantity=qty,entry=route['entry'],
+            stop=route['stop']['price'],target=route['target']['price'],
+            researched=route['economics'],fresh=e,existing_risk_twd=oldrisk,
+            total_risk_twd=e['modeled_loss_twd']+oldrisk,
+            limits={k:p[k] for k in ('minimum_net_profit_twd','minimum_net_return','minimum_reward_risk',
+                'capital_twd','maximum_position_risk_fraction')},checks=checks,
+            failed_checks=[k for k,v in checks.items() if not v],
+            quote={k:quote.get(k) for k in ('quote_timestamp','bid','ask','last_price','low','high')},
+            requires_new_research=True))
     return route
 
 
@@ -306,6 +322,7 @@ class ExecutionBridge:
             if candidate['state']!='RESEARCH_READY':continue
             symbol=candidate['symbol']
             quotes={}
+            validation_phase='BEFORE_PRETRADE'
             try:
                 quotes=fetch_buy_quotes(runtime,[symbol],dataset)
                 context=runtime.contexts(dataset,quotes)[symbol]
@@ -339,6 +356,7 @@ class ExecutionBridge:
                 expected=buy_decision(candidate,route,quotes[symbol])
                 if any(decisions[0].get(k)!=expected[k] for k in ('symbol','suggested_qty','suggested_price','target_price','invalidation_price','holding_days')):
                     blocked.append(dict(symbol=symbol,reason='PRETRADE_ALTERED_FROZEN_PLAN'));continue
+                validation_phase='AFTER_PRETRADE'
                 runtime.refresh();quotes=fetch_buy_quotes(runtime,[symbol],dataset)
                 context=runtime.contexts(dataset,quotes)[symbol]
                 validate_buy(candidate,quotes.get(symbol),runtime.snapshot,context,runtime.effective_policy(self.policy),self.now(),
@@ -352,6 +370,8 @@ class ExecutionBridge:
             except (ValueError,KeyError,TypeError,ArithmeticError) as exc:
                 reason=str(exc)
                 block=dict(symbol=symbol,reason=reason)
+                if isinstance(exc,FreshEconomicsError):
+                    block.update(economics_evidence=exc.evidence,validation_phase=validation_phase)
                 if reason in {'ODDLOT_QUOTE_MISSING','LIVE_NON_TRIAL_QUOTE_REQUIRED','VERIFIED_ODDLOT_QUOTE_BASIS_REQUIRED',
                               'QUOTE_SYMBOL_OR_EXCHANGE_MISMATCH','QUOTE_STALE_OR_FUTURE','CROSSED_QUOTE','BROKER_MARKET_NOT_VERIFIED',
                               'QUOTE_SESSION_RANGE_INVALID','REVIEWED_PLAN_INVALIDATED','REVIEWED_PLAN_INVALIDATED_THIS_SESSION',

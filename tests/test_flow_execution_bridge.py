@@ -232,7 +232,8 @@ class BridgeTests(unittest.TestCase):
             self.assertIsNone(coordinator.future)
             coordinator.offer(self.result,self.ds)
             coordinator.future.result(timeout=2)
-            self.assertEqual(coordinator.bridge.step.call_args.args[0]['candidates'],self.result['candidates'])
+            self.assertEqual(coordinator.bridge.step.call_args.args[0]['candidates'],
+                [c for c in self.result['candidates'] if c['state']=='RESEARCH_READY'])
         finally:coordinator.close()
 
     def test_broker_read_failure_replaces_stale_buy_budget_and_discards_pending_research(self):
@@ -266,7 +267,8 @@ class BridgeTests(unittest.TestCase):
             self.assertIsNotNone(coordinator.pending)
             busy.set_result(dict(reports=[],blocked=[]))
             coordinator.drain();coordinator.future.result(timeout=2)
-            self.assertEqual(coordinator.bridge.step.call_args.args[0]['candidates'],self.result['candidates'])
+            self.assertEqual(coordinator.bridge.step.call_args.args[0]['candidates'],
+                [c for c in self.result['candidates'] if c['state']=='RESEARCH_READY'])
         finally:coordinator.close()
 
     def test_ui_notification_is_sent_only_after_the_snapshot_is_saved(self):

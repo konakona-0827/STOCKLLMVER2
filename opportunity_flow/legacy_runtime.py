@@ -52,7 +52,7 @@ class LegacyRuntime:
             raise RuntimeError('EXISTING_EXECUTOR_IS_DISABLED')
         self.store=ExecutionStore(selected/'data/execution/live_execution.sqlite3',must_exist=True)
         self.output.mkdir(parents=True,exist_ok=True)
-        self.audit=Audit(self.output)
+        self.audit=Audit(self.output,max_events=512)
         self.broker=get_broker_runtime(selected)
         self.account_identity=digest(str(selected))
         self.snapshot=None

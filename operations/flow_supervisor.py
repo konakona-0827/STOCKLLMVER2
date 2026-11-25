@@ -20,6 +20,7 @@ from opportunity_flow.recovery import folder, heartbeat_reason, intent, set_inte
 from state_lock import StateLease
 from operations.flow_runtime_audit import RuntimeAudit, wait_for_startup
 from operations.flow_startup_handoff import pending_token,prepare_handoff,wait_for_handoff
+from operations.flow_resources import MemoryGuard
 
 
 def record(root, event, **detail):
@@ -176,6 +177,8 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                 last_row={}
                 publish('AWAITING_FRESH_ACCOUNT',child_pid=child.pid,run_id=run_id)
                 requested = None
+                memory_guard=MemoryGuard()
+                resources_saved=None
                 while True:
                     try:
                         exit_code = child.wait(timeout=poll_seconds)
@@ -196,6 +199,15 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
                             heartbeat_read_degraded=True
                             row=last_row  # Its original timestamps continue to age.
                         reason = heartbeat_reason(row, child.pid, run_id, launched, time.time())
+                        resource_reason=memory_guard.check(child.pid)
+                        if memory_guard.row is not None and memory_guard.checked!=resources_saved:
+                            persist(target/'resources.json',dict(pid=child.pid,run_id=run_id,at=time.time(),
+                                **memory_guard.row))
+                            resources_saved=memory_guard.checked
+                        if resource_reason and intent(root) and requested is None:
+                            reason=resource_reason
+                            record(root,'MEMORY_PRESSURE_DETECTED',child_pid=child.pid,reason=resource_reason,
+                                resources=memory_guard.row,automatic_force_kill=False)
                         if stop.is_set():
                             reason = 'SUPERVISOR_STOP'
                         if reason and requested is None:
