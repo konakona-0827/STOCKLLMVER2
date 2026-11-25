@@ -1,0 +1,13 @@
+{
+  "pid": 28552,
+  "run_id": "15fba264c84f4a6db135bef2a273046f",
+  "checked_at": "2026-11-25T19:12:40+08:00",
+  "errors": [
+    "broker connection: CapitalReplySessionError: No OnComplete; replay is not trustworthy."
+  ],
+  "confirmed_defect": "Authenticated owner discarded after initial No OnComplete; only agreement-pending sessions were retained.",
+  "official_2003": "SK_WARNING_LOGIN_ALREADY: ID already logged in; no duplicate login needed.",
+  "source": "https://www.capital.com.tw/apiforum/docs/errCodeDefinitions/",
+  "fix": "Preserve owner on replay timeout, clean Reply-only reset and require fresh OnComplete plus full reconciliation.",
+  "unresolved_attempts": 0
+}

@@ -1,0 +1,83 @@
+{
+  "first_hour_window_taipei": [
+    "2026-11-25T09:00:00+08:00",
+    "2026-11-25T10:00:00+08:00"
+  ],
+  "end_exclusive": true,
+  "delayed_automation_trigger_utc": "2026-11-25T11:00:22.763Z",
+  "delayed_check": true,
+  "first_hour": {
+    "calls": 30,
+    "roles": {
+      "researcher": 15,
+      "challenger": 15
+    },
+    "statuses": {
+      "VALID": 30
+    },
+    "paired_reviews": 39,
+    "states": {
+      "RESEARCH_WATCH": 27,
+      "RESEARCH_REJECT": 11,
+      "RESEARCH_READY": 1
+    }
+  },
+  "first_hour_formal_attempts": 0,
+  "first_hour_formal_events": 0,
+  "full_day_comparison": {
+    "call_results": 94,
+    "valid_research": 92,
+    "pretrade": 1,
+    "research_errors": 1,
+    "paired_reviews": 132,
+    "watch": 101,
+    "reject": 29,
+    "ready": 2,
+    "formal_submissions": 0,
+    "confirmed_fills": 0
+  },
+  "integrated_remote": "1f3a56265a3440f7aad5ff00b7d67020772058ce",
+  "source_commit": "c1391efb4a22905195186211992464a0bbdf4292",
+  "live_source_matches": true,
+  "tests": {
+    "full": 952,
+    "pretrade_focused": 11,
+    "reply_focused": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "temporary_account": true,
+    "external_network_and_real_model_disabled": true
+  },
+  "code_changes": [
+    "Integrated bounded dataset/review/event memory and graceful memory guard.",
+    "Fresh economics evidence and new quantity re-review.",
+    "Independent minute account recovery.",
+    "Final pretrade receives existing PLANNED_LIMIT contract and independent approval semantics.",
+    "Retain authenticated owner after initial replay timeout; clean Reply-only reset requires new OnComplete."
+  ],
+  "safeguards": {
+    "reserve_twd": 5000,
+    "ai_cap_twd": 10000,
+    "daily_cap_twd": 30000,
+    "risk_and_profit_gates_unchanged": true,
+    "no_real_test_orders": true
+  },
+  "normal_shutdown": {
+    "only_ui_thread_remained": true,
+    "broker_lease_verified_free": true,
+    "normal_tk_quit_called": true,
+    "forced_process_termination": false
+  },
+  "runtime_state": "WAITING_RESEARCH_WINDOW",
+  "checks": {
+    "startup_verified": true,
+    "current_process_heartbeat": true,
+    "running_version_verified": true,
+    "fresh_account_reconciled": true,
+    "watch_loop_running": true,
+    "automatic_execution_enabled": true,
+    "research_cycle_observed": false
+  },
+  "long_run_stability_verified": false
+}
