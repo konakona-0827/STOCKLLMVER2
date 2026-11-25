@@ -121,6 +121,35 @@ class AgreementFallbackTests(unittest.TestCase):
             self.session.ensure_ready(allow_reply_reconnect=False)
         self.session._skR.SKReplyLib_ConnectByID.assert_not_called()
 
+    def test_initial_replay_timeout_keeps_owner_and_requires_clean_reply_reset(self):
+        self.codes=[0,0];self.complete=False;s=self.session
+        with self.assertRaisesRegex(CapitalReplySessionError,'No OnComplete'):
+            s._complete_reply_startup(0,0)
+        self.assertTrue(s.reply_startup_pending)
+        self.assertFalse(s.connected)
+        def close(user):
+            s._skR.SKReplyLib_IsConnectedByID.return_value=0
+            return 0
+        s._skR.SKReplyLib_SolaceCloseByID=Mock(side_effect=close)
+        self.complete=True
+        self.assertTrue(s.ensure_ready().ready)
+        self.assertFalse(s.reply_startup_pending)
+        s._skR.SKReplyLib_SolaceCloseByID.assert_called_once()
+        s._skC.SKCenterLib_Login.assert_not_called()
+        s._skC.SKCenterLib_RequestAgreement.assert_not_called()
+
+    def test_pending_replay_reset_error_remains_unverified(self):
+        self.codes=[0];self.complete=False;s=self.session
+        with self.assertRaisesRegex(CapitalReplySessionError,'No OnComplete'):
+            s._complete_reply_startup(0,0)
+        s._skR.SKReplyLib_SolaceCloseByID=Mock(return_value=9999)
+        with self.assertRaisesRegex(CapitalReplySessionError,'Reply reset failed: rc=9999'):
+            s.ensure_ready()
+        self.assertTrue(s.reply_startup_pending)
+        self.assertFalse(s.connected)
+        self.assertEqual(s._skR.SKReplyLib_ConnectByID.call_count,1)
+        s._skC.SKCenterLib_Login.assert_not_called()
+
     def test_ui_explains_ambiguous_securities_status(self):
         message=broker_read_message(dict(errors=['SKReplyLib_ConnectByID failed: rc=2018']))
         self.assertIn('證券 API',message)

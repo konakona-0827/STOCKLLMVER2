@@ -363,11 +363,11 @@ class CapitalReplySession:
         return rc
 
     def _complete_reply_startup(self,replay_wait_seconds=20.0,replay_grace_seconds=1.0):
-        # Retain the existing login only for this known post-login failure.
+        # Preserve an authenticated owner while Reply permission/replay is pending.
         # A nonzero ConnectByID is never accepted as an authorized connection.
         self.snapshot.begin_replay()
         rc=self._connect_reply_with_agreement_fallback()
-        self._reply_startup_pending=rc==2018
+        self._reply_startup_pending=rc in (0,2018)
         if rc != 0:
             detail=('; '+self._agreement_error) if rc==2018 else ''
             raise CapitalReplySessionError(f"SKReplyLib_ConnectByID failed: rc={rc}{detail}")
@@ -377,6 +377,7 @@ class CapitalReplySession:
             self._comtypes.PumpEvents(0.25)
 
         if not self.snapshot.replay_complete:
+            self._reply_needs_reset=True
             raise CapitalReplySessionError("No OnComplete; replay is not trustworthy.")
 
         end = time.time() + max(0.0, replay_grace_seconds)
@@ -385,6 +386,8 @@ class CapitalReplySession:
 
         self._connected = True
         self._owner_thread_id = get_ident()
+        self._reply_startup_pending=False
+        self._reply_needs_reset=False
         return self.snapshot.copy()
 
     def pump(self, seconds: float) -> ReplySnapshot:
@@ -569,8 +572,12 @@ class CapitalReplySession:
         """
         if getattr(self,'_reply_startup_pending',False):
             if not allow_reply_reconnect:
-                raise CapitalReplySessionError('BROKER_API_AGREEMENT_UNVERIFIED; reconnect disabled.')
-            self._complete_reply_startup()
+                raise CapitalReplySessionError('BROKER_REPLY_STARTUP_UNVERIFIED; reconnect disabled.')
+            if getattr(self,'_reply_needs_reset',False):
+                self._reconnect_reply_only()
+                self._connected=True;self._owner_thread_id=get_ident()
+                self._reply_startup_pending=False
+            else:self._complete_reply_startup()
         health = self.health_check()
         if health.ready:
             return health
