@@ -1,0 +1,41 @@
+{
+  "first_health_error_at": "2026-11-25T12:00:17+08:00",
+  "last_ok_health_at": "2026-11-25T11:58:11+08:00",
+  "call_errors": [
+    {
+      "at": "2026-11-25T11:59:22.971941+08:00",
+      "role": "researcher",
+      "status": "ERROR",
+      "symbols": [
+        "6163",
+        "4763",
+        "9958"
+      ],
+      "elapsed_seconds": 35.649,
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    }
+  ],
+  "pretrade_calls": [
+    {
+      "at": "2026-11-25T11:40:32.045297+08:00",
+      "role": "pretrade",
+      "status": "VALID",
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 30.989060699997935,
+      "answer": {
+        "reviews": [
+          {
+            "approved": false,
+            "reason": "否決本筆買單。32.7元限價、28.55元失效價及41.2元目標均有歷史價位依據；依指定取整規則，10股成本328元、目標費稅後獲利79元、停損損失46.5元，風險低於50元上限，計算本身無誤。但刷新報價為33.35元，尚未達原計畫的32.7元入場條件；若回落至該價，須重查回升形態。今日已成交至32.4元、跌破32.7元，且11月24日完整日線成交量僅569,727股，回升證據偏弱。五日內由前收32.8元抵達41.2元需上漲約25.6%，明顯高於所列五日歷史高點變幅第75百分位8.94%；歷史極端反彈不足以獨立支持此期限的目標可及性。兩方意見均僅同意繼續研究，不能視為本次買單獲准。",
+            "symbol": "6163"
+          }
+        ]
+      },
+      "validation_phase": "TRANSPORT_ONLY"
+    }
+  ],
+  "latest_health_errors": [
+    "broker connection: CapitalReplySessionError: SKCenterLib_Login failed: rc=2003"
+  ],
+  "interpretation": "Pretrade transport VALID is a valid answer, not an approved order. Latest postclose missing quotes are not evidence of absent sell liquidity all day."
+}
