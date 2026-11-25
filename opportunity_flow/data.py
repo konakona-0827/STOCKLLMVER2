@@ -14,6 +14,26 @@ def load_dataset(folder):
     with dataset_lease(folder):return _load_dataset_locked(folder)
 
 
+class DatasetReader:
+    """One immutable dataset snapshot per watch, refreshed under the collector lock."""
+    def __init__(self,folder):
+        self.folder=Path(folder);self.signature=None;self.value=None
+
+    def get(self):
+        from .dataset_lock import dataset_lease
+        with dataset_lease(self.folder):
+            signature=[]
+            for name in ('manifest.json','bars.csv','sessions.csv','master.json','rejected.json'):
+                path=self.folder/name
+                try:
+                    info=path.stat();signature.append((name,info.st_mtime_ns,info.st_size))
+                except FileNotFoundError:signature.append((name,None,None))
+            if signature!=self.signature or self.value is None:
+                value=_load_dataset_locked(self.folder)  # Hash and calendar checks still run on every change.
+                self.value,self.signature=value,signature
+            return self.value
+
+
 def _load_dataset_locked(folder):
     folder = Path(folder)
     manifest = read(folder / "manifest.json")

@@ -64,6 +64,7 @@ class LiveCoordinator:
         self.broker_read_error=None
         self.session_reset_failures=0
         self.session_recovery_requested=False
+        self.research_refresh_required=False
 
     def check_session_recovery(self,errors):
         failed=any('CapitalReplySessionError' in str(error) and 'Reply reset failed: rc=9999' in str(error)
@@ -195,16 +196,28 @@ class LiveCoordinator:
         self.drain()
         if self.stop.is_set() or self.broker_read_error:return
         ready=any(c['state']=='RESEARCH_READY' for c in result['candidates'])
+        # The execution worker needs approved plans only, not another complete
+        # copy of every stock's frozen history and cached model responses.
+        selected=dict(candidates=[deepcopy(c) for c in result['candidates'] if c['state']=='RESEARCH_READY'])
         if self.future is not None:
-            if ready:self.pending=(deepcopy(result),dataset)
+            if ready:self.pending=(selected,dataset)
         elif ready or any(q>0 for q in self.runtime.store.ai_positions().values()):
             self.pending=None
-            self.future=self.pool.submit(self.bridge.step,deepcopy(result),dataset,datetime.now(TAIPEI))
+            self.future=self.pool.submit(self.bridge.step,selected,dataset,datetime.now(TAIPEI))
 
     def drain(self):
         if self.future is not None and self.future.done():
             try:
                 report=self.future.result();save(self.state/'latest_flow_execution.json',report)
+                failed={b.get('symbol') for b in report.get('blocked',[]) if b.get('reason')=='FRESH_TRADE_ECONOMICS_FAILED'}
+                if failed:
+                    self.research_refresh_required=True;self.last_quote_refresh=0
+                    if self.pending:
+                        previous,ds=self.pending
+                        self.pending=(dict(candidates=[c for c in previous['candidates'] if c['symbol'] not in failed]),ds)
+                latest=getattr(self.runtime,'snapshot',None)
+                if latest and latest.get('checked_at')!=self.snapshot.get('checked_at'):
+                    self.snapshot=deepcopy(latest)
                 self.publish(last_execution=report)
             except Exception as exc:
                 error=dict(status='EXECUTION_CYCLE_ERROR',error=type(exc).__name__+':'+str(exc)[:180])
@@ -217,6 +230,9 @@ class LiveCoordinator:
     def maintenance(self,force=False):
         """Existing holdings keep their exit path even if daily collection fails."""
         self.drain()
+        if not self.stop.is_set() and time.monotonic()-self.last_refresh>=60:
+            try:self.refresh_account()
+            except (TimeoutError,RuntimeError):return  # Next scheduled pass retries; no manual re-enable.
         if (force and self.runtime.can_trade_now() and self.dataset is not None
                 and time.monotonic()-self.last_maintenance>=60):
             self.last_maintenance=time.monotonic()

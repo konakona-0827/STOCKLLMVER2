@@ -24,7 +24,13 @@ class RecoveryLifecycleTests(unittest.TestCase):
     def test_rc9999_rebuild_reconciles_then_automatically_buys_manages_and_sells(self):
         self.recovered_lifecycle(reset_reply=True)
 
-    def recovered_lifecycle(self,reset_reply=False):
+    def test_memory_rollover_reconciles_then_automatically_buys_manages_and_sells(self):
+        self.recovered_lifecycle(memory_restart=True)
+
+    def test_expired_account_refreshes_before_research_and_automatic_buy_sell(self):
+        self.recovered_lifecycle(expired=True)
+
+    def recovered_lifecycle(self,reset_reply=False,memory_restart=False,expired=False):
         from execution.account_guard import BuyingPower,InventoryRow
         from execution.account_snapshot import ExecutionAccountSnapshot
         from execution.auto_advice_executor import execute_advice_file
@@ -107,11 +113,13 @@ class RecoveryLifecycleTests(unittest.TestCase):
         coordinator=LiveCoordinator('unused',root/'watch',fixture.p,stop,runtime=runtime)
         with self.assertRaises(TimeoutError):coordinator.refresh_account()
         self.assertIsNone(coordinator.future)
-        if reset_reply:
-            failed=dict(runtime.snapshot,status='ERROR',inventory_checked=False,budget_status='UNVERIFIED',
-                current_buy_budget_twd=None,errors=['session: CapitalReplySessionError: Reply reset failed: rc=9999'])
-            with patch.object(runtime,'refresh',side_effect=lambda:deepcopy(failed)):
-                for _ in range(3):coordinator.refresh_account()
+        if reset_reply or memory_restart:
+            if reset_reply:
+                failed=dict(runtime.snapshot,status='ERROR',inventory_checked=False,budget_status='UNVERIFIED',
+                    current_buy_budget_twd=None,errors=['session: CapitalReplySessionError: Reply reset failed: rc=9999'])
+                with patch.object(runtime,'refresh',side_effect=lambda:deepcopy(failed)):
+                    for _ in range(3):coordinator.refresh_account()
+            else:probe.request_restart('PROCESS_MEMORY_BUDGET_EXCEEDED')
             self.assertTrue(probe.restart_requested())
             self.assertFalse(runtime.sent)
             coordinator.close()
@@ -121,6 +129,11 @@ class RecoveryLifecycleTests(unittest.TestCase):
             self.assertFalse(probe.restart_requested())
             coordinator=LiveCoordinator('unused',root/'watch',fixture.p,stop,runtime=runtime)
         coordinator.bridge.now=instant
+        if expired:
+            from opportunity_flow.execution_bridge import verified_snapshot
+            coordinator.snapshot=dict(runtime.snapshot,checked_at=(instant()-timedelta(seconds=121)).isoformat())
+            with self.assertRaisesRegex(ValueError,'BROKER_ACCOUNT_STALE'):verified_snapshot(coordinator.snapshot,instant())
+            coordinator.broker_read_error=None
         latest=[];step=coordinator.bridge.step
         def completed(*args,**kwargs):
             result=step(*args,**kwargs)

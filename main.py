@@ -49,13 +49,25 @@ def save_json(path, payload):
 
 
 class Audit:
-    def __init__(self, directory):
+    def __init__(self, directory, *, max_events=None):
+        if max_events is not None and (type(max_events) is not int or max_events<=0):raise ValueError('INVALID_AUDIT_MEMORY_LIMIT')
         self.directory = directory
         self.events = []
+        self.max_events=max_events
+        self.write_failures=0
 
     def event(self, kind, detail):
-        self.events.append(dict(timestamp=now().isoformat(), kind=kind, detail=detail))
-        save_json(self.directory / 'connection.json', self.events)
+        row=dict(timestamp=now().isoformat(), kind=kind, detail=detail)
+        self.events.append(row)
+        if self.max_events is not None:
+            del self.events[:-self.max_events]
+            try:
+                self.directory.mkdir(parents=True,exist_ok=True)
+                with (self.directory/('connection_'+row['timestamp'][:10]+'.jsonl')).open('a',encoding='utf-8') as stream:
+                    stream.write(json.dumps(row,ensure_ascii=False,allow_nan=False)+'\n')
+                save_json(self.directory/'connection.json',self.events)
+            except OSError:self.write_failures+=1
+        else:save_json(self.directory / 'connection.json', self.events)
 
 
 @contextmanager

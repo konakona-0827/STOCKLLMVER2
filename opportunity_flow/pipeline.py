@@ -60,14 +60,15 @@ def execution_readiness(candidate, reviewed_packet, route_id, at, event, p,*,sup
     return dict(state="EXECUTION_REVIEW_READY" if advisory else "PAPER_REVIEW_READY",missing=[],orders_permitted=False)
 
 
-def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_llm=False,diagnose_blocked=False,review_symbols=None,publish_latest=True,account_context=None):
+def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_llm=False,diagnose_blocked=False,review_symbols=None,publish_latest=True,account_context=None,focus_only=False):
     started=time.monotonic()
     at=stamp(at)
     quotes,events=quotes or {},events or {}
     ledger=Ledger(state_folder)
     candidates=[]
     try:
-        for symbol in sorted(dataset["grouped"]):
+        symbols=sorted(set(dataset['grouped']) & set(review_symbols)) if focus_only and review_symbols is not None else sorted(dataset['grouped'])
+        for symbol in symbols:
             bars=dataset["grouped"][symbol]
             exchange=bars[-1]["exchange"] if bars else None
             event=events.get(symbol)

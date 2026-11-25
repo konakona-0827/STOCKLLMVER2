@@ -255,6 +255,7 @@ def build(symbol, dataset, at, p, raw_quote=None, event=None, account=None):
     material = dict(structure=digest({**core,"evidence":[*evidence[:2],stable_limits]}),
         price_band=math.floor(math.log((q["ask"] if q else price_reference["price"])/f["close"])/math.log(1+p["material_price_change_fraction"])) if q or price_reference else "NO_QUOTE",
         eligible_routes=[r["kind"] for r in eligible], quote_problem=quote_error,
+        executable_plan_capacity=[(r['kind'],r['stop']['price'],r['target']['price'],r['economics']['quantity']) for r in eligible],
         intraday_time_evidence=material_history(intraday,thresholds,at))
     base.update(packet=packet, material_key=digest(material), quote=q, quote_problem=quote_error,
                 hypothetical_reference=q is None, input_characters=len(canonical(packet)),

@@ -11,6 +11,7 @@ import time
 
 from opportunity_flow.common import atomic_write_text,read,save
 from opportunity_flow.recovery import STAGES,code_revision,folder,money,runtime_fingerprint,safe_details,same_runtime_code
+from operations.flow_resources import PRIVATE_LIMIT,pressure_reason
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -164,6 +165,10 @@ def text_report(report):
         lines.append(f"{label}：{report['account'].get(key) or '尚未確認'}")
     if report['execution_block_reasons']:lines.append('執行阻擋：'+', '.join(report['execution_block_reasons']))
     count=report.get('diagnostics',{}).get('heartbeat_write_failures')
+    resources=report.get('resources') or {}
+    if resources:
+        lines.append(f"程序私人承諾記憶體：{resources.get('private_commit_bytes',0)/1024**2:.1f} MiB；正常交接上限 {PRIVATE_LIMIT/1024**2:.0f} MiB。")
+        if resources.get('pressure_reason'):lines.append('資源異常：'+resources['pressure_reason']+'；僅請求正常退出，不強殺金融程序。')
     if count is not None:lines.append(f'本次重試後仍失敗的心跳寫入累計：{count}；歷史寫入錯誤不代表目前交易已失敗。')
     if report.get('diagnostics',{}).get('heartbeat_read_degraded'):
         lines.append('本次心跳讀取暫時失敗；保留上次心跳與對帳時間，待下次讀取，未刷新資料時效。')
@@ -198,6 +203,18 @@ class RuntimeAudit:
         report.update(schema_version=1,source='LIVE_RUNTIME_OBSERVATION',source_revision=self.revision,
             exported_at=datetime.fromtimestamp(now,timezone.utc).isoformat(),
             supervisor_pid=__import__('os').getpid(),runtime_pid=pid,run_id=run_id,source_fingerprint=self.fingerprint)
+        report['resources']=None
+        try:
+            resource=read(folder(self.root)/'resources.json');sampled=epoch(resource.get('at'))
+            if (resource.get('pid')==pid and resource.get('run_id')==run_id
+                    and sampled is not None and 0<=now-sampled<=60):
+                safe={key:value for key,value in resource.items() if key in (
+                    'private_commit_bytes','working_set_bytes','available_commit_bytes','available_physical_bytes',
+                    'total_physical_bytes','system_memory_load_pct') and type(value) is int and value>=0}
+                if 'private_commit_bytes' in safe:
+                    report['resources']=dict(**safe,pressure_reason=pressure_reason(safe),private_limit_bytes=PRIVATE_LIMIT,
+                        sampled_at=datetime.fromtimestamp(sampled,timezone.utc).isoformat())
+        except (OSError,ValueError,TypeError,AttributeError):pass
         signature=(report['state'],tuple(report['checks'].values()),len(report['events']),
                    tuple(report['order_evidence'].values()))
         if not force and now-self.last_saved<30 and signature==self.last_signature:return report

@@ -1,0 +1,117 @@
+{
+  "recorded_at": "2026-11-25T05:42:48.934135+00:00",
+  "baseline_commit": "52ae35f2aa107c0f4b23fd4dee53b401be5baf50",
+  "branch": "codex/new-system-tw-opportunity-flow",
+  "incident_source": "reports/trading_daily/2026-11-25/intraday_113725",
+  "full_regression": {
+    "tests": 948,
+    "seconds": 129.27,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "47b9790abf1023f62687ba7d1ea3bee346a83d856fd39112cf41080e40d160b4"
+  },
+  "resource_and_economics_tests": {
+    "tests": 12,
+    "seconds": 1.904,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "ea1fb6e1a24005ce4fb5f555dd91da53364c8c02964848317b9896bcf56166ad"
+  },
+  "lifecycle_tests": {
+    "tests": 4,
+    "seconds": 3.33,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "f79991f387c2e69cec05102661aed97df1eacf2026c09c53e46fc0e21ab9d55e"
+  },
+  "external_python_network_disabled": true,
+  "real_models_disabled": true,
+  "real_orders_sent": 0,
+  "test_environment": "GIT_CONFIG_COUNT removed only in isolated test shell for Windows empty-value compatibility",
+  "source_sha256_lf": {
+    "main.py": "978aea3952f14a7da1e0c814f1ec0b7635aef7ee81a4887a07a8bf321b5ced8a",
+    "operations/flow_resources.py": "312571dac78185234266bf9ed0eead06010a4acd285b0c1b64d3e31ff79009d8",
+    "operations/flow_runtime_audit.py": "0a040bf5876366b2b522f8f34d8a9dc0f0256a79f6a017cf18d4719f03fbe094",
+    "operations/flow_supervisor.py": "e0ada5c94ed8921a02ae62caa4c81ca723a456d493e87907da03ce8500a5ee05",
+    "opportunity_flow/__main__.py": "95d418bb130d1abb362b44647c38493fb0ea899d2dc424b9985f80da1d9290fe",
+    "opportunity_flow/data.py": "f151b95694c3a090f3a0ab3fff685c023bca6a27a9605eb7b32a0c5fe1ef2678",
+    "opportunity_flow/engine.py": "33fa4032844536544cdfbad064384d2ceb59af2c6d89151885f4d584d020c28a",
+    "opportunity_flow/execution_bridge.py": "2c52064319d566a3efeca777bcfcd427407e9f507bb9ff422eac40d23b016c7e",
+    "opportunity_flow/legacy_runtime.py": "0b706f9e90a0e58c8488dca3c27f5d5e4c657099f583ff4dbbc37c65125d73e8",
+    "opportunity_flow/live.py": "a958dbb2af10117aa46cb2117b67c0d53f8b71c27ba66457c113b2d296bd8831",
+    "opportunity_flow/pipeline.py": "48ac9225f99023d368397cb820869717a119b5dcc5b7b2e96d61211bacf967e3",
+    "tests/test_flow_execution_bridge.py": "e9db496743a0efe84a1eb58125aa04bb6d0fa7a3aa01d81f23ffb176151b18e2",
+    "tests/test_flow_recovery_lifecycle.py": "a5c595a76bae502848e1e1a49e06617bda5b2e17fc5717f16ede1d086281d44d",
+    "tests/test_flow_resource_economics_recovery.py": "3361acb791e9e7f31d9e8611f6d30a9c1f744c3d974c0356af1acd59652f9645"
+  },
+  "source_fingerprint": "511fe8a475339e80cd72a69d54e22e08d51fe93b29be035ec97c668d057733e5",
+  "protected_paths_unchanged": [
+    "config",
+    "opportunity_flow/policy.json",
+    "execution/auto_advice_executor.py",
+    "execution/execution_store.py",
+    "pretrade_policy.py"
+  ],
+  "memory": {
+    "private_limit_bytes": 2147483648,
+    "system_available_commit_floor_bytes": 268435456,
+    "sampling_seconds": 15,
+    "graceful_handoff_only": true,
+    "force_kill": false,
+    "complete_connection_events_on_disk": true,
+    "connection_memory_tail": 512,
+    "native_allocation_counter_and_handle_lifetime_test": true,
+    "isolated_benchmarks": "memory_reload_each_cycle.json / memory_shared_snapshot.json",
+    "live_18_gib_unique_root_cause_proven": false
+  },
+  "economics": {
+    "same_research_and_execution_function": true,
+    "old_actual_fresh_quote_reconstructed": false,
+    "structured_recalculation_evidence": true,
+    "legal_quantity_change_requires_new_two_role_review": true,
+    "old_frozen_quantity_not_changed": true,
+    "original_risk_cap_not_relaxed": true
+  },
+  "lifecycle": {
+    "variants": [
+      "broker read failure",
+      "rc9999 rebuild",
+      "memory rollover",
+      "expired account"
+    ],
+    "original_watch_bridge_and_executor": true,
+    "broker_sdk_simulated": true,
+    "stages": [
+      "fresh reconciliation",
+      "researcher",
+      "challenger",
+      "BUY pretrade",
+      "confirmed simulated BUY",
+      "AI ledger update",
+      "position management",
+      "SELL pretrade",
+      "confirmed simulated SELL"
+    ],
+    "manual_dispatch": false,
+    "manual_shares_preserved": 3,
+    "final_ai_qty": 0,
+    "account_age_limit_seconds_unchanged": 120,
+    "unknown_orders_not_resent": true
+  },
+  "launcher_check": {
+    "entry": "OpportunityFlow.cmd -Mode Check",
+    "exit_code": 0,
+    "ready": true,
+    "broker_login_tested": false,
+    "orders_sent": 0,
+    "local_settings_not_copied_to_trading_pc": true
+  },
+  "deployment": {
+    "trading_pc_accessed": false,
+    "live_long_run_acceptance": false,
+    "requires_trading_pc_pull_and_original_launcher": true
+  }
+}
