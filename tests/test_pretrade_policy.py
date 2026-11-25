@@ -126,6 +126,34 @@ class PretradePolicyTests(unittest.TestCase):
         self.assertFalse(plans['available'])
         self.assertEqual([row['quantity'] for row in plans['lots']], [1, 3])
 
+    def test_planned_review_receives_limit_contract_and_retains_independent_veto(self):
+        for approved in (True,False):
+            with self.subTest(approved=approved):
+                candidate=self.candidate();candidate.update(pricing_policy='PLANNED_LIMIT',ask=101,last_price=101)
+                trade=self.decision();trade['suggested_price']=99
+                def provider(request):
+                    from execution.planned_entry import REVIEW_INSTRUCTIONS
+                    self.assertIn(REVIEW_INSTRUCTIONS,request['instructions'])
+                    payload=json.loads(request['input'])
+                    self.assertEqual(payload['proposed_trades'][0]['suggested_price'],99)
+                    self.assertEqual(payload['proposed_trades'][0]['suggested_qty'],10)
+                    self.assertEqual(payload['original_input']['analysis_set'][0]['ask'],101)
+                    return json.dumps({'reviews':[dict(symbol='2330',approved=approved,reason='具體反證或計畫核對結果')]}),{}
+                review=review_trades(dict(decisions=[trade]),dict(model='test',input=json.dumps(dict(analysis_set=[candidate]))),provider)
+                self.assertEqual(review['status'],'VALID')
+                self.assertEqual(trade['decision'],'BUY' if approved else 'WAIT')
+                if approved:self.assertEqual(trade['suggested_price'],99)
+
+    def test_current_price_review_does_not_enable_planned_contract(self):
+        def provider(request):
+            from execution.planned_entry import REVIEW_INSTRUCTIONS
+            self.assertNotIn(REVIEW_INSTRUCTIONS,request['instructions'])
+            return json.dumps({'reviews':[dict(symbol='2330',approved=True,reason='原模式核對')]}),{}
+        trade=self.decision()
+        review=review_trades(dict(decisions=[trade]),dict(model='test',input=json.dumps(dict(analysis_set=[self.candidate()]))),provider)
+        self.assertEqual(review['status'],'VALID')
+        self.assertEqual(trade['decision'],'BUY')
+
     def test_live_confirmed_fill_plan_survives_reconstruction(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'execution.sqlite3'

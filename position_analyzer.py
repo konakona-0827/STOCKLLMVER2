@@ -119,6 +119,10 @@ def review_trades(result, request, provider):
         text={'format': {'type': 'json_schema', 'name': 'pretrade_review',
                          'strict': True, 'schema': REVIEW_SCHEMA}},
         max_output_tokens=None)
+    if any(d['decision']=='BUY' and candidate_map.get(d['symbol'],{}).get('pricing_policy')=='PLANNED_LIMIT'
+           for d in trades):
+        from execution.planned_entry import REVIEW_INSTRUCTIONS
+        review_request['instructions'] += REVIEW_INSTRUCTIONS
     raw, api = '', {}
     try:
         raw, api = provider(review_request)
