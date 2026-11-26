@@ -1,0 +1,282 @@
+[
+  {
+    "scope": "FROZEN_REAL_INPUT_NATIVE_MODEL_COMPARISON_NOT_FORWARD_OR_PNL",
+    "packet_id": "0142d457a360d32279bfd4e64cd1d3428a219b54a82ffc9af90c084e197dde9d",
+    "model": "gpt-6-sol",
+    "same_inputs": true,
+    "input_tokens": 63352,
+    "output_tokens": 2572,
+    "unknown_usage_calls": 0,
+    "orders_sent": 0,
+    "calls": [
+      {
+        "arm": "formal_baseline",
+        "role": "researcher",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": false,
+          "sha256": null
+        },
+        "usage": {
+          "input_tokens": 14693,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 650,
+          "reasoning_output_tokens": 205
+        },
+        "elapsed_seconds": 16.719,
+        "opinions": [
+          {
+            "execution_missing": [
+              "即時行情與價差未知；零股報價缺失。",
+              "公司事件尚未查核；公司行動未驗證，可能影響未調整價格所標示的支撐與目標。",
+              "歷史資料未取得時點認證。"
+            ],
+            "selected_route_id": null,
+            "symbol": "2466",
+            "verdict": "WATCH"
+          }
+        ]
+      },
+      {
+        "arm": "formal_baseline",
+        "role": "challenger",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": false,
+          "sha256": null
+        },
+        "usage": {
+          "input_tokens": 15667,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 579,
+          "reasoning_output_tokens": 106
+        },
+        "elapsed_seconds": 14.437,
+        "opinions": [
+          {
+            "execution_missing": [
+              "即時行情與價差未知；零股報價缺失。",
+              "公司事件尚未查核；公司行動未驗證，未調整價格基準可能影響支撐與目標。",
+              "歷史資料尚未取得時點認證。"
+            ],
+            "selected_route_id": null,
+            "symbol": "2466",
+            "verdict": "WATCH"
+          }
+        ]
+      },
+      {
+        "arm": "formal_with_skill",
+        "role": "researcher",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": true,
+          "sha256": "86deda08a05261f7b02b9d3961c1ceeba605b0a5b8616c54fa53bdda871d74b7"
+        },
+        "usage": {
+          "input_tokens": 16486,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 637,
+          "reasoning_output_tokens": 243
+        },
+        "elapsed_seconds": 15.515,
+        "opinions": [
+          {
+            "execution_missing": [
+              "即時零股報價及價差未核實",
+              "公司行動與公司事件未核實"
+            ],
+            "selected_route_id": null,
+            "symbol": "2466",
+            "verdict": "REJECT"
+          }
+        ]
+      },
+      {
+        "arm": "formal_with_skill",
+        "role": "challenger",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": true,
+          "sha256": "86deda08a05261f7b02b9d3961c1ceeba605b0a5b8616c54fa53bdda871d74b7"
+        },
+        "usage": {
+          "input_tokens": 16506,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 706,
+          "reasoning_output_tokens": 264
+        },
+        "elapsed_seconds": 17.391,
+        "opinions": [
+          {
+            "execution_missing": [
+              "即時零股報價與買賣價差尚未核實",
+              "公司事件尚未查核；公司行動尚未核實，原始未調整價格的支撐與目標仍待確認"
+            ],
+            "selected_route_id": null,
+            "symbol": "2466",
+            "verdict": "WATCH"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "scope": "FROZEN_REAL_INPUT_NATIVE_MODEL_COMPARISON_NOT_FORWARD_OR_PNL",
+    "packet_id": "d69dc043ba03722ad564e1f2c80c054998bf6fc5296d1c149b03692392de9f27",
+    "model": "gpt-6-sol",
+    "same_inputs": true,
+    "input_tokens": 65056,
+    "output_tokens": 4183,
+    "unknown_usage_calls": 0,
+    "orders_sent": 0,
+    "calls": [
+      {
+        "arm": "formal_baseline",
+        "role": "researcher",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": false,
+          "sha256": null
+        },
+        "usage": {
+          "input_tokens": 15841,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 1038,
+          "reasoning_output_tokens": 516
+        },
+        "elapsed_seconds": 23.297,
+        "opinions": [
+          {
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：即時零股報價及買賣價差未提供，無法核對當日執行條件。",
+              "公司事件尚未查核、公司行動尚未驗證；若涉及除權息等調整，須重新核對原始價格所對應的支撐與目標。",
+              "歷史資料時點認證尚未完成。"
+            ],
+            "selected_route_id": null,
+            "symbol": "2385",
+            "verdict": "WATCH"
+          }
+        ]
+      },
+      {
+        "arm": "formal_baseline",
+        "role": "challenger",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": false,
+          "sha256": null
+        },
+        "usage": {
+          "input_tokens": 15851,
+          "cached_input_tokens": 11264,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 973,
+          "reasoning_output_tokens": 435
+        },
+        "elapsed_seconds": 23.719,
+        "opinions": [
+          {
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：未提供11月13日即時價格及觸價狀態，無法核對90.2入場條件。",
+              "SOURCE_DATA_GAP：零股報價缺失，價差未知，無法核對17股的實際成交成本。",
+              "公司事件尚未查核；公司行動未核實，原始未調整價格可能影響88.1失效價與99.7目標的可比性。",
+              "歷史資料未取得時點認證。"
+            ],
+            "selected_route_id": null,
+            "symbol": "2385",
+            "verdict": "WATCH"
+          }
+        ]
+      },
+      {
+        "arm": "formal_with_skill",
+        "role": "researcher",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": true,
+          "sha256": "86deda08a05261f7b02b9d3961c1ceeba605b0a5b8616c54fa53bdda871d74b7"
+        },
+        "usage": {
+          "input_tokens": 16672,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 1153,
+          "reasoning_output_tokens": 516
+        },
+        "elapsed_seconds": 25.203,
+        "opinions": [
+          {
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：本 packet 未提供11月13日盤中報價、實際快照或已完成分鐘彙整，無法核對90.2元收復後的盤中維持情形。",
+              "零股報價缺失、價差未知，送單前須取得有效報價並重審原路徑。",
+              "公司事件及公司行動未核實；未調整價格可能影響支撐、失效與目標的可比性。",
+              "歷史資料的時點認證尚未完成。"
+            ],
+            "selected_route_id": null,
+            "symbol": "2385",
+            "verdict": "WATCH"
+          }
+        ]
+      },
+      {
+        "arm": "formal_with_skill",
+        "role": "challenger",
+        "status": "VALID",
+        "model": "gpt-6-sol",
+        "trading_skill": {
+          "name": "tw-production-decision",
+          "version": 1,
+          "enabled": true,
+          "sha256": "86deda08a05261f7b02b9d3961c1ceeba605b0a5b8616c54fa53bdda871d74b7"
+        },
+        "usage": {
+          "input_tokens": 16692,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 1019,
+          "reasoning_output_tokens": 516
+        },
+        "elapsed_seconds": 23.282,
+        "opinions": [
+          {
+            "execution_missing": [
+              "即時零股報價缺失，且價差未知；送單前須核實行情。",
+              "公司事件尚未查核、公司行動未核實；須確認是否影響原始未調整價位及目標。",
+              "逐時點資料尚未認證。"
+            ],
+            "selected_route_id": null,
+            "symbol": "2385",
+            "verdict": "WATCH"
+          }
+        ]
+      }
+    ]
+  }
+]

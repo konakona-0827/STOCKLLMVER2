@@ -1,0 +1,31 @@
+{
+  "version": "tw-selection-lab-v1",
+  "scope": "FIXED_CURRENT_UNIVERSE_RETROSPECTIVE_RAW_PRICE_RESEARCH",
+  "symbols": ["2330", "2454", "2317", "2382", "3231", "3017", "2891", "2881", "2882", "2303", "2308", "2345", "2357", "2376", "2356", "2377", "2603", "2609", "1101", "1815", "5347", "6488"],
+  "top_k": 3,
+  "warmup_sessions": 61,
+  "minimum_average_turnover_twd": 20000000,
+  "horizon_sessions_after_entry": 5,
+  "take_profit_rate": "0.02",
+  "stop_loss_rate": "0.02",
+  "notional_per_opportunity_twd": "10000",
+  "costs": {
+    "version": "research-assumptions-not-broker-fees-v1",
+    "commission_rate": "0.001425",
+    "commission_discount": "1",
+    "minimum_commission_twd": "20",
+    "sell_tax_rate": "0.003",
+    "slippage_bps_per_side": "10",
+    "fee_rounding": "CEILING_TWD"
+  },
+  "train_through": "2025-12-31",
+  "test_from": "2026-01-01",
+  "notes": [
+    "Research assumptions are independent of the live trading strategy and account settings.",
+    "Current hand-selected universe is not a survivorship-free historical market universe.",
+    "Raw prices have not been certified for corporate actions. No certified performance claim.",
+    "Daily price paths do not prove odd-lot order fills. Entry-day exits are excluded.",
+    "Signals and labels can overlap; per-opportunity statistics are not portfolio returns.",
+    "A future label is used only after its full observation window is available."
+  ]
+}

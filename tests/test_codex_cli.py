@@ -159,15 +159,20 @@ class CodexTransportTests(unittest.TestCase):
         self.assertEqual(decision['decisions'][0]['decision'], 'WAIT')
 
     def test_cancelled_process_is_killed(self):
-        async def blocked(_):
-            await asyncio.Event().wait()
+        async def blocked():
+            if process.returncode is None:await asyncio.Event().wait()
+            return process.returncode
         process = unittest.mock.Mock(pid=123, returncode=None)
-        process.communicate = blocked
-        kill = AsyncMock()
-        with patch('asyncio.create_subprocess_exec', AsyncMock(return_value=process)), patch('codex_cli._kill', kill):
+        process.wait = blocked
+        process.kill.side_effect=lambda:setattr(process,'returncode',-9)
+        killer=unittest.mock.Mock(wait=AsyncMock(return_value=0))
+        spawned=AsyncMock(side_effect=[process,killer])
+        group_kill=unittest.mock.Mock(side_effect=lambda *args:setattr(process,'returncode',-9))
+        with patch('asyncio.create_subprocess_exec',spawned),patch('bounded_cli_capture.os.killpg',group_kill,create=True):
             with self.assertRaises(TimeoutError):
                 asyncio.run(codex_cli._capture(['codex'], cwd=self.tmp.name, env={}, timeout=.01))
-        kill.assert_awaited_once_with(process)
+        if os.name=='nt':process.kill.assert_called_once()
+        else:group_kill.assert_called_once()
 
 
 if __name__ == '__main__':

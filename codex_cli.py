@@ -45,34 +45,10 @@ def child_environment():
     return env
 
 
-async def _kill(process):
-    if process.returncode is not None:
-        return
-    if os.name == 'nt':
-        # Kill this invocation's descendants as well, never a global process name.
-        killer = await asyncio.create_subprocess_exec(
-            'taskkill', '/PID', str(process.pid), '/T', '/F',
-            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW)
-        await killer.wait()
-    else:
-        process.kill()
-    # Drain pipes after killing so a full stdout buffer cannot stall cleanup.
-    await process.communicate()
-
-
 async def _capture(command, *, cwd, env, stdin=None, timeout=30):
-    options = dict(cwd=cwd, env=env, stdin=asyncio.subprocess.PIPE,
-                   stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-    if os.name == 'nt':
-        options['creationflags'] = subprocess.CREATE_NO_WINDOW
-    process = await asyncio.create_subprocess_exec(*command, **options)
-    try:
-        out, err = await asyncio.wait_for(process.communicate(stdin), timeout)
-    except BaseException:
-        await _kill(process)
-        raise
-    return process.returncode, out.decode('utf-8', errors='replace'), err.decode('utf-8', errors='replace')
+    from bounded_cli_capture import capture
+    code,out,err=await capture(command,cwd=cwd,env=env,stdin=stdin,timeout=timeout)
+    return code,out.decode('utf-8',errors='replace'),err.decode('utf-8',errors='replace')
 
 
 def _envelope(request):
@@ -109,15 +85,17 @@ def _output(answer, functions):
 
 async def create_response(request, timeout=180):
     from openai.types.responses import Response
+    request=dict(request)
+    pin_model=request.pop('_pin_model',False)
 
     if request.get('stream') is True:
         raise ValueError('CODEX_STREAMING_NOT_SUPPORTED')
     schema, functions = _envelope(request)
     cli, env = executable(), child_environment()
-    selected_model = os.getenv('CODEX_MODEL') or request['model']
+    selected_model = request['model'] if pin_model else os.getenv('CODEX_MODEL') or request['model']
     # A fresh, empty directory avoids loading project instructions, hooks, or
     # account files. Saved authentication stays in the user's normal CODEX_HOME.
-    with tempfile.TemporaryDirectory(prefix='plannedlimit-codex-') as tmp:
+    with tempfile.TemporaryDirectory(prefix='plannedlimit-codex-',ignore_cleanup_errors=True) as tmp:
         code, status, status_error = await _capture([cli, 'login', 'status'],
                                        cwd=tmp, env=env, timeout=30)
         if code or 'Logged in using ChatGPT' not in status:

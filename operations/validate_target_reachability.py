@@ -5,6 +5,7 @@ price only; score opens later price paths. Every stock-day is an independent
 blank-account probe, not a portfolio equity curve or a claim of odd-lot fills.
 """
 import argparse
+import os
 from bisect import bisect_left
 from collections import Counter
 from contextlib import ExitStack
@@ -37,7 +38,7 @@ def read(path):return json.loads(Path(path).read_text('utf-8-sig'))
 def save(path,value):
     Path(path).write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-def git_file(name):return subprocess.check_output(['git','show',BASELINE+':'+name],cwd=ROOT)
+def git_file(name):return subprocess.check_output(['git','show',BASELINE+':'+name],cwd=ROOT,env=dict(os.environ))
 
 def freeze():
     if (REPORT/'freeze.json').exists():raise ValueError('EXISTING_FREEZE_MUST_NOT_BE_REPLACED')

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from .common import TAIPEI,digest,save,stamp
 from .activity import tracked
+from .skill_profile import load_profile
 
 
 def review_evidence_rows(rows):
@@ -42,6 +43,7 @@ class LegacyRuntime:
         from main import Audit
         self.root,self.output,self.model=selected,Path(output),model
         self.read_only,self.stop_event=read_only,stop_event
+        self.production_skill=load_profile()
         self.operation_lock=threading.RLock()
         if not read_only:
             from .fees import fee_status,correct_legacy_capital_fee
@@ -290,13 +292,18 @@ class LegacyRuntime:
         from .state import Ledger
         request={k:v for k,v in request.items() if k not in ('usage_path',)}
         request['model']=self.model
-        began=time.monotonic();ledger=Ledger(self.output.parent)
+        request['_pin_model']=True
+        began=time.monotonic()
         role='pretrade' if request.get('text',{}).get('format',{}).get('name')=='pretrade_review' else 'position_exit'
+        skill=getattr(self,'production_skill',None) or load_profile()
+        request=skill.request(request,role)
+        ledger=Ledger(self.output.parent)
         try:
             response=CodexClient(timeout=180).responses.create(**request)
+            skill.verify()
             usage=response.usage.model_dump()
             detail=dict(usage=usage,elapsed_seconds=time.monotonic()-began,model=self.model,
-                        validation_phase='TRANSPORT_ONLY')
+                        validation_phase='TRANSPORT_ONLY',trading_skill=skill.metadata,prompt_sha256=digest(request),stage=role)
             if role=='pretrade':
                 try:
                     answer=json.loads(response.output_text)
@@ -306,7 +313,7 @@ class LegacyRuntime:
             ledger.call(datetime.now(TAIPEI).isoformat(),role,'VALID',detail)
             return response.output_text,dict(runtime='codex-cli',billing_source='chatgpt-plan',api_fallback=False,usage=usage)
         except Exception as exc:
-            ledger.call(datetime.now(TAIPEI).isoformat(),role,'ERROR',dict(usage=None,error=type(exc).__name__))
+            ledger.call(datetime.now(TAIPEI).isoformat(),role,'ERROR',dict(usage=None,error=type(exc).__name__,trading_skill=skill.metadata))
             raise
         finally:ledger.close()
 
@@ -342,7 +349,7 @@ class LegacyRuntime:
         result=dict(market_view='沿用最新持倉管理與費後獲利退出判斷',decisions=decisions)
         position_analyzer.validate(result,candidates,self.account()['available_cash_cents'],
             minimum_buy_fee_twd=self.config.economic_minimum_commission_twd,capital_twd=self.account()['capital_limit_twd'])
-        return result,dict(validation='VALID',management_plans=plans,cancellations=cancels,errors=errors)
+        return result,dict(validation='VALID',management_plans=plans,cancellations=cancels,errors=errors,trading_skill=load_profile().metadata)
 
     def cancel_exit(self,decision_id):
         if self.read_only or self.stopped():return dict(status='READ_ONLY_OR_STOPPED',broker_order_sent=False)
@@ -376,6 +383,9 @@ class LegacyRuntime:
     def execute(self,payload,path):
         if self.stopped():return dict(status='USER_STOPPED',results=[],broker_order_sent=False)
         if self.read_only:return dict(status='READ_ONLY',results=[],broker_order_sent=False)
+        skill=getattr(self,'production_skill',None) or load_profile()
+        skill.verify()
+        if payload.get('trading_skill')!=skill.metadata:raise ValueError('EXECUTION_TRADING_SKILL_MISMATCH')
         from execution.timing import current_trace
         if current_trace() is not None:current_trace().enable(self.root)
         from config import redact

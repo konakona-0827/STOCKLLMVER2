@@ -7,6 +7,7 @@ import sqlite3
 
 from .common import canonical, digest
 from .review import PROMPT_VERSION, ROLE_TASKS, RULES
+from .skill_profile import load_profile
 
 
 class Ledger:
@@ -25,14 +26,23 @@ class Ledger:
                 kind TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS handoffs (decision_id TEXT PRIMARY KEY, status TEXT NOT NULL,
                 payload TEXT NOT NULL, report TEXT);
+            CREATE TABLE IF NOT EXISTS trading_skill_profiles (identity TEXT PRIMARY KEY,
+                metadata TEXT NOT NULL,source_text TEXT NOT NULL);
         """)
+        profile=load_profile()
+        if profile.enabled:
+            self.db.execute('INSERT OR IGNORE INTO trading_skill_profiles VALUES (?,?,?)',
+                (profile.cache_identity,canonical(profile.metadata),profile.source_text))
         self.db.commit()
 
     def close(self):
         self.db.close()
 
     def key(self, candidate, model):
-        return digest([candidate["material_key"],model,PROMPT_VERSION,ROLE_TASKS,RULES])
+        key=[candidate["material_key"],model,PROMPT_VERSION,ROLE_TASKS,RULES]
+        profile=load_profile()
+        if profile.enabled:key.append(profile.cache_identity)
+        return digest(key)
 
     def lookup(self,key,now,p):
         row = self.db.execute("SELECT status,updated,data FROM reviews WHERE key=?",(key,)).fetchone()
@@ -63,6 +73,8 @@ class Ledger:
         self.db.commit()
 
     def call(self,at,role,status,data):
+        profile=load_profile()
+        if profile.enabled:data=dict(data,trading_skill=data.get('trading_skill',profile.metadata))
         self.db.execute("INSERT INTO calls(at,role,status,data) VALUES (?,?,?,?)",(at,role,status,canonical(data)))
         self.db.commit()
 

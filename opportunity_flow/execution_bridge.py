@@ -14,6 +14,7 @@ from .engine import economics
 from .review import combine,validate,verify_packet
 from .state import Ledger
 from .recovery import observe,observe_execution
+from .skill_profile import load_profile,validate_review_profile
 
 
 class FreshEconomicsError(ValueError):
@@ -44,6 +45,7 @@ def validate_buy(candidate,quote,snapshot,context,p,at,*,planned_limits=False,su
     """Return the exact reviewed route after fresh account/book checks, not a BUY guess."""
     review=candidate.get('review') or {};packet=review.get('packet')
     if not packet:raise ValueError('FROZEN_RESEARCH_MISSING')
+    validate_review_profile(review)
     verify_packet(packet)
     for role in ('researcher','challenger'):
         validate(dict(role=role,opinions=[review[role]]),[packet],role)
@@ -174,7 +176,7 @@ def payload_for(decisions,candidates,account,at,*,kind='BUY',review=None):
             source='CAPITAL_SKCOM',quote_basis='capital_intraday_odd_lot'))
     return dict(interface_version='1.0',run_id='tw-flow-'+digest([kind,[r['decision_id'] for r in recommendations]])[:28],
         generated_at=at.isoformat(),run_status='READY',llm_validation='VALID',real_order_sent=False,
-        trading_mode='agent',pretrade_review_status='VALID',recommendations=recommendations,
+        trading_mode='agent',pretrade_review_status='VALID',recommendations=recommendations,trading_skill=load_profile().metadata,
         execution_budget=dict(available_cash_twd=account['available_cash_twd'],strategy_cap_twd=account['capital_limit_twd'],budget_status=account['budget_status']),
         market=dict(source='CAPITAL_SKCOM',quote_basis='capital_intraday_odd_lot',quotes=quotes),
         flow_pretrade_evidence=review,orders_already_sent=False)
@@ -193,6 +195,8 @@ class ExecutionBridge:
             ids=[r['decision_id'] for r in payload['recommendations']]
             if not ids:return dict(status='NO_TRADE_ACTION',results=[])
             if self.runtime.read_only:return dict(status='READ_ONLY',results=[],broker_order_sent=False)
+            profile=load_profile();profile.verify()
+            if payload.get('trading_skill')!=profile.metadata:raise ValueError('EXECUTION_TRADING_SKILL_MISMATCH')
             if not ledger.claim_handoff(ids,payload):return dict(status='SKIPPED_DUPLICATE_HANDOFF',results=[])
             path=self.state/'handoffs'/(payload['run_id']+'.json')
             try:

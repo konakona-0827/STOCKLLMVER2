@@ -9,6 +9,7 @@ from .engine import build,economics
 from .data import plan_quote_problem
 from .review import CodexRunner, combine, validate
 from .state import Ledger
+from .skill_profile import load_profile
 
 
 def execution_readiness(candidate, reviewed_packet, route_id, at, event, p,*,support_policy='strict',planned_limits=False):
@@ -146,7 +147,7 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
                     else:
                         pid=c["packet"]["packet_id"]
                         result=dict(packet=c["packet"],researcher=answers["researcher"][pid],challenger=answers["challenger"][pid],
-                            reviewed_at=(at+timedelta(seconds=time.monotonic()-started)).isoformat())
+                            reviewed_at=(at+timedelta(seconds=time.monotonic()-started)).isoformat(),trading_skill=load_profile().metadata)
                         ledger.finish(key,"VALID",now,result)
                         c.update(review=result,review_source="NEW_MATERIAL_FACTS")
                 if error:
@@ -185,7 +186,7 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             information_gap_origins=dict(Counter(g['origin'] for c in candidates for g in c.get('research_information_gaps',[]))),
             additional_api_billed_usd=0,plan_usage_consumed=bool(calls),orders_sent=0,
             decision_scope="LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF" if account_context is not None else "SHADOW_RESEARCH_NO_BROKER_OR_ACCOUNT_ACCESS",
-            elapsed_seconds=round(time.monotonic()-started,3))
+            elapsed_seconds=round(time.monotonic()-started,3),trading_skill=load_profile().metadata)
         cycle_id=ledger.cycle(at.isoformat(),summary)
         root=ledger.folder/"cycles"/f"{cycle_id:06d}"
         save(root/"summary.json",summary)

@@ -30,7 +30,10 @@ class FlowDashboard(Dashboard):
             service=FlowViewService(resolve_account_root(args.state_root),args)
         self.controller=service.controller
         super().__init__(root,service.directory,service=service)
-        root.title('TW Opportunity Flow｜完整帳戶、研究與持倉管理')
+        from .skill_profile import load_profile
+        profile=load_profile()
+        mode='只讀' if getattr(args,'read_only',False) else '實盤'
+        root.title(('TW Trading Skill｜' if profile.enabled else 'TW Opportunity Flow｜')+mode+'｜完整帳戶、研究與持倉管理')
         root.geometry(f'{min(1500,root.winfo_screenwidth()-20)}x{min(920,root.winfo_screenheight()-80)}')
         self.run_button.configure(text='立即更新研究')
         self.refresh_button.configure(text='健康檢查',command=self.choose_health_check)

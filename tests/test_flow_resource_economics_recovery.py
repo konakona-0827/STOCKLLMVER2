@@ -46,6 +46,8 @@ class Economics4743Tests(unittest.TestCase):
             wait_conditions=[],execution_missing=[])
         self.c=dict(symbol='4743',state='RESEARCH_READY',selected_route_id='frozen',review=dict(packet=packet,
             researcher=opinion,challenger=deepcopy(opinion),reviewed_at=(self.at-timedelta(seconds=122)).isoformat()))
+        from opportunity_flow.skill_profile import load_profile
+        self.c['review']['trading_skill']=load_profile().metadata
         self.q=dict(symbol='4743',exchange='TPEX',quote_status='LIVE',is_trial=False,source_market_number=6,
             quote_basis='capital_intraday_odd_lot',quote_timestamp=self.at.isoformat(),bid=39.15,ask=39.35,last_price=39.15,low=38.65)
         self.snapshot=dict(checked_at=self.at.isoformat(),status='OK',errors=[],budget_status='READY',current_buy_budget_twd=10000)

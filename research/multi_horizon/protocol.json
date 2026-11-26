@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "experiment_id": "tw-multi-horizon-v1",
+  "mode": "OFFLINE_LABEL_RESEARCH",
+  "market": "TW_COMMON_STOCK",
+  "research_effort_weights": {"A": 0.4, "B": 0.4, "C": 0.2},
+  "costs": {
+    "version": "tw-stock-scenario-v1",
+    "commission_rate": "0.001425",
+    "commission_discount": "1",
+    "minimum_commission_twd": "20",
+    "sell_tax_rate": "0.003",
+    "slippage_bps_per_side": "10",
+    "fee_rounding": "CEILING_TWD"
+  },
+  "notional_per_opportunity_twd": "20000",
+  "max_oddlot_quantity": 999,
+  "entry_rule": "NEXT_SESSION_OPEN",
+  "earliest_exit_sessions_after_entry": 1,
+  "ambiguous_bar_rule": "STOP_FIRST",
+  "profiles": [
+    {
+      "id": "A",
+      "name": "Quantity",
+      "status": "PRICE_PATH_RESEARCH",
+      "forecast_horizons_trading_days": [3, 5, 10],
+      "planned_max_holding_trading_days": 5,
+      "planned_scan_interval_minutes": 10,
+      "barriers": [
+        {"take_profit_rate": "0.015", "stop_loss_rate": "0.01"},
+        {"take_profit_rate": "0.02", "stop_loss_rate": "0.02"}
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Balanced",
+      "status": "PRICE_PATH_RESEARCH",
+      "forecast_horizons_trading_days": [5, 10, 20, 60],
+      "planned_max_holding_trading_days": 20,
+      "planned_scan_interval_minutes": 15,
+      "barriers": [
+        {"take_profit_rate": "0.03", "stop_loss_rate": "0.02"},
+        {"take_profit_rate": "0.05", "stop_loss_rate": "0.03"}
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Quality",
+      "status": "PRICE_BASELINE_ONLY_FUNDAMENTALS_PENDING",
+      "forecast_horizons_trading_days": [63, 126, 252],
+      "planned_max_holding_trading_days": 252,
+      "planned_review_interval": "WEEKLY_OR_MATERIAL_EVENT",
+      "barriers": [
+        {"take_profit_rate": null, "stop_loss_rate": null}
+      ]
+    }
+  ]
+}

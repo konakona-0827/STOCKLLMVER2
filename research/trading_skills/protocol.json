@@ -1,0 +1,42 @@
+{
+  "version": "tw-trading-skills-v1",
+  "mode": "PAPER_ONLY",
+  "initial_cash_twd": "100000",
+  "notional_twd": "10000",
+  "risk_fraction": "0.01",
+  "max_daily_buy_twd": "20000",
+  "max_positions": 6,
+  "max_participation": "0.01",
+  "top_k": 3,
+  "horizon": 5,
+  "stop_fraction": "0.02",
+  "target_fraction": "0.02",
+  "history_sessions": 252,
+  "min_pool_blocks": 20,
+  "block_size": 3,
+  "paths": 300,
+  "seed": 19,
+  "minimum_turnover_twd": 20000000,
+  "volatility_ratio_low": 0.5,
+  "volatility_ratio_high": 2.0,
+  "calibration_minimum": 30,
+  "calibration_bins": 5,
+  "test_from": "2026-01-01",
+  "costs": {
+    "commission_rate": "0.001425",
+    "minimum_commission_twd": "20",
+    "sell_tax_rate": "0.003",
+    "slippage_bps": "10"
+  },
+  "forward_quote_max_age_seconds": 10,
+  "forward_max_spread_fraction": "0.01",
+  "rules_file": "market_rules.json",
+  "notes": [
+    "Research fees are explicit assumptions, not verified account fees.",
+    "Daily replay uses next-session open, no entry-day exit, conservative stop first and adverse gap fills.",
+    "Historical selection baseline is existing selection_lab momentum, not the production LLM strategy.",
+    "Historical raw-price dataset is exploratory, not point-in-time certified.",
+    "No cash reuse from a sale until two subsequent supplied trading sessions; settlement remains a model.",
+    "Monte Carlo net-positive frequency is not a calibrated live win probability."
+  ]
+}

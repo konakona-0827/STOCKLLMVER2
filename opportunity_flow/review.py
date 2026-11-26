@@ -11,6 +11,7 @@ import tempfile
 import time
 
 from .common import canonical, digest
+from .skill_profile import load_profile
 
 PROMPT_VERSION = "flow-review-v4-actionable-plan"
 ROLE_TASKS = {
@@ -108,41 +109,18 @@ class CodexRunner:
         self.stop_event=stop_event
 
     async def _capture(self, args, cwd, stdin=None, timeout=30):
-        opts = dict(cwd=cwd, env=self.env, stdin=asyncio.subprocess.PIPE,
-                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        if os.name == "nt":
-            opts["creationflags"] = subprocess.CREATE_NO_WINDOW
-        process = await asyncio.create_subprocess_exec(*args, **opts)
-        communication=asyncio.create_task(process.communicate(stdin))
-        deadline=time.monotonic()+timeout
-        try:
-            while not communication.done():
-                if self.stop_event is not None and self.stop_event.is_set():
-                    raise RuntimeError("CODEX_REVIEW_STOPPED")
-                if time.monotonic()>deadline:
-                    raise TimeoutError("CODEX_REVIEW_TIMEOUT")
-                await asyncio.wait([communication],timeout=.2)
-            out,err=await communication
-        except BaseException:
-            if process.returncode is None:
-                if os.name == "nt":
-                    killer = await asyncio.create_subprocess_exec("taskkill","/PID",str(process.pid),"/T","/F",
-                        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
-                        creationflags=subprocess.CREATE_NO_WINDOW)
-                    await killer.wait()
-                else:
-                    process.kill()
-            await communication
-            raise
-        return process.returncode, out.decode("utf-8",errors="replace"), err.decode("utf-8",errors="replace")
+        from bounded_cli_capture import capture
+        code,out,err=await capture(args,cwd=cwd,env=self.env,stdin=stdin,timeout=timeout,stop_event=self.stop_event)
+        return code,out.decode('utf-8',errors='replace'),err.decode('utf-8',errors='replace')
 
     async def _run(self, packets, role):
         for p in packets:
             verify_packet(p)
-        task = RULES + "\n" + ROLE_TASKS[role]
+        skill=load_profile()
+        task = RULES + "\n" + ROLE_TASKS[role]+skill.guidance(role)
         prompt = task + "\n" + canonical(dict(packets=packets))
         started = time.monotonic()
-        with tempfile.TemporaryDirectory(prefix="tw-opportunity-flow-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="tw-opportunity-flow-",ignore_cleanup_errors=True) as tmp:
             if not self.auth_checked:
                 code, out, err = await self._capture([self.executable,"login","status"],tmp)
                 if code or "Logged in using ChatGPT" not in out + err:
@@ -177,7 +155,8 @@ class CodexRunner:
                 raise RuntimeError("CODEX_INCOMPLETE_OUTPUT_OR_USAGE")
             obj = json.loads(answer.read_text(encoding="utf-8-sig"))
             validate(obj,packets,role)
-        return dict(answer=obj,usage=usage,model=self.model,elapsed_seconds=round(time.monotonic()-started,3),
+        skill.verify()
+        return dict(answer=obj,usage=usage,model=self.model,elapsed_seconds=round(time.monotonic()-started,3),trading_skill=skill.metadata,
             prompt_characters=len(prompt),prompt_sha256=digest(prompt),prompt_version=PROMPT_VERSION,
             billing_source="chatgpt-plan",additional_api_billed_usd=0)
 

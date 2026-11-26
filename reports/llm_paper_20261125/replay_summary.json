@@ -1,0 +1,103 @@
+{
+  "status": "COMPLETE",
+  "frames": 85,
+  "available_frames": 85,
+  "partial_cohort": false,
+  "errors": [
+    {
+      "frame": "20261013T120500-gui-d248d7cc",
+      "arm": "formal_baseline",
+      "status": "ERROR",
+      "error_type": "RuntimeError",
+      "error": "FORMAL_PIPELINE_FAILED: ValueError: UNKNOWN_OR_DUPLICATE_SYMBOL"
+    },
+    {
+      "frame": "20261021T103500-gui-e8b779d6",
+      "arm": "formal_baseline",
+      "status": "ERROR",
+      "error_type": "RuntimeError",
+      "error": "FORMAL_PIPELINE_FAILED: IndexError: list index out of range"
+    },
+    {
+      "frame": "20261021T110500-gui-10736789",
+      "arm": "formal_baseline",
+      "status": "ERROR",
+      "error_type": "RuntimeError",
+      "error": "FORMAL_PIPELINE_FAILED: IndexError: list index out of range"
+    },
+    {
+      "frame": "20261021T113500-gui-3d6fa933",
+      "arm": "formal_baseline",
+      "status": "ERROR",
+      "error_type": "RuntimeError",
+      "error": "FORMAL_PIPELINE_FAILED: IndexError: list index out of range"
+    },
+    {
+      "frame": "20261021T113500-gui-3d6fa933",
+      "arm": "formal_with_skill",
+      "status": "ERROR",
+      "error_type": "RuntimeError",
+      "error": "FORMAL_PIPELINE_FAILED: IndexError: list index out of range"
+    }
+  ],
+  "arms": {
+    "formal_baseline": {
+      "net_return": -0.005682500000000035,
+      "closed_trades": 1,
+      "closed_fills": 1,
+      "buy_fills": 2,
+      "win_rate": 0.0,
+      "expectancy_twd": -137.25,
+      "profit_factor": 0.0,
+      "profit_factor_infinite": false,
+      "maximum_drawdown": 0.0057825,
+      "sharpe_ratio": -8.518527040366173,
+      "open_positions": {
+        "2345": 2
+      },
+      "pending_orders": 1,
+      "probability_calibration": null,
+      "probability_calibration_reason": "LLM_CONFIDENCE_IS_NOT_A_TRADE_WIN_PROBABILITY"
+    },
+    "formal_with_skill": {
+      "net_return": -0.0008200000000000429,
+      "closed_trades": 1,
+      "closed_fills": 1,
+      "buy_fills": 1,
+      "win_rate": 0.0,
+      "expectancy_twd": -82.0,
+      "profit_factor": 0.0,
+      "profit_factor_infinite": false,
+      "maximum_drawdown": 0.00162,
+      "sharpe_ratio": -2.17976444861475,
+      "open_positions": {},
+      "pending_orders": 0,
+      "probability_calibration": null,
+      "probability_calibration_reason": "LLM_CONFIDENCE_IS_NOT_A_TRADE_WIN_PROBABILITY"
+    }
+  },
+  "usage": {
+    "input_tokens": 10470209,
+    "output_tokens": 550669,
+    "cached_input_tokens": 1575680,
+    "calls": 215,
+    "api_billed_usd": 0,
+    "billing_source": "chatgpt-plan",
+    "plan_credit_cost_unknown": true
+  },
+  "cohort_sha256": "4f484563aaeb8c99c9a7ad79d230c61d6c214ccd66d651600fe6ba7648eda2ba",
+  "strategy_sha256": "ef2fe149783900d2ebf596ee2d6785938d6917fea5de1f36a8a9495de10234fe",
+  "model": "gpt-5.6-luna",
+  "historical_fill_model": "NEXT_OBSERVED_CROSSING_SIDE_QUOTE_PROXY_NO_HISTORICAL_DEPTH",
+  "real_orders_possible": false,
+  "prefetched_requests": 184,
+  "used_request_hashes": 170,
+  "scope": "PRODUCTION_STRATEGY_AND_VALIDATOR_IN_CONTROLLED_PAPER_ACCOUNTS_NOT_BIT_IDENTICAL_ONLINE_WEB_REEXECUTION",
+  "warnings": [
+    "OCTOBER_IS_DEVELOPMENT",
+    "HISTORICAL_DEPTH_UNAVAILABLE",
+    "NO_TODAYS_NEWS",
+    "CURRENT_STRATEGY_POSTDATES_COHORT",
+    "NO_UNSEEN_OOS_CLAIM"
+  ]
+}

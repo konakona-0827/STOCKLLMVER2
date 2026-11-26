@@ -1,0 +1,5571 @@
+{
+  "repository": "https://github.com/Jakeschincariol/trader-skill.git",
+  "commit": "5189e79b9a480755a3733ac9713f5353981dbe18",
+  "clean": true,
+  "license": "MIT",
+  "dependency_imports": [
+    "_load",
+    "argparse",
+    "contextlib",
+    "csv",
+    "datetime",
+    "email",
+    "gzip",
+    "hashlib",
+    "importlib",
+    "io",
+    "json",
+    "math",
+    "os",
+    "re",
+    "shutil",
+    "subprocess",
+    "sys",
+    "tempfile",
+    "time",
+    "unittest",
+    "urllib",
+    "xml",
+    "zipfile"
+  ],
+  "non_stdlib_or_local_imports": [],
+  "python": "3.12.3",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "files": [
+    {
+      "path": ".claude-plugin/marketplace.json",
+      "bytes": 721,
+      "sha256": "2ba319bb6a27362ee7b00066819edb06fa489d097f82a23a8ee10917c98841e8",
+      "lines": 18,
+      "urls": [
+        "https://anthropic.com/claude-code/marketplace.schema.json",
+        "https://github.com/Jakeschincariol/trader-skill",
+        "https://opusjake.ai"
+      ],
+      "json_valid": true
+    },
+    {
+      "path": ".claude-plugin/plugin.json",
+      "bytes": 652,
+      "sha256": "d8279f7f37efc1082af80ec90f70b3f833baa381ed0e7e1dac24ed2c0db65685",
+      "lines": 22,
+      "urls": [
+        "https://github.com/Jakeschincariol/trader-skill",
+        "https://opusjake.ai"
+      ],
+      "json_valid": true
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1094,
+      "sha256": "9f65c2af3935669d28c1afb82da45e5da609c590a636c233866a4888e84f91f4"
+    },
+    {
+      "path": "README.md",
+      "bytes": 9972,
+      "sha256": "86a77b10c39931e9da83d99de606fa23a531ffcc2d88eb51201ebaced05eb36f",
+      "lines": 188,
+      "urls": [
+        "https://github.com/Jakeschincariol/trader-skill",
+        "https://github.com/Jakeschincariol/trader-skill.git",
+        "https://opusjake.ai"
+      ],
+      "headings": [
+        "# The Trader skill\r",
+        "## Install\r",
+        "## The eleven\r",
+        "## How to use it\r",
+        "## The tools\r",
+        "## Fine print\r",
+        "## Files\r"
+      ]
+    },
+    {
+      "path": "tests/_load.py",
+      "bytes": 483,
+      "sha256": "9e77e0bbe9b97c01e6ea71abb64e9e2a6ba04923296d12c618032d0e29b847d4",
+      "lines": 15,
+      "urls": [],
+      "imports": [
+        "importlib",
+        "os"
+      ],
+      "functions": [
+        {
+          "name": "load",
+          "line": 10,
+          "end_line": 15,
+          "doc": null,
+          "arguments": "folder, name"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 14,
+          "call": "spec.loader.exec_module"
+        }
+      ]
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/stooq-AAPL.csv",
+      "bytes": 111,
+      "sha256": "bd9b1914675c7abc21feeaec13210595734acc974cbde1aa52c48ce99b7bae94"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/stooq-ZZZZ.csv",
+      "bytes": 82,
+      "sha256": "9cfe313d5b195b177eae37ff61a21cfd82f630b6c273157fc678154393cda2a6"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/yahoo-AAPL.json",
+      "bytes": 1297,
+      "sha256": "f39185b4c868848a26d8e9868bb6c2ba63e754189766d5764736e371f6924bc3"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/yahoo-AXP.json",
+      "bytes": 1307,
+      "sha256": "c3ba28e353a1ce794d784282ed5dd5c632541d3b1875c5f37fa8fe4d8933dd23"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/yahoo-BAC.json",
+      "bytes": 1325,
+      "sha256": "ab1a5ca1732da46e317753f0e742583c601df84d92753c2eb8f110cadcf7a954"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/yahoo-GOOGL.json",
+      "bytes": 1304,
+      "sha256": "506b6c7a25e1d896d7a9eae5eacd927cf903aced9cdfa28e8b8e7cc5e6ef59ea"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/yahoo-KO.json",
+      "bytes": 1308,
+      "sha256": "d6658491d812eaff1f82d0093014e3edd8f462522eafc1beca9895013b4d1d92"
+    },
+    {
+      "path": "tests/fixtures/trader-alerts/yahoo-ZZZZ.json",
+      "bytes": 110,
+      "sha256": "7bd32bb525b85d418e56c490c5d137e26d0fa3691ab58e7d9aa0b1d07856230f"
+    },
+    {
+      "path": "tests/fixtures/trader-analyst/000032019326000018/index.json",
+      "bytes": 1890,
+      "sha256": "11f2b1e98e28910ecb42a3a2be040f257e258c80ecfe75780340b8ed07cf69e0"
+    },
+    {
+      "path": "tests/fixtures/trader-analyst/company_tickers.json",
+      "bytes": 239,
+      "sha256": "0369655216c73506680005fa1c4edc2cbfba0e63d5dbaf3d5072d26fa034d91b"
+    },
+    {
+      "path": "tests/fixtures/trader-analyst/companyfacts-CIK0000021344.json",
+      "bytes": 6616,
+      "sha256": "2bef9ad2c9feab5823d778fb92c9abf7e040a02a6cc445c0906d5b23d3921b8a"
+    },
+    {
+      "path": "tests/fixtures/trader-analyst/companyfacts-CIK0000320193.json",
+      "bytes": 26050,
+      "sha256": "d435cab7801489596ca2a0469e50f37717cf289d4836601292eb354e766500d2"
+    },
+    {
+      "path": "tests/fixtures/trader-analyst/submissions-CIK0000021344.json",
+      "bytes": 4013,
+      "sha256": "7e916621bf7e86c1881ae33d15c2aba3c95bdb2bf43f57d22bf8cc2a1087d295"
+    },
+    {
+      "path": "tests/fixtures/trader-analyst/submissions-CIK0000320193.json",
+      "bytes": 5616,
+      "sha256": "2b1d71bbdeb8e4cda4951825087ea15ab07a91e62187f34eeb93814f227a0dec"
+    },
+    {
+      "path": "tests/fixtures/trader-budget/berkshire-q2-2026-top5.json",
+      "bytes": 1231,
+      "sha256": "2b8832fde6a54d42160d3d71bbb134b4305fb21b24e3ce09998eec7fa11fdd87"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/000119312526226661/53405.xml",
+      "bytes": 37249,
+      "sha256": "65c3da287a4f812a50ae4cbf20baf63e2063b58eff9e4cba68d965cd40c81422"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/000119312526226661/index.json",
+      "bytes": 656,
+      "sha256": "77d2fa9f5f3b1320dc3d904ec00cef7d24ad39045cb4b9c392dd2d989c526a79"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/000119312526352200/56757.xml",
+      "bytes": 36803,
+      "sha256": "1c22790501c4b5a51f35feb179054bdbe78146c8c671d29a8876a9ccb4105b8a"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/000119312526352200/index.json",
+      "bytes": 656,
+      "sha256": "55b791cd90a12c4fe10c0d13471853e3e53ccbede45157b4264092aa0f5674f9"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/000119312526352200/primary_doc.xml",
+      "bytes": 5706,
+      "sha256": "f268058ed1952d2b38d22bd0599b0ba2aa4564dad6465cf9fee1cc54545f2b0b"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/CIK0001067983.json",
+      "bytes": 3980,
+      "sha256": "25b1393925ff43f02fdd89697518e70e36c705bc7c63099e5461e0933da589ad"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/company_tickers.json",
+      "bytes": 5457,
+      "sha256": "99a4e28ba6d6f662a989b662c9e53b1e58fb58c67ac8eb506a6160b238b21417"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/openfigi-classes.json",
+      "bytes": 2507,
+      "sha256": "144905cc778eb7cb945f39c7b70b0a35bf31380d91a51860b4e2845092c18ab8"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/openfigi.json",
+      "bytes": 552,
+      "sha256": "5245d25c1049f6a39ec7bd45f1f58c76d59e4b64f525461b3995e20d254f792f"
+    },
+    {
+      "path": "tests/fixtures/trader-copycat/search-scion-asset.json",
+      "bytes": 903,
+      "sha256": "f36ed4a33b259dec4e1166be2e44ca17996eee09b372e9163c37cec234f9ff28"
+    },
+    {
+      "path": "tests/fixtures/trader-news/company_tickers.json",
+      "bytes": 568,
+      "sha256": "6e31c3fc04062fd021fffbe9f0cae6d91167b5a67b76ee041d77199551451ba0"
+    },
+    {
+      "path": "tests/fixtures/trader-news/sec-8-K-0000021344.xml",
+      "bytes": 7078,
+      "sha256": "21bfaa0854823e7b47e26d7d50eb963743c4e988ede4c2bb39df249381eddec7"
+    },
+    {
+      "path": "tests/fixtures/trader-news/sec-8-K-0000320193.xml",
+      "bytes": 7577,
+      "sha256": "99635c64c0adea64efc6bfd50b0faa6b4895fc4a02b28ed6afb889d1ae8370ff"
+    },
+    {
+      "path": "tests/fixtures/trader-news/yahoo-AAPL.xml",
+      "bytes": 4373,
+      "sha256": "212506b627330d51c82ee9a5ca6d41feb352bf3e28118f147d0bd1ead5483ee0"
+    },
+    {
+      "path": "tests/fixtures/trader-news/yahoo-KO.xml",
+      "bytes": 3203,
+      "sha256": "830975bd44923e2412c7b9e478bf81f0b7c2d2dc33518f865566a7f36b00d457"
+    },
+    {
+      "path": "tests/fixtures/trader-pelosi/2026FD.zip",
+      "bytes": 716,
+      "sha256": "43f0c4d0c042e34d00f7ab41e0f07bed760dd4ede65ddc4d3d39f9bffd7a788b"
+    },
+    {
+      "path": "tests/fixtures/trader-pelosi/ptr-20033725-excerpt.txt",
+      "bytes": 3650,
+      "sha256": "9c393d9d258086d3b790a1e54acc8565af8eda359428804502376fef1545c39c"
+    },
+    {
+      "path": "tests/fixtures/trader-pelosi/ptr-20035143.txt",
+      "bytes": 4668,
+      "sha256": "538435224705788670a55a943cce646d5badc2a0c373a72dcf0108c0799bc1d6"
+    },
+    {
+      "path": "tests/fixtures/trader-pelosi/ptr-20035562-excerpt.txt",
+      "bytes": 3530,
+      "sha256": "cafe71c4d3087351f07f73ef1fbe5025731ed7e9947f26466dc0ce6f4553209e"
+    },
+    {
+      "path": "tests/fixtures/trader-pelosi/ptr-20035590.txt",
+      "bytes": 2212,
+      "sha256": "f232fc0eb674677035f2d1ba82c345269725a4bc615d13d1d97d43f5871218e1"
+    },
+    {
+      "path": "tests/fixtures/trader-rebalance/config.json",
+      "bytes": 365,
+      "sha256": "25382f8fceb1c194d0b1e6089f95cb1a32acf0bca01a2c04df4012bd266a8b41"
+    },
+    {
+      "path": "tests/fixtures/trader-rebalance/portfolio.json",
+      "bytes": 1179,
+      "sha256": "22ff39a9428a37638ed32ea0b696049929b88cc3a5618de95403019aad3655dd"
+    },
+    {
+      "path": "tests/fixtures/trader-rebalance/prices.json",
+      "bytes": 561,
+      "sha256": "4e6c686890fea76e1ebb7905c36cb49c0769fe94a82840d9ae3dd9f82e76ac0e"
+    },
+    {
+      "path": "tests/fixtures/trader-rebalance/targets.json",
+      "bytes": 621,
+      "sha256": "975bae28ba360c22c2fc4fe3de9279f41cbe86d080b0feb03f330f90f24e5880"
+    },
+    {
+      "path": "tests/fixtures/trader-risk/orders-reel.json",
+      "bytes": 798,
+      "sha256": "db1060f8269a10cb2bb2699f0a6224964a8dbc666611908d76752918834a9f2e"
+    },
+    {
+      "path": "tests/fixtures/trader-screener/companies.csv",
+      "bytes": 234,
+      "sha256": "9c9e6efc027196c5d115f1ad0a695e44ed3164599ca7d2f18ca79f6d7a0a389b"
+    },
+    {
+      "path": "tests/fixtures/trader-screener/metrics.json",
+      "bytes": 2402,
+      "sha256": "fe9070c8e12bcff0e4badaa728daedc869a0042ee55cc031c9b839254c2165a5"
+    },
+    {
+      "path": "tests/fixtures/trader-screener/prices.json",
+      "bytes": 249,
+      "sha256": "5fa113ced69054dd60410f7b8477fe6f51072c2d9f6270cfad54408ad24af79a"
+    },
+    {
+      "path": "tests/fixtures/trader-tax/portfolio.json",
+      "bytes": 1184,
+      "sha256": "ecb25f810ef52a42864af9f3d131acd46592e406b4887ec9e8b49cf129b3a1d5"
+    },
+    {
+      "path": "tests/fixtures/trader-tax/prices.json",
+      "bytes": 161,
+      "sha256": "44786c052187493569bd3d7e059944fb9694d419c8e75d437991a5fb4c401cc2"
+    },
+    {
+      "path": "tests/test_alerts.py",
+      "bytes": 11361,
+      "sha256": "e01a99cc43af10a4be88c35ce4e5ae650c9b349a2150d5e432ca6e80c47fa204",
+      "lines": 235,
+      "urls": [
+        "https://stooq.com/q/l/?s=brk-b.us&f=sd2t2ohlcv&h&e=csv",
+        "https://www.nyse.com/markets/hours-calendars"
+      ],
+      "imports": [
+        "_load",
+        "contextlib",
+        "datetime",
+        "io",
+        "json",
+        "os",
+        "shutil",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "ny",
+          "line": 25,
+          "end_line": 26,
+          "doc": null,
+          "arguments": "text"
+        },
+        {
+          "name": "run",
+          "line": 29,
+          "end_line": 33,
+          "doc": null,
+          "arguments": "argv"
+        },
+        {
+          "name": "test_holidays_match_the_published_list",
+          "line": 37,
+          "end_line": 41,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_daylight_saving_switches",
+          "line": 43,
+          "end_line": 48,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_parse_now",
+          "line": 50,
+          "end_line": 55,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_market_status",
+          "line": 57,
+          "end_line": 76,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_yahoo_fixture",
+          "line": 80,
+          "end_line": 85,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_stooq_fixture",
+          "line": 87,
+          "end_line": 94,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_urls",
+          "line": 96,
+          "end_line": 98,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_offline_quotes_and_errors",
+          "line": 100,
+          "end_line": 105,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "setUp",
+          "line": 109,
+          "end_line": 112,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_a_target_rings_once",
+          "line": 114,
+          "end_line": 120,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_stop_and_rearm",
+          "line": 122,
+          "end_line": 132,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_pct_move_from_previous_close",
+          "line": 134,
+          "end_line": 142,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_opening_bell_once_per_trading_day",
+          "line": 144,
+          "end_line": 152,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_bad_rules",
+          "line": 154,
+          "end_line": 158,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "setUp",
+          "line": 162,
+          "end_line": 166,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "tearDown",
+          "line": 168,
+          "end_line": 169,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "check",
+          "line": 171,
+          "end_line": 173,
+          "doc": null,
+          "arguments": "self, now"
+        },
+        {
+          "name": "test_the_reel_portfolio_evening_and_morning",
+          "line": 175,
+          "end_line": 200,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_quote_write_merges",
+          "line": 202,
+          "end_line": 211,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_quote_holdings",
+          "line": 213,
+          "end_line": 220,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_clock_exit_codes",
+          "line": 222,
+          "end_line": 226,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_check_without_rules",
+          "line": 228,
+          "end_line": 231,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_holidays_match_the_published_list",
+        "test_daylight_saving_switches",
+        "test_parse_now",
+        "test_market_status",
+        "test_yahoo_fixture",
+        "test_stooq_fixture",
+        "test_urls",
+        "test_offline_quotes_and_errors",
+        "test_a_target_rings_once",
+        "test_stop_and_rearm",
+        "test_pct_move_from_previous_close",
+        "test_opening_bell_once_per_trading_day",
+        "test_bad_rules",
+        "test_the_reel_portfolio_evening_and_morning",
+        "test_quote_write_merges",
+        "test_quote_holdings",
+        "test_clock_exit_codes",
+        "test_check_without_rules"
+      ],
+      "effects": [
+        {
+          "line": 81,
+          "call": "open"
+        },
+        {
+          "line": 88,
+          "call": "open"
+        },
+        {
+          "line": 92,
+          "call": "open"
+        },
+        {
+          "line": 97,
+          "call": "alerts.stooq_url"
+        },
+        {
+          "line": 98,
+          "call": "alerts.yahoo_url"
+        },
+        {
+          "line": 186,
+          "call": "open"
+        },
+        {
+          "line": 208,
+          "call": "open"
+        },
+        {
+          "line": 215,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_analyst.py",
+      "bytes": 7567,
+      "sha256": "c4d684d26621708a03ce30c901b6289e078fafe9402d707ebbea7a52d50f08af",
+      "lines": 163,
+      "urls": [
+        "https://www.sec.gov/Archives/edgar/data/320193/"
+      ],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "companyfacts",
+          "line": 14,
+          "end_line": 16,
+          "doc": null,
+          "arguments": "cik"
+        },
+        {
+          "name": "run",
+          "line": 19,
+          "end_line": 23,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "setUp",
+          "line": 27,
+          "end_line": 28,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_latest_quarter",
+          "line": 30,
+          "end_line": 42,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_fiscal_labels_come_from_the_first_filing",
+          "line": 44,
+          "end_line": 46,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_q4_is_derived_from_the_10k",
+          "line": 48,
+          "end_line": 53,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_trailing_twelve_months",
+          "line": 55,
+          "end_line": 58,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_what_changed_in_words",
+          "line": 60,
+          "end_line": 64,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_restated_values_win_but_labels_stay",
+          "line": 66,
+          "end_line": 77,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_latest_10q_and_earnings_press_release",
+          "line": 81,
+          "end_line": 91,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_exhibit_names_seen_on_edgar",
+          "line": 93,
+          "end_line": 103,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_says_when_sec_facts_trail_a_filed_10q",
+          "line": 107,
+          "end_line": 112,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_one_offs_are_flagged",
+          "line": 114,
+          "end_line": 120,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_metrics_file_for_the_screener",
+          "line": 124,
+          "end_line": 137,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_unknown_ticker_and_no_user_agent",
+          "line": 139,
+          "end_line": 151,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_json_output",
+          "line": 153,
+          "end_line": 159,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_latest_quarter",
+        "test_fiscal_labels_come_from_the_first_filing",
+        "test_q4_is_derived_from_the_10k",
+        "test_trailing_twelve_months",
+        "test_what_changed_in_words",
+        "test_restated_values_win_but_labels_stay",
+        "test_latest_10q_and_earnings_press_release",
+        "test_exhibit_names_seen_on_edgar",
+        "test_says_when_sec_facts_trail_a_filed_10q",
+        "test_one_offs_are_flagged",
+        "test_metrics_file_for_the_screener",
+        "test_unknown_ticker_and_no_user_agent",
+        "test_json_output"
+      ],
+      "effects": [
+        {
+          "line": 15,
+          "call": "open"
+        },
+        {
+          "line": 82,
+          "call": "open"
+        },
+        {
+          "line": 87,
+          "call": "f['report']['url'].endswith"
+        },
+        {
+          "line": 129,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_broker.py",
+      "bytes": 10352,
+      "sha256": "7e0bb400a6dde85abbf91213c6143fc92a6a4912312b067b4fcbd7ffd3ca95fc",
+      "lines": 224,
+      "urls": [],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "shutil",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "run",
+          "line": 21,
+          "end_line": 25,
+          "doc": null,
+          "arguments": "argv"
+        },
+        {
+          "name": "yes",
+          "line": 29,
+          "end_line": 30,
+          "doc": null,
+          "arguments": "self, reply, order=AAPL"
+        },
+        {
+          "name": "test_plain_yes_counts",
+          "line": 32,
+          "end_line": 35,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_anything_else_does_not",
+          "line": 37,
+          "end_line": 42,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_amount_must_match_this_order",
+          "line": 44,
+          "end_line": 47,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_tool_input_is_the_alpaca_call",
+          "line": 51,
+          "end_line": 57,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_plain_english",
+          "line": 59,
+          "end_line": 63,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_example_is_paper_with_placeholder_keys",
+          "line": 67,
+          "end_line": 73,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "setUp",
+          "line": 77,
+          "end_line": 85,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "tearDown",
+          "line": 87,
+          "end_line": 88,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "args",
+          "line": 90,
+          "end_line": 92,
+          "doc": null,
+          "arguments": "self, *extra"
+        },
+        {
+          "name": "run_risk",
+          "line": 94,
+          "end_line": 98,
+          "doc": null,
+          "arguments": "self, today=TODAY"
+        },
+        {
+          "name": "test_nothing_is_ready_before_the_risk_check",
+          "line": 100,
+          "end_line": 107,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_the_full_two_yes_flow",
+          "line": 109,
+          "end_line": 150,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_an_edited_order_is_not_ready",
+          "line": 152,
+          "end_line": 161,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_yesterdays_check_does_not_count",
+          "line": 163,
+          "end_line": 166,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_blocked_orders_are_never_ready",
+          "line": 168,
+          "end_line": 178,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_result_needs_an_approval_and_decline_is_logged",
+          "line": 180,
+          "end_line": 188,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_ibkr_tickets_send_the_final_yes_to_ibkr",
+          "line": 190,
+          "end_line": 200,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_fill_sell_relieves_the_oldest_lot",
+          "line": 202,
+          "end_line": 220,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_plain_yes_counts",
+        "test_anything_else_does_not",
+        "test_amount_must_match_this_order",
+        "test_tool_input_is_the_alpaca_call",
+        "test_plain_english",
+        "test_example_is_paper_with_placeholder_keys",
+        "test_nothing_is_ready_before_the_risk_check",
+        "test_the_full_two_yes_flow",
+        "test_an_edited_order_is_not_ready",
+        "test_yesterdays_check_does_not_count",
+        "test_blocked_orders_are_never_ready",
+        "test_result_needs_an_approval_and_decline_is_logged",
+        "test_ibkr_tickets_send_the_final_yes_to_ibkr",
+        "test_fill_sell_relieves_the_oldest_lot"
+      ],
+      "effects": [
+        {
+          "line": 68,
+          "call": "open"
+        },
+        {
+          "line": 133,
+          "call": "open"
+        },
+        {
+          "line": 138,
+          "call": "open"
+        },
+        {
+          "line": 154,
+          "call": "open"
+        },
+        {
+          "line": 157,
+          "call": "open"
+        },
+        {
+          "line": 169,
+          "call": "open"
+        },
+        {
+          "line": 172,
+          "call": "open"
+        },
+        {
+          "line": 191,
+          "call": "open"
+        },
+        {
+          "line": 194,
+          "call": "open"
+        },
+        {
+          "line": 206,
+          "call": "open"
+        },
+        {
+          "line": 211,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_budget.py",
+      "bytes": 7710,
+      "sha256": "18023bdf193d64b57332469080a8672e7b3ef3b720bc7896b26678c2b6b4ee30",
+      "lines": 177,
+      "urls": [],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "cfg",
+          "line": 19,
+          "end_line": 23,
+          "doc": null,
+          "arguments": "**over"
+        },
+        {
+          "name": "rows",
+          "line": 26,
+          "end_line": 28,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "dollars",
+          "line": 31,
+          "end_line": 32,
+          "doc": null,
+          "arguments": "result"
+        },
+        {
+          "name": "run",
+          "line": 35,
+          "end_line": 39,
+          "doc": null,
+          "arguments": "argv"
+        },
+        {
+          "name": "check_reel",
+          "line": 45,
+          "end_line": 51,
+          "doc": null,
+          "arguments": "self, r"
+        },
+        {
+          "name": "test_from_the_raw_13f_weights",
+          "line": 53,
+          "end_line": 54,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_from_the_renormalised_targets_file",
+          "line": 56,
+          "end_line": 57,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_from_inline_weights",
+          "line": 59,
+          "end_line": 61,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_renormalised_weights_match_the_reel_labels",
+          "line": 63,
+          "end_line": 66,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_one_decimal_weights_stay_within_a_dollar",
+          "line": 68,
+          "end_line": 74,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_orders_are_place_stock_order_shaped",
+          "line": 76,
+          "end_line": 85,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_cents_mode_keeps_the_total",
+          "line": 87,
+          "end_line": 93,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_cap_redistributes_until_nobody_is_over",
+          "line": 97,
+          "end_line": 101,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_everything_capped_leaves_money_idle",
+          "line": 103,
+          "end_line": 108,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_slices_under_the_minimum_are_dropped_and_shared_out",
+          "line": 110,
+          "end_line": 116,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_blocked_tickers_are_dropped_first",
+          "line": 118,
+          "end_line": 122,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_top_n",
+          "line": 124,
+          "end_line": 126,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_whole_shares_need_prices",
+          "line": 128,
+          "end_line": 130,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_whole_shares_with_prices",
+          "line": 132,
+          "end_line": 142,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_no_budget_is_an_error",
+          "line": 144,
+          "end_line": 146,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_duplicate_tickers_are_an_error",
+          "line": 148,
+          "end_line": 150,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_write_orders_file",
+          "line": 154,
+          "end_line": 165,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_json_output_and_missing_targets",
+          "line": 167,
+          "end_line": 173,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_from_the_raw_13f_weights",
+        "test_from_the_renormalised_targets_file",
+        "test_from_inline_weights",
+        "test_renormalised_weights_match_the_reel_labels",
+        "test_one_decimal_weights_stay_within_a_dollar",
+        "test_orders_are_place_stock_order_shaped",
+        "test_cents_mode_keeps_the_total",
+        "test_cap_redistributes_until_nobody_is_over",
+        "test_everything_capped_leaves_money_idle",
+        "test_slices_under_the_minimum_are_dropped_and_shared_out",
+        "test_blocked_tickers_are_dropped_first",
+        "test_top_n",
+        "test_whole_shares_need_prices",
+        "test_whole_shares_with_prices",
+        "test_no_budget_is_an_error",
+        "test_duplicate_tickers_are_an_error",
+        "test_write_orders_file",
+        "test_json_output_and_missing_targets"
+      ],
+      "effects": [
+        {
+          "line": 20,
+          "call": "open"
+        },
+        {
+          "line": 27,
+          "call": "open"
+        },
+        {
+          "line": 78,
+          "call": "size.orders_from"
+        },
+        {
+          "line": 141,
+          "call": "size.orders_from"
+        },
+        {
+          "line": 108,
+          "call": "size.orders_from"
+        },
+        {
+          "line": 161,
+          "call": "open"
+        },
+        {
+          "line": 93,
+          "call": "size.orders_from"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_copycat.py",
+      "bytes": 16076,
+      "sha256": "9808771fec9d9b1c08d9a6be6f2d5f9c0edc7db6670a00c770b5d80f9a602fd4",
+      "lines": 323,
+      "urls": [
+        "https://data.sec.gov/submissions/CIK0000000001.json",
+        "https://data.sec.gov/submissions/CIK0001067983.json"
+      ],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "offline",
+          "line": 27,
+          "end_line": 28,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "quarter",
+          "line": 31,
+          "end_line": 37,
+          "doc": null,
+          "arguments": "combine=True, **kw"
+        },
+        {
+          "name": "run",
+          "line": 40,
+          "end_line": 44,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "test_latest_filing_is_q2_2026",
+          "line": 48,
+          "end_line": 55,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_top_five_as_percent_of_the_full_13f",
+          "line": 57,
+          "end_line": 65,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_positions_and_issuers",
+          "line": 67,
+          "end_line": 74,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_copy_top_five_renormalised",
+          "line": 76,
+          "end_line": 87,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_copy_cli_writes_targets",
+          "line": 89,
+          "end_line": 105,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_diff_vs_the_prior_quarter",
+          "line": 109,
+          "end_line": 134,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_diff_cli_text",
+          "line": 136,
+          "end_line": 141,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_every_cusip_gets_the_right_ticker",
+          "line": 145,
+          "end_line": 148,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_guesses_are_flagged",
+          "line": 150,
+          "end_line": 154,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_name_normalising",
+          "line": 156,
+          "end_line": 168,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_preferreds_and_warrants_are_not_the_stock",
+          "line": 170,
+          "end_line": 178,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_openfigi_answers",
+          "line": 180,
+          "end_line": 193,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_figi_lookup_offline",
+          "line": 195,
+          "end_line": 197,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_your_own_map_wins",
+          "line": 199,
+          "end_line": 208,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_bundled_filers",
+          "line": 212,
+          "end_line": 221,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_search_every_filer",
+          "line": 223,
+          "end_line": 225,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_filings_list_and_amendments",
+          "line": 227,
+          "end_line": 237,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_find_cli",
+          "line": 239,
+          "end_line": 244,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_user_agent_is_required_and_never_the_placeholder",
+          "line": 248,
+          "end_line": 271,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_options_and_bonds_are_never_copied",
+          "line": 273,
+          "end_line": 290,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_old_filings_are_in_thousands",
+          "line": 292,
+          "end_line": 294,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_offline_never_touches_the_network",
+          "line": 296,
+          "end_line": 299,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_holdings_cli_says_how_old_the_data_is",
+          "line": 301,
+          "end_line": 309,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_xml_file_without_network",
+          "line": 311,
+          "end_line": 319,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_latest_filing_is_q2_2026",
+        "test_top_five_as_percent_of_the_full_13f",
+        "test_positions_and_issuers",
+        "test_copy_top_five_renormalised",
+        "test_copy_cli_writes_targets",
+        "test_diff_vs_the_prior_quarter",
+        "test_diff_cli_text",
+        "test_every_cusip_gets_the_right_ticker",
+        "test_guesses_are_flagged",
+        "test_name_normalising",
+        "test_preferreds_and_warrants_are_not_the_stock",
+        "test_openfigi_answers",
+        "test_figi_lookup_offline",
+        "test_your_own_map_wins",
+        "test_bundled_filers",
+        "test_search_every_filer",
+        "test_filings_list_and_amendments",
+        "test_find_cli",
+        "test_user_agent_is_required_and_never_the_placeholder",
+        "test_options_and_bonds_are_never_copied",
+        "test_old_filings_are_in_thousands",
+        "test_offline_never_touches_the_network",
+        "test_holdings_cli_says_how_old_the_data_is",
+        "test_xml_file_without_network"
+      ],
+      "effects": [
+        {
+          "line": 171,
+          "call": "open"
+        },
+        {
+          "line": 183,
+          "call": "open"
+        },
+        {
+          "line": 95,
+          "call": "open"
+        },
+        {
+          "line": 202,
+          "call": "open"
+        },
+        {
+          "line": 253,
+          "call": "open"
+        },
+        {
+          "line": 258,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_news.py",
+      "bytes": 6673,
+      "sha256": "f6327688f05f03b8731a7a4ede4079cd8df5014f0c93aac70505064bf86eb311",
+      "lines": 153,
+      "urls": [
+        "https://finance.yahoo.com/",
+        "https://www.sec.gov/x"
+      ],
+      "imports": [
+        "_load",
+        "contextlib",
+        "datetime",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "raw",
+          "line": 16,
+          "end_line": 18,
+          "doc": null,
+          "arguments": "name"
+        },
+        {
+          "name": "run",
+          "line": 21,
+          "end_line": 25,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "test_yahoo_rss",
+          "line": 29,
+          "end_line": 37,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_sec_atom_8k",
+          "line": 39,
+          "end_line": 50,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_times",
+          "line": 52,
+          "end_line": 55,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_yahoo_symbols",
+          "line": 57,
+          "end_line": 58,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_touches_and_tags",
+          "line": 62,
+          "end_line": 70,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_earnings_filings_are_tagged",
+          "line": 72,
+          "end_line": 75,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_dedupe_merges_the_same_story",
+          "line": 77,
+          "end_line": 82,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "setUp",
+          "line": 86,
+          "end_line": 91,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "tearDown",
+          "line": 93,
+          "end_line": 94,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_new_items_once_newest_first",
+          "line": 96,
+          "end_line": 105,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_filings_show_in_a_wider_window",
+          "line": 107,
+          "end_line": 113,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_tickers_from_targets",
+          "line": 115,
+          "end_line": 125,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_no_tickers_is_an_error",
+          "line": 127,
+          "end_line": 130,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_sec_needs_a_user_agent",
+          "line": 132,
+          "end_line": 142,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_state_forgets_after_30_days",
+          "line": 144,
+          "end_line": 149,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_yahoo_rss",
+        "test_sec_atom_8k",
+        "test_times",
+        "test_yahoo_symbols",
+        "test_touches_and_tags",
+        "test_earnings_filings_are_tagged",
+        "test_dedupe_merges_the_same_story",
+        "test_new_items_once_newest_first",
+        "test_filings_show_in_a_wider_window",
+        "test_tickers_from_targets",
+        "test_no_tickers_is_an_error",
+        "test_sec_needs_a_user_agent",
+        "test_state_forgets_after_30_days"
+      ],
+      "effects": [
+        {
+          "line": 17,
+          "call": "open"
+        },
+        {
+          "line": 117,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_pelosi.py",
+      "bytes": 9690,
+      "sha256": "3c972da9840206b4e2a9dd90f0619965077a3ce1f2d5f94917682368372b2ab0",
+      "lines": 200,
+      "urls": [
+        "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf"
+      ],
+      "imports": [
+        "_load",
+        "contextlib",
+        "datetime",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest",
+        "zipfile"
+      ],
+      "functions": [
+        {
+          "name": "text",
+          "line": 16,
+          "end_line": 18,
+          "doc": null,
+          "arguments": "name"
+        },
+        {
+          "name": "run",
+          "line": 21,
+          "end_line": 25,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "setUp",
+          "line": 29,
+          "end_line": 30,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_finds_her_four_2026_ptrs",
+          "line": 32,
+          "end_line": 41,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_member_names_in_any_order",
+          "line": 43,
+          "end_line": 48,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_only_ptrs_unless_asked",
+          "line": 50,
+          "end_line": 56,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_since_and_newest_first",
+          "line": 58,
+          "end_line": 62,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_reads_the_xml_inside_or_alone",
+          "line": 64,
+          "end_line": 71,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_alerts_once",
+          "line": 75,
+          "end_line": 90,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_a_new_doc_id_is_new",
+          "line": 92,
+          "end_line": 96,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_dry_run_keeps_state",
+          "line": 98,
+          "end_line": 103,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_the_reel_alert_bloom_energy_calls",
+          "line": 107,
+          "end_line": 135,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_render_says_public_and_flags_your_stocks",
+          "line": 137,
+          "end_line": 144,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_joint_owner_and_account",
+          "line": 146,
+          "end_line": 151,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_self_owned_partial_sales_and_crowded_columns",
+          "line": 153,
+          "end_line": 166,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_page_breaks_exercises_and_exchanges",
+          "line": 168,
+          "end_line": 179,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_late_filings_are_flagged",
+          "line": 181,
+          "end_line": 183,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_parse_cli",
+          "line": 185,
+          "end_line": 191,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_dates",
+          "line": 193,
+          "end_line": 196,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_finds_her_four_2026_ptrs",
+        "test_member_names_in_any_order",
+        "test_only_ptrs_unless_asked",
+        "test_since_and_newest_first",
+        "test_reads_the_xml_inside_or_alone",
+        "test_alerts_once",
+        "test_a_new_doc_id_is_new",
+        "test_dry_run_keeps_state",
+        "test_the_reel_alert_bloom_energy_calls",
+        "test_render_says_public_and_flags_your_stocks",
+        "test_joint_owner_and_account",
+        "test_self_owned_partial_sales_and_crowded_columns",
+        "test_page_breaks_exercises_and_exchanges",
+        "test_late_filings_are_flagged",
+        "test_parse_cli",
+        "test_dates"
+      ],
+      "effects": [
+        {
+          "line": 17,
+          "call": "open"
+        },
+        {
+          "line": 85,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_rebalance.py",
+      "bytes": 6215,
+      "sha256": "8cabcea4c62c105b0eb1675f155eee4f71a583352837b98e1cf0fa7d2ed8c951",
+      "lines": 144,
+      "urls": [],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "read",
+          "line": 16,
+          "end_line": 18,
+          "doc": null,
+          "arguments": "name"
+        },
+        {
+          "name": "setup",
+          "line": 21,
+          "end_line": 28,
+          "doc": null,
+          "arguments": "cash_add=0, prices=None, **cfg_over"
+        },
+        {
+          "name": "orders",
+          "line": 31,
+          "end_line": 32,
+          "doc": null,
+          "arguments": "res"
+        },
+        {
+          "name": "test_on_the_day_it_was_bought_nothing_trades",
+          "line": 36,
+          "end_line": 42,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_new_cash_buys_only_what_left_the_band",
+          "line": 44,
+          "end_line": 49,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_bigger_deposit_buys_everything_and_keeps_the_buffer",
+          "line": 51,
+          "end_line": 57,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_sells_come_before_buys",
+          "line": 61,
+          "end_line": 69,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_band",
+          "line": 71,
+          "end_line": 75,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_untracked_holdings_are_left_alone_unless_asked",
+          "line": 77,
+          "end_line": 86,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_missing_price_is_an_error",
+          "line": 88,
+          "end_line": 92,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_whole_shares",
+          "line": 94,
+          "end_line": 98,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_max_order_and_scaling",
+          "line": 100,
+          "end_line": 110,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_write_and_exit_codes",
+          "line": 114,
+          "end_line": 140,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_on_the_day_it_was_bought_nothing_trades",
+        "test_new_cash_buys_only_what_left_the_band",
+        "test_bigger_deposit_buys_everything_and_keeps_the_buffer",
+        "test_sells_come_before_buys",
+        "test_band",
+        "test_untracked_holdings_are_left_alone_unless_asked",
+        "test_missing_price_is_an_error",
+        "test_whole_shares",
+        "test_max_order_and_scaling",
+        "test_write_and_exit_codes"
+      ],
+      "effects": [
+        {
+          "line": 17,
+          "call": "open"
+        },
+        {
+          "line": 47,
+          "call": "orders"
+        },
+        {
+          "line": 86,
+          "call": "orders"
+        },
+        {
+          "line": 119,
+          "call": "open"
+        },
+        {
+          "line": 129,
+          "call": "open"
+        },
+        {
+          "line": 54,
+          "call": "orders"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_repo.py",
+      "bytes": 4435,
+      "sha256": "8efe9614908139b5ec8ddd51e615e9ffd8536f0ec871e22286a4b15786089ace",
+      "lines": 98,
+      "urls": [
+        "https://github.com/Jakeschincariol/trader-skill"
+      ],
+      "imports": [
+        "_load",
+        "json",
+        "os",
+        "re",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "frontmatter",
+          "line": 18,
+          "end_line": 22,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "every_text_file",
+          "line": 25,
+          "end_line": 30,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "test_eleven_skill_folders_at_the_root",
+          "line": 34,
+          "end_line": 37,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_root_matches_the_reel",
+          "line": 39,
+          "end_line": 41,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_frontmatter_name_and_description",
+          "line": 43,
+          "end_line": 49,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_order_path_skills_carry_the_safety_rule",
+          "line": 51,
+          "end_line": 56,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_plugin_manifest_points_at_the_root_skills",
+          "line": 58,
+          "end_line": 67,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_readme_carries_the_reel_copy",
+          "line": 69,
+          "end_line": 80,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_no_em_dashes_and_no_personal_email",
+          "line": 82,
+          "end_line": 88,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_paper_trading_is_the_default",
+          "line": 90,
+          "end_line": 94,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_eleven_skill_folders_at_the_root",
+        "test_root_matches_the_reel",
+        "test_frontmatter_name_and_description",
+        "test_order_path_skills_carry_the_safety_rule",
+        "test_plugin_manifest_points_at_the_root_skills",
+        "test_readme_carries_the_reel_copy",
+        "test_no_em_dashes_and_no_personal_email",
+        "test_paper_trading_is_the_default"
+      ],
+      "effects": [
+        {
+          "line": 19,
+          "call": "open"
+        },
+        {
+          "line": 59,
+          "call": "open"
+        },
+        {
+          "line": 64,
+          "call": "open"
+        },
+        {
+          "line": 70,
+          "call": "open"
+        },
+        {
+          "line": 91,
+          "call": "open"
+        },
+        {
+          "line": 84,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_risk.py",
+      "bytes": 9373,
+      "sha256": "dddcdf89039dbb9d1245495d66a996908307602c86b59eb4587135d10ae3b4a3",
+      "lines": 197,
+      "urls": [],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "cfg",
+          "line": 19,
+          "end_line": 23,
+          "doc": null,
+          "arguments": "**over"
+        },
+        {
+          "name": "reel_orders",
+          "line": 26,
+          "end_line": 28,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "buy",
+          "line": 31,
+          "end_line": 32,
+          "doc": null,
+          "arguments": "sym, usd"
+        },
+        {
+          "name": "verdicts",
+          "line": 35,
+          "end_line": 36,
+          "doc": null,
+          "arguments": "res"
+        },
+        {
+          "name": "reasons",
+          "line": 39,
+          "end_line": 40,
+          "doc": null,
+          "arguments": "res, i"
+        },
+        {
+          "name": "test_the_five_buys_pass_on_a_fresh_5000_paper_account",
+          "line": 44,
+          "end_line": 50,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_a_sixth_buy_is_blocked_three_ways",
+          "line": 52,
+          "end_line": 58,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_fingerprint_is_shared_with_the_broker",
+          "line": 60,
+          "end_line": 64,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "one",
+          "line": 68,
+          "end_line": 70,
+          "doc": null,
+          "arguments": "self, order, **over"
+        },
+        {
+          "name": "test_max_and_min_order",
+          "line": 72,
+          "end_line": 74,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_blocked_list",
+          "line": 76,
+          "end_line": 79,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_options_off_unless_allowed",
+          "line": 81,
+          "end_line": 89,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_crypto_and_junk_symbols",
+          "line": 91,
+          "end_line": 93,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_format_rules",
+          "line": 95,
+          "end_line": 103,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_numbers_should_be_strings",
+          "line": 105,
+          "end_line": 108,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_share_orders_need_a_price",
+          "line": 110,
+          "end_line": 116,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_margin",
+          "line": 118,
+          "end_line": 121,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_short_sales_are_blocked",
+          "line": 128,
+          "end_line": 134,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_a_sell_frees_cash_for_a_later_buy",
+          "line": 136,
+          "end_line": 142,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_daily_limit_and_already_placed_today",
+          "line": 144,
+          "end_line": 155,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_live_account_warns",
+          "line": 157,
+          "end_line": 159,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_writes_verdicts_and_exit_codes",
+          "line": 163,
+          "end_line": 187,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_missing_orders_file",
+          "line": 189,
+          "end_line": 193,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_the_five_buys_pass_on_a_fresh_5000_paper_account",
+        "test_a_sixth_buy_is_blocked_three_ways",
+        "test_fingerprint_is_shared_with_the_broker",
+        "test_max_and_min_order",
+        "test_blocked_list",
+        "test_options_off_unless_allowed",
+        "test_crypto_and_junk_symbols",
+        "test_format_rules",
+        "test_numbers_should_be_strings",
+        "test_share_orders_need_a_price",
+        "test_margin",
+        "test_short_sales_are_blocked",
+        "test_a_sell_frees_cash_for_a_later_buy",
+        "test_daily_limit_and_already_placed_today",
+        "test_live_account_warns",
+        "test_writes_verdicts_and_exit_codes",
+        "test_missing_orders_file"
+      ],
+      "effects": [
+        {
+          "line": 20,
+          "call": "open"
+        },
+        {
+          "line": 27,
+          "call": "open"
+        },
+        {
+          "line": 45,
+          "call": "reel_orders"
+        },
+        {
+          "line": 61,
+          "call": "reel_orders"
+        },
+        {
+          "line": 53,
+          "call": "reel_orders"
+        },
+        {
+          "line": 174,
+          "call": "open"
+        },
+        {
+          "line": 181,
+          "call": "open"
+        },
+        {
+          "line": 182,
+          "call": "reel_orders"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_screener.py",
+      "bytes": 5851,
+      "sha256": "a5b8641e9084e011d90ea980a51378128830dffe8f4c7aac2177736ba99049e3",
+      "lines": 133,
+      "urls": [],
+      "imports": [
+        "_load",
+        "contextlib",
+        "io",
+        "json",
+        "os",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "run",
+          "line": 17,
+          "end_line": 21,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "companies",
+          "line": 24,
+          "end_line": 28,
+          "doc": null,
+          "arguments": "prices=True"
+        },
+        {
+          "name": "test_pe_and_earnings_yield",
+          "line": 32,
+          "end_line": 37,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_no_pe_for_losses",
+          "line": 39,
+          "end_line": 47,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "setUp",
+          "line": 51,
+          "end_line": 53,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_the_example_screen",
+          "line": 55,
+          "end_line": 62,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_missing_can_be_skipped",
+          "line": 64,
+          "end_line": 69,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_every_op",
+          "line": 71,
+          "end_line": 83,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_bad_rules_are_refused",
+          "line": 85,
+          "end_line": 92,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_text_report_and_shortlist",
+          "line": 96,
+          "end_line": 108,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_csv_with_units_and_nothing_passing",
+          "line": 110,
+          "end_line": 118,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_bad_input_exit_2",
+          "line": 120,
+          "end_line": 123,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_top_limits_the_shortlist",
+          "line": 125,
+          "end_line": 129,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_pe_and_earnings_yield",
+        "test_no_pe_for_losses",
+        "test_the_example_screen",
+        "test_missing_can_be_skipped",
+        "test_every_op",
+        "test_bad_rules_are_refused",
+        "test_text_report_and_shortlist",
+        "test_csv_with_units_and_nothing_passing",
+        "test_bad_input_exit_2",
+        "test_top_limits_the_shortlist"
+      ],
+      "effects": [
+        {
+          "line": 43,
+          "call": "open"
+        },
+        {
+          "line": 101,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_tax.py",
+      "bytes": 8979,
+      "sha256": "885d9bfd8a38a116b5cd13c881b160c8098356aafab581e025d38e3ed04924d3",
+      "lines": 196,
+      "urls": [],
+      "imports": [
+        "_load",
+        "contextlib",
+        "datetime",
+        "io",
+        "json",
+        "os",
+        "shutil",
+        "tempfile",
+        "unittest"
+      ],
+      "functions": [
+        {
+          "name": "pf",
+          "line": 20,
+          "end_line": 22,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "prices",
+          "line": 25,
+          "end_line": 27,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "run",
+          "line": 30,
+          "end_line": 34,
+          "doc": null,
+          "arguments": "argv"
+        },
+        {
+          "name": "test_more_than_one_year_is_long",
+          "line": 38,
+          "end_line": 40,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_leap_day",
+          "line": 42,
+          "end_line": 44,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_unrealized_by_lot",
+          "line": 48,
+          "end_line": 59,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_fifo_hifo_specific",
+          "line": 61,
+          "end_line": 76,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_example_portfolio_is_the_reel_buy",
+          "line": 78,
+          "end_line": 85,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_shares_without_lots_are_refused",
+          "line": 87,
+          "end_line": 89,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_harvest_finds_losses_and_skips_wash_sales",
+          "line": 93,
+          "end_line": 109,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_threshold",
+          "line": 111,
+          "end_line": 117,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_a_planned_buy_is_a_wash_sale",
+          "line": 119,
+          "end_line": 123,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_share_classes_are_one_family",
+          "line": 125,
+          "end_line": 132,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_record_sale_and_rebuy_window",
+          "line": 134,
+          "end_line": 146,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "setUp",
+          "line": 150,
+          "end_line": 153,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "tearDown",
+          "line": 155,
+          "end_line": 156,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "common",
+          "line": 158,
+          "end_line": 160,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_report",
+          "line": 162,
+          "end_line": 166,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_harvest_write_then_wash",
+          "line": 168,
+          "end_line": 187,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "test_missing_portfolio",
+          "line": 189,
+          "end_line": 192,
+          "doc": null,
+          "arguments": "self"
+        }
+      ],
+      "test_methods": [
+        "test_more_than_one_year_is_long",
+        "test_leap_day",
+        "test_unrealized_by_lot",
+        "test_fifo_hifo_specific",
+        "test_example_portfolio_is_the_reel_buy",
+        "test_shares_without_lots_are_refused",
+        "test_harvest_finds_losses_and_skips_wash_sales",
+        "test_threshold",
+        "test_a_planned_buy_is_a_wash_sale",
+        "test_share_classes_are_one_family",
+        "test_record_sale_and_rebuy_window",
+        "test_report",
+        "test_harvest_write_then_wash",
+        "test_missing_portfolio"
+      ],
+      "effects": [
+        {
+          "line": 21,
+          "call": "open"
+        },
+        {
+          "line": 26,
+          "call": "open"
+        },
+        {
+          "line": 103,
+          "call": "lots.harvest_orders"
+        },
+        {
+          "line": 107,
+          "call": "lots.harvest_orders"
+        },
+        {
+          "line": 80,
+          "call": "open"
+        },
+        {
+          "line": 123,
+          "call": "lots.harvest_orders"
+        },
+        {
+          "line": 173,
+          "call": "open"
+        },
+        {
+          "line": 117,
+          "call": "lots.harvest_orders"
+        }
+      ]
+    },
+    {
+      "path": "trader-alerts/SKILL.md",
+      "bytes": 5924,
+      "sha256": "6f7ecf49dbfc36f1723f706ffb7094aebe65e39766bc82673751b4e63ff7dc2a",
+      "lines": 113,
+      "urls": [],
+      "headings": [
+        "# trader-alerts\r",
+        "## What it reads and writes\r",
+        "## Rule types\r",
+        "## Quotes\r",
+        "## The NYSE clock\r",
+        "## Steps\r",
+        "## Example: the reel's portfolio\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-alerts/alerts.example.json",
+      "bytes": 417,
+      "sha256": "0e553ea413f4922125bd879ef445fc8e4eb21ef7d709382ca37cae96bacc9fad",
+      "lines": 9,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-alerts/alerts.py",
+      "bytes": 24786,
+      "sha256": "1738c76e643a1f8f7d4903fdbf2e5d8c9425835e26eeab6f672c84c8f6ef9650",
+      "lines": 596,
+      "urls": [
+        "https://github.com/Jakeschincariol/trader-skill",
+        "https://query1.finance.yahoo.com/v8/finance/chart/%s?range=1d&interval=1d",
+        "https://query1.finance.yahoo.com/v8/finance/chart/AAPL",
+        "https://stooq.com/q/l/?s=%s.us&f=sd2t2ohlcv&h&e=csv",
+        "https://stooq.com/q/l/?s=aapl.us&f=sd2t2ohlcv&h&e=csv",
+        "https://www.nyse.com/markets/hours-calendars"
+      ],
+      "imports": [
+        "argparse",
+        "csv",
+        "datetime",
+        "io",
+        "json",
+        "os",
+        "sys",
+        "time",
+        "urllib"
+      ],
+      "functions": [
+        {
+          "name": "_nth_sunday",
+          "line": 91,
+          "end_line": 94,
+          "doc": null,
+          "arguments": "year, month, n"
+        },
+        {
+          "name": "eastern_offset",
+          "line": 97,
+          "end_line": 105,
+          "doc": "Hours from UTC for New York: -4 in daylight time, -5 otherwise.\nDST runs from 2:00 a.m. on the second Sunday of March to 2:00 a.m. on the\nfirst Sunday of November (US rule since 2007).",
+          "arguments": "utc"
+        },
+        {
+          "name": "to_eastern",
+          "line": 108,
+          "end_line": 109,
+          "doc": null,
+          "arguments": "utc"
+        },
+        {
+          "name": "eastern_to_utc",
+          "line": 112,
+          "end_line": 117,
+          "doc": null,
+          "arguments": "local"
+        },
+        {
+          "name": "parse_now",
+          "line": 120,
+          "end_line": 131,
+          "doc": "ISO time -> naive UTC. A time without an offset is taken as New York time.",
+          "arguments": "text"
+        },
+        {
+          "name": "trading_day",
+          "line": 134,
+          "end_line": 141,
+          "doc": "(is_trading_day, reason). Weekends and the NYSE holiday list.",
+          "arguments": "d"
+        },
+        {
+          "name": "session",
+          "line": 144,
+          "end_line": 149,
+          "doc": "(open_time, close_time) in New York time, or None if closed all day.",
+          "arguments": "d"
+        },
+        {
+          "name": "market_status",
+          "line": 152,
+          "end_line": 177,
+          "doc": null,
+          "arguments": "now_utc"
+        },
+        {
+          "name": "stooq_url",
+          "line": 182,
+          "end_line": 183,
+          "doc": null,
+          "arguments": "sym"
+        },
+        {
+          "name": "yahoo_url",
+          "line": 186,
+          "end_line": 188,
+          "doc": null,
+          "arguments": "sym"
+        },
+        {
+          "name": "parse_stooq",
+          "line": 191,
+          "end_line": 209,
+          "doc": "Symbol,Date,Time,Open,High,Low,Close,Volume -> quote. N/D means no data.",
+          "arguments": "text, sym"
+        },
+        {
+          "name": "parse_yahoo",
+          "line": 212,
+          "end_line": 233,
+          "doc": null,
+          "arguments": "text, sym"
+        },
+        {
+          "name": "fetch",
+          "line": 236,
+          "end_line": 244,
+          "doc": null,
+          "arguments": "url, timeout=20"
+        },
+        {
+          "name": "get_quotes",
+          "line": 247,
+          "end_line": 267,
+          "doc": "{SYM: quote} and [errors]. One request per ticker, with a pause between.",
+          "arguments": "symbols, source='yahoo', offline=None, pause=PAUSE"
+        },
+        {
+          "name": "write_prices",
+          "line": 270,
+          "end_line": 287,
+          "doc": null,
+          "arguments": "path, quotes, now_utc, source"
+        },
+        {
+          "name": "_write",
+          "line": 290,
+          "end_line": 296,
+          "doc": null,
+          "arguments": "path, doc"
+        },
+        {
+          "name": "_read",
+          "line": 299,
+          "end_line": 306,
+          "doc": null,
+          "arguments": "path, default"
+        },
+        {
+          "name": "validate",
+          "line": 314,
+          "end_line": 323,
+          "doc": null,
+          "arguments": "rule"
+        },
+        {
+          "name": "evaluate",
+          "line": 326,
+          "end_line": 371,
+          "doc": "Pure function. Returns (rings, new_state). Each ring: {id, symbol, message}.",
+          "arguments": "rules, quotes, status, state, now_utc"
+        },
+        {
+          "name": "_n",
+          "line": 374,
+          "end_line": 376,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "holdings",
+          "line": 381,
+          "end_line": 389,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "_dedupe",
+          "line": 392,
+          "end_line": 397,
+          "doc": null,
+          "arguments": "items"
+        },
+        {
+          "name": "cmd_clock",
+          "line": 400,
+          "end_line": 414,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_quote",
+          "line": 417,
+          "end_line": 440,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_check",
+          "line": 443,
+          "end_line": 473,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_add",
+          "line": 476,
+          "end_line": 509,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_list",
+          "line": 512,
+          "end_line": 523,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_reset",
+          "line": 526,
+          "end_line": 534,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "main",
+          "line": 537,
+          "end_line": 592,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "f",
+          "line": 201,
+          "end_line": 206,
+          "doc": null,
+          "arguments": "k"
+        },
+        {
+          "name": "net",
+          "line": 541,
+          "end_line": 545,
+          "doc": null,
+          "arguments": "p"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 237,
+          "call": "urllib.request.Request"
+        },
+        {
+          "line": 286,
+          "call": "_write"
+        },
+        {
+          "line": 507,
+          "call": "_write"
+        },
+        {
+          "line": 532,
+          "call": "_write"
+        },
+        {
+          "line": 294,
+          "call": "open"
+        },
+        {
+          "line": 296,
+          "call": "fh.write"
+        },
+        {
+          "line": 424,
+          "call": "write_prices"
+        },
+        {
+          "line": 455,
+          "call": "_write"
+        },
+        {
+          "line": 239,
+          "call": "urllib.request.urlopen"
+        },
+        {
+          "line": 303,
+          "call": "open"
+        },
+        {
+          "line": 457,
+          "call": "write_prices"
+        },
+        {
+          "line": 274,
+          "call": "open"
+        },
+        {
+          "line": 258,
+          "call": "open"
+        },
+        {
+          "line": 263,
+          "call": "stooq_url"
+        },
+        {
+          "line": 263,
+          "call": "yahoo_url"
+        },
+        {
+          "line": 242,
+          "call": "url.split"
+        },
+        {
+          "line": 244,
+          "call": "url.split"
+        }
+      ]
+    },
+    {
+      "path": "trader-analyst/SKILL.md",
+      "bytes": 4817,
+      "sha256": "2d8c69bc58124339ecc06db26c6c289e828273944696d23db855f14d5d0b2c5a",
+      "lines": 104,
+      "urls": [
+        "https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json`"
+      ],
+      "headings": [
+        "# trader-analyst\r",
+        "## What it reads and writes\r",
+        "## The rules\r",
+        "## Steps\r",
+        "## Example: the reel's top holding\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-analyst/facts.py",
+      "bytes": 24540,
+      "sha256": "e553601d91cb9184f51f70674be186ed5369632eabbf05faee5def6a50114674",
+      "lines": 548,
+      "urls": [
+        "https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json",
+        "https://data.sec.gov/api/xbrl/companyfacts/CIK%s.json",
+        "https://data.sec.gov/submissions/CIK##########.json",
+        "https://data.sec.gov/submissions/CIK%s.json",
+        "https://www.sec.gov/Archives/edgar/data/",
+        "https://www.sec.gov/Archives/edgar/data/%d/%s/",
+        "https://www.sec.gov/files/company_tickers.json"
+      ],
+      "imports": [
+        "argparse",
+        "datetime",
+        "gzip",
+        "json",
+        "os",
+        "re",
+        "sys",
+        "time",
+        "urllib"
+      ],
+      "functions": [
+        {
+          "name": "user_agent",
+          "line": 79,
+          "end_line": 89,
+          "doc": null,
+          "arguments": "cli=None, config='trader/config.json'"
+        },
+        {
+          "name": "_date",
+          "line": 127,
+          "end_line": 128,
+          "doc": null,
+          "arguments": "s"
+        },
+        {
+          "name": "facts_for",
+          "line": 131,
+          "end_line": 138,
+          "doc": "Raw facts for one us-gaap concept (USD, or USD/shares for EPS).",
+          "arguments": "companyfacts, concept, unit_hint=None"
+        },
+        {
+          "name": "periods",
+          "line": 141,
+          "end_line": 163,
+          "doc": "{(start, end): fact} for duration facts from 10-Q/10-K.\n\nThe value comes from the latest filing (restatements win). The fiscal\nlabel (fy, fp) comes from the first filing that reported the period: a\nlater 10-Q that repeats it as a comparison carries its own fy and fp.",
+          "arguments": "facts"
+        },
+        {
+          "name": "quarterly",
+          "line": 166,
+          "end_line": 192,
+          "doc": "{end: {\"value\", \"start\", \"end\", \"derived\", \"fy\", \"fp\", \"form\"}} three-month values.",
+          "arguments": "facts, derive_q4=True"
+        },
+        {
+          "name": "series",
+          "line": 195,
+          "end_line": 210,
+          "doc": "Quarterly series for a metric, trying its concepts in order and filling gaps.",
+          "arguments": "companyfacts, key, derive_q4=True"
+        },
+        {
+          "name": "_yoy_match",
+          "line": 213,
+          "end_line": 220,
+          "doc": null,
+          "arguments": "series_, end, days=365, slack=10"
+        },
+        {
+          "name": "pct",
+          "line": 223,
+          "end_line": 226,
+          "doc": null,
+          "arguments": "a, b"
+        },
+        {
+          "name": "margin",
+          "line": 229,
+          "end_line": 232,
+          "doc": null,
+          "arguments": "part, whole"
+        },
+        {
+          "name": "analyse",
+          "line": 235,
+          "end_line": 278,
+          "doc": "Every number in the report, as a dict.",
+          "arguments": "companyfacts, quarters=6, name=None"
+        },
+        {
+          "name": "stale_note",
+          "line": 281,
+          "end_line": 291,
+          "doc": "A note when SEC's facts lag a report that is already filed.",
+          "arguments": "result, filings"
+        },
+        {
+          "name": "changes",
+          "line": 294,
+          "end_line": 333,
+          "doc": "Plain sentences: what changed in the latest quarter.",
+          "arguments": "result"
+        },
+        {
+          "name": "exhibit_name",
+          "line": 342,
+          "end_line": 350,
+          "doc": "The press release among a filing's files (EX-99.1 by its usual names).",
+          "arguments": "names, primary=None"
+        },
+        {
+          "name": "latest_filings",
+          "line": 353,
+          "end_line": 381,
+          "doc": "Newest 10-Q/10-K and newest earnings 8-K (item 2.02) with its EX-99 exhibit.",
+          "arguments": "submissions, cik, fetcher=None"
+        },
+        {
+          "name": "_m",
+          "line": 386,
+          "end_line": 389,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "_p",
+          "line": 392,
+          "end_line": 393,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "_pm",
+          "line": 396,
+          "end_line": 397,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "render",
+          "line": 400,
+          "end_line": 440,
+          "doc": null,
+          "arguments": "ticker, result, filings"
+        },
+        {
+          "name": "metrics_row",
+          "line": 443,
+          "end_line": 453,
+          "doc": null,
+          "arguments": "ticker, result"
+        },
+        {
+          "name": "clean_title",
+          "line": 456,
+          "end_line": 457,
+          "doc": null,
+          "arguments": "title"
+        },
+        {
+          "name": "ticker_ciks",
+          "line": 460,
+          "end_line": 467,
+          "doc": "ticker -> (10-digit CIK, company name) from company_tickers.json.",
+          "arguments": "fetcher"
+        },
+        {
+          "name": "main",
+          "line": 470,
+          "end_line": 544,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "__init__",
+          "line": 93,
+          "end_line": 94,
+          "doc": null,
+          "arguments": "self, ua=None, offline=None, pause=0.15"
+        },
+        {
+          "name": "json",
+          "line": 96,
+          "end_line": 122,
+          "doc": null,
+          "arguments": "self, url, name"
+        },
+        {
+          "name": "money",
+          "line": 303,
+          "end_line": 304,
+          "doc": null,
+          "arguments": "v"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 109,
+          "call": "urllib.request.Request"
+        },
+        {
+          "line": 523,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 524,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 537,
+          "call": "open"
+        },
+        {
+          "line": 541,
+          "call": "fh.write"
+        },
+        {
+          "line": 83,
+          "call": "open"
+        },
+        {
+          "line": 101,
+          "call": "open"
+        },
+        {
+          "line": 112,
+          "call": "urllib.request.urlopen"
+        },
+        {
+          "line": 530,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "trader-analyst/metrics.example.json",
+      "bytes": 2402,
+      "sha256": "fe9070c8e12bcff0e4badaa728daedc869a0042ee55cc031c9b839254c2165a5",
+      "lines": 85,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-broker/SKILL.md",
+      "bytes": 8662,
+      "sha256": "8d703c6eb8b7bc24b8169a200e5167239f3cd4dfecd667dcb26f78578b046ba4",
+      "lines": 163,
+      "urls": [
+        "https://api.ibkr.com/v1/api/mcp`"
+      ],
+      "headings": [
+        "# trader-broker\r",
+        "## Setup A: Alpaca (official MCP server, Claude Desktop)\r",
+        "## Setup B: Interactive Brokers (connector in Claude's directory)\r",
+        "## Steps, for each order\r",
+        "## Example: the reel\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-broker/claude_desktop_config.example.json",
+      "bytes": 392,
+      "sha256": "cffbae3fc51831aae136b7d8a8378fa6299d3b7ccaafaa6b0a7fec59e22d4680",
+      "lines": 14,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-broker/ticket.py",
+      "bytes": 22042,
+      "sha256": "4691b1b7864a19a996848c638e5e1fba3bff799f7e21efcb8277d192ea0e1674",
+      "lines": 498,
+      "urls": [],
+      "imports": [
+        "argparse",
+        "datetime",
+        "hashlib",
+        "json",
+        "os",
+        "re",
+        "sys"
+      ],
+      "functions": [
+        {
+          "name": "read_json",
+          "line": 58,
+          "end_line": 67,
+          "doc": null,
+          "arguments": "path, what, required=True"
+        },
+        {
+          "name": "write_json",
+          "line": 70,
+          "end_line": 78,
+          "doc": null,
+          "arguments": "path, data"
+        },
+        {
+          "name": "now_iso",
+          "line": 81,
+          "end_line": 82,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "rec_day",
+          "line": 85,
+          "end_line": 87,
+          "doc": "The trading day a decision belongs to: its \"date\" (the --today it was made under), else the day of \"at\".",
+          "arguments": "rec"
+        },
+        {
+          "name": "fingerprint",
+          "line": 92,
+          "end_line": 96,
+          "doc": "Same function as trader-risk/check.py: identifies the exact order.",
+          "arguments": "order"
+        },
+        {
+          "name": "_str_num",
+          "line": 99,
+          "end_line": 105,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "tool_input",
+          "line": 108,
+          "end_line": 115,
+          "doc": "The exact arguments for place_stock_order: Alpaca's parameter names,\nnumbers as strings (its signature types qty and notional as str).",
+          "arguments": "order"
+        },
+        {
+          "name": "_money",
+          "line": 118,
+          "end_line": 121,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "plain",
+          "line": 124,
+          "end_line": 143,
+          "doc": "BUY $1,250 of AAPL, market order, good for today",
+          "arguments": "order"
+        },
+        {
+          "name": "amount_numbers",
+          "line": 146,
+          "end_line": 154,
+          "doc": null,
+          "arguments": "order"
+        },
+        {
+          "name": "parse_yes",
+          "line": 157,
+          "end_line": 183,
+          "doc": "Is this reply an explicit yes for THIS one order? Returns (ok, why).",
+          "arguments": "reply, order, batch_symbols=()"
+        },
+        {
+          "name": "load_state",
+          "line": 188,
+          "end_line": 189,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "latest",
+          "line": 192,
+          "end_line": 198,
+          "doc": "The latest decision recorded today for this fingerprint, or None.",
+          "arguments": "state, fp, today"
+        },
+        {
+          "name": "risk_verdict",
+          "line": 201,
+          "end_line": 209,
+          "doc": null,
+          "arguments": "risk, fp, today"
+        },
+        {
+          "name": "status_of",
+          "line": 212,
+          "end_line": 226,
+          "doc": "(ready, label, risk_result)",
+          "arguments": "order, risk, state, today"
+        },
+        {
+          "name": "render",
+          "line": 231,
+          "end_line": 254,
+          "doc": null,
+          "arguments": "order, idx, total, cfg, risk, state, today"
+        },
+        {
+          "name": "ticket_json",
+          "line": 257,
+          "end_line": 262,
+          "doc": null,
+          "arguments": "order, idx, cfg, risk, state, today"
+        },
+        {
+          "name": "apply_fill",
+          "line": 267,
+          "end_line": 309,
+          "doc": "Record a filled order in trader/portfolio.json (a lot for a buy, FIFO for a sell).",
+          "arguments": "portfolio_path, cfg, symbol, side, qty, price, date"
+        },
+        {
+          "name": "_load",
+          "line": 314,
+          "end_line": 323,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "_pick",
+          "line": 326,
+          "end_line": 331,
+          "doc": null,
+          "arguments": "orders, index"
+        },
+        {
+          "name": "cmd_show",
+          "line": 334,
+          "end_line": 349,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_approve",
+          "line": 352,
+          "end_line": 376,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_decline",
+          "line": 379,
+          "end_line": 388,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_result",
+          "line": 391,
+          "end_line": 413,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_fill",
+          "line": 416,
+          "end_line": 422,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_log",
+          "line": 425,
+          "end_line": 438,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "main",
+          "line": 441,
+          "end_line": 494,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "common",
+          "line": 445,
+          "end_line": 450,
+          "doc": null,
+          "arguments": "p"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 126,
+          "call": "str(order.get('side', '')).upper"
+        },
+        {
+          "line": 127,
+          "call": "order.get"
+        },
+        {
+          "line": 171,
+          "call": "str(order.get('symbol', '')).upper"
+        },
+        {
+          "line": 238,
+          "call": "order.get"
+        },
+        {
+          "line": 308,
+          "call": "write_json"
+        },
+        {
+          "line": 366,
+          "call": "state.setdefault('orders', []).append"
+        },
+        {
+          "line": 367,
+          "call": "write_json"
+        },
+        {
+          "line": 385,
+          "call": "state.setdefault('orders', []).append"
+        },
+        {
+          "line": 386,
+          "call": "write_json"
+        },
+        {
+          "line": 404,
+          "call": "state['orders'].append"
+        },
+        {
+          "line": 405,
+          "call": "write_json"
+        },
+        {
+          "line": 75,
+          "call": "open"
+        },
+        {
+          "line": 77,
+          "call": "fh.write"
+        },
+        {
+          "line": 128,
+          "call": "order.get"
+        },
+        {
+          "line": 133,
+          "call": "order.get"
+        },
+        {
+          "line": 142,
+          "call": "order.get"
+        },
+        {
+          "line": 248,
+          "call": "json.dumps(tool_input(order), indent=2).splitlines"
+        },
+        {
+          "line": 262,
+          "call": "order.get"
+        },
+        {
+          "line": 363,
+          "call": "str(order.get('symbol', '')).upper"
+        },
+        {
+          "line": 363,
+          "call": "order.get"
+        },
+        {
+          "line": 383,
+          "call": "str(order.get('symbol', '')).upper"
+        },
+        {
+          "line": 383,
+          "call": "order.get"
+        },
+        {
+          "line": 64,
+          "call": "open"
+        },
+        {
+          "line": 131,
+          "call": "order.get"
+        },
+        {
+          "line": 142,
+          "call": "order.get"
+        },
+        {
+          "line": 149,
+          "call": "order.get"
+        },
+        {
+          "line": 126,
+          "call": "order.get"
+        },
+        {
+          "line": 135,
+          "call": "order.get"
+        },
+        {
+          "line": 171,
+          "call": "order.get"
+        },
+        {
+          "line": 137,
+          "call": "order.get"
+        },
+        {
+          "line": 363,
+          "call": "order.get"
+        },
+        {
+          "line": 383,
+          "call": "order.get"
+        },
+        {
+          "line": 139,
+          "call": "order.get"
+        },
+        {
+          "line": 139,
+          "call": "order.get"
+        }
+      ]
+    },
+    {
+      "path": "trader-budget/SKILL.md",
+      "bytes": 5728,
+      "sha256": "67410c3b99046bcd1c5098adba6eaef00202579014d8280b0b5445868d1e29e5",
+      "lines": 119,
+      "urls": [],
+      "headings": [
+        "# trader-budget\r",
+        "## What it reads and writes\r",
+        "## Step 1: set the rules once\r",
+        "## Step 2: size it\r",
+        "## Step 3: show the user\r",
+        "## Example: the reel\r",
+        "## Rules\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-budget/config.example.json",
+      "bytes": 365,
+      "sha256": "25382f8fceb1c194d0b1e6089f95cb1a32acf0bca01a2c04df4012bd266a8b41",
+      "lines": 16,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-budget/size.py",
+      "bytes": 20240,
+      "sha256": "ea6d821a5dbaf4fead71e1f7e28a27095c6eee1f5a42657585156304ddc7b3c6",
+      "lines": 483,
+      "urls": [],
+      "imports": [
+        "argparse",
+        "datetime",
+        "json",
+        "math",
+        "os",
+        "sys"
+      ],
+      "functions": [
+        {
+          "name": "read_json",
+          "line": 65,
+          "end_line": 72,
+          "doc": null,
+          "arguments": "path, what"
+        },
+        {
+          "name": "load_config",
+          "line": 75,
+          "end_line": 79,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "parse_weights",
+          "line": 82,
+          "end_line": 110,
+          "doc": "Accept targets.json, a {ticker: weight} dict or a list of rows.\n\nReturns [{\"ticker\", \"name\", \"weight\"}] with weight as a float.",
+          "arguments": "data"
+        },
+        {
+          "name": "weights_from_arg",
+          "line": 113,
+          "end_line": 124,
+          "doc": "AAPL=22.04,AXP=17.14 -> {ticker: weight}",
+          "arguments": "text"
+        },
+        {
+          "name": "load_prices",
+          "line": 127,
+          "end_line": 138,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "normalise",
+          "line": 143,
+          "end_line": 166,
+          "doc": "Drop blocked and non-positive weights, keep the top N, renormalise to 100.",
+          "arguments": "rows, blocked=(), top=None"
+        },
+        {
+          "name": "allocate",
+          "line": 169,
+          "end_line": 194,
+          "doc": "Exact (unrounded) dollars per ticker with the cap enforced.\n\nProportional to weight; any stock over the cap is pinned at the cap and\nthe rest of the money is shared over the others, repeated until no stock\nis over. Returns ({ticker: dollars}, set of capped tickers).",
+          "arguments": "rows, investable, cap"
+        },
+        {
+          "name": "round_to_unit",
+          "line": 197,
+          "end_line": 231,
+          "doc": "Round to whole dollars (unit 1) or cents (unit 0.01) and keep the total.\n\nThe total placed is the exact total rounded DOWN to the unit, so it never\nspends money you do not have. Each slice is rounded to the nearest unit,\nthen the difference (usually one unit) goes to the biggest stock that is\nnot capped, then the next, never pushing anyone over the cap.",
+          "arguments": "exact, capped, order, cap, unit"
+        },
+        {
+          "name": "whole_shares",
+          "line": 234,
+          "end_line": 255,
+          "doc": "Whole shares: floor each slice, then buy one more share at a time for the\nstock furthest below its slice while cash lasts and the cap holds.",
+          "arguments": "dollars, prices, order, cap, money"
+        },
+        {
+          "name": "size",
+          "line": 258,
+          "end_line": 334,
+          "doc": "Pure function: weights + rules -> the full sizing result (a dict).",
+          "arguments": "rows, cfg, budget=None, prices=None, whole=None, cents=False, top=None"
+        },
+        {
+          "name": "_num",
+          "line": 339,
+          "end_line": 344,
+          "doc": "1250 -> \"1250\", 1118.13 -> \"1118.13\" (Alpaca wants these as strings).",
+          "arguments": "x"
+        },
+        {
+          "name": "orders_from",
+          "line": 347,
+          "end_line": 365,
+          "doc": "Proposed buy orders, one per position, in Alpaca place_stock_order shape.",
+          "arguments": "result, source=''"
+        },
+        {
+          "name": "write_orders",
+          "line": 368,
+          "end_line": 384,
+          "doc": null,
+          "arguments": "path, orders, result, cfg, source=''"
+        },
+        {
+          "name": "money",
+          "line": 389,
+          "end_line": 393,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "report",
+          "line": 396,
+          "end_line": 435,
+          "doc": null,
+          "arguments": "result, orders, source=''"
+        },
+        {
+          "name": "main",
+          "line": 438,
+          "end_line": 479,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "units",
+          "line": 204,
+          "end_line": 205,
+          "doc": null,
+          "arguments": "x"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 382,
+          "call": "open"
+        },
+        {
+          "line": 384,
+          "call": "fh.write"
+        },
+        {
+          "line": 467,
+          "call": "orders_from"
+        },
+        {
+          "line": 67,
+          "call": "open"
+        },
+        {
+          "line": 469,
+          "call": "write_orders"
+        }
+      ]
+    },
+    {
+      "path": "trader-budget/targets.example.json",
+      "bytes": 621,
+      "sha256": "975bae28ba360c22c2fc4fe3de9279f41cbe86d080b0feb03f330f90f24e5880",
+      "lines": 11,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-copycat/SKILL.md",
+      "bytes": 7792,
+      "sha256": "591f829f039127d7567bb3c9bbdb5b1e6f61103692357e61b4eaac62001ccf08",
+      "lines": 166,
+      "urls": [
+        "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK="
+      ],
+      "headings": [
+        "# trader-copycat\r",
+        "## What it writes\r",
+        "## The rules\r",
+        "## Step 1: find the investor\r",
+        "## Step 2: read the latest quarter\r",
+        "## Step 3: what changed\r",
+        "## Step 4: write the targets\r",
+        "## Example: the reel\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-copycat/edgar13f.py",
+      "bytes": 44909,
+      "sha256": "129e1156e2775e55ea0d6575b6cf2adc36efcd03e03d6d6814314012a369df5f",
+      "lines": 1032,
+      "urls": [
+        "https://api.openfigi.com/v3/mapping",
+        "https://data.sec.gov/submissions/CIK%s.json",
+        "https://efts.sec.gov/LATEST/search-index?keysTyped=%s",
+        "https://www.sec.gov/Archives/edgar/data/%s/%s/",
+        "https://www.sec.gov/files/company_tickers.json",
+        "https://www.sec.gov/os/accessing-edgar-data"
+      ],
+      "imports": [
+        "argparse",
+        "datetime",
+        "gzip",
+        "json",
+        "os",
+        "re",
+        "sys",
+        "time",
+        "urllib",
+        "xml"
+      ],
+      "functions": [
+        {
+          "name": "user_agent",
+          "line": 86,
+          "end_line": 97,
+          "doc": "The SEC User-Agent from the flag, the environment or the config, or None.",
+          "arguments": "cli=None, config_path='trader/config.json'"
+        },
+        {
+          "name": "cik10",
+          "line": 179,
+          "end_line": 183,
+          "doc": null,
+          "arguments": "value"
+        },
+        {
+          "name": "load_filers",
+          "line": 186,
+          "end_line": 188,
+          "doc": null,
+          "arguments": "path=FILERS"
+        },
+        {
+          "name": "find_bundled",
+          "line": 191,
+          "end_line": 203,
+          "doc": "Bundled filers whose name, person or alias contains every word of query.",
+          "arguments": "query, filers=None"
+        },
+        {
+          "name": "search_sec",
+          "line": 206,
+          "end_line": 213,
+          "doc": "Every EDGAR filer whose name matches (the EDGAR company search box).",
+          "arguments": "fetcher, query"
+        },
+        {
+          "name": "list_filings",
+          "line": 218,
+          "end_line": 233,
+          "doc": "13F filings from a submissions JSON, newest filing first.",
+          "arguments": "submissions, forms=FORMS"
+        },
+        {
+          "name": "pick_filing",
+          "line": 236,
+          "end_line": 255,
+          "doc": "The original 13F-HR for a period (default: the newest), plus any amendments.",
+          "arguments": "filings, period=None, accession=None, before=None"
+        },
+        {
+          "name": "archive_url",
+          "line": 258,
+          "end_line": 259,
+          "doc": null,
+          "arguments": "cik, accession"
+        },
+        {
+          "name": "info_table_name",
+          "line": 262,
+          "end_line": 274,
+          "doc": "The information table XML inside a filing folder (index.json).",
+          "arguments": "index_json"
+        },
+        {
+          "name": "value_multiplier",
+          "line": 277,
+          "end_line": 283,
+          "doc": "1 for dollars (filed on or after 2023-01-03), 1000 for older filings.",
+          "arguments": "filed"
+        },
+        {
+          "name": "_local",
+          "line": 288,
+          "end_line": 289,
+          "doc": null,
+          "arguments": "tag"
+        },
+        {
+          "name": "parse_info_table",
+          "line": 292,
+          "end_line": 325,
+          "doc": "Rows of a 13F information table XML, as dicts. Values in dollars.",
+          "arguments": "data, multiplier=1"
+        },
+        {
+          "name": "parse_cover",
+          "line": 328,
+          "end_line": 341,
+          "doc": "tableValueTotal, tableEntryTotal and the cover facts from primary_doc.xml.",
+          "arguments": "data"
+        },
+        {
+          "name": "is_stock",
+          "line": 344,
+          "end_line": 345,
+          "doc": null,
+          "arguments": "p"
+        },
+        {
+          "name": "aggregate",
+          "line": 348,
+          "end_line": 370,
+          "doc": "One position per CUSIP (and per PUT/CALL), summing the manager split rows.",
+          "arguments": "rows"
+        },
+        {
+          "name": "combine_classes",
+          "line": 373,
+          "end_line": 403,
+          "doc": "Sum the share classes of one issuer (same 6-character CUSIP issuer code).\n\nOnly stock rows are combined. The combined position keeps the ticker and\nname of its biggest class and lists every CUSIP and ticker it holds.",
+          "arguments": "positions, total"
+        },
+        {
+          "name": "norm_name",
+          "line": 426,
+          "end_line": 433,
+          "doc": null,
+          "arguments": "name"
+        },
+        {
+          "name": "name_keys",
+          "line": 436,
+          "end_line": 438,
+          "doc": null,
+          "arguments": "name"
+        },
+        {
+          "name": "norm_ticker",
+          "line": 441,
+          "end_line": 443,
+          "doc": null,
+          "arguments": "t"
+        },
+        {
+          "name": "class_letter",
+          "line": 446,
+          "end_line": 448,
+          "doc": null,
+          "arguments": "title"
+        },
+        {
+          "name": "load_company_tickers",
+          "line": 451,
+          "end_line": 457,
+          "doc": "company_tickers.json -> ordered list of (cik10, ticker, title).",
+          "arguments": "data"
+        },
+        {
+          "name": "load_overrides",
+          "line": 517,
+          "end_line": 527,
+          "doc": null,
+          "arguments": "paths"
+        },
+        {
+          "name": "figi_lookup",
+          "line": 530,
+          "end_line": 544,
+          "doc": "CUSIP -> ticker through OpenFIGI (US composite). Free, no key needed:\n10 CUSIPs a request and 25 requests a minute without a key.",
+          "arguments": "fetcher, cusips, api_key=None, batch=None, pause=2.5"
+        },
+        {
+          "name": "parse_figi",
+          "line": 547,
+          "end_line": 554,
+          "doc": null,
+          "arguments": "cusips, answer"
+        },
+        {
+          "name": "pretty_name",
+          "line": 557,
+          "end_line": 568,
+          "doc": null,
+          "arguments": "issuer, sec_title=None"
+        },
+        {
+          "name": "resolve_tickers",
+          "line": 571,
+          "end_line": 595,
+          "doc": "Give every position a ticker, where it came from and whether to check it.",
+          "arguments": "positions, index=None, overrides=None, figi=None"
+        },
+        {
+          "name": "diff",
+          "line": 600,
+          "end_line": 631,
+          "doc": "Compare two quarters by CUSIP: NEW, SOLD OUT, ADDED, TRIMMED, UNCHANGED.",
+          "arguments": "current, prior"
+        },
+        {
+          "name": "copy_weights",
+          "line": 634,
+          "end_line": 674,
+          "doc": "Pick the stock positions to copy and scale them to 100.\n\nReturns (weights, skipped). Weights are pct_of_13f scaled to sum to 100,\nrounded to 2 decimals.",
+          "arguments": "positions, top=None, min_pct=0.0, exclude=(), need_ticker=True"
+        },
+        {
+          "name": "_money",
+          "line": 689,
+          "end_line": 690,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "_shares",
+          "line": 693,
+          "end_line": 694,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "render_holdings",
+          "line": 697,
+          "end_line": 730,
+          "doc": null,
+          "arguments": "meta, positions, total, top=None, combined=False"
+        },
+        {
+          "name": "render_diff",
+          "line": 733,
+          "end_line": 756,
+          "doc": null,
+          "arguments": "meta, rows"
+        },
+        {
+          "name": "load_quarter",
+          "line": 761,
+          "end_line": 788,
+          "doc": "Download and parse one quarter. Returns (meta, rows, filings).",
+          "arguments": "fetcher, cik, period=None, accession=None, before=None"
+        },
+        {
+          "name": "build",
+          "line": 791,
+          "end_line": 801,
+          "doc": null,
+          "arguments": "meta, rows, index=None, overrides=None, figi=None, combine=False"
+        },
+        {
+          "name": "ticker_index",
+          "line": 804,
+          "end_line": 808,
+          "doc": null,
+          "arguments": "fetcher, path=None"
+        },
+        {
+          "name": "_common",
+          "line": 811,
+          "end_line": 815,
+          "doc": null,
+          "arguments": "ap"
+        },
+        {
+          "name": "_quarter_args",
+          "line": 818,
+          "end_line": 832,
+          "doc": null,
+          "arguments": "ap"
+        },
+        {
+          "name": "_parser",
+          "line": 835,
+          "end_line": 868,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "_fetcher",
+          "line": 871,
+          "end_line": 875,
+          "doc": null,
+          "arguments": "args, sec=True"
+        },
+        {
+          "name": "_positions",
+          "line": 878,
+          "end_line": 905,
+          "doc": null,
+          "arguments": "args, fetcher, period=None, before=None, xml=None"
+        },
+        {
+          "name": "main",
+          "line": 908,
+          "end_line": 917,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "_run",
+          "line": 920,
+          "end_line": 1028,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "__init__",
+          "line": 103,
+          "end_line": 107,
+          "doc": null,
+          "arguments": "self, ua=None, offline=None, pause=0.15"
+        },
+        {
+          "name": "local_path",
+          "line": 109,
+          "end_line": 119,
+          "doc": null,
+          "arguments": "self, url"
+        },
+        {
+          "name": "_wait",
+          "line": 121,
+          "end_line": 125,
+          "doc": null,
+          "arguments": "self"
+        },
+        {
+          "name": "get",
+          "line": 127,
+          "end_line": 138,
+          "doc": null,
+          "arguments": "self, url, sec=True"
+        },
+        {
+          "name": "post_json",
+          "line": 140,
+          "end_line": 151,
+          "doc": null,
+          "arguments": "self, url, payload, headers=None"
+        },
+        {
+          "name": "_open",
+          "line": 153,
+          "end_line": 168,
+          "doc": null,
+          "arguments": "self, req, url"
+        },
+        {
+          "name": "get_json",
+          "line": 170,
+          "end_line": 174,
+          "doc": null,
+          "arguments": "self, url, sec=True"
+        },
+        {
+          "name": "__init__",
+          "line": 463,
+          "end_line": 476,
+          "doc": null,
+          "arguments": "self, rows"
+        },
+        {
+          "name": "match_cik",
+          "line": 478,
+          "end_line": 494,
+          "doc": null,
+          "arguments": "self, issuer"
+        },
+        {
+          "name": "ticker_for",
+          "line": 496,
+          "end_line": 514,
+          "doc": "(ticker, needs_check) for a company and a 13F titleOfClass.",
+          "arguments": "self, cik, title_of_class"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 769,
+          "call": "archive_url"
+        },
+        {
+          "line": 110,
+          "call": "urllib.parse.urlparse"
+        },
+        {
+          "line": 138,
+          "call": "self._open"
+        },
+        {
+          "line": 149,
+          "call": "urllib.request.Request"
+        },
+        {
+          "line": 187,
+          "call": "open"
+        },
+        {
+          "line": 138,
+          "call": "urllib.request.Request"
+        },
+        {
+          "line": 151,
+          "call": "self._open(req, url).decode"
+        },
+        {
+          "line": 208,
+          "call": "urllib.parse.quote"
+        },
+        {
+          "line": 360,
+          "call": "order.append"
+        },
+        {
+          "line": 806,
+          "call": "open"
+        },
+        {
+          "line": 880,
+          "call": "open"
+        },
+        {
+          "line": 970,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 992,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 1017,
+          "call": "open"
+        },
+        {
+          "line": 1019,
+          "call": "fh.write"
+        },
+        {
+          "line": 91,
+          "call": "open"
+        },
+        {
+          "line": 113,
+          "call": "urllib.parse.parse_qs(parsed.query).get"
+        },
+        {
+          "line": 132,
+          "call": "open"
+        },
+        {
+          "line": 145,
+          "call": "open"
+        },
+        {
+          "line": 156,
+          "call": "urllib.request.urlopen"
+        },
+        {
+          "line": 172,
+          "call": "self.get(url, sec=sec).decode"
+        },
+        {
+          "line": 521,
+          "call": "open"
+        },
+        {
+          "line": 978,
+          "call": "open"
+        },
+        {
+          "line": 151,
+          "call": "self._open"
+        },
+        {
+          "line": 113,
+          "call": "urllib.parse.parse_qs"
+        }
+      ]
+    },
+    {
+      "path": "trader-copycat/filers.json",
+      "bytes": 4365,
+      "sha256": "1373e61b7e833a125e2a0e690159097b821d86ec64bc1d98ae3951fd1bd6e55a",
+      "lines": 29,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-copycat/share_classes.json",
+      "bytes": 905,
+      "sha256": "bcb27ae3b3d973560aae39cdda99358db937df3ff268f11a539301e74220ace4",
+      "lines": 27,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-copycat/targets.example.json",
+      "bytes": 4338,
+      "sha256": "5ac31509c4b56730d46e2d4b070e9a563656af0056ddd0cc05b96caa56deca6b",
+      "lines": 182,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-news/SKILL.md",
+      "bytes": 4961,
+      "sha256": "6c85167f1233c55ec96bb6664fbf62ec70ca93622587a9598062dc2485a9f8db",
+      "lines": 105,
+      "urls": [
+        "https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL&region=US&lang=en-US`"
+      ],
+      "headings": [
+        "# trader-news\r",
+        "## What it reads and writes\r",
+        "## The rules\r",
+        "## Steps\r",
+        "## Example: the reel's portfolio\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-news/news.py",
+      "bytes": 18059,
+      "sha256": "bba7adf40f2a606f3b3d1c568cda277f5fffb91d39baa3261e8c3fc6b601ec5c",
+      "lines": 446,
+      "urls": [
+        "https://feeds.finance.yahoo.com/rss/2.0/headline?s=",
+        "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%s&region=US&lang=en-US",
+        "https://github.com/Jakeschincariol/trader-skill",
+        "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=",
+        "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=%s&type=%s",
+        "https://www.sec.gov/files/company_tickers.json"
+      ],
+      "imports": [
+        "argparse",
+        "datetime",
+        "email",
+        "gzip",
+        "hashlib",
+        "json",
+        "os",
+        "re",
+        "sys",
+        "time",
+        "urllib",
+        "xml"
+      ],
+      "functions": [
+        {
+          "name": "load_json",
+          "line": 82,
+          "end_line": 86,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "watch_from_files",
+          "line": 89,
+          "end_line": 101,
+          "doc": "{ticker: name or None} from your holdings, else from your targets.",
+          "arguments": "portfolio='trader/portfolio.json', targets='trader/targets.json'"
+        },
+        {
+          "name": "sec_user_agent",
+          "line": 104,
+          "end_line": 111,
+          "doc": null,
+          "arguments": "cli=None, config='trader/config.json'"
+        },
+        {
+          "name": "yahoo_symbol",
+          "line": 150,
+          "end_line": 151,
+          "doc": null,
+          "arguments": "ticker"
+        },
+        {
+          "name": "cik_map",
+          "line": 154,
+          "end_line": 162,
+          "doc": "ticker -> 10-digit CIK, from SEC's company_tickers.json (cached in state).",
+          "arguments": "fetcher, state"
+        },
+        {
+          "name": "_local",
+          "line": 167,
+          "end_line": 168,
+          "doc": null,
+          "arguments": "tag"
+        },
+        {
+          "name": "_text",
+          "line": 171,
+          "end_line": 175,
+          "doc": null,
+          "arguments": "el, name"
+        },
+        {
+          "name": "parse_time",
+          "line": 178,
+          "end_line": 194,
+          "doc": "RFC 822 (RSS) or ISO 8601 (Atom) -> aware UTC datetime, or None.",
+          "arguments": "value"
+        },
+        {
+          "name": "parse_rss",
+          "line": 197,
+          "end_line": 211,
+          "doc": "Yahoo headline RSS -> items.",
+          "arguments": "data, ticker"
+        },
+        {
+          "name": "parse_sec_atom",
+          "line": 214,
+          "end_line": 244,
+          "doc": "EDGAR company filings Atom -> items.",
+          "arguments": "data, ticker"
+        },
+        {
+          "name": "mention_patterns",
+          "line": 247,
+          "end_line": 255,
+          "doc": null,
+          "arguments": "watch"
+        },
+        {
+          "name": "tag",
+          "line": 258,
+          "end_line": 271,
+          "doc": "Which of your tickers each item touches, and why it matters.",
+          "arguments": "items, watch"
+        },
+        {
+          "name": "dedupe",
+          "line": 274,
+          "end_line": 292,
+          "doc": "One item per story: same id, or same link, or same title the same day.",
+          "arguments": "items"
+        },
+        {
+          "name": "fingerprint",
+          "line": 295,
+          "end_line": 296,
+          "doc": null,
+          "arguments": "it"
+        },
+        {
+          "name": "collect",
+          "line": 301,
+          "end_line": 328,
+          "doc": null,
+          "arguments": "fetcher, watch, state, sec=True, forms=('8-K',), count=10, errors=None"
+        },
+        {
+          "name": "select",
+          "line": 331,
+          "end_line": 344,
+          "doc": "Items within the window; only unseen ones unless show_all.",
+          "arguments": "items, state, now, hours=48, show_all=False"
+        },
+        {
+          "name": "remember",
+          "line": 347,
+          "end_line": 354,
+          "doc": null,
+          "arguments": "items, state, now"
+        },
+        {
+          "name": "render",
+          "line": 357,
+          "end_line": 375,
+          "doc": null,
+          "arguments": "items, errors, now"
+        },
+        {
+          "name": "_json_ready",
+          "line": 378,
+          "end_line": 384,
+          "doc": null,
+          "arguments": "items"
+        },
+        {
+          "name": "main",
+          "line": 387,
+          "end_line": 442,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "__init__",
+          "line": 117,
+          "end_line": 121,
+          "doc": null,
+          "arguments": "self, sec_ua=None, offline=None, pause=0.15"
+        },
+        {
+          "name": "get",
+          "line": 123,
+          "end_line": 147,
+          "doc": null,
+          "arguments": "self, url, name, sec=False"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 137,
+          "call": "urllib.request.Request"
+        },
+        {
+          "line": 159,
+          "call": "fetcher.get(TICKERS_URL, 'company_tickers.json', sec=True).decode"
+        },
+        {
+          "line": 433,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 84,
+          "call": "open"
+        },
+        {
+          "line": 439,
+          "call": "open"
+        },
+        {
+          "line": 441,
+          "call": "fh.write"
+        },
+        {
+          "line": 128,
+          "call": "open"
+        },
+        {
+          "line": 139,
+          "call": "urllib.request.urlopen"
+        }
+      ]
+    },
+    {
+      "path": "trader-pelosi/SKILL.md",
+      "bytes": 7400,
+      "sha256": "fbe385de057d3ac9ec7fac50d5068619146845e8d80fb458d68223534a1c5e00",
+      "lines": 156,
+      "urls": [
+        "https://disclosures-clerk.house.gov/public_disc/financial-pdfs/",
+        "https://efdsearch.senate.gov/search/`",
+        "https://efdsearch.senate.gov`."
+      ],
+      "headings": [
+        "# trader-pelosi\r",
+        "## What it reads and writes\r",
+        "## The rules\r",
+        "## Step 1: what has been filed\r",
+        "## Step 2: watch for new ones\r",
+        "## Step 3: read a report\r",
+        "## Example: the reel's alert\r",
+        "## The Senate: the manual route\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-pelosi/ptr.py",
+      "bytes": 23486,
+      "sha256": "c19319ad2f33b5460af599234a137c76ed08a9c56579b7244feb4cbcf27012f4",
+      "lines": 566,
+      "urls": [
+        "https://disclosures-clerk.house.gov/public_disc/financial-pdfs/",
+        "https://disclosures-clerk.house.gov/public_disc/financial-pdfs/%d%s.zip",
+        "https://disclosures-clerk.house.gov/public_disc/financial-pdfs/%d/%s.pdf",
+        "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/",
+        "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/%d/%s.pdf",
+        "https://github.com/Jakeschincariol/trader-skill"
+      ],
+      "imports": [
+        "argparse",
+        "datetime",
+        "io",
+        "json",
+        "os",
+        "re",
+        "shutil",
+        "subprocess",
+        "sys",
+        "urllib",
+        "xml",
+        "zipfile"
+      ],
+      "functions": [
+        {
+          "name": "iso",
+          "line": 68,
+          "end_line": 79,
+          "doc": "'8/21/2026' or '08/21/2026' -> '2026-08-21' (two-digit years -> 20xx).",
+          "arguments": "mdy"
+        },
+        {
+          "name": "download",
+          "line": 82,
+          "end_line": 90,
+          "doc": null,
+          "arguments": "url, timeout=60"
+        },
+        {
+          "name": "read_index_bytes",
+          "line": 93,
+          "end_line": 101,
+          "doc": "Index XML bytes from the ZIP (or the XML itself).",
+          "arguments": "data"
+        },
+        {
+          "name": "parse_index",
+          "line": 104,
+          "end_line": 124,
+          "doc": "Every filing in a <YEAR>FD.xml as a dict, newest first.",
+          "arguments": "xml_bytes, year"
+        },
+        {
+          "name": "load_index",
+          "line": 127,
+          "end_line": 133,
+          "doc": null,
+          "arguments": "year, offline=None"
+        },
+        {
+          "name": "member_match",
+          "line": 136,
+          "end_line": 148,
+          "doc": "'pelosi', 'Nancy Pelosi' or 'Pelosi, Nancy' against an index row.",
+          "arguments": "row, member"
+        },
+        {
+          "name": "select",
+          "line": 151,
+          "end_line": 161,
+          "doc": null,
+          "arguments": "rows, members=None, kind='P', since=None"
+        },
+        {
+          "name": "load_state",
+          "line": 166,
+          "end_line": 170,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "save_state",
+          "line": 173,
+          "end_line": 179,
+          "doc": null,
+          "arguments": "path, state"
+        },
+        {
+          "name": "new_since",
+          "line": 182,
+          "end_line": 189,
+          "doc": "Rows not seen before. On the first run: only those filed in the last\nfirst_days days, so you are not flooded with the whole year.",
+          "arguments": "rows, state, today, first_days=LATE_DAYS"
+        },
+        {
+          "name": "_amount",
+          "line": 214,
+          "end_line": 218,
+          "doc": null,
+          "arguments": "text"
+        },
+        {
+          "name": "_finish",
+          "line": 221,
+          "end_line": 248,
+          "doc": null,
+          "arguments": "row, filed"
+        },
+        {
+          "name": "parse_ptr_text",
+          "line": 251,
+          "end_line": 334,
+          "doc": "Rows from `pdftotext -layout` output of a House PTR.\n\nReturns {\"name\", \"status\", \"district\", \"doc_id\", \"filed\", \"rows\": [...]}.\nEach row: owner, owner_name, asset, ticker, asset_type, type, type_name,\ndate, notified, amount, amount_low, amount_high, status, description,\naccount, option {contracts, kind, strike, expires}, shares,\ndays_to_disclose, late.",
+          "arguments": "text, filed=None"
+        },
+        {
+          "name": "pdf_to_text",
+          "line": 337,
+          "end_line": 345,
+          "doc": null,
+          "arguments": "pdf_path"
+        },
+        {
+          "name": "watchlist",
+          "line": 350,
+          "end_line": 358,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "describe",
+          "line": 361,
+          "end_line": 382,
+          "doc": null,
+          "arguments": "row"
+        },
+        {
+          "name": "render_report",
+          "line": 385,
+          "end_line": 398,
+          "doc": null,
+          "arguments": "report, watch=()"
+        },
+        {
+          "name": "render_index",
+          "line": 401,
+          "end_line": 406,
+          "doc": null,
+          "arguments": "rows"
+        },
+        {
+          "name": "_parser",
+          "line": 411,
+          "end_line": 455,
+          "doc": null,
+          "arguments": ""
+        },
+        {
+          "name": "_fetch_and_read",
+          "line": 458,
+          "end_line": 473,
+          "doc": null,
+          "arguments": "doc_id, year, pdf_dir, filed=None"
+        },
+        {
+          "name": "main",
+          "line": 476,
+          "end_line": 485,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "_run",
+          "line": 488,
+          "end_line": 562,
+          "doc": null,
+          "arguments": "args"
+        },
+        {
+          "name": "common",
+          "line": 416,
+          "end_line": 423,
+          "doc": null,
+          "arguments": "p"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 83,
+          "call": "urllib.request.Request"
+        },
+        {
+          "line": 177,
+          "call": "open"
+        },
+        {
+          "line": 179,
+          "call": "fh.write"
+        },
+        {
+          "line": 342,
+          "call": "subprocess.run"
+        },
+        {
+          "line": 85,
+          "call": "urllib.request.urlopen"
+        },
+        {
+          "line": 129,
+          "call": "open"
+        },
+        {
+          "line": 168,
+          "call": "open"
+        },
+        {
+          "line": 354,
+          "call": "open"
+        },
+        {
+          "line": 465,
+          "call": "open"
+        },
+        {
+          "line": 466,
+          "call": "fh.write"
+        },
+        {
+          "line": 490,
+          "call": "open"
+        },
+        {
+          "line": 495,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 507,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 525,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 555,
+          "call": "sys.stdout.write"
+        }
+      ]
+    },
+    {
+      "path": "trader-rebalance/SKILL.md",
+      "bytes": 5359,
+      "sha256": "5b2e8944da8429d51c905fb4b314fc49fb6077de402783c9b996a602f67e95c4",
+      "lines": 98,
+      "urls": [],
+      "headings": [
+        "# trader-rebalance\r",
+        "## What it reads and writes\r",
+        "## How it decides\r",
+        "## Steps\r",
+        "## Example: the reel's portfolio\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-rebalance/rebalance.py",
+      "bytes": 14860,
+      "sha256": "48150e7efd0fd6f5197007f71e788a9901a8b1dc9a0f3f7c56bbbebcb86dccef",
+      "lines": 319,
+      "urls": [],
+      "imports": [
+        "argparse",
+        "datetime",
+        "json",
+        "math",
+        "os",
+        "sys"
+      ],
+      "functions": [
+        {
+          "name": "read_json",
+          "line": 49,
+          "end_line": 58,
+          "doc": null,
+          "arguments": "path, what, required=True"
+        },
+        {
+          "name": "money",
+          "line": 61,
+          "end_line": 65,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "fmt_qty",
+          "line": 68,
+          "end_line": 70,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "parse_targets",
+          "line": 73,
+          "end_line": 87,
+          "doc": null,
+          "arguments": "doc, blocked=()"
+        },
+        {
+          "name": "capped_targets",
+          "line": 90,
+          "end_line": 108,
+          "doc": "Dollar target per ticker, proportional to weight, none above the cap.",
+          "arguments": "weights, sleeve, cap"
+        },
+        {
+          "name": "holdings_of",
+          "line": 111,
+          "end_line": 121,
+          "doc": null,
+          "arguments": "portfolio"
+        },
+        {
+          "name": "plan",
+          "line": 124,
+          "end_line": 231,
+          "doc": "Pure function: the drift table and the proposed trades.",
+          "arguments": "portfolio, prices, weights, cfg, band=None, sell_untracked=False"
+        },
+        {
+          "name": "_n",
+          "line": 234,
+          "end_line": 236,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "clean",
+          "line": 239,
+          "end_line": 240,
+          "doc": null,
+          "arguments": "orders"
+        },
+        {
+          "name": "report",
+          "line": 243,
+          "end_line": 269,
+          "doc": null,
+          "arguments": "res"
+        },
+        {
+          "name": "main",
+          "line": 272,
+          "end_line": 315,
+          "doc": null,
+          "arguments": "argv=None"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 196,
+          "call": "orders.append"
+        },
+        {
+          "line": 226,
+          "call": "orders.append"
+        },
+        {
+          "line": 55,
+          "call": "open"
+        },
+        {
+          "line": 296,
+          "call": "open"
+        },
+        {
+          "line": 303,
+          "call": "fh.write"
+        }
+      ]
+    },
+    {
+      "path": "trader-risk/SKILL.md",
+      "bytes": 5445,
+      "sha256": "5da79b11b1d8a69673ae755bfbfc7825f8e0b14218091ee114f175669ec0d7d2",
+      "lines": 109,
+      "urls": [],
+      "headings": [
+        "# trader-risk\r",
+        "## What it reads and writes\r",
+        "## The checks\r",
+        "## Steps\r",
+        "## Example: the reel\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-risk/check.py",
+      "bytes": 18005,
+      "sha256": "eb08af511e3d045caab3857d923420820c48bbad9bf7ccae4cad78e50754d109",
+      "lines": 384,
+      "urls": [],
+      "imports": [
+        "argparse",
+        "datetime",
+        "hashlib",
+        "json",
+        "os",
+        "re",
+        "sys"
+      ],
+      "functions": [
+        {
+          "name": "read_json",
+          "line": 63,
+          "end_line": 72,
+          "doc": null,
+          "arguments": "path, what, required=True"
+        },
+        {
+          "name": "fingerprint",
+          "line": 75,
+          "end_line": 79,
+          "doc": "Same function in trader-broker/ticket.py: the exact order that was checked.",
+          "arguments": "order"
+        },
+        {
+          "name": "_f",
+          "line": 82,
+          "end_line": 86,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "money",
+          "line": 89,
+          "end_line": 90,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "account",
+          "line": 93,
+          "end_line": 121,
+          "doc": "Starting account: cash and position values. No portfolio = a fresh\naccount funded with the budget.",
+          "arguments": "cfg, portfolio, prices"
+        },
+        {
+          "name": "placed_today",
+          "line": 124,
+          "end_line": 130,
+          "doc": "Orders recorded as placed today by trader-broker.",
+          "arguments": "state, today"
+        },
+        {
+          "name": "check",
+          "line": 133,
+          "end_line": 304,
+          "doc": "Pure function. Returns {\"results\": [...], \"pass\": n, \"block\": n, \"warnings\": [...]}.",
+          "arguments": "orders, cfg, portfolio=None, prices=None, state=None, today=None"
+        },
+        {
+          "name": "_pct",
+          "line": 307,
+          "end_line": 309,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "_num",
+          "line": 312,
+          "end_line": 314,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "report",
+          "line": 317,
+          "end_line": 337,
+          "doc": null,
+          "arguments": "res"
+        },
+        {
+          "name": "main",
+          "line": 340,
+          "end_line": 380,
+          "doc": null,
+          "arguments": "argv=None"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 69,
+          "call": "open"
+        },
+        {
+          "line": 373,
+          "call": "open"
+        },
+        {
+          "line": 375,
+          "call": "fh.write"
+        }
+      ]
+    },
+    {
+      "path": "trader-screener/SKILL.md",
+      "bytes": 4739,
+      "sha256": "be4316d256538d863f014f7189c46a5ff97a35388934f60eabc6925f5deb8fa3",
+      "lines": 109,
+      "urls": [],
+      "headings": [
+        "# trader-screener\r",
+        "## What it reads and writes\r",
+        "## The rules file\r",
+        "## Steps\r",
+        "## Example: the reel's five\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-screener/rules.example.json",
+      "bytes": 552,
+      "sha256": "518f4d724ac5e56cf33cc1a98c45c95bb934b266b5fd70eb5b0e14f275aa0439",
+      "lines": 16,
+      "urls": [],
+      "json_valid": true
+    },
+    {
+      "path": "trader-screener/screen.py",
+      "bytes": 13311,
+      "sha256": "9c49108747cee7d092a00f3d4c90dfa1fb6ad8df259b03b5842438c3d1ece848",
+      "lines": 310,
+      "urls": [],
+      "imports": [
+        "argparse",
+        "csv",
+        "json",
+        "os",
+        "sys"
+      ],
+      "functions": [
+        {
+          "name": "to_number",
+          "line": 53,
+          "end_line": 65,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "load_metrics",
+          "line": 68,
+          "end_line": 92,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "add_prices",
+          "line": 95,
+          "end_line": 109,
+          "doc": null,
+          "arguments": "rows, prices_path"
+        },
+        {
+          "name": "load_rules",
+          "line": 112,
+          "end_line": 119,
+          "doc": null,
+          "arguments": "path"
+        },
+        {
+          "name": "check_rules",
+          "line": 122,
+          "end_line": 139,
+          "doc": null,
+          "arguments": "spec"
+        },
+        {
+          "name": "_fmt",
+          "line": 144,
+          "end_line": 149,
+          "doc": null,
+          "arguments": "v"
+        },
+        {
+          "name": "check",
+          "line": 152,
+          "end_line": 177,
+          "doc": "(passed, reason). passed is None when the metric is missing.",
+          "arguments": "company, rule"
+        },
+        {
+          "name": "screen",
+          "line": 180,
+          "end_line": 200,
+          "doc": "Every company with pass/fail and reasons; passing ones ranked.",
+          "arguments": "companies, spec"
+        },
+        {
+          "name": "rank",
+          "line": 203,
+          "end_line": 229,
+          "doc": null,
+          "arguments": "results, keys"
+        },
+        {
+          "name": "render",
+          "line": 234,
+          "end_line": 261,
+          "doc": null,
+          "arguments": "results, spec, top=None, prices_as_of=None"
+        },
+        {
+          "name": "main",
+          "line": 264,
+          "end_line": 306,
+          "doc": null,
+          "arguments": "argv=None"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 96,
+          "call": "open"
+        },
+        {
+          "line": 113,
+          "call": "open"
+        },
+        {
+          "line": 296,
+          "call": "sys.stdout.write"
+        },
+        {
+          "line": 72,
+          "call": "open"
+        },
+        {
+          "line": 76,
+          "call": "open"
+        },
+        {
+          "line": 301,
+          "call": "open"
+        },
+        {
+          "line": 303,
+          "call": "fh.write"
+        }
+      ]
+    },
+    {
+      "path": "trader-tax/SKILL.md",
+      "bytes": 5611,
+      "sha256": "e2531eb502830cf331718396c93f60c38c57a17803f00b4abcfa96f3b27ea973",
+      "lines": 101,
+      "urls": [],
+      "headings": [
+        "# trader-tax\r",
+        "## What it reads and writes\r",
+        "## The rules it applies (US federal, arithmetic only)\r",
+        "## Steps\r",
+        "## Example: the reel's portfolio\r",
+        "## What it never does\r",
+        "## Safety\r"
+      ]
+    },
+    {
+      "path": "trader-tax/lots.py",
+      "bytes": 25512,
+      "sha256": "4694fa4490212d55b51d92038824f7521f7a68fb209d2811c9ad8292cd8e77fa",
+      "lines": 567,
+      "urls": [],
+      "imports": [
+        "argparse",
+        "datetime",
+        "json",
+        "os",
+        "sys"
+      ],
+      "functions": [
+        {
+          "name": "read_json",
+          "line": 52,
+          "end_line": 61,
+          "doc": null,
+          "arguments": "path, what, required=True"
+        },
+        {
+          "name": "write_json",
+          "line": 64,
+          "end_line": 70,
+          "doc": null,
+          "arguments": "path, data"
+        },
+        {
+          "name": "day",
+          "line": 73,
+          "end_line": 77,
+          "doc": null,
+          "arguments": "s"
+        },
+        {
+          "name": "money",
+          "line": 80,
+          "end_line": 83,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "fmt_qty",
+          "line": 86,
+          "end_line": 88,
+          "doc": null,
+          "arguments": "x"
+        },
+        {
+          "name": "family",
+          "line": 91,
+          "end_line": 96,
+          "doc": null,
+          "arguments": "ticker"
+        },
+        {
+          "name": "lots_of",
+          "line": 101,
+          "end_line": 120,
+          "doc": "{ticker: [lot, ...]} with id, date (date), shares, cost, per_share; oldest first.",
+          "arguments": "portfolio"
+        },
+        {
+          "name": "anniversary",
+          "line": 123,
+          "end_line": 127,
+          "doc": null,
+          "arguments": "d"
+        },
+        {
+          "name": "term",
+          "line": 130,
+          "end_line": 132,
+          "doc": "long if held MORE than one year (sold after the first anniversary).",
+          "arguments": "acquired, sold"
+        },
+        {
+          "name": "unrealized",
+          "line": 135,
+          "end_line": 162,
+          "doc": null,
+          "arguments": "portfolio, prices, today"
+        },
+        {
+          "name": "pick_lots",
+          "line": 165,
+          "end_line": 193,
+          "doc": "[(lot, shares_taken)] for selling `shares` by the lot method.",
+          "arguments": "lots, shares, method='fifo', ids=None"
+        },
+        {
+          "name": "simulate_sale",
+          "line": 196,
+          "end_line": 211,
+          "doc": null,
+          "arguments": "lots, shares, price, sold, method='fifo', ids=None"
+        },
+        {
+          "name": "planned_buys",
+          "line": 216,
+          "end_line": 228,
+          "doc": null,
+          "arguments": "orders, prices"
+        },
+        {
+          "name": "wash_check",
+          "line": 231,
+          "end_line": 253,
+          "doc": "Purchases that would make a loss on this sale a wash sale.\n\nused: the lots consumed by the sale [{id, shares}]. Shares bought within\n30 days before or after the sale that you still hold after it count, and\nso do planned buys in trader/orders.json.",
+          "arguments": "ticker, sold, used, portfolio, orders, prices"
+        },
+        {
+          "name": "disallowed",
+          "line": 256,
+          "end_line": 265,
+          "doc": "Loss disallowed: proportional to replacement shares (all of it if unknown).",
+          "arguments": "loss, shares_sold, hits"
+        },
+        {
+          "name": "recent_loss_sales",
+          "line": 268,
+          "end_line": 277,
+          "doc": null,
+          "arguments": "ticker, when, realized"
+        },
+        {
+          "name": "rebuy_date",
+          "line": 280,
+          "end_line": 281,
+          "doc": null,
+          "arguments": "sold"
+        },
+        {
+          "name": "harvest",
+          "line": 286,
+          "end_line": 312,
+          "doc": null,
+          "arguments": "portfolio, prices, today, min_loss=100.0, min_pct=0.0, orders=None"
+        },
+        {
+          "name": "harvest_orders",
+          "line": 315,
+          "end_line": 329,
+          "doc": null,
+          "arguments": "cands, include_wash=False"
+        },
+        {
+          "name": "record_sale",
+          "line": 334,
+          "end_line": 360,
+          "doc": null,
+          "arguments": "portfolio, ticker, sale, sold, price, state"
+        },
+        {
+          "name": "realized_ytd",
+          "line": 363,
+          "end_line": 371,
+          "doc": null,
+          "arguments": "state, year"
+        },
+        {
+          "name": "_inputs",
+          "line": 381,
+          "end_line": 390,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_report",
+          "line": 393,
+          "end_line": 417,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_sell",
+          "line": 420,
+          "end_line": 461,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_harvest",
+          "line": 464,
+          "end_line": 500,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "cmd_wash",
+          "line": 503,
+          "end_line": 517,
+          "doc": null,
+          "arguments": "a"
+        },
+        {
+          "name": "main",
+          "line": 520,
+          "end_line": 563,
+          "doc": null,
+          "arguments": "argv=None"
+        },
+        {
+          "name": "common",
+          "line": 525,
+          "end_line": 531,
+          "doc": null,
+          "arguments": "p"
+        }
+      ],
+      "test_methods": [],
+      "effects": [
+        {
+          "line": 468,
+          "call": "harvest_orders"
+        },
+        {
+          "line": 68,
+          "call": "open"
+        },
+        {
+          "line": 70,
+          "call": "fh.write"
+        },
+        {
+          "line": 457,
+          "call": "write_json"
+        },
+        {
+          "line": 458,
+          "call": "write_json"
+        },
+        {
+          "line": 470,
+          "call": "write_json"
+        },
+        {
+          "line": 58,
+          "call": "open"
+        }
+      ]
+    },
+    {
+      "path": "trader-tax/portfolio.example.json",
+      "bytes": 674,
+      "sha256": "e9755130685459ee02a8165315ea34487733b57efa1fbcb98e014c4f61194508",
+      "lines": 10,
+      "urls": [],
+      "json_valid": true
+    }
+  ],
+  "skills": 11,
+  "python_files": 24,
+  "dependency_manifests": [],
+  "tests": {
+    "command": "python -m unittest discover -s tests -v",
+    "exit_code": 0,
+    "count": 175,
+    "seconds": 0.625,
+    "log_sha256": "c8d5b908d13a3c13e15987539aa70795715853725db19a71152c8cf0ab56f26c",
+    "scope": "Fixture and mocked-network suite; not live endpoint or broker certification"
+  }
+}

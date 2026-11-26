@@ -2,6 +2,7 @@
 from copy import deepcopy
 from pathlib import Path
 import subprocess
+import os
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -269,7 +270,7 @@ class RuntimeRevisionTests(unittest.TestCase):
             root=Path(temp)
 
             def git(*args):
-                return subprocess.check_output(['git',*args],cwd=root,stderr=subprocess.DEVNULL).decode().strip()
+                return subprocess.check_output(['git',*args],cwd=root,env=dict(os.environ),stderr=subprocess.DEVNULL).decode().strip()
 
             def commit(message):
                 git('add','.')

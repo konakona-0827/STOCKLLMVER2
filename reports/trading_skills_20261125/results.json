@@ -1,0 +1,2006 @@
+{
+  "cells": {
+    "base-v2": {
+      "version": "tw-trading-skills-v1",
+      "protocol_sha256": "965d295877deeaa970337c704b55d9380d6091fdccefa1ce6c4287ac3b043760",
+      "data_manifest_sha256": "f831a64ef85ed53a127018c437cd01dd4fc211970ca81fbe17875510fac11985",
+      "dataset_rows": 20435,
+      "date_from": "2026-01-02",
+      "date_to": "2026-11-10",
+      "data_role": "RETROSPECTIVE_DEVELOPMENT_DIAGNOSTIC_NOT_CERTIFIED_OOS",
+      "point_in_time_certified": false,
+      "warnings": [
+        "CURRENT_SURVIVOR_UNIVERSE",
+        "RAW_UNADJUSTED_UNVERIFIED_ACTIONS",
+        "HISTORICAL_PUBLICATION_TIMES_UNVERIFIED",
+        "DAILY_OPEN_PROXY_NOT_ODDLOT_FILL",
+        "PRICE_LIMITS_INFERRED_FROM_PREVIOUS_CLOSE_NOT_EXCHANGE_REFERENCES",
+        "SCENARIO_CALIBRATION_NOT_EXECUTION_WIN_RATE",
+        "FIVE_VARIANTS_NOT_A_TUNED_WINNER_SELECTION",
+        "FORWARD_VALIDATION_PENDING",
+        "PRODUCTION_LLM_BASELINE_NOT_REPLAYED"
+      ],
+      "benchmark_name": "FIXED_CURRENT_UNIVERSE_EQUAL_WEIGHT_BUY_HOLD_NOT_TAIEX",
+      "benchmark_net_return": 0.390976,
+      "label_status": {
+        "MATURED_SCENARIO": 597,
+        "IMMATURE": 18
+      },
+      "timing": {
+        "feature_exclusions": {},
+        "total_frozen_events": 615,
+        "forecasting_wall_seconds": 141.92299999999523,
+        "latency_mean_seconds": 0.23076910569104914,
+        "latency_max_seconds": 0.3899999999994179,
+        "latency_scope": "ALL_THREE_MODELS_PER_FROZEN_CANDIDATE",
+        "by_model": {
+          "iid_costs": {
+            "mean_seconds": 0.07996260162617545,
+            "max_seconds": 0.125
+          },
+          "block_costs": {
+            "mean_seconds": 0.08046016260163813,
+            "max_seconds": 0.11000000000058208
+          },
+          "conditioned_block_costs": {
+            "mean_seconds": 0.07034634146323557,
+            "max_seconds": 0.21899999999732245
+          }
+        }
+      },
+      "variants": {
+        "baseline_selection_momentum": {
+          "net_return": -0.644147,
+          "win_rate": 0.40189873417721517,
+          "expectancy_twd": -204.49556962025315,
+          "profit_factor": 0.17117267332167874,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.6454993200242612,
+          "sharpe_ratio": -7.856580948856953,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -1.035123,
+          "closed_trades": 316,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "status": "NO_PROBABILITY_FORECAST"
+          },
+          "decision_latency_seconds": {
+            "status": "RANKING_ONLY_NOT_SEPARATELY_TIMED"
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": -0.17082699999999995,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": -0.21020583159364814,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": -0.2982465382759484,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.22566838170734493,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "skill_scanner": {
+          "net_return": -0.38432599999999995,
+          "win_rate": 0.42783505154639173,
+          "expectancy_twd": -196.92268041237114,
+          "profit_factor": 0.18889682707343194,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.38466873951209174,
+          "sharpe_ratio": -6.140161288934368,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.7753019999999999,
+          "closed_trades": 194,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "status": "NO_PROBABILITY_FORECAST"
+          },
+          "decision_latency_seconds": {
+            "status": "RANKING_ONLY_NOT_SEPARATELY_TIMED"
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": -0.10237200000000002,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": -0.13297379315262003,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": -0.14882167687952852,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.07060219429868775,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "iid_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.390976,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 597,
+              "brier": 0.24531528010422482,
+              "log_loss": 0.683730375327902,
+              "ece": 0.05487437185929649,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 23,
+                  "mean_probability": 0.3808695652173913,
+                  "observed_fraction": 0.30434782608695654
+                },
+                {
+                  "bin": 2,
+                  "samples": 565,
+                  "mean_probability": 0.4752920353982301,
+                  "observed_fraction": 0.42123893805309737
+                },
+                {
+                  "bin": 3,
+                  "samples": 9,
+                  "mean_probability": 0.6155555555555555,
+                  "observed_fraction": 0.6666666666666666
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 517,
+              "brier": 0.24972243090418117,
+              "log_loss": 0.6926591135620038,
+              "ece": 0.04704376468136288,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 512,
+                  "mean_probability": 0.45557226345563323,
+                  "observed_fraction": 0.4140625
+                },
+                {
+                  "bin": 3,
+                  "samples": 5,
+                  "mean_probability": 0.6137254901960785,
+                  "observed_fraction": 0.0
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 517,
+              "brier": 0.24487206103589082,
+              "log_loss": 0.6828286117778208,
+              "ece": 0.06497098646034816,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 517,
+                  "mean_probability": 0.4750290135396518,
+                  "observed_fraction": 0.41005802707930367
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.24845433511314519,
+              "log_loss": 0.6900339735674859,
+              "ece": 0.035141113653699416,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 16,
+                  "mean_probability": 0.380625,
+                  "observed_fraction": 0.25
+                },
+                {
+                  "bin": 2,
+                  "samples": 414,
+                  "mean_probability": 0.47239130434782606,
+                  "observed_fraction": 0.4420289855072464
+                },
+                {
+                  "bin": 3,
+                  "samples": 7,
+                  "mean_probability": 0.6147619047619048,
+                  "observed_fraction": 0.7142857142857143
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.07996260162617545,
+            "max_seconds": 0.125
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "block_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.390976,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 597,
+              "brier": 0.24473268192815933,
+              "log_loss": 0.6825809547733406,
+              "ece": 0.0696538246789503,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 28,
+                  "mean_probability": 0.3804761904761905,
+                  "observed_fraction": 0.5
+                },
+                {
+                  "bin": 2,
+                  "samples": 552,
+                  "mean_probability": 0.47942028985507246,
+                  "observed_fraction": 0.41304347826086957
+                },
+                {
+                  "bin": 3,
+                  "samples": 17,
+                  "mean_probability": 0.6233333333333334,
+                  "observed_fraction": 0.5294117647058824
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 503,
+              "brier": 0.24628393071594915,
+              "log_loss": 0.6856873722853379,
+              "ece": 0.05351196076365111,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 503,
+                  "mean_probability": 0.4570904895906889,
+                  "observed_fraction": 0.40357852882703776
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 503,
+              "brier": 0.2424491716368456,
+              "log_loss": 0.6779649607625533,
+              "ece": 0.07587806494367128,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 503,
+                  "mean_probability": 0.47945659377070904,
+                  "observed_fraction": 0.40357852882703776
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.24862110348334604,
+              "log_loss": 0.6904416235139762,
+              "ece": 0.048314263920671244,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 25,
+                  "mean_probability": 0.37986666666666663,
+                  "observed_fraction": 0.48
+                },
+                {
+                  "bin": 2,
+                  "samples": 401,
+                  "mean_probability": 0.478428927680798,
+                  "observed_fraction": 0.4389027431421446
+                },
+                {
+                  "bin": 3,
+                  "samples": 11,
+                  "mean_probability": 0.6145454545454545,
+                  "observed_fraction": 0.36363636363636365
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.08046016260163813,
+            "max_seconds": 0.11000000000058208
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "conditioned_block_costs": {
+          "net_return": -0.001715000000000022,
+          "win_rate": 0.5,
+          "expectancy_twd": -85.75000000000001,
+          "profit_factor": 0.42226713828532925,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0029685000000000583,
+          "sharpe_ratio": -0.7239579014261495,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.392691,
+          "closed_trades": 2,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 437,
+              "brier": 0.2581011695906433,
+              "log_loss": 0.7098564531296546,
+              "ece": 0.06783371472158657,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 39,
+                  "mean_probability": 0.3694017094017094,
+                  "observed_fraction": 0.48717948717948717
+                },
+                {
+                  "bin": 2,
+                  "samples": 373,
+                  "mean_probability": 0.4879267202859696,
+                  "observed_fraction": 0.43967828418230565
+                },
+                {
+                  "bin": 3,
+                  "samples": 25,
+                  "mean_probability": 0.6421333333333333,
+                  "observed_fraction": 0.36
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 337,
+              "brier": 0.2494971611754562,
+              "log_loss": 0.692142622341258,
+              "ece": 0.05397126058301732,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 337,
+                  "mean_probability": 0.47830360479666717,
+                  "observed_fraction": 0.42433234421364985
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 337,
+              "brier": 0.2529381470491263,
+              "log_loss": 0.699067745444686,
+              "ece": 0.062354104846686485,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 8,
+                  "mean_probability": 0.36875,
+                  "observed_fraction": 0.375
+                },
+                {
+                  "bin": 2,
+                  "samples": 329,
+                  "mean_probability": 0.4892502532928065,
+                  "observed_fraction": 0.425531914893617
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.2581011695906433,
+              "log_loss": 0.7098564531296546,
+              "ece": 0.06783371472158657,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 39,
+                  "mean_probability": 0.3694017094017094,
+                  "observed_fraction": 0.48717948717948717
+                },
+                {
+                  "bin": 2,
+                  "samples": 373,
+                  "mean_probability": 0.4879267202859696,
+                  "observed_fraction": 0.43967828418230565
+                },
+                {
+                  "bin": 3,
+                  "samples": 25,
+                  "mean_probability": 0.6421333333333333,
+                  "observed_fraction": 0.36
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.07034634146323557,
+            "max_seconds": 0.21899999999732245
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.001715000000000022,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        }
+      }
+    },
+    "slippage30": {
+      "version": "tw-trading-skills-v1",
+      "protocol_sha256": "e8be22210d18f5883e9aad3adc4c1cc91b38962ad2787c69b7f9689258dac2e5",
+      "data_manifest_sha256": "f831a64ef85ed53a127018c437cd01dd4fc211970ca81fbe17875510fac11985",
+      "dataset_rows": 20435,
+      "date_from": "2026-01-02",
+      "date_to": "2026-11-10",
+      "data_role": "RETROSPECTIVE_DEVELOPMENT_DIAGNOSTIC_NOT_CERTIFIED_OOS",
+      "point_in_time_certified": false,
+      "warnings": [
+        "CURRENT_SURVIVOR_UNIVERSE",
+        "RAW_UNADJUSTED_UNVERIFIED_ACTIONS",
+        "HISTORICAL_PUBLICATION_TIMES_UNVERIFIED",
+        "DAILY_OPEN_PROXY_NOT_ODDLOT_FILL",
+        "PRICE_LIMITS_INFERRED_FROM_PREVIOUS_CLOSE_NOT_EXCHANGE_REFERENCES",
+        "SCENARIO_CALIBRATION_NOT_EXECUTION_WIN_RATE",
+        "FIVE_VARIANTS_NOT_A_TUNED_WINNER_SELECTION",
+        "FORWARD_VALIDATION_PENDING",
+        "PRODUCTION_LLM_BASELINE_NOT_REPLAYED"
+      ],
+      "benchmark_name": "FIXED_CURRENT_UNIVERSE_EQUAL_WEIGHT_BUY_HOLD_NOT_TAIEX",
+      "benchmark_net_return": 0.3875845000000002,
+      "label_status": {
+        "MATURED_SCENARIO": 597,
+        "IMMATURE": 18
+      },
+      "timing": {
+        "feature_exclusions": {},
+        "total_frozen_events": 615,
+        "forecasting_wall_seconds": 141.3909999999887,
+        "latency_mean_seconds": 0.22990406504063204,
+        "latency_max_seconds": 0.4370000000053551,
+        "latency_scope": "ALL_THREE_MODELS_PER_FROZEN_CANDIDATE",
+        "by_model": {
+          "iid_costs": {
+            "mean_seconds": 0.08100975609743662,
+            "max_seconds": 0.1409999999887077
+          },
+          "block_costs": {
+            "mean_seconds": 0.08033658536588792,
+            "max_seconds": 0.25
+          },
+          "conditioned_block_costs": {
+            "mean_seconds": 0.06855772357730751,
+            "max_seconds": 0.125
+          }
+        }
+      },
+      "variants": {
+        "baseline_selection_momentum": {
+          "net_return": -0.6937074999999999,
+          "win_rate": 0.3829113924050633,
+          "expectancy_twd": -218.69256329113927,
+          "profit_factor": 0.1372794413220912,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.6937188324032011,
+          "sharpe_ratio": -8.604478758630412,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -1.0812920000000001,
+          "closed_trades": 316,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "status": "NO_PROBABILITY_FORECAST"
+          },
+          "decision_latency_seconds": {
+            "status": "RANKING_ONLY_NOT_SEPARATELY_TIMED"
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": -0.18832899999999997,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": -0.24142417309476383,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": -0.36368021516483306,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.2182247677971163,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "skill_scanner": {
+          "net_return": -0.4208915,
+          "win_rate": 0.41237113402061853,
+          "expectancy_twd": -215.49664948453608,
+          "profit_factor": 0.15300692585175213,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.42089150000000003,
+          "sharpe_ratio": -7.01238189224733,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.8084760000000002,
+          "closed_trades": 194,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "status": "NO_PROBABILITY_FORECAST"
+          },
+          "decision_latency_seconds": {
+            "status": "RANKING_ONLY_NOT_SEPARATELY_TIMED"
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": -0.11297800000000002,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": -0.14931196745965714,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": -0.16430353879448,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.08165331692565325,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "iid_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.3875845000000002,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 597,
+              "brier": 0.2419424157826168,
+              "log_loss": 0.6769002997514323,
+              "ece": 0.040245672808486864,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 80,
+                  "mean_probability": 0.3774166666666666,
+                  "observed_fraction": 0.3375
+                },
+                {
+                  "bin": 2,
+                  "samples": 516,
+                  "mean_probability": 0.45627906976744187,
+                  "observed_fraction": 0.4166666666666667
+                },
+                {
+                  "bin": 3,
+                  "samples": 1,
+                  "mean_probability": 0.6066666666666667,
+                  "observed_fraction": 1.0
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 514,
+              "brier": 0.24564587987438447,
+              "log_loss": 0.684475917268595,
+              "ece": 0.038686834988397915,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 70,
+                  "mean_probability": 0.3674654453676022,
+                  "observed_fraction": 0.4
+                },
+                {
+                  "bin": 2,
+                  "samples": 444,
+                  "mean_probability": 0.44506219450398354,
+                  "observed_fraction": 0.40540540540540543
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 514,
+              "brier": 0.24208666234327714,
+              "log_loss": 0.677165674973726,
+              "ece": 0.045466926070038924,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 44,
+                  "mean_probability": 0.3811363636363636,
+                  "observed_fraction": 0.3409090909090909
+                },
+                {
+                  "bin": 2,
+                  "samples": 470,
+                  "mean_probability": 0.45659574468085107,
+                  "observed_fraction": 0.4106382978723404
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.2468813374014747,
+              "log_loss": 0.6869115161994068,
+              "ece": 0.025636918382913813,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 58,
+                  "mean_probability": 0.3795402298850574,
+                  "observed_fraction": 0.39655172413793105
+                },
+                {
+                  "bin": 2,
+                  "samples": 378,
+                  "mean_probability": 0.4545590828924162,
+                  "observed_fraction": 0.42857142857142855
+                },
+                {
+                  "bin": 3,
+                  "samples": 1,
+                  "mean_probability": 0.6066666666666667,
+                  "observed_fraction": 1.0
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.08100975609743662,
+            "max_seconds": 0.1409999999887077
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "block_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.3875845000000002,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 597,
+              "brier": 0.24173761399590546,
+              "log_loss": 0.676585471511393,
+              "ece": 0.05104410943606922,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 97,
+                  "mean_probability": 0.37742268041237115,
+                  "observed_fraction": 0.3917525773195876
+                },
+                {
+                  "bin": 2,
+                  "samples": 498,
+                  "mean_probability": 0.464524765729585,
+                  "observed_fraction": 0.40763052208835343
+                },
+                {
+                  "bin": 3,
+                  "samples": 2,
+                  "mean_probability": 0.625,
+                  "observed_fraction": 1.0
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 514,
+              "brier": 0.24506345330448648,
+              "log_loss": 0.6833405346890329,
+              "ece": 0.03240558598486497,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 42,
+                  "mean_probability": 0.3723843640324563,
+                  "observed_fraction": 0.42857142857142855
+                },
+                {
+                  "bin": 2,
+                  "samples": 472,
+                  "mean_probability": 0.4370690984864063,
+                  "observed_fraction": 0.4067796610169492
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 514,
+              "brier": 0.24211240812797233,
+              "log_loss": 0.6773408669501254,
+              "ece": 0.04608300907911804,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 63,
+                  "mean_probability": 0.3793121693121693,
+                  "observed_fraction": 0.38095238095238093
+                },
+                {
+                  "bin": 2,
+                  "samples": 451,
+                  "mean_probability": 0.4647080561714708,
+                  "observed_fraction": 0.4124168514412417
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.24663623188405798,
+              "log_loss": 0.6864565319851504,
+              "ece": 0.02388253241800157,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 68,
+                  "mean_probability": 0.37607843137254904,
+                  "observed_fraction": 0.36764705882352944
+                },
+                {
+                  "bin": 2,
+                  "samples": 369,
+                  "mean_probability": 0.46304426377597113,
+                  "observed_fraction": 0.4363143631436314
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.08033658536588792,
+            "max_seconds": 0.25
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "conditioned_block_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.3875845000000002,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 437,
+              "brier": 0.2534359013475718,
+              "log_loss": 0.7005479599627724,
+              "ece": 0.07090770404271549,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 81,
+                  "mean_probability": 0.3593827160493827,
+                  "observed_fraction": 0.4567901234567901
+                },
+                {
+                  "bin": 2,
+                  "samples": 345,
+                  "mean_probability": 0.4784830917874396,
+                  "observed_fraction": 0.41739130434782606
+                },
+                {
+                  "bin": 3,
+                  "samples": 11,
+                  "mean_probability": 0.6381818181818182,
+                  "observed_fraction": 0.45454545454545453
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 349,
+              "brier": 0.24659012329951527,
+              "log_loss": 0.6863307187531889,
+              "ece": 0.051546474517967934,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 8,
+                  "mean_probability": 0.39285376744779776,
+                  "observed_fraction": 0.75
+                },
+                {
+                  "bin": 2,
+                  "samples": 341,
+                  "mean_probability": 0.45200161215939355,
+                  "observed_fraction": 0.40762463343108507
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 349,
+              "brier": 0.24969022604266156,
+              "log_loss": 0.692532749974864,
+              "ece": 0.06328557784145178,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 47,
+                  "mean_probability": 0.3676595744680851,
+                  "observed_fraction": 0.425531914893617
+                },
+                {
+                  "bin": 2,
+                  "samples": 302,
+                  "mean_probability": 0.47803532008830024,
+                  "observed_fraction": 0.4139072847682119
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.2534359013475718,
+              "log_loss": 0.7005479599627724,
+              "ece": 0.07090770404271549,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 81,
+                  "mean_probability": 0.3593827160493827,
+                  "observed_fraction": 0.4567901234567901
+                },
+                {
+                  "bin": 2,
+                  "samples": 345,
+                  "mean_probability": 0.4784830917874396,
+                  "observed_fraction": 0.41739130434782606
+                },
+                {
+                  "bin": 3,
+                  "samples": 11,
+                  "mean_probability": 0.6381818181818182,
+                  "observed_fraction": 0.45454545454545453
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.06855772357730751,
+            "max_seconds": 0.125
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        }
+      }
+    },
+    "minimum1": {
+      "version": "tw-trading-skills-v1",
+      "protocol_sha256": "f50875a194f84b31c7cc8713ad74f28cea6cbd46944664391a15619554102e9d",
+      "data_manifest_sha256": "f831a64ef85ed53a127018c437cd01dd4fc211970ca81fbe17875510fac11985",
+      "dataset_rows": 20435,
+      "date_from": "2026-01-02",
+      "date_to": "2026-11-10",
+      "data_role": "RETROSPECTIVE_DEVELOPMENT_DIAGNOSTIC_NOT_CERTIFIED_OOS",
+      "point_in_time_certified": false,
+      "warnings": [
+        "CURRENT_SURVIVOR_UNIVERSE",
+        "RAW_UNADJUSTED_UNVERIFIED_ACTIONS",
+        "HISTORICAL_PUBLICATION_TIMES_UNVERIFIED",
+        "DAILY_OPEN_PROXY_NOT_ODDLOT_FILL",
+        "PRICE_LIMITS_INFERRED_FROM_PREVIOUS_CLOSE_NOT_EXCHANGE_REFERENCES",
+        "SCENARIO_CALIBRATION_NOT_EXECUTION_WIN_RATE",
+        "FIVE_VARIANTS_NOT_A_TUNED_WINNER_SELECTION",
+        "FORWARD_VALIDATION_PENDING",
+        "PRODUCTION_LLM_BASELINE_NOT_REPLAYED"
+      ],
+      "benchmark_name": "FIXED_CURRENT_UNIVERSE_EQUAL_WEIGHT_BUY_HOLD_NOT_TAIEX",
+      "benchmark_net_return": 0.39788749999999995,
+      "label_status": {
+        "MATURED_SCENARIO": 597,
+        "IMMATURE": 18
+      },
+      "timing": {
+        "feature_exclusions": {},
+        "total_frozen_events": 615,
+        "forecasting_wall_seconds": 141.65599999998813,
+        "latency_mean_seconds": 0.23033495934957418,
+        "latency_max_seconds": 0.42199999999138527,
+        "latency_scope": "ALL_THREE_MODELS_PER_FROZEN_CANDIDATE",
+        "by_model": {
+          "iid_costs": {
+            "mean_seconds": 0.08084715447143455,
+            "max_seconds": 0.25
+          },
+          "block_costs": {
+            "mean_seconds": 0.08062439024437984,
+            "max_seconds": 0.11000000000058208
+          },
+          "conditioned_block_costs": {
+            "mean_seconds": 0.06883739837361556,
+            "max_seconds": 0.125
+          }
+        }
+      },
+      "variants": {
+        "baseline_selection_momentum": {
+          "net_return": -0.599335,
+          "win_rate": 0.4125,
+          "expectancy_twd": -187.88093750000002,
+          "profit_factor": 0.20141567577332184,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.600742315477088,
+          "sharpe_ratio": -7.347553014155194,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.9972224999999999,
+          "closed_trades": 320,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "status": "NO_PROBABILITY_FORECAST"
+          },
+          "decision_latency_seconds": {
+            "status": "RANKING_ONLY_NOT_SEPARATELY_TIMED"
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": -0.1589489999999999,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": -0.19197290057321148,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": -0.2712428927945002,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.1909966027773431,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "skill_scanner": {
+          "net_return": -0.35997100000000004,
+          "win_rate": 0.4256410256410256,
+          "expectancy_twd": -183.47948717948717,
+          "profit_factor": 0.2158747100225626,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.36052542445699576,
+          "sharpe_ratio": -5.757471115555213,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.7578585,
+          "closed_trades": 195,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "status": "NO_PROBABILITY_FORECAST"
+          },
+          "decision_latency_seconds": {
+            "status": "RANKING_ONLY_NOT_SEPARATELY_TIMED"
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": -0.09511199999999997,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": -0.12306053345828438,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": -0.1375155633295192,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.06484426709759794,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "iid_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.39788749999999995,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 597,
+              "brier": 0.24533096966313048,
+              "log_loss": 0.6837616058929057,
+              "ece": 0.05510329424902288,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 23,
+                  "mean_probability": 0.3808695652173913,
+                  "observed_fraction": 0.30434782608695654
+                },
+                {
+                  "bin": 2,
+                  "samples": 565,
+                  "mean_probability": 0.4755339233038348,
+                  "observed_fraction": 0.42123893805309737
+                },
+                {
+                  "bin": 3,
+                  "samples": 9,
+                  "mean_probability": 0.6155555555555555,
+                  "observed_fraction": 0.6666666666666666
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 517,
+              "brier": 0.24972243090418117,
+              "log_loss": 0.6926591135620038,
+              "ece": 0.04704376468136288,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 512,
+                  "mean_probability": 0.45557226345563323,
+                  "observed_fraction": 0.4140625
+                },
+                {
+                  "bin": 3,
+                  "samples": 5,
+                  "mean_probability": 0.6137254901960785,
+                  "observed_fraction": 0.0
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 517,
+              "brier": 0.24490505050505051,
+              "log_loss": 0.6828946746898296,
+              "ece": 0.06520954223081882,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 517,
+                  "mean_probability": 0.4752675693101225,
+                  "observed_fraction": 0.41005802707930367
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.24848927027714215,
+              "log_loss": 0.6901041959857548,
+              "ece": 0.03536994660564452,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 16,
+                  "mean_probability": 0.380625,
+                  "observed_fraction": 0.25
+                },
+                {
+                  "bin": 2,
+                  "samples": 414,
+                  "mean_probability": 0.4726328502415459,
+                  "observed_fraction": 0.4420289855072464
+                },
+                {
+                  "bin": 3,
+                  "samples": 7,
+                  "mean_probability": 0.6147619047619048,
+                  "observed_fraction": 0.7142857142857143
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.08084715447143455,
+            "max_seconds": 0.25
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "block_costs": {
+          "net_return": 0.0,
+          "win_rate": null,
+          "expectancy_twd": null,
+          "profit_factor": null,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.0,
+          "sharpe_ratio": null,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.39788749999999995,
+          "closed_trades": 0,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 597,
+              "brier": 0.244907947143123,
+              "log_loss": 0.6829345747715323,
+              "ece": 0.07165829145728642,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 27,
+                  "mean_probability": 0.3801234567901235,
+                  "observed_fraction": 0.5185185185185185
+                },
+                {
+                  "bin": 2,
+                  "samples": 553,
+                  "mean_probability": 0.4800060277275467,
+                  "observed_fraction": 0.41229656419529837
+                },
+                {
+                  "bin": 3,
+                  "samples": 17,
+                  "mean_probability": 0.6235294117647059,
+                  "observed_fraction": 0.5294117647058824
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 503,
+              "brier": 0.2459313864820063,
+              "log_loss": 0.6849796175487691,
+              "ece": 0.05093689070828321,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 3,
+                  "mean_probability": 0.39705882352941174,
+                  "observed_fraction": 0.3333333333333333
+                },
+                {
+                  "bin": 2,
+                  "samples": 500,
+                  "mean_probability": 0.45486015911135647,
+                  "observed_fraction": 0.404
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 503,
+              "brier": 0.24267433178705544,
+              "log_loss": 0.6784198570412355,
+              "ece": 0.07658714380384363,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 503,
+                  "mean_probability": 0.4801656726308814,
+                  "observed_fraction": 0.40357852882703776
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.24879984744469869,
+              "log_loss": 0.6908009921081414,
+              "ece": 0.05080091533180772,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 24,
+                  "mean_probability": 0.3794444444444445,
+                  "observed_fraction": 0.5
+                },
+                {
+                  "bin": 2,
+                  "samples": 402,
+                  "mean_probability": 0.4789635157545605,
+                  "observed_fraction": 0.43781094527363185
+                },
+                {
+                  "bin": 3,
+                  "samples": 11,
+                  "mean_probability": 0.6148484848484849,
+                  "observed_fraction": 0.36363636363636365
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.08062439024437984,
+            "max_seconds": 0.11000000000058208
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        },
+        "conditioned_block_costs": {
+          "net_return": -0.0015049999999999786,
+          "win_rate": 0.5,
+          "expectancy_twd": -75.25000000000001,
+          "profit_factor": 0.4735000874584572,
+          "profit_factor_infinite": false,
+          "maximum_drawdown": 0.002858500000000058,
+          "sharpe_ratio": -0.6584623660818723,
+          "sharpe_assumption": "252 daily sessions, zero risk-free rate, overlapping positions kept in NAV",
+          "benchmark_relative_return": -0.39939249999999993,
+          "closed_trades": 2,
+          "llm_api_cost_usd": 0,
+          "valuation": "cash plus unsettled net proceeds plus marked positions net of assumed liquidation costs",
+          "probability_calibration": {
+            "raw": {
+              "samples": 437,
+              "brier": 0.2583294940249174,
+              "log_loss": 0.7103360806569498,
+              "ece": 0.06827612509534704,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 39,
+                  "mean_probability": 0.3694017094017094,
+                  "observed_fraction": 0.48717948717948717
+                },
+                {
+                  "bin": 2,
+                  "samples": 370,
+                  "mean_probability": 0.4874324324324324,
+                  "observed_fraction": 0.44054054054054054
+                },
+                {
+                  "bin": 3,
+                  "samples": 28,
+                  "mean_probability": 0.6390476190476191,
+                  "observed_fraction": 0.35714285714285715
+                }
+              ]
+            },
+            "prequential": {
+              "samples": 334,
+              "brier": 0.24960631291780058,
+              "log_loss": 0.6923616205419475,
+              "ece": 0.0532338006095201,
+              "bins": [
+                {
+                  "bin": 2,
+                  "samples": 334,
+                  "mean_probability": 0.4783835012083225,
+                  "observed_fraction": 0.4251497005988024
+                }
+              ]
+            },
+            "matched_raw_for_prequential": {
+              "samples": 334,
+              "brier": 0.25282894211576845,
+              "log_loss": 0.6988494332928717,
+              "ece": 0.06093812375249505,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 8,
+                  "mean_probability": 0.36875,
+                  "observed_fraction": 0.375
+                },
+                {
+                  "bin": 2,
+                  "samples": 326,
+                  "mean_probability": 0.4886605316973415,
+                  "observed_fraction": 0.4263803680981595
+                }
+              ]
+            },
+            "common_model_coverage_raw": {
+              "samples": 437,
+              "brier": 0.2583294940249174,
+              "log_loss": 0.7103360806569498,
+              "ece": 0.06827612509534704,
+              "bins": [
+                {
+                  "bin": 1,
+                  "samples": 39,
+                  "mean_probability": 0.3694017094017094,
+                  "observed_fraction": 0.48717948717948717
+                },
+                {
+                  "bin": 2,
+                  "samples": 370,
+                  "mean_probability": 0.4874324324324324,
+                  "observed_fraction": 0.44054054054054054
+                },
+                {
+                  "bin": 3,
+                  "samples": 28,
+                  "mean_probability": 0.6390476190476191,
+                  "observed_fraction": 0.35714285714285715
+                }
+              ]
+            },
+            "scope": "ALL_FROZEN_TOP_K_SCENARIOS_NOT_ACCOUNT_TRADE_WIN_RATE"
+          },
+          "decision_latency_seconds": {
+            "mean_seconds": 0.06883739837361556,
+            "max_seconds": 0.125
+          },
+          "walk_forward_folds": [
+            {
+              "fold": "2026-Q1",
+              "start": "2026-01-02",
+              "end": "2026-03-31",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q2",
+              "start": "2026-04-01",
+              "end": "2026-06-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q3",
+              "start": "2026-07-01",
+              "end": "2026-09-30",
+              "return_fraction": 0.0,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            },
+            {
+              "fold": "2026-Q4",
+              "start": "2026-10-01",
+              "end": "2026-11-10",
+              "return_fraction": -0.0015049999999999786,
+              "method": "EXPANDING_PAST_POOL_PREQUENTIAL_CALIBRATION_NO_PARAMETER_SEARCH"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "cli": {
+    "cli-pilot": {
+      "results": [
+        {
+          "skill": false,
+          "model": "gpt-6-sol",
+          "prompt_sha256": "3f6fc969350238ab15814204d96fe39b3473b11763660de3b67395765307d13c",
+          "status": "VALID_RESEARCH_FORMAT",
+          "answer": {
+            "packet_id": "8ac4b6dc3f18f07e82ebdbbbcceffb6a67199f8343b30f338200b21cb1a2596d",
+            "opinions": [
+              {
+                "symbol": "2603",
+                "verdict": "WATCH",
+                "evidence_id": "ev-cb2b372401c9c8a9",
+                "thesis": "20 日報酬約 9.89%，仍高於 60 日均線約 4.58%，且資料標示 recovery，值得追查回升型態。",
+                "counterevidence": "近 5 日下跌約 4.13%，低於 20 日均線約 2.04%，量比僅 0.72；三種含成本模擬的預期淨值均為負。模擬頻率不是真實勝率。",
+                "missing_data": [
+                  "歷史當時可取得性與候選池驗證",
+                  "公司行動調整後價格",
+                  "新聞與基本面佐證",
+                  "即時零股報價及實際成本",
+                  "樣本外校準"
+                ]
+              },
+              {
+                "symbol": "2891",
+                "verdict": "RESEARCH",
+                "evidence_id": "ev-6ac359c554d0c0cd",
+                "thesis": "20 日報酬約 9.51%，接近 20 日均線且高於 60 日均線約 6.28%；量比約 1.10。三種模擬中，其含成本預期淨值虧損幅度在三檔候選中較小，適合進一步做回溯驗證。",
+                "counterevidence": "近 5 日仍小幅下跌，沒有標記的進場型態；三種含成本模擬的預期淨值皆為負，條件式樣本池僅 31 區塊。模擬頻率不是真實勝率。",
+                "missing_data": [
+                  "歷史當時可取得性與候選池驗證",
+                  "公司行動調整後價格",
+                  "新聞與基本面佐證",
+                  "即時零股報價及實際成本",
+                  "更大樣本與樣本外校準"
+                ]
+              },
+              {
+                "symbol": "1101",
+                "verdict": "REJECT",
+                "evidence_id": "ev-849303e51aeeb4c4",
+                "thesis": "20 日報酬約 6.23%，且高於 60 日均線約 6.78%，保留作為回溯比較樣本。",
+                "counterevidence": "近 5 日下跌約 1.44%，量比低於 1，沒有標記的進場型態；三種含成本模擬的預期淨值皆為負，現有凍結證據不足以支持優先研究。模擬頻率不是真實勝率。",
+                "missing_data": [
+                  "歷史當時可取得性與候選池驗證",
+                  "公司行動調整後價格",
+                  "新聞與基本面佐證",
+                  "即時零股報價及實際成本",
+                  "樣本外校準"
+                ]
+              }
+            ]
+          },
+          "usage": {
+            "input_tokens": 14502,
+            "input_tokens_details": {
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "output_tokens": 930,
+            "output_tokens_details": {
+              "reasoning_tokens": 246
+            },
+            "total_tokens": 15432
+          },
+          "latency_seconds": 27.593999999997322
+        },
+        {
+          "skill": true,
+          "model": "gpt-6-sol",
+          "prompt_sha256": "a806248eb603a84b01e1c9c0e5bf126a5040086544eb9c44aa78cbdd305773f7",
+          "status": "VALID_RESEARCH_FORMAT",
+          "answer": {
+            "packet_id": "8ac4b6dc3f18f07e82ebdbbbcceffb6a67199f8343b30f338200b21cb1a2596d",
+            "opinions": [
+              {
+                "symbol": "2603",
+                "verdict": "WATCH",
+                "evidence_id": "ev-cb2b372401c9c8a9",
+                "thesis": "僅供回顧研究。20日報酬為正且標記為 recovery，可觀察修復形態；但 setups 為空，尚無已確認的入場假說。",
+                "counterevidence": "5日報酬為負、低於20日均線，量比約0.72。三種抽樣模型的費後期望值均為負；其觸價頻率不是實際勝率。",
+                "missing_data": [
+                  "明確的進場、失效、目標與持有期限，以及未觸價比例和成本明細",
+                  "已收線的開盤區間分K與形態確認",
+                  "可驗證的即時零股雙邊價、價差、深度及非試撮狀態",
+                  "公司行動、交易日曆、新聞與財報的發布及取得時間",
+                  "成熟前向資料與模型校準"
+                ]
+              },
+              {
+                "symbol": "2891",
+                "verdict": "RESEARCH",
+                "evidence_id": "ev-6ac359c554d0c0cd",
+                "thesis": "20日報酬為正、量比約1.10，可研究動能訊號與費後結果不一致的原因；目前沒有可確認的 setup。",
+                "counterevidence": "三種抽樣模型雖顯示較高的淨正值頻率，費後期望值仍全部為負；狀態篩選樣本僅31個區塊，這些頻率不能視為實際勝率。",
+                "missing_data": [
+                  "明確的進場、失效、目標與持有期限，以及未觸價比例和成本明細",
+                  "已收線的開盤區間分K與形態確認",
+                  "可驗證的即時零股雙邊價、價差、深度及非試撮狀態",
+                  "公司行動、交易日曆、新聞與財報的發布及取得時間",
+                  "成熟前向資料與模型校準"
+                ]
+              },
+              {
+                "symbol": "1101",
+                "verdict": "REJECT",
+                "evidence_id": "ev-849303e51aeeb4c4",
+                "thesis": "就這份凍結資料，沒有足夠依據支持進一步採用此候選：setups 為空，三種抽樣模型的費後期望值均為負。",
+                "counterevidence": "20日報酬為正且高於60日均線，仍有可供後續重新檢驗的動能線索；模擬結果也不能證明未來表現。",
+                "missing_data": [
+                  "明確的進場、失效、目標與持有期限，以及未觸價比例和成本明細",
+                  "已收線的開盤區間分K與形態確認",
+                  "可驗證的即時零股雙邊價、價差、深度及非試撮狀態",
+                  "公司行動、交易日曆、新聞與財報的發布及取得時間",
+                  "成熟前向資料與模型校準"
+                ]
+              }
+            ]
+          },
+          "usage": {
+            "input_tokens": 15356,
+            "input_tokens_details": {
+              "cache_write_tokens": 0,
+              "cached_tokens": 11264
+            },
+            "output_tokens": 1028,
+            "output_tokens_details": {
+              "reasoning_tokens": 277
+            },
+            "total_tokens": 16384
+          },
+          "latency_seconds": 23.718999999997322
+        }
+      ],
+      "attempted_calls": 2,
+      "valid_calls": 2,
+      "api_billed_usd": 0,
+      "billing_source": "chatgpt-plan",
+      "plan_credits_consumed": true,
+      "credit_charge_unknown": true,
+      "transport_sha256": "5b68104e7a974a8fb9d90d83c3e1faf068f31708e4161804fafc52d1ee91effc",
+      "skill_sha256": "ba05d639caa57c9039d2c2b0190d13a5704b7f1bab67aa85ebbc2ffc66821cb9",
+      "outcome": "FORMAT_AND_LATENCY_PILOT_ONLY_NOT_PROVEN_STRATEGY_UPLIFT"
+    },
+    "cli-final": {
+      "results": [
+        {
+          "skill": false,
+          "model": "gpt-6-sol",
+          "prompt_sha256": "3f6fc969350238ab15814204d96fe39b3473b11763660de3b67395765307d13c",
+          "status": "VALID_RESEARCH_FORMAT",
+          "answer": {
+            "packet_id": "5b6297b42ba143bc0c0acb89b94f264e7d2bf44926a5b1ca14ed8ba26cac4b6d",
+            "opinions": [
+              {
+                "symbol": "2603",
+                "verdict": "WATCH",
+                "evidence_id": "ev-cb2b372401c9c8a9",
+                "thesis": "20日報酬約9.9%，且標記為復甦候選，值得回顧後續表現。",
+                "counterevidence": "近5日下跌約4.1%、量比僅0.72；三種含成本模擬的預期淨額均為負。模擬頻率不是真實勝率。",
+                "missing_data": [
+                  "已驗證公司行動的調整價格",
+                  "當時可得資料與股票池驗證",
+                  "新聞及基本面佐證"
+                ]
+              },
+              {
+                "symbol": "2891",
+                "verdict": "WATCH",
+                "evidence_id": "ev-6ac359c554d0c0cd",
+                "thesis": "20日報酬約9.5%，三種模擬的淨正報酬頻率在候選中相對較高，適合追蹤驗證。",
+                "counterevidence": "三種含成本模擬的預期淨額仍全為負，且沒有已確認的交易型態；模擬頻率不是真實勝率。",
+                "missing_data": [
+                  "已驗證公司行動的調整價格",
+                  "當時可得資料與股票池驗證",
+                  "新聞及基本面佐證",
+                  "成本與模擬校準驗證"
+                ]
+              },
+              {
+                "symbol": "1101",
+                "verdict": "REJECT",
+                "evidence_id": "ev-849303e51aeeb4c4",
+                "thesis": "20日報酬約6.2%，保留作為回顧比較樣本。",
+                "counterevidence": "近5日下跌、量比低於1；三種含成本模擬的預期淨額均為負，未見足夠研究優勢。模擬頻率不是真實勝率。",
+                "missing_data": [
+                  "已驗證公司行動的調整價格",
+                  "當時可得資料與股票池驗證",
+                  "新聞及基本面佐證"
+                ]
+              }
+            ]
+          },
+          "usage": {
+            "input_tokens": 14945,
+            "input_tokens_details": {
+              "cache_write_tokens": 0,
+              "cached_tokens": 11264
+            },
+            "output_tokens": 708,
+            "output_tokens_details": {
+              "reasoning_tokens": 195
+            },
+            "total_tokens": 15653
+          },
+          "latency_seconds": 20.125
+        },
+        {
+          "skill": true,
+          "model": "gpt-6-sol",
+          "prompt_sha256": "a806248eb603a84b01e1c9c0e5bf126a5040086544eb9c44aa78cbdd305773f7",
+          "status": "VALID_RESEARCH_FORMAT",
+          "answer": {
+            "packet_id": "5b6297b42ba143bc0c0acb89b94f264e7d2bf44926a5b1ca14ed8ba26cac4b6d",
+            "opinions": [
+              {
+                "symbol": "2603",
+                "verdict": "REJECT",
+                "evidence_id": "ev-cb2b372401c9c8a9",
+                "thesis": "回顧資料顯示20日漲幅約9.89%，但近5日下跌約4.13%、收盤低於20日均線約2.04%，且沒有已確認形態。依實際模擬成交價設定的2%目標、2%失效門檻與進場後5個交易日，是待檢驗假說。",
+                "counterevidence": "三種含成本模擬的費後期望值均為負；區塊抽樣的目標、停損、未觸價頻率分別約47.33%、45.67%、7%。這些只是模型抽樣頻率，不是真實勝率。",
+                "missing_data": [
+                  "資料於訊號日後取得，缺少訊號當時可用性的驗證",
+                  "原始價格的公司行動調整驗證",
+                  "完整已收線的開盤區間分K及收線確認",
+                  "即時零股雙邊報價、價差、深度單位與非試撮狀態",
+                  "可核對發布與取得時間的新聞、公告及財報版本",
+                  "交易日曆、實際漲跌停參考與成熟前向校準"
+                ]
+              },
+              {
+                "symbol": "2891",
+                "verdict": "WATCH",
+                "evidence_id": "ev-6ac359c554d0c0cd",
+                "thesis": "回顧資料顯示20日漲幅約9.51%、收盤接近20日均線，5日對20日量比約1.10；可觀察後續是否形成已收線的進場形態。入場仍須按實際模擬成交價重算費後空間，並以2%失效門檻、2%目標及進場後5個交易日檢驗。",
+                "counterevidence": "目前沒有已確認形態。區塊抽樣雖有約57.67%觸及目標、約58.33%費後為正，但費後期望值仍約負60.03元，另有5%未觸價；條件區塊池僅31塊且截至2026-08-12。抽樣頻率不是真實勝率。",
+                "missing_data": [
+                  "訊號當時資料可用性的驗證及原始價格公司行動調整",
+                  "完整已收線的開盤區間分K與形態確認",
+                  "即時零股雙邊報價、價差、深度單位與非試撮狀態",
+                  "新聞原文、來源及發布與取得時間；公司公告與財報申報或修訂時間",
+                  "交易日曆、漲跌停參考、實際成交模型與成熟前向校準"
+                ]
+              },
+              {
+                "symbol": "1101",
+                "verdict": "REJECT",
+                "evidence_id": "ev-849303e51aeeb4c4",
+                "thesis": "回顧資料顯示20日漲幅約6.23%，但近5日下跌約1.44%、5日對20日量比低於1，且沒有已確認形態。2%目標、2%失效門檻及進場後5個交易日僅是模擬假說。",
+                "counterevidence": "三種含成本模擬的費後期望值均為負；區塊抽樣的目標、停損、未觸價頻率分別約49.33%、47%、3.67%。模擬未提供支持進場的費後證據，抽樣頻率亦不是真實勝率。",
+                "missing_data": [
+                  "訊號當時資料可用性的驗證及原始價格公司行動調整",
+                  "完整已收線的開盤區間分K與收線確認",
+                  "即時零股雙邊報價、價差、深度單位與非試撮狀態",
+                  "可核對時點與原文的新聞、公告及財報版本",
+                  "交易日曆、實際漲跌停參考與成熟前向校準"
+                ]
+              }
+            ]
+          },
+          "usage": {
+            "input_tokens": 15799,
+            "input_tokens_details": {
+              "cache_write_tokens": 0,
+              "cached_tokens": 11264
+            },
+            "output_tokens": 1111,
+            "output_tokens_details": {
+              "reasoning_tokens": 119
+            },
+            "total_tokens": 16910
+          },
+          "latency_seconds": 25.313000000009197
+        }
+      ],
+      "attempted_calls": 2,
+      "valid_calls": 2,
+      "api_billed_usd": 0,
+      "billing_source": "chatgpt-plan",
+      "plan_credits_consumed": true,
+      "credit_charge_unknown": true,
+      "transport_sha256": "5b68104e7a974a8fb9d90d83c3e1faf068f31708e4161804fafc52d1ee91effc",
+      "skill_sha256": "ba05d639caa57c9039d2c2b0190d13a5704b7f1bab67aa85ebbc2ffc66821cb9",
+      "outcome": "FORMAT_AND_LATENCY_PILOT_ONLY_NOT_PROVEN_STRATEGY_UPLIFT"
+    }
+  },
+  "tests": {
+    "upstream": 490,
+    "new": 52,
+    "full_project": 331,
+    "new_included_in_full": true
+  },
+  "forward": {
+    "version": "4ea35096472ecafa56be",
+    "mode": "PAPER_ONLY",
+    "active": false,
+    "reason": "VERIFIED_FORWARD_INPUTS_NOT_YET_AVAILABLE",
+    "counts": {
+      "versions": 1,
+      "runs": 0,
+      "fills": 0,
+      "controls": 2,
+      "source_archives": 14
+    },
+    "no_daemon_started": true,
+    "no_broker_connected": true
+  },
+  "baseline_verified_unchanged": true
+}
