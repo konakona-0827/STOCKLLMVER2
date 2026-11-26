@@ -9,13 +9,14 @@
 先讓舊 FLOW 正常停止、等待帳戶鎖釋放。保留舊程式及資料作回退；在新的空資料夾取得版本，避免直接切換執行中程式的原始碼。
 
 ```powershell
-git clone --branch codex/production-trading-skill --single-branch https://github.com/konakona-0827/STOCKLLMVER2.git STOCKLLM-skill
+git clone -c core.longpaths=true --branch codex/production-trading-skill --single-branch https://github.com/konakona-0827/STOCKLLMVER2.git STOCKLLM-skill
 cd STOCKLLM-skill
 ```
 
 如果這個新資料夾已經存在，從該資料夾更新：
 
 ```powershell
+git config core.longpaths true
 git fetch origin
 git switch codex/production-trading-skill
 git pull --ff-only

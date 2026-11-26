@@ -86,12 +86,14 @@ class ForwardStore:
         at = at or datetime.now(timezone.utc).isoformat()
         instant(at)
         folder = Path(__file__).parent
-        source = {p.name: digest(p.read_bytes()) for p in folder.glob("*") if p.is_file()}
+        source_bytes = {p.name: p.read_bytes() for p in folder.glob("*") if p.is_file()}
+        source = {name: digest(raw) for name, raw in source_bytes.items()}
         version = digest(dict(protocol=protocol, source=source))[:20]
         with self.connect() as db:
             db.execute("INSERT INTO versions VALUES(?,?,?,?)", (version, at, json.dumps(protocol), json.dumps(source)))
             for name, sha in source.items():
-                db.execute("INSERT INTO source_archives VALUES(?,?,?,?)", (version, name, sha, (folder / name).read_text(encoding="utf-8")))
+                # Preserve the hashed bytes, including CRLF on Windows.
+                db.execute("INSERT INTO source_archives VALUES(?,?,?,?)", (version, name, sha, source_bytes[name].decode("utf-8")))
             db.execute("INSERT INTO controls(version,at,active) VALUES(?,?,1)", (version, at))
         return version
 

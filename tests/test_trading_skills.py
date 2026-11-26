@@ -429,6 +429,19 @@ class ForwardSafetyTests(unittest.TestCase):
             with self.assertRaises(sqlite3.IntegrityError):
                 db.execute("DELETE FROM source_archives")
 
+    def test_source_archive_preserves_crlf_bytes_and_hash(self):
+        folder = Path(self.tmp.name) / "archive_inputs"
+        folder.mkdir()
+        raw = "# 台股\r\nVALUE = 1\r\n".encode("utf-8")
+        (folder / "forward.py").write_bytes(raw)
+        with patch("research.trading_skills.forward.__file__", str(folder / "forward.py")):
+            version = self.store.register(self.p, self.at)
+        with self.store.connect() as db:
+            row = db.execute("SELECT sha256,content FROM source_archives WHERE version=? AND path=?",
+                             (version, "forward.py")).fetchone()
+        self.assertEqual(row["content"].encode("utf-8"), raw)
+        self.assertEqual(row["sha256"], digest(raw))
+
 
 class ReviewAndIsolationSafetyTests(unittest.TestCase):
     def setUp(self):
