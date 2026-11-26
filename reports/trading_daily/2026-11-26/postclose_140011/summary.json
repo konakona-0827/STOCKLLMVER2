@@ -1,0 +1,251 @@
+{
+  "trade_date": "2026-11-26",
+  "report_type": "POST_CLOSE",
+  "cutoff_taipei": "2026-11-26T14:00:11.182924+08:00",
+  "cutoff_japan": "2026-11-26T15:00:11.182924+09:00",
+  "market_status": "CONFIRMED_BY_DATED_NON_TRIAL_BROKER_QUOTES",
+  "market_evidence": "ARCHIVED_SAME_DAY_INTRADAY_NON_TRIAL_BROKER_BATCH",
+  "market_calendar": {
+    "status": "OFFICIAL_YEAR_SPECIFIC_RESPONSE_NOT_VERIFIED",
+    "source": "http[PRIVATE_PATH]",
+    "limitation": "Official web response did not expose requested 2026 table; no holiday conclusion inferred from the wrong-year response."
+  },
+  "git": {
+    "branch": "codex/new-system-tw-opportunity-flow",
+    "head": "ddcbab94945756e38f75523e46a6af048ef32b81",
+    "runtime_source_revision": "ddcbab94945756e38f75523e46a6af048ef32b81",
+    "source_fingerprint": "4af8c0de843439ba3f6c72fab114e864bafde8c8b525bda476402ebfe92b177b",
+    "matches_live": true
+  },
+  "runtime": {
+    "state": "WAITING_RESEARCH_WINDOW",
+    "checks": {
+      "startup_verified": true,
+      "current_process_heartbeat": true,
+      "running_version_verified": true,
+      "fresh_account_reconciled": true,
+      "watch_loop_running": true,
+      "automatic_execution_enabled": true,
+      "research_cycle_observed": true
+    },
+    "heartbeat_age_seconds": 1.9,
+    "supervisor_pid": 10708,
+    "runtime_pid": 23408,
+    "observed_at": "2026-11-26T06:00:05.248441+00:00",
+    "stage_counts_scope": "CUMULATIVE_SINCE_LAUNCH_NOT_TODAY_COUNTS",
+    "stages": {
+      "ACCOUNT_CHECK_STARTED": {
+        "first_at": 1795670966.836908,
+        "last_at": 1795672779.652439,
+        "count": 22,
+        "detail": {}
+      },
+      "ACCOUNT_RECONCILED": {
+        "first_at": 1795670997.7030416,
+        "last_at": 1795672805.1494508,
+        "count": 22,
+        "detail": {}
+      },
+      "WATCH_STARTED": {
+        "first_at": 1795670997.7161775,
+        "last_at": 1795670997.7161775,
+        "count": 1,
+        "detail": {}
+      },
+      "RESEARCH_CYCLE_COMPLETED": {
+        "first_at": 1795671057.4740326,
+        "last_at": 1795671057.4740326,
+        "count": 1,
+        "detail": {
+          "count": 1990,
+          "eligible_count": 0,
+          "ready_count": 0
+        }
+      },
+      "WAITING_RESEARCH_WINDOW": {
+        "first_at": 1795671111.1741102,
+        "last_at": 1795672805.1578,
+        "count": 41,
+        "detail": {}
+      }
+    },
+    "order_evidence_scope": "CURRENT_RUN_ONLY_NOT_TODAY_LEDGER",
+    "order_evidence": {
+      "sent_events": 0,
+      "fill_events": 0,
+      "unknown_events": 0
+    }
+  },
+  "health": {
+    "checked_at": "2026-11-26T13:59:39+08:00",
+    "status": "OK",
+    "inventory_checked": true,
+    "budget_status": "READY",
+    "current_buy_budget_twd": "10000",
+    "minimum_balance_twd": "5000",
+    "strategy_cap_twd": "10000",
+    "daily_buy_limit_twd": "30000",
+    "buy_block_reasons": [],
+    "errors": []
+  },
+  "daily_dataset": {
+    "end": "2026-11-25",
+    "calendar_verified_through": "2026-11-25",
+    "rows": 127002,
+    "rejected_rows": 1485
+  },
+  "model": {
+    "calls": 28,
+    "by_role": {
+      "researcher": 15,
+      "challenger": 13
+    },
+    "by_status": {
+      "VALID": 26,
+      "ERROR": 2
+    },
+    "prompt_versions": {
+      "flow-review-v4-actionable-plan": 26,
+      "null": 2
+    },
+    "paired_reviews": 15,
+    "paired_states": {
+      "RESEARCH_WATCH": 13,
+      "RESEARCH_REJECT": 2
+    },
+    "reviews_with_received_minutes": 15,
+    "max_completed_minute_rows": 60
+  },
+  "flow": {
+    "recorded_cycles": 229,
+    "latest_completed_cycle": {
+      "additional_api_billed_usd": 0,
+      "as_of": "2026-11-26T13:30:56.741037+08:00",
+      "blockers": {
+        "CAPITAL_OR_RISK_CAP": 1,
+        "INSUFFICIENT_COMPLETED_HISTORY": 5,
+        "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1340,
+        "NET_PROFIT_BELOW_FLOOR": 13,
+        "NET_RETURN_BELOW_FLOOR": 11,
+        "NO_CURRENT_SETUP": 475,
+        "OBSERVED_TARGET_MISSING": 1,
+        "RECENT_HISTORY_GAP_OR_INVALID_BAR": 155,
+        "REWARD_RISK_BELOW_FLOOR": 14
+      },
+      "cached_theses": 0,
+      "dataset_manifest_sha256": "f9afb309737965f28c05775dfd85be169718a46c32dcc0fb7586b739a995a597",
+      "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+      "elapsed_seconds": 0.52,
+      "information_gap_origins": {},
+      "llm_calls": 0,
+      "orders_sent": 0,
+      "plan_usage_consumed": false,
+      "policy_sha256": "e295dc9d546a95617cbe484299853437a0506aba812db94796a69bce828ed6cb",
+      "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+      "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+      "states": {
+        "DATA_BLOCKED": 160,
+        "ECONOMIC_BLOCKED": 15,
+        "NO_SETUP": 475,
+        "SCREENED_OUT": 1340
+      },
+      "symbols_observed": 1990,
+      "system": "TW Opportunity Flow",
+      "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+      "usage": {},
+      "usage_unknown_calls": 0
+    },
+    "latest_file_summary": {
+      "system": "TW Opportunity Flow",
+      "as_of": "2026-11-26T13:30:56.741037+08:00",
+      "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+      "policy_sha256": "e295dc9d546a95617cbe484299853437a0506aba812db94796a69bce828ed6cb",
+      "dataset_manifest_sha256": "f9afb309737965f28c05775dfd85be169718a46c32dcc0fb7586b739a995a597",
+      "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+      "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+      "symbols_observed": 1990,
+      "states": {
+        "NO_SETUP": 475,
+        "SCREENED_OUT": 1340,
+        "DATA_BLOCKED": 160,
+        "ECONOMIC_BLOCKED": 15
+      },
+      "blockers": {
+        "NO_CURRENT_SETUP": 475,
+        "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1340,
+        "RECENT_HISTORY_GAP_OR_INVALID_BAR": 155,
+        "NET_PROFIT_BELOW_FLOOR": 13,
+        "NET_RETURN_BELOW_FLOOR": 11,
+        "REWARD_RISK_BELOW_FLOOR": 14,
+        "INSUFFICIENT_COMPLETED_HISTORY": 5,
+        "CAPITAL_OR_RISK_CAP": 1,
+        "OBSERVED_TARGET_MISSING": 1
+      },
+      "llm_calls": 0,
+      "cached_theses": 0,
+      "usage": {},
+      "usage_unknown_calls": 0,
+      "information_gap_origins": {},
+      "additional_api_billed_usd": 0,
+      "plan_usage_consumed": false,
+      "orders_sent": 0,
+      "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+      "elapsed_seconds": 0.52
+    },
+    "cycle_counts_include_intermediate_pending_states": true,
+    "ready_reviews": [],
+    "current_day_handoffs": 0,
+    "excluded_old_handoffs": 1,
+    "latest_execution_is_today": false,
+    "latest_execution_blocked": [],
+    "pretrade_model_events_today": 0,
+    "pretrade_event_limit": "Runtime events are bounded; corroborated with zero new formal attempts and zero new handoffs."
+  },
+  "formal_trading": {
+    "attempt_count": 0,
+    "attempt_statuses": {},
+    "ledger_event_count": 0,
+    "new_handoff_count": 0,
+    "confirmed_fills_in_current_health": [],
+    "unresolved_attempts": 0,
+    "ledger_note": "Zero attempts/events today is zero recorded automated submissions/fills; older manual/AI broker reconciliation entries excluded."
+  },
+  "quotes": {
+    "checked_at": "2026-11-26T13:30:56.534430+08:00",
+    "batch_size": 12,
+    "valid": 0,
+    "problems": {
+      "LIVE_NON_TRIAL_QUOTE_REQUIRED": 12
+    },
+    "missing_fields": {
+      "ask": 1,
+      "bid": 0,
+      "last_price": 0,
+      "low": 0
+    },
+    "confirmed_market_absence": 0,
+    "coverage_symbols_with_persistent_history": 83,
+    "history_max_ticks": 2751,
+    "public_feed_events": {
+      "PUBLIC_QUOTES": 215,
+      "BROKER_READ_ERROR": 1,
+      "PUBLIC_QUOTES_ERROR": 3
+    },
+    "coverage_limit": "Persistent history union is not exact subscription count. Current quote file holds latest batch only; public rotation events are separate."
+  },
+  "health_history": {
+    "records": 528,
+    "statuses": {
+      "OK": 525,
+      "ERROR": 3
+    },
+    "error_status_records": 3,
+    "historical_error_details": "Not expanded; latest snapshot errors separately included."
+  },
+  "export_policy": {
+    "sqlite": "mode=ro with BEGIN read transaction per database; no cross-database atomic snapshot",
+    "no_broker_or_model_calls": true,
+    "no_trade_process_or_settings_changes": true,
+    "only_reports_committed": true
+  }
+}

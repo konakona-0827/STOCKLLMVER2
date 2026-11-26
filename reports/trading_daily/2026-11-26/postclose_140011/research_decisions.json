@@ -1,0 +1,3056 @@
+{
+  "calls": [
+    {
+      "at": "2026-11-26T09:17:56.680048+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 39.954,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "e5bb6270f971dab7ab496a86cfa6f274ff5f5205fde3dc868f58bbf387fff697",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "09:14曾收在67.0，但09:15收回66.5，09:17:29報價66.2，尚未確認守住前高66.6。目標78.2距入場價1.846 ATR、需上漲17.95%；已成熟的五日歷史高點變幅中位數約2.96%、第75百分位約9.09%。這些重疊視窗不是勝率或預測。若跌破既定失效價60.1，原路徑即失效。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "即時行情：09:17:29後的報價與已完成分鐘資料未知。",
+              "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史，後續公司事件仍待核對。",
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接、未驗證；可能影響原始日線支撐與78.2目標的可比性。"
+            ],
+            "packet_id": "616412ad7c6175983c434f1e8409c3d20c0675ff833ccbe0837609c361dd51da",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "11月25日放量收至66.6、盤中仍高於五日均線，支持趨勢延續或拉回假說；既有66.3入場、7股、60.1失效、78.2目標的路徑數值合格。但本次收到的七根完成分鐘彙整呈現反覆穿越66.6，最新報價又低於該價，尚不足以同意當日限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "取得09:17:29後的已完成一分鐘彙整；若收盤重返66.6，且下一根收到的完成分鐘仍收在66.6之上，重審原路徑。現有分鐘資料僅涵蓋09:10至09:16，不能視為全時段連續成交。",
+              "若盤中跌破既定失效價60.1，原路徑失效，應重新審查假說；後續若維持在其上，仍須核對上述66.6的盤中形態。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T09:17:56.680048+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 25.409,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "da60ef3955dff3bfec2dc8f62f4ede24641c4206f2132249312a8e9572b990e3",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中最高67.2後，09:15、09:16完成分鐘收在66.5、66.9，09:17:29抽樣價回落至66.2，低於前高66.6；尚無回測66.3後守住並重新收復66.6的完成分鐘證據。目標78.2距入場1.846 ATR、需上漲17.95%，高於已成熟五日歷史高點變幅第75百分位9.09%；重到目標的期限可行性仍弱，這些重疊視窗不代表勝率。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "執行前須更新即時零股報價及66.3限價可成交性；現有報價截至09:17:29。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整日線及78.2目標的價格基礎尚未核實。",
+              "SOURCE_DATA_GAP：current_disclosures.complete_news_history 不完整；須查明是否有影響支撐、目標或風險的公司事件。",
+              "盤中已收到09:10至09:16共7根完成分鐘，但成交明細涵蓋未認證完整，不能據此宣稱連續站穩。"
+            ],
+            "packet_id": "616412ad7c6175983c434f1e8409c3d20c0675ff833ccbe0837609c361dd51da",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "趨勢延續及拉回假說仍可追蹤，但目前66.3限價、7股、60.1失效、78.2目標的既有計畫，缺少足以同意當日先掛單的盤中回測確認；數值路徑合格不等於研究確認。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "用後續已收到的完成分鐘檢查：價格重新收復66.6後，回測既有66.3附近仍守住當日低點65.7，才重審此限價路徑；若跌破65.7，須重審盤中形態與既有路徑。",
+              "確認公司行動是否改變原始歷史價格的可比性，並查核有無影響60.1支撐或78.2目標的具體公告；資料缺口補齊本身不構成批准。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T09:21:47.083158+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 34.281,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "9460657ba30fa8a684c4d3a0911c59adebb6cb6011c6dd4d945c9f91e0c85a6b",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/16觸及78.2後曾急跌至11/20的53.7；今日盤中最高67.2，但09:17至09:20的已完成分鐘回落，09:20收在66.0，尚未確認收復前日高點66.6。目標距離為1.8925 ATR、需上漲18.48%；已成熟的五日歷史高點變幅中位數僅2.96%、第75百分位為9.09%。這些重疊視窗不能視為勝率或預測。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "即時行情：目前報價截至09:21:07；重審時需更新當前報價及已完成分鐘。",
+              "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史；目前查無公告，不等於已排除所有公司事件。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整日線尚未認證；若期間有公司行動，需核對其是否影響60.1支撐與78.2目標的可比性。"
+            ],
+            "packet_id": "099722c6652a099edf8004f487b07b5f38c28037cc9dbf302db9d24d18f01533",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "日線反彈與量能支持趨勢延續研究，66.0入場、7股、60.1失效、78.2目標的既有路徑數值合格；但盤中衝高後退回66.0，對五日內重到78.2的形態確認仍不足。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "09:20後收到的新完成分鐘收復66.6，並在其後回測66.0的已完成分鐘守住66.0時，重審既有66.0限價路徑；抽樣快照不算分鐘確認。",
+              "若盤中價格跌破60.1，原路徑失效；若新增完成分鐘持續低於66.0且未收復66.6，重審反彈假說。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T09:21:47.083158+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 24.358,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "e45676f321879f44ca30ee643cc7cf22448405548772afc98881fcd6b5102471",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "尚無明確反證；但11月16日觸及78.2後曾急跌，今日盤中上探67.2後回到66.0，現低於前一日高點66.6。目標距離1.8925 ATR、需上漲18.48%，高於已成熟五日歷史高點變幅的中位數2.96%及第75百分位9.09%；這些重疊視窗不能當作勝率。",
+            "evidence_ids": [
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "09:21:07後的即時報價及限價66.0的可成交狀態未知。",
+              "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史；需查核是否有影響60.1支撐或78.2目標的公司事件。",
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線尚未認證；若期間有公司行動，需重核支撐與目標的可比性。"
+            ],
+            "packet_id": "099722c6652a099edf8004f487b07b5f38c28037cc9dbf302db9d24d18f01533",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "11月25日放量收在66.6，今日仍高於5日與20日均線，回測後延續上行的假說尚可觀察。既有66.0限價、7股、60.1失效及78.2目標的數值路徑合格，但收到的09:10至09:20共11根完成分鐘顯示上探後回落，09:20才收至66.0；目前不足以同意先掛此計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "後續收到的完成一分鐘彙整顯示66.0附近回測後維持其上，並重新收復既有前高66.6時，重審原限價計畫；分鐘資料僅按實際收到的時段判讀。",
+              "若後續價格跌破66.0，重審回測假說；若跌破既有失效價60.1，檢視該路徑失效。",
+              "取得會影響原始價格可比性的公司行動或相關公司事件資料時，重核60.1與78.2的依據。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T09:36:50.010653+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 26.209,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "38b44b2c7622bf9310020597c96d071b2f03b211242ea7c03c8fa33b6b3ac0e4",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11月26日盤中曾觸及67.2，但09:25後收到的完成分鐘多在66.0下方，09:34短暫收於66.0，09:35又收於65.7；最新盤中價65.7，尚未重新站回既有入場價66.0及前一日高點66.6。目標78.2距入場價1.8925 ATR、須上漲18.48%；已成熟的五日歷史高點變幅中位數約2.96%、第75百分位約9.09%，不能因78.2曾出現就認定期限內可重到。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_ECONOMICS",
+              "E_FEATURES",
+              "E_DAILY_HISTORY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "需要更新盤中報價，核對66.0限價計畫當時的價格與價差。",
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接；原始未調整日線的60.1支撐及78.2目標仍未獲認證。",
+              "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；需核對是否有會改變本計畫支撐、目標或風險的具體公司事件。",
+              "已收到25列09:10至09:35完成分鐘，但成交明細僅部分覆蓋，無法據此認定全時段連續站穩。"
+            ],
+            "packet_id": "bf8eb73ef1daea285767c4be3692a95c3ccaaaa5c837dd17eb12b5bb4ce92f84",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "完成日線的反彈與量能支持續漲假說，且66.0入場、7股、60.1失效、78.2目標的既有路徑數值合格；但盤中突破66.6後回落，現有完成分鐘尚不足以支持先掛該限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "09:35之後收到的完成分鐘重新收回既有入場價66.0，後續收到的完成分鐘維持在66.0以上，並觀察能否重新收復66.6；若再跌回66.0下方，重審反彈形態。",
+              "若盤中跌破既有失效價60.1，推翻此路徑；若取得影響60.1或78.2可比性的公司行動證據，重審價格基礎與假說。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T09:36:50.010653+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 29.134,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "e0959b4f1601179abf57eb455f096329c2182fcc8922313c9f7f7b8a75dbc9c3",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/16 高點 78.2 後曾跌至 11/19 收盤 57.1；今日觸及 67.2 後回落至 64.8，09:34 完成分鐘收 66.0，09:35 又收 65.7，尚未形成可確認的續漲或回測轉強。目標距離為 1.8925 ATR、需漲 18.4848%；已成熟的五日歷史高點變幅中位數為 2.9586%、第 75 百分位為 9.0909%，不足以支持期限內重到 78.2 的把握。這些重疊視窗不是勝率或預測。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接；須確認原始未調整價格是否影響 60.1 支撐與 78.2 目標的可比性。",
+              "SOURCE_DATA_GAP：目前官方揭露檢查並非完整新聞歷史；須查核是否有影響本計畫價位或風險的公司事件。",
+              "即時執行查核：09:36:21 後的報價、買賣盤與當日低點是否變動。"
+            ],
+            "packet_id": "bf8eb73ef1daea285767c4be3692a95c3ccaaaa5c837dd17eb12b5bb4ce92f84",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "日線反彈與放量使趨勢延續假說仍可觀察；66.0 入場、7 股、60.1 失效、78.2 目標的路徑數值合格，含成本淨利 78.2927 元、報酬風險比 1.621618。但盤中突破 66.6 後回落，現有 25 根已收到的完成分鐘只支持局部形態，尚不足以同意掛出該限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "後續已收到的完成分鐘重新收復 66.0 與前高 66.6，並在回測 66.0 時維持其上，再重審既有 66.0 限價路徑；缺漏分鐘不得補成連續站穩。",
+              "若盤中跌破目前當日低點 64.8，重新檢查既有失效位置與合格股數；若跌破 60.1，原路徑失效。",
+              "取得會影響原始價位可比性的公司行動或具體重大事件證據時，重新評估支撐、目標與風險。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T09:40:34.862529+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471",
+        "3147"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 43.176,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "3575eba3014c560eb9441d9d21027fc4303282b44d18d02991f223dcce7831e9",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中高點67.2後回落，09:39已完成分鐘收在66.3，低於前一日高點66.6。目標78.2距入場價1.846 ATR、需上漲17.95%，高於五日歷史高點變幅中位數2.96%及第75百分位9.09%；這些重疊視窗不能推算達標機率。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "09:40後即時報價與限價可成交資訊未知。",
+              "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史，後續公司事件仍未知。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接，歷史價格的公司行動調整未驗證。"
+            ],
+            "packet_id": "656cdc12474e5bde147bec9c8bd2fabeede11b9be9138afa612adfdc55e53da8",
+            "selected_route_id": "b045acc581c9ff20",
+            "symbol": "2471",
+            "thesis": "11/25放量收於66.6，盤中回測64.8後回到66.3，趨勢延續假說仍值得研究。同意既有當日限價計畫：66.3、7股、失效60.1、目標78.2；RESEARCH不代表買進指令或期限內可達標。",
+            "verdict": "RESEARCH",
+            "wait_conditions": [
+              "後續已收到的完成分鐘若重新收復66.6，重審延續形態；若持續收在其下，重審回落風險。",
+              "若盤中跌破60.1，既有失效位置被觸及，重審並否定此路徑。",
+              "若查得影響60.1支撐或78.2目標可比性的公司行動，重審歷史價位。"
+            ]
+          },
+          {
+            "counterevidence": "雖然盤中仍高於前一日高點250.5，但從269.0回落至257.0，已收到的完成分鐘由09:10的268.0降至09:34的258.5；09:34後沒有完成分鐘可核對回落是否止住。上一完成日線的20日報酬為負22.47%，盤中仍低於20日均線293.025。目標300距入場價1.5718 ATR、需上漲16.73%，高於五日歷史高點變幅中位數7.11%及第75百分位10.41%；重疊視窗並非達標機率。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "09:34後的完成分鐘未提供；現有20列分鐘彙整僅涵蓋已收到的成交，未認證連續覆蓋。",
+              "09:40後即時報價與限價可成交資訊未知。",
+              "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史，後續公司事件仍未知。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接，歷史價格的公司行動調整未驗證。"
+            ],
+            "packet_id": "3c35d4b2ad07757232f77373e801df56e06f316a30cdca43da9cfe7b48c2d343",
+            "selected_route_id": null,
+            "symbol": "3147",
+            "thesis": "250.5已在盤中收復，且257.0／2股／240.0／300.0為合格數值路徑；但盤中急升後一路回落，現有完成分鐘不足以確認回測形態，暫不認可該限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "取得09:34後實際收到的完成分鐘，核對價格是否維持在既有250.5之上、回落是否停止，並重審257.0限價計畫。",
+              "若盤中跌破240.0，既有路徑失效；若跌破250.5，前高收復形態亦須重審。",
+              "若查得影響240.0支撐或300.0目標可比性的公司行動，重審歷史價位。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T09:40:34.862529+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471",
+        "3147"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 33.587,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "5397de6dba1021ffc218f78e1ca2277b6984a9536db9f48660516ed71f8ef9fe",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中觸及67.2後回落至64.8；09:38完成分鐘收66.5、09:39收66.3，尚未重新站上昨日高點66.6。目標78.2距入場1.846 ATR、需漲17.95%，高於已成熟五日歷史高點變幅第75百分位9.09%；曾觸及78.2不代表五個交易日內能重到。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時報價更新：現有報價截至2026-11-26 09:40:07。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接；須查明是否影響60.1支撐與78.2目標的價格可比性。",
+              "SOURCE_DATA_GAP：current_disclosures並非完整新聞歷史；須查核是否有影響本計畫的公司事件。"
+            ],
+            "packet_id": "656cdc12474e5bde147bec9c8bd2fabeede11b9be9138afa612adfdc55e53da8",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "昨日放量收66.6、仍高於五日與二十日均線，趨勢延續假說尚有依據；但盤中回落後的收復證據不足，暫不同意以既有66.3入場、7股、60.1失效、78.2目標掛當日限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "後續收到的完成分鐘重新收上66.6，且再下一個收到的完成分鐘仍守住66.6，再審視66.3計畫；缺分鐘不得視為連續站穩。",
+              "若盤中跌破60.1，原路徑失效；若跌破當日低點64.8，須先重算合格路徑與股數再審。",
+              "取得足以判斷公司行動是否改變歷史支撐與目標可比性的資料，並更新當時報價及公司事件查核。"
+            ]
+          },
+          {
+            "counterevidence": "已完成日線的五日及二十日報酬為負，昨收245低於二十日均線293.025。今日雖已站上昨日高點250.5，但已收到的09:10至09:34共20根完成分鐘呈269回落至257.5附近，09:40報257，缺少回收後維持的證據。目標300距入場1.5718 ATR、需漲16.73%，高於已成熟五日歷史高點變幅第75百分位10.41%。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時報價更新：現有報價截至2026-11-26 09:40:28；09:34後尚無已收到的完成分鐘可驗證回落後形態。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接；須查明是否影響240支撐與300目標的價格可比性。",
+              "SOURCE_DATA_GAP：current_disclosures並非完整新聞歷史；須查核是否有影響本計畫的公司事件。"
+            ],
+            "packet_id": "3c35d4b2ad07757232f77373e801df56e06f316a30cdca43da9cfe7b48c2d343",
+            "selected_route_id": null,
+            "symbol": "3147",
+            "thesis": "盤中已收復昨日高點250.5，反彈假說未被否定；但連續完成分鐘顯示由269回落，尚不足以同意既有257入場、2股、240失效、300目標的當日限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "後續收到的完成分鐘維持在250.5之上，且回落後出現完成分鐘重新向上、再下一個收到的完成分鐘未跌回250.5以下，再審視257計畫；缺分鐘不得視為連續站穩。",
+              "若盤中跌破240，原路徑失效；若跌破當日低點257，須先重算合格路徑與股數再審。",
+              "取得足以判斷公司行動是否改變歷史支撐與目標可比性的資料，並更新當時報價及公司事件查核。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T09:42:45.666411+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471",
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 32.587,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "318d50c3ab02921e96172a314e943a947e4f88b9616286f5979995ee88b8162d",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中曾觸及67.2，但09:41已完成分鐘收於66.0，低於前高66.6；09:30曾跌至64.8，回升後尚未確認守住前高。目標78.2距入場價1.8615 ATR、需上漲18.1269%；已成熟的五日歷史高點變幅第75百分位為9.0909%，不能因過去曾到78.2就推定五日內可重到。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線價格基礎未認證。",
+              "SOURCE_DATA_GAP：現有官方揭露並非完整新聞歷史；仍需核對會影響支撐、目標或風險的公司事件。",
+              "執行前需更新09:42後的盤中報價與已完成分鐘資料。"
+            ],
+            "packet_id": "48c66e4db373348dc4a41c297ee596f42204f51867357f388d144c2d4599f8c2",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "11月25日放量收於66.6，盤中仍高於五日與二十日均線，趨勢延續假說可觀察；但早盤突破前高後回落，現有局部分鐘形態不足以同意66.2入場、7股、60.1失效、78.2目標的當日計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "後續已完成分鐘重新收復66.6，並在可核對的後續分鐘維持其上；若再跌破今日已見低點64.8，重審回測假說。",
+              "重新評估五日內到達78.2所需的18.1269%漲幅，是否有新出現的價格與時間證據支撐；若跌破路徑失效價60.1，該路徑失效。"
+            ]
+          },
+          {
+            "counterevidence": "11月27日已有官方資料列示除權，公司事件檢查明列「需新計畫」；目前59.3入場、54.4失效、73.4目標均依未認證調整的原始價格建立。另股價低於二十日均線，目標距離3.3345 ATR、需上漲23.7774%，遠高於已成熟五日歷史高點變幅第75百分位3.5578%。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，無法認證原始日線與支撐、目標的可比性。",
+              "SOURCE_DATA_GAP：現有官方揭露並非完整新聞歷史；需取得11月27日除權對本計畫價位與風險的核對結果。",
+              "執行前需更新09:42後的盤中報價與已完成分鐘資料。"
+            ],
+            "packet_id": "1c44b1ce1e1e31db4923e93c5ba2bca84069b0216904fc24818f0b772bef456e",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中已收復昨日高點59.0，09:10至09:41收到32列已完成分鐘資料，但09:31觸及60.2後回落至59.3。已知隔日除權直接否定沿用59.3入場、8股、54.4失效、73.4目標的現有假說；須重建計畫。",
+            "verdict": "REJECT",
+            "wait_conditions": [
+              "取得11月27日除權的價格調整依據後，重算並重新審查入場、股數、失效與目標；不得沿用本路徑。",
+              "若新計畫仍以盤中收復為依據，核對後續已完成分鐘能否維持在昨日高點59.0之上，以及是否再跌破今日低點58.7。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T09:42:45.666411+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471",
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 37.979,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "ee78ed48df487d36a059694932d5fed062bec99ac3c3858c47a224b349d36bf6",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/25放量收66.6，盤中曾達67.2，且當日低點64.8仍高於既有失效價60.1；反彈假說尚無明確反證。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線未獲認證。",
+              "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；需查核是否有影響60.1支撐或78.2目標的事件。",
+              "後續盤中報價與已完成分鐘資料尚未提供；現有30列分鐘資料僅涵蓋收到的成交，未認證涵蓋全部成交。"
+            ],
+            "packet_id": "48c66e4db373348dc4a41c297ee596f42204f51867357f388d144c2d4599f8c2",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "反彈仍可研究，但目前不足以同意66.2限價、7股、60.1失效及78.2目標的整套計畫。盤中自67.2回落至64.8後，09:41已完成分鐘收66.0，尚未重新站上昨高66.6。目標需上漲18.13%、距離1.86 ATR；成熟五日歷史高點變幅中位數2.96%、第75百分位9.09%，僅供比較，不能當作期限內到價機率。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "後續已收到的完成分鐘收盤重新站上66.6，並在回測66.2時守住；再核對67.2近端壓力及66.2限價計畫。",
+              "若盤中跌破既有失效價60.1，原路徑失效，應重審而非沿用此計畫。"
+            ]
+          },
+          {
+            "counterevidence": "盤中已站上昨高59.0，09:31完成分鐘曾收60.2；短線收復訊號存在，但其後回落至59.3，且仍低於20日線66.395。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接；原始日線的支撐與目標基準未獲認證。",
+              "SOURCE_DATA_GAP：現況揭露不含完整新聞歷史；需取得11/27除權對本計畫價格基準與風險的可核對資料。",
+              "後續盤中報價與已完成分鐘資料尚未提供；現有32列分鐘資料未認證涵蓋全部成交。"
+            ],
+            "packet_id": "1c44b1ce1e1e31db4923e93c5ba2bca84069b0216904fc24818f0b772bef456e",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "拒絕目前59.3入場、8股、54.4失效及73.4目標的計畫：官方現況資料列有11/27除權，並明示需重建計畫；這直接影響跨越該日的原始價格基準。另目標需上漲23.78%、距離3.33 ATR，明顯高於成熟五日歷史高點變幅第75百分位3.56%；歷史變幅並非勝率。",
+            "verdict": "REJECT",
+            "wait_conditions": [
+              "11/27除權影響及調整後價格基準可核對，並產生重新計算且合格的新路徑時，重審新計畫；不得沿用本路徑。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T09:45:32.449475+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 25.36,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "1348267c35a30fcf4ee35a670ede86915889c58a49346e488b3affe2bdabc56b",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中曾到67.2，但已收到的09:41、09:42與09:44完成分鐘均收在66.0，09:45抽樣價為65.8；尚未顯示收復並維持前一日高點66.6。目標78.2距入場價1.8925 ATR、需上漲18.48%，高於已成熟五日歷史高點變幅的中位數2.96%與第75百分位9.09%；這些重疊視窗不能當作勝率或預測。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_ECONOMICS",
+              "E_FEATURES",
+              "E_DAILY_HISTORY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "最新即時零股報價及委託狀態：目前盤中資料止於2026-11-26 09:45:13。",
+              "公司事件：官方現況揭露曾查至09:33，完整新聞歷史未提供；須核對其後是否有影響目標或風險的公告。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整日線及78.2目標的價格基礎未經公司行動認證。"
+            ],
+            "packet_id": "470913fe90bdc82a44c3b8869036b6f51754f335a6c2b33996b08440ff3ad7fc",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "近日日線反彈且盤中低點64.8仍高於既有失效價60.1，趨勢延續假說尚可觀察；但66.0限價計畫所需的盤中收復證據不足，暫不認可該路徑的入場、7股、60.1失效與78.2目標組合。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "收到後續完成分鐘，顯示價格重新收復66.6，且其後收到的完成分鐘維持在既有入場價66.0或以上，再重審66.0限價計畫；缺分鐘不視為連續站穩。",
+              "若可取得的當日低點跌破既有失效價60.1，重審或推翻目前假說。",
+              "核對新的即時報價、其後官方公告及影響原始價格基礎的公司行動資料；資料缺口補齊本身不代表計畫通過。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T09:45:32.449475+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 24.804,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "f52249ed02354d0f5725e40969cf15f73ed51fd0e2c130561ff6e1529013ae0e",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/16觸及78.2後迅速回落，該價位是近端壓力；本次自66.0至目標需上漲18.48%（1.8925 ATR），高於已成熟五日歷史高點變幅的中位數2.96%及第75百分位9.09%。盤中最高67.2後回落至65.8，已收妥分鐘資料顯示66.0附近的回測尚不穩定。這些是期限與型態疑慮，尚非趨勢假說的明確反證。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時行情：09:45:13之後的報價、買賣價與已完成分鐘尚未知，掛單前須更新。",
+              "公司事件：官方現況查核未列公告或阻礙，但揭露來源不含完整新聞歷史；SOURCE_DATA_GAP：完整事件／新聞歷史。",
+              "公司行動：SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始未調整日線尚未認證；須查明是否影響60.1支撐或78.2目標。"
+            ],
+            "packet_id": "470913fe90bdc82a44c3b8869036b6f51754f335a6c2b33996b08440ff3ad7fc",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "趨勢延續與回測假說仍可研究，但目前不足以同意66.0限價、7股、60.1失效、78.2目標的整組計畫。32列已收到的完成分鐘顯示64.8後反彈，卻未充分確認66.0回測；分鐘涵蓋亦未認證完整。既有路徑經濟條件合格，成本已納入計算，但五日內重到78.2的幅度要求偏高，歷史重疊視窗不代表勝率。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "取得09:45後已完成的一分鐘資料，檢查回到66.0後的回測是否維持在66.0或以上，並觀察是否重新越過66.6；若再跌回66.0以下，持續等待型態確認。",
+              "若盤中跌破既有失效價60.1，重審此假說與路徑；若取得影響歷史支撐或目標的公司行動證據，也須重審。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T12:16:50.358400+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 25.071,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "8d6d8752586582af748bdefc1eb4c544599434b938b0cdb317cfbbc66aeb839d",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "60根完成日線仍呈下行，前一日收盤58.0低於20日均線66.395；盤中雖已收復前高59.0及5日均線56.1，仍低於20日均線。目標73.4距入場60.1為3.1453 ATR、需上漲22.1298%；已成熟的5日歷史高點變幅中位數約2.05%、第75百分位約3.56%。這些重疊視窗不能當作勝率或預測。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線與73.4目標、54.4失效價的可比性尚未認證。",
+              "SOURCE_DATA_GAP：官方現況來源列出11月27日除權相關公司行動，但來源審查未完成；需核對其對本限價計畫支撐、目標與風險的影響。",
+              "執行前需更新即時零股報價；現有報價時間為11月26日12:16:24。"
+            ],
+            "packet_id": "facd2e25a70a9f25f4bcedf067c674d51173a3f302fda862609bba6429b481bd",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中收復前高59.0的反彈假說值得追蹤，但目前不宜同意60.1買入7股、54.4失效、73.4目標的當日限價計畫：隔日已列有除權相關公司行動，現有未調整價位的適用性待查。已收到10:54至12:14的60根完成分鐘彙整，可見局部站上59.0；其成交涵蓋未認證完整，不能據此宣稱全時段連續站穩。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "核對11月27日公司行動及其對未調整歷史價位的影響；若影響54.4失效價或73.4目標，待系統提供重新計算的合格路徑後重審。",
+              "若仍評估11月26日盤中假說，查看12:14之後已收到的完成分鐘及更新報價是否維持在既有前高59.0之上；跌破既有失效價54.4則推翻此路徑。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T12:16:50.358400+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 28.997,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "18cdbfdaa0da2431106a7d89d2f215c26cc7578ecd98dc7e4810f32b0e0605b7",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "雖已盤中收復前日高點59.0，但仍低於MA20的66.395；60.1入場至73.4目標需上漲22.13%、跨越3.1453 ATR，明顯高於已成熟五日歷史高點變幅的中位數2.05%與第75百分位3.56%。這些重疊視窗不能當作勝率。11/27已列有公司行動，現有未調整價位的適用性待釐清。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整與原始日線價位認證未串接；須確認其對54.4失效及73.4目標的影響。",
+              "11/27已列權利相關公司行動，須核對條件及對當日計畫的影響；若計畫跨至該日，須重算新計畫。",
+              "下一次執行判斷所需的即時委買賣、成交與公司事件更新。"
+            ],
+            "packet_id": "facd2e25a70a9f25f4bcedf067c674d51173a3f302fda862609bba6429b481bd",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中收復前日高點的反彈假說已有局部證據，但現有資料尚不足以同意60.1入場、7股、54.4失效、73.4目標的當日限價計畫。已收到10:54至12:14共60列完成分鐘彙整，後段多在59.9至60.1；其成交涵蓋未經完整認證，且目標距離與公司行動風險使計畫仍待核對。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "取得12:14之後的完成分鐘彙整，核對價格是否持續守住既有前日高點59.0，並能否突破當日高點60.2；若回落至59.0以下或跌破當日低點58.7，重新評估反彈型態。",
+              "釐清11/27公司行動對54.4失效與73.4目標的影響；如需跨日，依事件結果取得重算計畫後重審。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T12:18:58.007192+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 23.454,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "a52cf41eb301b955f3ff68658b7fb928d00869960606fa4b11cbc458f80e6d06",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/27 已列有除權及認購安排，資料明示目前計畫須重建；未認證公司行動調整的原始日線不足以支持跨越該日的 54.4 失效與 73.4 目標。另從 60.0 到目標需上漲 22.33%、跨越 3.1689 ATR，明顯高於已成熟五日歷史高點變幅中位數 2.05% 與第 75 百分位 3.56%；這些重疊視窗不代表勝率。",
+            "evidence_ids": [
+              "E_DATA_LIMITS",
+              "E_ECONOMICS",
+              "E_FEATURES",
+              "E_INTRADAY",
+              "E_DAILY_HISTORY"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，無法認證公司行動調整後的支撐與目標。",
+              "SOURCE_DATA_GAP：current_disclosures 缺完整新聞歷史；須核對 11/27 公司行動的正式條件及其對計畫的影響。",
+              "實際執行時的即時零股報價與當日事件狀態尚未知；12:18:25 報價不能代替屆時核對。"
+            ],
+            "packet_id": "a4ac2158f1b3e3d7f9f8d276d95a516d450c7a55d01006802416bf164e3a4112",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中已收復前日高點 59.0，收到的完成分鐘彙整也顯示 11:43 後多次觸及 60.0，支持局部反彈觀察；但資料涵蓋未認證完整，且價格仍低於 20 日均線。更關鍵的是，已知 11/27 除權安排落在五日持有期限內，使現有 60.0 入場、7 股、54.4 失效、73.4 目標的原始價格計畫不再適用。",
+            "verdict": "REJECT",
+            "wait_conditions": [
+              "取得 11/27 公司行動正式條件及調整後價格依據，重新產生並檢查合格數值路徑；不得沿用本路徑的失效與目標。",
+              "新路徑產生後，以當時即時報價及已收到的完成分鐘，重審前日高點 59.0 附近的維持情形與新的失效條件。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T12:18:58.007192+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 26.577,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "a7cc5ca07b6d996b07e3e4a242d1ef3569bb82ec7443a6547113a522b286d15a",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中已收復前日高點59.0，已收到的11:43至12:17完成分鐘多在60.0附近，尚無明確證據否定短線反彈假說。但20日跌幅約28.4%、價格仍低於20日均線；73.4目標距60.0入場價3.1689 ATR、須上漲22.33%，遠高於已成熟五日高點變幅的中位數2.05%及第75百分位3.56%。這些重疊視窗只描述歷史幅度，並非勝率或預測。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始未調整日線尚未認證；須釐清11月27日除權對54.4失效價與73.4目標的影響。",
+              "SOURCE_DATA_GAP：目前官方揭露資料不含完整新聞歷史；須確認11月27日除權條款及是否有影響本計畫的其他公告。",
+              "即時執行查核：下次審查時須重新核對零股報價與當時帳戶狀態；現有行情時間為11月26日12:18:25。"
+            ],
+            "packet_id": "a4ac2158f1b3e3d7f9f8d276d95a516d450c7a55d01006802416bf164e3a4112",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中收復59.0支持短線反彈研究，但已收到的60根完成分鐘僅涵蓋10:56至12:17的部分成交，不能證明整段盤勢連續站穩。既有60.0入場、7股、54.4失效、73.4目標路徑雖通過成本與風險數值檢查，11月27日已列出的除權事項會影響持有期間的原始價位基準，現階段不能同意該限價計畫；目標所需漲幅也缺乏相近的五日歷史幅度支持。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "核對11月27日除權的正式條款及其對既有支撐、失效與目標的影響，取得重新計算且合格的路徑後重審；補齊資料本身不代表批准。",
+              "在11月26日12:17之後收到的完成分鐘中，檢查價格能否維持在既有前日高點59.0之上、於60.0附近延續，並核對當日低點及是否跌破既有失效價54.4；若跌破失效價，重審此反彈假說。",
+              "若出現能具體支持持有期限內接近73.4目標的新價格證據，重新評估目標幅度與追價風險。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T12:21:20.409613+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 38.509,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "d41724d4a953c1a01f4130223fbcfa7e24ceceac3cd543fb0445ca78a50bc717",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "已收日線仍低於MA20，20日跌幅28.3951%。73.4目標距離為3.1453 ATR、需上漲22.1298%；已成熟五日歷史高點變幅中位數為2.0537%、第75百分位為3.5578%。這些重疊視窗不能當作勝率或預測。另有11/27除權事項，未調整的支撐與目標可能受影響。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "即時行情：報價僅截至11/26 12:20:42，之後價格未知。",
+              "公司事件：SOURCE_DATA_GAP—現況揭露來源未涵蓋完整新聞歷史；目前查無公告不等於已排除所有事件。",
+              "公司行動：已提供11/27除權資料，但SYSTEM_DATA_GAP—歷史公司行動調整未串接、原始日線未認證；需確認除權對54.4失效及73.4目標的影響。"
+            ],
+            "packet_id": "b0dce6a0cdd66c567b96f1006d4d469c2de7ddf9a8a6884664e1fa9b381e0aa8",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中60.1已收復昨高59.0及MA5；已收到11:00至12:20的60根完成分鐘彙整，呈現局部維持在59.0之上，但未認證涵蓋全部成交。11/27除權明確要求重建計畫，現階段不能同意既有60.1入場、7股、54.4失效及73.4目標的組合。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "確認11/27除權的生效與價格調整資料，並取得據此重算、仍合格的入場、股數、失效與目標路徑後重審；現有路徑不得直接沿用。",
+              "若在11/26盤中先重審收復型態，核對12:20後已收到的完成分鐘是否仍維持在既有昨高59.0之上，以及當日低點是否跌破既有54.4失效位；這項型態確認不會單獨解除公司行動造成的計畫缺口。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T12:21:20.409613+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 28.123,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "afc2ac16b866bb0919a50b4e2d2db03afed9330d23c0846cc001466ac451e723",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "目前沒有足以否定盤中收復假說的價格反證；盤中已高於前日高點59.0及MA5。惟60.1至73.4仍需上漲22.13%、約3.15 ATR，明顯高於已成熟五日歷史高點變幅的中位數2.05%及第75百分位3.56%；這些重疊視窗不能當作勝率。11月27日除權可能改變未調整的支撐、失效與目標基礎，現有計畫尚不能核可。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時行情：12:20:42後的報價、已完成分鐘及當日低點。",
+              "公司行動：確認11月27日除權條件及其對60.1入場、54.4失效、73.4目標的影響；目前歷史價格未經公司行動調整認證。",
+              "公司事件：目前官方揭露來源未涵蓋完整新聞歷史，須查核影響本計畫的後續公告。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接、未認證。",
+              "SOURCE_DATA_GAP：complete_news_history 未取得完整來源回覆。"
+            ],
+            "packet_id": "b0dce6a0cdd66c567b96f1006d4d469c2de7ddf9a8a6884664e1fa9b381e0aa8",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中收復前日高點的局部形態成立：60筆已完成分鐘彙整涵蓋11:00至12:20，最後報價60.1，當日低點58.7未跌破54.4。惟分鐘成交涵蓋未認證，且11月27日除權緊接在五日持有期限內；在確認公司行動對原價位計畫的影響前，不能同意既有60.1、7股、54.4、73.4的整組限價計畫。既有數值路徑的淨利與報酬風險比合格，但無法消除上述疑點。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "取得11月27日除權的正式條件及可核對的價格調整依據，重審既有支撐、失效、目標與數值路徑；若原路徑不再適用，須由系統重算。",
+              "在公司行動釐清前，若後續已收到的完成分鐘仍守住前日高點59.0、且當日低點未跌破既有失效54.4，可重審盤中收復形態；跌破54.4則重審或淘汰此路徑。",
+              "以更新的即時報價核對60.1限價與實際價差，並檢查新的公司公告是否影響持有期。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T12:23:31.006048+08:00",
+      "role": "researcher",
+      "status": "ERROR",
+      "symbols": [
+        "3706"
+      ],
+      "elapsed_seconds": 0.461,
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    },
+    {
+      "at": "2026-11-26T12:36:04.345524+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "3264"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 37.123,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "c5552cdf19826485f295c75610b899141bf87a2013a795b5bbe878e7c9062ed7",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11月26日盤中已收復前日高點154.5及前波高點155.5，但11:46觸及155.5後曾回落，至12:35僅有12:34、12:35兩筆完成分鐘收在156。從入場156至目標198.5須上漲27.24%、跨越2.63 ATR；已成熟的五日歷史高點變幅中位數為6.09%、第75百分位為11.78%。這些重疊視窗不能當作勝率，但顯示五日目標需要比多數歷史視窗更大的漲幅。近20日跌幅38.74%，盤中價格仍低於MA20的179.8。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_FEATURES",
+              "E_DAILY_HISTORY",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時行情：執行前須更新零股報價；現有156報價時間為11月26日12:35:57。",
+              "SOURCE_DATA_GAP：官方現況揭露已查詢，但完整新聞歷史未回傳；須核對是否有影響支撐、目標或風險的公司事件。",
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始未調整日線尚未認證；須核對140失效位與198.5目標的價格基準。"
+            ],
+            "packet_id": "2efc8fd9208272effae4059d906a4392911d92a15a97f63cfab248995a162b8f",
+            "selected_route_id": null,
+            "symbol": "3264",
+            "thesis": "盤中收復154.5與155.5使反彈假說值得追蹤；目前對156入場、2股、140失效、198.5目標的當日限價計畫，突破後的持續性與五日目標幅度仍缺足夠支持。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "核對12:36–13:00時段後續收到的完成分鐘：價格能否持續維持在既有155.5之上，回測既有154.5時能否守住；已收分鐘之間有缺口時，不推定連續站穩。",
+              "若後續價格跌破140，現有路徑失效；若回落至盤中低點150以下，重審盤中反彈形態及既有路徑。",
+              "若取得會影響140失效位或198.5目標之公司行動、事件或價格調整證據，重新審查假說。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T12:36:04.345524+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "3264"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 41.663,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "8577eb94292f75cce767d99d91f73f86d01b573c5a3c3e545368fba091b77c7d",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "20日跌幅38.7%，現價仍低於MA20的179.8；198.5目標距入場價2.63 ATR、需上漲27.24%，明顯高於已成熟五日歷史高點變幅中位數6.09%及第75百分位11.78%。曾到達198.5不代表本次能在五日內重到。盤中直到12:34、12:35兩根已收到的完成分鐘才收在156，突破延續與回測證據仍薄弱。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時行情：12:35:57後的報價與已完成分鐘尚未提供。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接，原始日線及歷史支撐、目標的公司行動調整未獲認證。",
+              "SOURCE_DATA_GAP：現況公告來源不含完整新聞歷史；後續公司事件及公司行動狀態未知。",
+              "已收分鐘彙整僅涵蓋11:16至12:35的60列，缺分鐘未補值，成交涵蓋範圍未認證。"
+            ],
+            "packet_id": "2efc8fd9208272effae4059d906a4392911d92a15a97f63cfab248995a162b8f",
+            "selected_route_id": null,
+            "symbol": "3264",
+            "thesis": "盤中已收復MA5與前日高154.5，反彈假說尚無明確反證；但156為當日高點，突破僅見於最後兩根已收到的完成分鐘。現階段不足以同意以156買2股、140失效、198.5目標的限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "收到12:35後的完成分鐘：若回測前日高154.5後仍收在其上，且較後完成分鐘再收於156，重審同一路徑及目標距離；缺分鐘不得視為持續站穩。",
+              "更新報價及當日低點；若跌破既有失效價140，該路徑失效。",
+              "取得可能影響140支撐或198.5目標的公司行動證據時，重審未調整歷史價位。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T12:39:25.330651+08:00",
+      "role": "researcher",
+      "status": "ERROR",
+      "symbols": [
+        "3481",
+        "3264"
+      ],
+      "elapsed_seconds": 0.456,
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    },
+    {
+      "at": "2026-11-26T12:52:58.043544+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 30.406,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "be99e6846c26e63a662c037b89fded5f81c2eaee9cb2db1310dbdc2d0486de30",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/27 有除權相關公司行動，來源已標示目前計畫須重做；未驗證的原始價格可能影響 54.4 失效價與 73.4 目標。另 73.4 距入場價 3.12 ATR、需上漲 21.93%，明顯高於已成熟五日歷史高點變幅中位數 2.05% 與第 75 百分位 3.56%；重疊視窗不能當作勝率。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線價位尚未認證。",
+              "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；需核對 11/27 除權條件對本計畫價位與風險的影響。",
+              "12:52:20 後的即時報價、完成分鐘與公司事件更新未知；已收到的 60 列分鐘彙整僅涵蓋部分成交，未認證連續覆蓋。"
+            ],
+            "packet_id": "828b777b74a3424bee94575908e1f7d28e9534391ffabf3a9f3e34bad12db346",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中已收復前一日高點 59.0 與 MA5；11:44–12:51 收到的完成分鐘顯示局部回升，但尾段回到 60.1。現有 60.2 入場、7 股、54.4 失效、73.4 目標的路徑，因隔日除權對價位基準的影響未釐清，暫不能同意。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "核對 11/27 除權公告及其價格調整影響後，取得重新計算且仍合格的數值路徑，再審入場、股數、失效與目標。",
+              "若當日仍評估盤中收復形態，檢查 12:52 後實際收到的完成一分鐘彙整是否再觸及 60.2 並維持在既有前高 59.0 之上；若驗證盤中價格跌破 54.4，現有路徑失效。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T12:52:58.043544+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "3706"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 37.257,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "7b22e15b0649aebc5fa01da10b00c6e47059449f30aa27999db840c52783a6ea",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "12:49–12:51 的已收到完成分鐘收在 60.1，低於計畫入場價 60.2；盤中仍低於 MA20，近 20 日跌幅為 28.4%。11/27 已列有除權事項，原始未調整價位跨越該日使用須重新檢查。這些削弱目前計畫，但尚未證明盤中收復假說失效。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_DAILY_HISTORY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "即時行情：12:52:20 後的報價與已完成分鐘。",
+              "公司事件：完整新聞歷史未提供；需查核有無影響計畫的新事件。",
+              "公司行動：核對 11/27 除權的最終資料，以及對既有失效價與目標價的影響。",
+              "SYSTEM_DATA_GAP: historical_corporate_action_adjustment 未串接，歷史價格基礎未認證。",
+              "SOURCE_DATA_GAP: complete_news_history 未由目前揭露來源提供。"
+            ],
+            "packet_id": "828b777b74a3424bee94575908e1f7d28e9534391ffabf3a9f3e34bad12db346",
+            "selected_route_id": null,
+            "symbol": "3706",
+            "thesis": "盤中已收復前日高點 59.0 與 MA5，但現有局部分鐘形態及隔日除權事項，尚不足以同意 60.2 買入 7 股、54.4 失效、73.4 目標的當日限價計畫。目標距離為 3.1216 ATR、需漲 21.93%；已成熟五日歷史高點變幅中位數為 2.05%、第 75 百分位為 3.56%。歷史觸及過 73.4 不代表持有期限內可重到；重疊視窗亦非勝率。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "核對 12:52 後至收盤已收到的完成分鐘，是否重新在 60.2 附近維持，且未跌回前日高點 59.0；若當日跌破既有失效價 54.4，重審假說。分鐘資料僅有 11:44–12:51 的 60 列且涵蓋未認證，不能據此宣稱全時段連續站穩。",
+              "完成 11/27 除權資料查核，確認原始未調整的 54.4 失效價與 73.4 目標價能否用於跨除權日的五個交易日計畫；若須調整，應以重新計算的合格路徑重審。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T13:09:19.589693+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "3264"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 32.843,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "31e71cae71794234505ee1f29608c03fe04b6b55321ed7ec9701bf2901e51edf",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "近20日跌幅38.7%；11/25曾自154.5回落至145.5。198.5目標距入場價2.63 ATR、需上漲27.24%，明顯高於已成熟五日歷史高點變幅中位數6.09%及第75百分位11.78%；這些重疊視窗不能當作勝率或預測。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "13:09後的即時報價、可成交賣價及完成分鐘尚未知。",
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接；140失效價與198.5目標所依據的未調整歷史價格尚未核實。",
+              "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；須查明是否有影響本計畫支撐、目標或風險的公司事件。"
+            ],
+            "packet_id": "2543dd27fe926be1fc8ec394a45c0404190e4a1b5cdf19e5eb4764f627d11580",
+            "selected_route_id": null,
+            "symbol": "3264",
+            "thesis": "盤中已收復前日高點154.5與五日均線；收到的完成分鐘顯示12:34後上行至157，回落後13:08收在156。局部收復假說仍可觀察，但尚不足以同意156入場、2股、140失效、198.5目標的當日限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "檢查13:09後至當日收盤已收到的完成分鐘：回測154.5後若再收於156，且未出現跌破154.5的完成分鐘，重審盤中收復；缺分鐘不推定連續站穩。",
+              "若後續完成分鐘跌破154.5，重新評估收復假說；若盤中價格嚴格低於140，該路徑失效。",
+              "核實是否有會改變140支撐、198.5目標或風險的公司行動與事件後，重審價格基礎。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T13:09:19.589693+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "3264"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 35.784,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "6086a3e3ea7e8bf0b2cf147951bcc61a0dd2d54740d83ca5abfca0d2b031aec8",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "目前盤中價 156 已高於前日高 154.5 與五日均線 145.9，已收到的分鐘彙整也顯示 12:34 後曾上探 157；但 12:58 至 13:07 多在 155 至 155.5，13:08 才回到 156，反彈延續仍待確認。五日、二十日報酬分別為 -13.13%、-38.74%，二十日均線 179.8 是通往目標的近端壓力。198.5 目標距入場價 2.63 ATR、需上漲 27.24%，高於五日歷史高點變幅的中位數 6.09% 與第 75 百分位 11.78%；這些重疊視窗不代表勝率或經校準預測。",
+            "evidence_ids": [
+              "E_INTRADAY",
+              "E_FEATURES",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "13:09 後的即時報價與已完成分鐘彙整，以核對回收 156 後的走勢；現有 60 列分鐘資料僅涵蓋已收到的成交，連續涵蓋未認證。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接；原始未調整日線尚未認證公司行動，可能影響 140 支撐與 198.5 目標的可比性。",
+              "SOURCE_DATA_GAP：complete_news_history 未由目前官方揭露來源完整提供；仍須查核可能影響本計畫的公司事件。"
+            ],
+            "packet_id": "2543dd27fe926be1fc8ec394a45c0404190e4a1b5cdf19e5eb4764f627d11580",
+            "selected_route_id": null,
+            "symbol": "3264",
+            "thesis": "盤中收復前日高點形成反彈研究假說，但現有局部回測不足以支持 156 元、2 股、140 元失效、198.5 元目標的當日限價計畫。合格數值路徑仍在，尚無足以 REJECT 的明確反證。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "取得 13:08 後至當日收盤已收到的完成分鐘：檢查回測時是否守住既有前高 154.5 與 11/24 高點 155.5，以及能否再次收在計畫入場價 156 或上探既有當日高點 157；若跌破既有當日低點 150，重審盤中反彈假說。",
+              "查明是否有影響原始價格序列的公司行動，或會改變支撐、目標與風險的公司公告後，重審同一路徑。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    },
+    {
+      "at": "2026-11-26T13:27:33.131407+08:00",
+      "role": "researcher",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 31.427,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "cffeaa1dda17db97af58a83b32cb6ced79a35ef10361df97d56fb77871e7561e",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "盤中自63.8反彈至65.9，但仍低於前一完成日高點66.6；11月16日觸及78.2後曾快速回落。由66.0至目標78.2需上漲18.48%、約1.89 ATR；已成熟的五日歷史高點變幅中位數為2.96%、第75百分位為9.09%。這些重疊視窗不代表勝率，也不能證明目標會在五個交易日內重到。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY",
+              "E_DATA_LIMITS"
+            ],
+            "execution_missing": [
+              "13:26:55後的即時報價與已完成分鐘資料未知。",
+              "公司事件：官方現況揭露未列公告，但來源並非完整新聞歷史；後續事件未知。",
+              "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整歷史尚未認證；若有影響比較基礎的公司行動，須重新核對78.2目標及歷史價位。"
+            ],
+            "packet_id": "71e92d5278e2c87daaf74fa8f784c51b1a47cde301c80bd9dd27c084a1726c4c",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "趨勢回檔後的盤中反彈值得追蹤，但目前尚不足以同意66.0限價、7股、60.1失效及78.2目標的整組計畫。已收到11:48至13:26的60列完成分鐘彙整，顯示局部回升；資料僅涵蓋已收到的成交，不能視為全時段連續站穩。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "檢查13:26後收到的完成分鐘：是否重新越過既有前高66.6，且後續已收到的完成分鐘仍維持在計畫入場價66.0以上；再以更新報價重審。",
+              "若盤中跌破既有失效價60.1，推翻此路徑的回檔支撐假說。",
+              "若查得會改變原始歷史價位比較基礎的公司行動，核對其對78.2目標與60.1支撐的影響後重審。"
+            ]
+          }
+        ],
+        "role": "researcher"
+      }
+    },
+    {
+      "at": "2026-11-26T13:27:33.131407+08:00",
+      "role": "challenger",
+      "status": "VALID",
+      "symbols": [
+        "2471"
+      ],
+      "model": "gpt-6-sol",
+      "elapsed_seconds": 25.921,
+      "prompt_version": "flow-review-v4-actionable-plan",
+      "prompt_sha256": "046adec63a91fa6ae1920e4e375c458cea7335e0cde43bbd5255bcc9da979fb2",
+      "answer": {
+        "opinions": [
+          {
+            "counterevidence": "11/25 完成日線收於66.6且量增；11/26 盤中高點67.2，現價65.9仍高於5日線及20日線，60.1失效價未被跌破。這些資料尚不足以反證趨勢延續假說。",
+            "evidence_ids": [
+              "E_FEATURES",
+              "E_LEVELS",
+              "E_ECONOMICS",
+              "E_DATA_LIMITS",
+              "E_DAILY_HISTORY",
+              "E_INTRADAY"
+            ],
+            "execution_missing": [
+              "SYSTEM_DATA_GAP：歷史公司行動調整未串接，60根原始日線尚未認證；須核對是否影響60.1支撐及78.2目標。",
+              "SOURCE_DATA_GAP：官方現況揭露並非完整新聞歷史；須查核有無影響本計畫的公司事件或公司行動。",
+              "即時下單時須重新核對報價、當日低點及帳戶狀態。"
+            ],
+            "packet_id": "71e92d5278e2c87daaf74fa8f784c51b1a47cde301c80bd9dd27c084a1726c4c",
+            "selected_route_id": null,
+            "symbol": "2471",
+            "thesis": "66.0限價、7股、60.1失效、78.2目標的路徑數值合格，成本後淨利79.6913元、報酬風險比1.699827。然而目標距離1.8925 ATR，須上漲18.4848%；已成熟的五日歷史高點變幅中位數約2.96%、第75百分位約9.09%，重到78.2的時限證據偏弱，這些重疊視窗並非勝率。當日曾到67.2，但13:26現價65.9，已收到的60列完成分鐘僅涵蓋11:48至13:26的部分成交，末段回升仍未以完成分鐘收復66.6；因此暫不認可先掛此限價計畫。",
+            "verdict": "WATCH",
+            "wait_conditions": [
+              "在後續已收到的完成1分鐘彙整中，觀察66.0附近回測後維持，並出現收於66.6以上的分鐘；重審時核對66.0限價路徑是否仍合格，不以抽樣快照推定連續站穩。",
+              "若盤中跌破既有失效價60.1，或新的當日低點使原路徑失效，立即重審假說與既有路徑。",
+              "若公司行動核對顯示原始歷史的60.1或78.2不可直接比較，依該具體結果重審。"
+            ]
+          }
+        ],
+        "role": "challenger"
+      }
+    }
+  ],
+  "paired_reviews": [
+    {
+      "at": "2026-11-26T09:19:02.100505+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "616412ad7c6175983c434f1e8409c3d20c0675ff833ccbe0837609c361dd51da",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 66.2,
+        "bid": 66.1,
+        "ask": 66.3,
+        "low": 65.7,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T09:17:29+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 43,
+        "observation_count": 5,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 7
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.3,
+            "invested_twd": 465.5641,
+            "modeled_loss_twd": 49.6834,
+            "net_profit_twd": 76.8899,
+            "net_return": 0.165154,
+            "quantity": 7,
+            "reward_risk": 1.547597,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.20000000000000284,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.3,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "64a968c08c25d12c",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.846,
+          "target_required_return": 0.179487,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "09:14曾收在67.0，但09:15收回66.5，09:17:29報價66.2，尚未確認守住前高66.6。目標78.2距入場價1.846 ATR、需上漲17.95%；已成熟的五日歷史高點變幅中位數約2.96%、第75百分位約9.09%。這些重疊視窗不是勝率或預測。若跌破既定失效價60.1，原路徑即失效。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "即時行情：09:17:29後的報價與已完成分鐘資料未知。",
+          "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史，後續公司事件仍待核對。",
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接、未驗證；可能影響原始日線支撐與78.2目標的可比性。"
+        ],
+        "packet_id": "616412ad7c6175983c434f1e8409c3d20c0675ff833ccbe0837609c361dd51da",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "11月25日放量收至66.6、盤中仍高於五日均線，支持趨勢延續或拉回假說；既有66.3入場、7股、60.1失效、78.2目標的路徑數值合格。但本次收到的七根完成分鐘彙整呈現反覆穿越66.6，最新報價又低於該價，尚不足以同意當日限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得09:17:29後的已完成一分鐘彙整；若收盤重返66.6，且下一根收到的完成分鐘仍收在66.6之上，重審原路徑。現有分鐘資料僅涵蓋09:10至09:16，不能視為全時段連續成交。",
+          "若盤中跌破既定失效價60.1，原路徑失效，應重新審查假說；後續若維持在其上，仍須核對上述66.6的盤中形態。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "盤中最高67.2後，09:15、09:16完成分鐘收在66.5、66.9，09:17:29抽樣價回落至66.2，低於前高66.6；尚無回測66.3後守住並重新收復66.6的完成分鐘證據。目標78.2距入場1.846 ATR、需上漲17.95%，高於已成熟五日歷史高點變幅第75百分位9.09%；重到目標的期限可行性仍弱，這些重疊視窗不代表勝率。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "執行前須更新即時零股報價及66.3限價可成交性；現有報價截至09:17:29。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整日線及78.2目標的價格基礎尚未核實。",
+          "SOURCE_DATA_GAP：current_disclosures.complete_news_history 不完整；須查明是否有影響支撐、目標或風險的公司事件。",
+          "盤中已收到09:10至09:16共7根完成分鐘，但成交明細涵蓋未認證完整，不能據此宣稱連續站穩。"
+        ],
+        "packet_id": "616412ad7c6175983c434f1e8409c3d20c0675ff833ccbe0837609c361dd51da",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "趨勢延續及拉回假說仍可追蹤，但目前66.3限價、7股、60.1失效、78.2目標的既有計畫，缺少足以同意當日先掛單的盤中回測確認；數值路徑合格不等於研究確認。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "用後續已收到的完成分鐘檢查：價格重新收復66.6後，回測既有66.3附近仍守住當日低點65.7，才重審此限價路徑；若跌破65.7，須重審盤中形態與既有路徑。",
+          "確認公司行動是否改變原始歷史價格的可比性，並查核有無影響60.1支撐或78.2目標的具體公告；資料缺口補齊本身不構成批准。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:22:45.765160+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "099722c6652a099edf8004f487b07b5f38c28037cc9dbf302db9d24d18f01533",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 66.0,
+        "bid": 65.9,
+        "ask": 66.0,
+        "low": 65.7,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T09:21:07+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 62,
+        "observation_count": 7,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 11
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.0,
+            "invested_twd": 463.462,
+            "modeled_loss_twd": 46.882,
+            "net_profit_twd": 79.6913,
+            "net_return": 0.171948,
+            "quantity": 7,
+            "reward_risk": 1.699827,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.09999999999999432,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "3bc0664737a2cfbe",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.8925,
+          "target_required_return": 0.184848,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "11/16觸及78.2後曾急跌至11/20的53.7；今日盤中最高67.2，但09:17至09:20的已完成分鐘回落，09:20收在66.0，尚未確認收復前日高點66.6。目標距離為1.8925 ATR、需上漲18.48%；已成熟的五日歷史高點變幅中位數僅2.96%、第75百分位為9.09%。這些重疊視窗不能視為勝率或預測。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "即時行情：目前報價截至09:21:07；重審時需更新當前報價及已完成分鐘。",
+          "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史；目前查無公告，不等於已排除所有公司事件。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整日線尚未認證；若期間有公司行動，需核對其是否影響60.1支撐與78.2目標的可比性。"
+        ],
+        "packet_id": "099722c6652a099edf8004f487b07b5f38c28037cc9dbf302db9d24d18f01533",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "日線反彈與量能支持趨勢延續研究，66.0入場、7股、60.1失效、78.2目標的既有路徑數值合格；但盤中衝高後退回66.0，對五日內重到78.2的形態確認仍不足。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "09:20後收到的新完成分鐘收復66.6，並在其後回測66.0的已完成分鐘守住66.0時，重審既有66.0限價路徑；抽樣快照不算分鐘確認。",
+          "若盤中價格跌破60.1，原路徑失效；若新增完成分鐘持續低於66.0且未收復66.6，重審反彈假說。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "尚無明確反證；但11月16日觸及78.2後曾急跌，今日盤中上探67.2後回到66.0，現低於前一日高點66.6。目標距離1.8925 ATR、需上漲18.48%，高於已成熟五日歷史高點變幅的中位數2.96%及第75百分位9.09%；這些重疊視窗不能當作勝率。",
+        "evidence_ids": [
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "09:21:07後的即時報價及限價66.0的可成交狀態未知。",
+          "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史；需查核是否有影響60.1支撐或78.2目標的公司事件。",
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線尚未認證；若期間有公司行動，需重核支撐與目標的可比性。"
+        ],
+        "packet_id": "099722c6652a099edf8004f487b07b5f38c28037cc9dbf302db9d24d18f01533",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "11月25日放量收在66.6，今日仍高於5日與20日均線，回測後延續上行的假說尚可觀察。既有66.0限價、7股、60.1失效及78.2目標的數值路徑合格，但收到的09:10至09:20共11根完成分鐘顯示上探後回落，09:20才收至66.0；目前不足以同意先掛此計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續收到的完成一分鐘彙整顯示66.0附近回測後維持其上，並重新收復既有前高66.6時，重審原限價計畫；分鐘資料僅按實際收到的時段判讀。",
+          "若後續價格跌破66.0，重審回測假說；若跌破既有失效價60.1，檢視該路徑失效。",
+          "取得會影響原始價格可比性的公司行動或相關公司事件資料時，重核60.1與78.2的依據。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:37:45.392414+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "bf8eb73ef1daea285767c4be3692a95c3ccaaaa5c837dd17eb12b5bb4ce92f84",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 65.7,
+        "bid": 65.7,
+        "ask": 66.0,
+        "low": 64.8,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T09:36:21+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 126,
+        "observation_count": 16,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 25
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.0,
+            "invested_twd": 463.462,
+            "modeled_loss_twd": 48.2806,
+            "net_profit_twd": 78.2927,
+            "net_return": 0.16893,
+            "quantity": 7,
+            "reward_risk": 1.621618,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.29999999999999716,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "12ce4076414875f0",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.8925,
+          "target_required_return": 0.184848,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "11月26日盤中曾觸及67.2，但09:25後收到的完成分鐘多在66.0下方，09:34短暫收於66.0，09:35又收於65.7；最新盤中價65.7，尚未重新站回既有入場價66.0及前一日高點66.6。目標78.2距入場價1.8925 ATR、須上漲18.48%；已成熟的五日歷史高點變幅中位數約2.96%、第75百分位約9.09%，不能因78.2曾出現就認定期限內可重到。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_ECONOMICS",
+          "E_FEATURES",
+          "E_DAILY_HISTORY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "需要更新盤中報價，核對66.0限價計畫當時的價格與價差。",
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接；原始未調整日線的60.1支撐及78.2目標仍未獲認證。",
+          "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；需核對是否有會改變本計畫支撐、目標或風險的具體公司事件。",
+          "已收到25列09:10至09:35完成分鐘，但成交明細僅部分覆蓋，無法據此認定全時段連續站穩。"
+        ],
+        "packet_id": "bf8eb73ef1daea285767c4be3692a95c3ccaaaa5c837dd17eb12b5bb4ce92f84",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "完成日線的反彈與量能支持續漲假說，且66.0入場、7股、60.1失效、78.2目標的既有路徑數值合格；但盤中突破66.6後回落，現有完成分鐘尚不足以支持先掛該限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "09:35之後收到的完成分鐘重新收回既有入場價66.0，後續收到的完成分鐘維持在66.0以上，並觀察能否重新收復66.6；若再跌回66.0下方，重審反彈形態。",
+          "若盤中跌破既有失效價60.1，推翻此路徑；若取得影響60.1或78.2可比性的公司行動證據，重審價格基礎與假說。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "11/16 高點 78.2 後曾跌至 11/19 收盤 57.1；今日觸及 67.2 後回落至 64.8，09:34 完成分鐘收 66.0，09:35 又收 65.7，尚未形成可確認的續漲或回測轉強。目標距離為 1.8925 ATR、需漲 18.4848%；已成熟的五日歷史高點變幅中位數為 2.9586%、第 75 百分位為 9.0909%，不足以支持期限內重到 78.2 的把握。這些重疊視窗不是勝率或預測。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接；須確認原始未調整價格是否影響 60.1 支撐與 78.2 目標的可比性。",
+          "SOURCE_DATA_GAP：目前官方揭露檢查並非完整新聞歷史；須查核是否有影響本計畫價位或風險的公司事件。",
+          "即時執行查核：09:36:21 後的報價、買賣盤與當日低點是否變動。"
+        ],
+        "packet_id": "bf8eb73ef1daea285767c4be3692a95c3ccaaaa5c837dd17eb12b5bb4ce92f84",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "日線反彈與放量使趨勢延續假說仍可觀察；66.0 入場、7 股、60.1 失效、78.2 目標的路徑數值合格，含成本淨利 78.2927 元、報酬風險比 1.621618。但盤中突破 66.6 後回落，現有 25 根已收到的完成分鐘只支持局部形態，尚不足以同意掛出該限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續已收到的完成分鐘重新收復 66.0 與前高 66.6，並在回測 66.0 時維持其上，再重審既有 66.0 限價路徑；缺漏分鐘不得補成連續站穩。",
+          "若盤中跌破目前當日低點 64.8，重新檢查既有失效位置與合格股數；若跌破 60.1，原路徑失效。",
+          "取得會影響原始價位可比性的公司行動或具體重大事件證據時，重新評估支撐、目標與風險。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:41:51.688629+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "656cdc12474e5bde147bec9c8bd2fabeede11b9be9138afa612adfdc55e53da8",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 66.3,
+        "bid": 66.2,
+        "ask": 66.3,
+        "low": 64.8,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T09:40:07+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 144,
+        "observation_count": 18,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 28
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.3,
+            "invested_twd": 465.5641,
+            "modeled_loss_twd": 48.9841,
+            "net_profit_twd": 77.5892,
+            "net_return": 0.166656,
+            "quantity": 7,
+            "reward_risk": 1.583967,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.09999999999999432,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.3,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "b045acc581c9ff20",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.846,
+          "target_required_return": 0.179487,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "盤中高點67.2後回落，09:39已完成分鐘收在66.3，低於前一日高點66.6。目標78.2距入場價1.846 ATR、需上漲17.95%，高於五日歷史高點變幅中位數2.96%及第75百分位9.09%；這些重疊視窗不能推算達標機率。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "09:40後即時報價與限價可成交資訊未知。",
+          "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史，後續公司事件仍未知。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接，歷史價格的公司行動調整未驗證。"
+        ],
+        "packet_id": "656cdc12474e5bde147bec9c8bd2fabeede11b9be9138afa612adfdc55e53da8",
+        "selected_route_id": "b045acc581c9ff20",
+        "symbol": "2471",
+        "thesis": "11/25放量收於66.6，盤中回測64.8後回到66.3，趨勢延續假說仍值得研究。同意既有當日限價計畫：66.3、7股、失效60.1、目標78.2；RESEARCH不代表買進指令或期限內可達標。",
+        "verdict": "RESEARCH",
+        "wait_conditions": [
+          "後續已收到的完成分鐘若重新收復66.6，重審延續形態；若持續收在其下，重審回落風險。",
+          "若盤中跌破60.1，既有失效位置被觸及，重審並否定此路徑。",
+          "若查得影響60.1支撐或78.2目標可比性的公司行動，重審歷史價位。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "盤中觸及67.2後回落至64.8；09:38完成分鐘收66.5、09:39收66.3，尚未重新站上昨日高點66.6。目標78.2距入場1.846 ATR、需漲17.95%，高於已成熟五日歷史高點變幅第75百分位9.09%；曾觸及78.2不代表五個交易日內能重到。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時報價更新：現有報價截至2026-11-26 09:40:07。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接；須查明是否影響60.1支撐與78.2目標的價格可比性。",
+          "SOURCE_DATA_GAP：current_disclosures並非完整新聞歷史；須查核是否有影響本計畫的公司事件。"
+        ],
+        "packet_id": "656cdc12474e5bde147bec9c8bd2fabeede11b9be9138afa612adfdc55e53da8",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "昨日放量收66.6、仍高於五日與二十日均線，趨勢延續假說尚有依據；但盤中回落後的收復證據不足，暫不同意以既有66.3入場、7股、60.1失效、78.2目標掛當日限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續收到的完成分鐘重新收上66.6，且再下一個收到的完成分鐘仍守住66.6，再審視66.3計畫；缺分鐘不得視為連續站穩。",
+          "若盤中跌破60.1，原路徑失效；若跌破當日低點64.8，須先重算合格路徑與股數再審。",
+          "取得足以判斷公司行動是否改變歷史支撐與目標可比性的資料，並更新當時報價及公司事件查核。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:41:51.692950+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "3147",
+      "packet_id": "3c35d4b2ad07757232f77373e801df56e06f316a30cdca43da9cfe7b48c2d343",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 257.0,
+        "bid": 256.5,
+        "ask": 257.0,
+        "low": 257.0,
+        "high": 269.0,
+        "quote_timestamp": "2026-11-26T09:40:28+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 126,
+        "observation_count": 1,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 20
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 257.0,
+            "invested_twd": 515.514,
+            "modeled_loss_twd": 39.993,
+            "net_profit_twd": 79.887,
+            "net_return": 0.154966,
+            "quantity": 2,
+            "reward_risk": 1.997525,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.5,
+            "stop": 240.0,
+            "target": 300.0
+          },
+          "eligible": true,
+          "entry": 257.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "b2ff645c2fe67a70",
+          "stop": {
+            "date": "2026-10-01",
+            "kind": "CONFIRMED_SWING_LOW",
+            "known_on": "2026-10-02",
+            "price": 240.0
+          },
+          "target": {
+            "date": "2026-10-06",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-10-07",
+            "price": 300.0
+          },
+          "target_distance_atr": 1.5718,
+          "target_required_return": 0.167315,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "雖然盤中仍高於前一日高點250.5，但從269.0回落至257.0，已收到的完成分鐘由09:10的268.0降至09:34的258.5；09:34後沒有完成分鐘可核對回落是否止住。上一完成日線的20日報酬為負22.47%，盤中仍低於20日均線293.025。目標300距入場價1.5718 ATR、需上漲16.73%，高於五日歷史高點變幅中位數7.11%及第75百分位10.41%；重疊視窗並非達標機率。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "09:34後的完成分鐘未提供；現有20列分鐘彙整僅涵蓋已收到的成交，未認證連續覆蓋。",
+          "09:40後即時報價與限價可成交資訊未知。",
+          "SOURCE_DATA_GAP：官方現況揭露未涵蓋完整新聞歷史，後續公司事件仍未知。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接，歷史價格的公司行動調整未驗證。"
+        ],
+        "packet_id": "3c35d4b2ad07757232f77373e801df56e06f316a30cdca43da9cfe7b48c2d343",
+        "selected_route_id": null,
+        "symbol": "3147",
+        "thesis": "250.5已在盤中收復，且257.0／2股／240.0／300.0為合格數值路徑；但盤中急升後一路回落，現有完成分鐘不足以確認回測形態，暫不認可該限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得09:34後實際收到的完成分鐘，核對價格是否維持在既有250.5之上、回落是否停止，並重審257.0限價計畫。",
+          "若盤中跌破240.0，既有路徑失效；若跌破250.5，前高收復形態亦須重審。",
+          "若查得影響240.0支撐或300.0目標可比性的公司行動，重審歷史價位。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "已完成日線的五日及二十日報酬為負，昨收245低於二十日均線293.025。今日雖已站上昨日高點250.5，但已收到的09:10至09:34共20根完成分鐘呈269回落至257.5附近，09:40報257，缺少回收後維持的證據。目標300距入場1.5718 ATR、需漲16.73%，高於已成熟五日歷史高點變幅第75百分位10.41%。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時報價更新：現有報價截至2026-11-26 09:40:28；09:34後尚無已收到的完成分鐘可驗證回落後形態。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接；須查明是否影響240支撐與300目標的價格可比性。",
+          "SOURCE_DATA_GAP：current_disclosures並非完整新聞歷史；須查核是否有影響本計畫的公司事件。"
+        ],
+        "packet_id": "3c35d4b2ad07757232f77373e801df56e06f316a30cdca43da9cfe7b48c2d343",
+        "selected_route_id": null,
+        "symbol": "3147",
+        "thesis": "盤中已收復昨日高點250.5，反彈假說未被否定；但連續完成分鐘顯示由269回落，尚不足以同意既有257入場、2股、240失效、300目標的當日限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續收到的完成分鐘維持在250.5之上，且回落後出現完成分鐘重新向上、再下一個收到的完成分鐘未跌回250.5以下，再審視257計畫；缺分鐘不得視為連續站穩。",
+          "若盤中跌破240，原路徑失效；若跌破當日低點257，須先重算合格路徑與股數再審。",
+          "取得足以判斷公司行動是否改變歷史支撐與目標可比性的資料，並更新當時報價及公司事件查核。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:43:56.285446+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "48c66e4db373348dc4a41c297ee596f42204f51867357f388d144c2d4599f8c2",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 66.0,
+        "bid": 66.0,
+        "ask": 66.2,
+        "low": 64.8,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T09:42:18+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 148,
+        "observation_count": 19,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 30
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.2,
+            "invested_twd": 464.8634,
+            "modeled_loss_twd": 48.9827,
+            "net_profit_twd": 77.5906,
+            "net_return": 0.166911,
+            "quantity": 7,
+            "reward_risk": 1.584041,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.20000000000000284,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.2,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "0702adbaf09ae8d9",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.8615,
+          "target_required_return": 0.181269,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "盤中曾觸及67.2，但09:41已完成分鐘收於66.0，低於前高66.6；09:30曾跌至64.8，回升後尚未確認守住前高。目標78.2距入場價1.8615 ATR、需上漲18.1269%；已成熟的五日歷史高點變幅第75百分位為9.0909%，不能因過去曾到78.2就推定五日內可重到。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線價格基礎未認證。",
+          "SOURCE_DATA_GAP：現有官方揭露並非完整新聞歷史；仍需核對會影響支撐、目標或風險的公司事件。",
+          "執行前需更新09:42後的盤中報價與已完成分鐘資料。"
+        ],
+        "packet_id": "48c66e4db373348dc4a41c297ee596f42204f51867357f388d144c2d4599f8c2",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "11月25日放量收於66.6，盤中仍高於五日與二十日均線，趨勢延續假說可觀察；但早盤突破前高後回落，現有局部分鐘形態不足以同意66.2入場、7股、60.1失效、78.2目標的當日計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續已完成分鐘重新收復66.6，並在可核對的後續分鐘維持其上；若再跌破今日已見低點64.8，重審回測假說。",
+          "重新評估五日內到達78.2所需的18.1269%漲幅，是否有新出現的價格與時間證據支撐；若跌破路徑失效價60.1，該路徑失效。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "11/25放量收66.6，盤中曾達67.2，且當日低點64.8仍高於既有失效價60.1；反彈假說尚無明確反證。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線未獲認證。",
+          "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；需查核是否有影響60.1支撐或78.2目標的事件。",
+          "後續盤中報價與已完成分鐘資料尚未提供；現有30列分鐘資料僅涵蓋收到的成交，未認證涵蓋全部成交。"
+        ],
+        "packet_id": "48c66e4db373348dc4a41c297ee596f42204f51867357f388d144c2d4599f8c2",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "反彈仍可研究，但目前不足以同意66.2限價、7股、60.1失效及78.2目標的整套計畫。盤中自67.2回落至64.8後，09:41已完成分鐘收66.0，尚未重新站上昨高66.6。目標需上漲18.13%、距離1.86 ATR；成熟五日歷史高點變幅中位數2.96%、第75百分位9.09%，僅供比較，不能當作期限內到價機率。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "後續已收到的完成分鐘收盤重新站上66.6，並在回測66.2時守住；再核對67.2近端壓力及66.2限價計畫。",
+          "若盤中跌破既有失效價60.1，原路徑失效，應重審而非沿用此計畫。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:43:56.290120+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_REJECT",
+      "selected_route_id": null,
+      "symbol": "3706",
+      "packet_id": "1c44b1ce1e1e31db4923e93c5ba2bca84069b0216904fc24818f0b772bef456e",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 59.3,
+        "bid": 59.1,
+        "ask": 59.3,
+        "low": 58.7,
+        "high": 60.2,
+        "quote_timestamp": "2026-11-26T09:42:16+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 151,
+        "observation_count": 1,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 32
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 59.3,
+            "invested_twd": 475.8744,
+            "modeled_loss_twd": 45.708,
+            "net_profit_twd": 106.14,
+            "net_return": 0.223042,
+            "quantity": 8,
+            "reward_risk": 2.322132,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.19999999999999574,
+            "stop": 54.4,
+            "target": 73.4
+          },
+          "eligible": true,
+          "entry": 59.3,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "f3c232b3f0cf8ce3",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 54.4
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 73.4
+          },
+          "target_distance_atr": 3.3345,
+          "target_required_return": 0.237774,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "11月27日已有官方資料列示除權，公司事件檢查明列「需新計畫」；目前59.3入場、54.4失效、73.4目標均依未認證調整的原始價格建立。另股價低於二十日均線，目標距離3.3345 ATR、需上漲23.7774%，遠高於已成熟五日歷史高點變幅第75百分位3.5578%。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，無法認證原始日線與支撐、目標的可比性。",
+          "SOURCE_DATA_GAP：現有官方揭露並非完整新聞歷史；需取得11月27日除權對本計畫價位與風險的核對結果。",
+          "執行前需更新09:42後的盤中報價與已完成分鐘資料。"
+        ],
+        "packet_id": "1c44b1ce1e1e31db4923e93c5ba2bca84069b0216904fc24818f0b772bef456e",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中已收復昨日高點59.0，09:10至09:41收到32列已完成分鐘資料，但09:31觸及60.2後回落至59.3。已知隔日除權直接否定沿用59.3入場、8股、54.4失效、73.4目標的現有假說；須重建計畫。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "取得11月27日除權的價格調整依據後，重算並重新審查入場、股數、失效與目標；不得沿用本路徑。",
+          "若新計畫仍以盤中收復為依據，核對後續已完成分鐘能否維持在昨日高點59.0之上，以及是否再跌破今日低點58.7。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "盤中已站上昨高59.0，09:31完成分鐘曾收60.2；短線收復訊號存在，但其後回落至59.3，且仍低於20日線66.395。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接；原始日線的支撐與目標基準未獲認證。",
+          "SOURCE_DATA_GAP：現況揭露不含完整新聞歷史；需取得11/27除權對本計畫價格基準與風險的可核對資料。",
+          "後續盤中報價與已完成分鐘資料尚未提供；現有32列分鐘資料未認證涵蓋全部成交。"
+        ],
+        "packet_id": "1c44b1ce1e1e31db4923e93c5ba2bca84069b0216904fc24818f0b772bef456e",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "拒絕目前59.3入場、8股、54.4失效及73.4目標的計畫：官方現況資料列有11/27除權，並明示需重建計畫；這直接影響跨越該日的原始價格基準。另目標需上漲23.78%、距離3.33 ATR，明顯高於成熟五日歷史高點變幅第75百分位3.56%；歷史變幅並非勝率。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "11/27除權影響及調整後價格基準可核對，並產生重新計算且合格的新路徑時，重審新計畫；不得沿用本路徑。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T09:46:22.664854+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "470913fe90bdc82a44c3b8869036b6f51754f335a6c2b33996b08440ff3ad7fc",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 65.8,
+        "bid": 65.8,
+        "ask": 66.0,
+        "low": 64.8,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T09:45:13+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 154,
+        "observation_count": 21,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 32
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.0,
+            "invested_twd": 463.462,
+            "modeled_loss_twd": 47.5813,
+            "net_profit_twd": 78.992,
+            "net_return": 0.170439,
+            "quantity": 7,
+            "reward_risk": 1.660148,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.20000000000000284,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "d492d84554f7e142",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.8925,
+          "target_required_return": 0.184848,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "盤中曾到67.2，但已收到的09:41、09:42與09:44完成分鐘均收在66.0，09:45抽樣價為65.8；尚未顯示收復並維持前一日高點66.6。目標78.2距入場價1.8925 ATR、需上漲18.48%，高於已成熟五日歷史高點變幅的中位數2.96%與第75百分位9.09%；這些重疊視窗不能當作勝率或預測。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_ECONOMICS",
+          "E_FEATURES",
+          "E_DAILY_HISTORY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "最新即時零股報價及委託狀態：目前盤中資料止於2026-11-26 09:45:13。",
+          "公司事件：官方現況揭露曾查至09:33，完整新聞歷史未提供；須核對其後是否有影響目標或風險的公告。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整日線及78.2目標的價格基礎未經公司行動認證。"
+        ],
+        "packet_id": "470913fe90bdc82a44c3b8869036b6f51754f335a6c2b33996b08440ff3ad7fc",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "近日日線反彈且盤中低點64.8仍高於既有失效價60.1，趨勢延續假說尚可觀察；但66.0限價計畫所需的盤中收復證據不足，暫不認可該路徑的入場、7股、60.1失效與78.2目標組合。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "收到後續完成分鐘，顯示價格重新收復66.6，且其後收到的完成分鐘維持在既有入場價66.0或以上，再重審66.0限價計畫；缺分鐘不視為連續站穩。",
+          "若可取得的當日低點跌破既有失效價60.1，重審或推翻目前假說。",
+          "核對新的即時報價、其後官方公告及影響原始價格基礎的公司行動資料；資料缺口補齊本身不代表計畫通過。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "11/16觸及78.2後迅速回落，該價位是近端壓力；本次自66.0至目標需上漲18.48%（1.8925 ATR），高於已成熟五日歷史高點變幅的中位數2.96%及第75百分位9.09%。盤中最高67.2後回落至65.8，已收妥分鐘資料顯示66.0附近的回測尚不穩定。這些是期限與型態疑慮，尚非趨勢假說的明確反證。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情：09:45:13之後的報價、買賣價與已完成分鐘尚未知，掛單前須更新。",
+          "公司事件：官方現況查核未列公告或阻礙，但揭露來源不含完整新聞歷史；SOURCE_DATA_GAP：完整事件／新聞歷史。",
+          "公司行動：SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始未調整日線尚未認證；須查明是否影響60.1支撐或78.2目標。"
+        ],
+        "packet_id": "470913fe90bdc82a44c3b8869036b6f51754f335a6c2b33996b08440ff3ad7fc",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "趨勢延續與回測假說仍可研究，但目前不足以同意66.0限價、7股、60.1失效、78.2目標的整組計畫。32列已收到的完成分鐘顯示64.8後反彈，卻未充分確認66.0回測；分鐘涵蓋亦未認證完整。既有路徑經濟條件合格，成本已納入計算，但五日內重到78.2的幅度要求偏高，歷史重疊視窗不代表勝率。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得09:45後已完成的一分鐘資料，檢查回到66.0後的回測是否維持在66.0或以上，並觀察是否重新越過66.6；若再跌回66.0以下，持續等待型態確認。",
+          "若盤中跌破既有失效價60.1，重審此假說與路徑；若取得影響歷史支撐或目標的公司行動證據，也須重審。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T12:17:44.468368+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "3706",
+      "packet_id": "facd2e25a70a9f25f4bcedf067c674d51173a3f302fda862609bba6429b481bd",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 59.9,
+        "bid": 59.9,
+        "ask": 60.1,
+        "low": 58.7,
+        "high": 60.2,
+        "quote_timestamp": "2026-11-26T12:16:24+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 426,
+        "observation_count": 3,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 60.1,
+            "invested_twd": 422.1207,
+            "modeled_loss_twd": 46.1001,
+            "net_profit_twd": 86.7669,
+            "net_return": 0.20555,
+            "quantity": 7,
+            "reward_risk": 1.882141,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.20000000000000284,
+            "stop": 54.4,
+            "target": 73.4
+          },
+          "eligible": true,
+          "entry": 60.1,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "313cdc61a1a805fa",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 54.4
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 73.4
+          },
+          "target_distance_atr": 3.1453,
+          "target_required_return": 0.221298,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "60根完成日線仍呈下行，前一日收盤58.0低於20日均線66.395；盤中雖已收復前高59.0及5日均線56.1，仍低於20日均線。目標73.4距入場60.1為3.1453 ATR、需上漲22.1298%；已成熟的5日歷史高點變幅中位數約2.05%、第75百分位約3.56%。這些重疊視窗不能當作勝率或預測。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線與73.4目標、54.4失效價的可比性尚未認證。",
+          "SOURCE_DATA_GAP：官方現況來源列出11月27日除權相關公司行動，但來源審查未完成；需核對其對本限價計畫支撐、目標與風險的影響。",
+          "執行前需更新即時零股報價；現有報價時間為11月26日12:16:24。"
+        ],
+        "packet_id": "facd2e25a70a9f25f4bcedf067c674d51173a3f302fda862609bba6429b481bd",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中收復前高59.0的反彈假說值得追蹤，但目前不宜同意60.1買入7股、54.4失效、73.4目標的當日限價計畫：隔日已列有除權相關公司行動，現有未調整價位的適用性待查。已收到10:54至12:14的60根完成分鐘彙整，可見局部站上59.0；其成交涵蓋未認證完整，不能據此宣稱全時段連續站穩。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "核對11月27日公司行動及其對未調整歷史價位的影響；若影響54.4失效價或73.4目標，待系統提供重新計算的合格路徑後重審。",
+          "若仍評估11月26日盤中假說，查看12:14之後已收到的完成分鐘及更新報價是否維持在既有前高59.0之上；跌破既有失效價54.4則推翻此路徑。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "雖已盤中收復前日高點59.0，但仍低於MA20的66.395；60.1入場至73.4目標需上漲22.13%、跨越3.1453 ATR，明顯高於已成熟五日歷史高點變幅的中位數2.05%與第75百分位3.56%。這些重疊視窗不能當作勝率。11/27已列有公司行動，現有未調整價位的適用性待釐清。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整與原始日線價位認證未串接；須確認其對54.4失效及73.4目標的影響。",
+          "11/27已列權利相關公司行動，須核對條件及對當日計畫的影響；若計畫跨至該日，須重算新計畫。",
+          "下一次執行判斷所需的即時委買賣、成交與公司事件更新。"
+        ],
+        "packet_id": "facd2e25a70a9f25f4bcedf067c674d51173a3f302fda862609bba6429b481bd",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中收復前日高點的反彈假說已有局部證據，但現有資料尚不足以同意60.1入場、7股、54.4失效、73.4目標的當日限價計畫。已收到10:54至12:14共60列完成分鐘彙整，後段多在59.9至60.1；其成交涵蓋未經完整認證，且目標距離與公司行動風險使計畫仍待核對。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得12:14之後的完成分鐘彙整，核對價格是否持續守住既有前日高點59.0，並能否突破當日高點60.2；若回落至59.0以下或跌破當日低點58.7，重新評估反彈型態。",
+          "釐清11/27公司行動對54.4失效與73.4目標的影響；如需跨日，依事件結果取得重算計畫後重審。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T12:19:48.089003+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_REJECT",
+      "selected_route_id": null,
+      "symbol": "3706",
+      "packet_id": "a4ac2158f1b3e3d7f9f8d276d95a516d450c7a55d01006802416bf164e3a4112",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 60.0,
+        "bid": 59.9,
+        "ask": 60.0,
+        "low": 58.7,
+        "high": 60.2,
+        "quote_timestamp": "2026-11-26T12:18:25+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 428,
+        "observation_count": 4,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 60.0,
+            "invested_twd": 421.42,
+            "modeled_loss_twd": 44.7001,
+            "net_profit_twd": 88.1669,
+            "net_return": 0.209214,
+            "quantity": 7,
+            "reward_risk": 1.972409,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.10000000000000142,
+            "stop": 54.4,
+            "target": 73.4
+          },
+          "eligible": true,
+          "entry": 60.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "2f8cf951028f1f88",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 54.4
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 73.4
+          },
+          "target_distance_atr": 3.1689,
+          "target_required_return": 0.223333,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "11/27 已列有除權及認購安排，資料明示目前計畫須重建；未認證公司行動調整的原始日線不足以支持跨越該日的 54.4 失效與 73.4 目標。另從 60.0 到目標需上漲 22.33%、跨越 3.1689 ATR，明顯高於已成熟五日歷史高點變幅中位數 2.05% 與第 75 百分位 3.56%；這些重疊視窗不代表勝率。",
+        "evidence_ids": [
+          "E_DATA_LIMITS",
+          "E_ECONOMICS",
+          "E_FEATURES",
+          "E_INTRADAY",
+          "E_DAILY_HISTORY"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，無法認證公司行動調整後的支撐與目標。",
+          "SOURCE_DATA_GAP：current_disclosures 缺完整新聞歷史；須核對 11/27 公司行動的正式條件及其對計畫的影響。",
+          "實際執行時的即時零股報價與當日事件狀態尚未知；12:18:25 報價不能代替屆時核對。"
+        ],
+        "packet_id": "a4ac2158f1b3e3d7f9f8d276d95a516d450c7a55d01006802416bf164e3a4112",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中已收復前日高點 59.0，收到的完成分鐘彙整也顯示 11:43 後多次觸及 60.0，支持局部反彈觀察；但資料涵蓋未認證完整，且價格仍低於 20 日均線。更關鍵的是，已知 11/27 除權安排落在五日持有期限內，使現有 60.0 入場、7 股、54.4 失效、73.4 目標的原始價格計畫不再適用。",
+        "verdict": "REJECT",
+        "wait_conditions": [
+          "取得 11/27 公司行動正式條件及調整後價格依據，重新產生並檢查合格數值路徑；不得沿用本路徑的失效與目標。",
+          "新路徑產生後，以當時即時報價及已收到的完成分鐘，重審前日高點 59.0 附近的維持情形與新的失效條件。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "盤中已收復前日高點59.0，已收到的11:43至12:17完成分鐘多在60.0附近，尚無明確證據否定短線反彈假說。但20日跌幅約28.4%、價格仍低於20日均線；73.4目標距60.0入場價3.1689 ATR、須上漲22.33%，遠高於已成熟五日高點變幅的中位數2.05%及第75百分位3.56%。這些重疊視窗只描述歷史幅度，並非勝率或預測。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始未調整日線尚未認證；須釐清11月27日除權對54.4失效價與73.4目標的影響。",
+          "SOURCE_DATA_GAP：目前官方揭露資料不含完整新聞歷史；須確認11月27日除權條款及是否有影響本計畫的其他公告。",
+          "即時執行查核：下次審查時須重新核對零股報價與當時帳戶狀態；現有行情時間為11月26日12:18:25。"
+        ],
+        "packet_id": "a4ac2158f1b3e3d7f9f8d276d95a516d450c7a55d01006802416bf164e3a4112",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中收復59.0支持短線反彈研究，但已收到的60根完成分鐘僅涵蓋10:56至12:17的部分成交，不能證明整段盤勢連續站穩。既有60.0入場、7股、54.4失效、73.4目標路徑雖通過成本與風險數值檢查，11月27日已列出的除權事項會影響持有期間的原始價位基準，現階段不能同意該限價計畫；目標所需漲幅也缺乏相近的五日歷史幅度支持。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "核對11月27日除權的正式條款及其對既有支撐、失效與目標的影響，取得重新計算且合格的路徑後重審；補齊資料本身不代表批准。",
+          "在11月26日12:17之後收到的完成分鐘中，檢查價格能否維持在既有前日高點59.0之上、於60.0附近延續，並核對當日低點及是否跌破既有失效價54.4；若跌破失效價，重審此反彈假說。",
+          "若出現能具體支持持有期限內接近73.4目標的新價格證據，重新評估目標幅度與追價風險。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T12:22:27.094901+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "3706",
+      "packet_id": "b0dce6a0cdd66c567b96f1006d4d469c2de7ddf9a8a6884664e1fa9b381e0aa8",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 60.1,
+        "bid": 60.0,
+        "ask": 60.1,
+        "low": 58.7,
+        "high": 60.2,
+        "quote_timestamp": "2026-11-26T12:20:42+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 432,
+        "observation_count": 5,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 60.1,
+            "invested_twd": 422.1207,
+            "modeled_loss_twd": 45.4008,
+            "net_profit_twd": 87.4662,
+            "net_return": 0.207207,
+            "quantity": 7,
+            "reward_risk": 1.926534,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.10000000000000142,
+            "stop": 54.4,
+            "target": 73.4
+          },
+          "eligible": true,
+          "entry": 60.1,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "356a8fd9cd83ec0f",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 54.4
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 73.4
+          },
+          "target_distance_atr": 3.1453,
+          "target_required_return": 0.221298,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "已收日線仍低於MA20，20日跌幅28.3951%。73.4目標距離為3.1453 ATR、需上漲22.1298%；已成熟五日歷史高點變幅中位數為2.0537%、第75百分位為3.5578%。這些重疊視窗不能當作勝率或預測。另有11/27除權事項，未調整的支撐與目標可能受影響。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "即時行情：報價僅截至11/26 12:20:42，之後價格未知。",
+          "公司事件：SOURCE_DATA_GAP—現況揭露來源未涵蓋完整新聞歷史；目前查無公告不等於已排除所有事件。",
+          "公司行動：已提供11/27除權資料，但SYSTEM_DATA_GAP—歷史公司行動調整未串接、原始日線未認證；需確認除權對54.4失效及73.4目標的影響。"
+        ],
+        "packet_id": "b0dce6a0cdd66c567b96f1006d4d469c2de7ddf9a8a6884664e1fa9b381e0aa8",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中60.1已收復昨高59.0及MA5；已收到11:00至12:20的60根完成分鐘彙整，呈現局部維持在59.0之上，但未認證涵蓋全部成交。11/27除權明確要求重建計畫，現階段不能同意既有60.1入場、7股、54.4失效及73.4目標的組合。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "確認11/27除權的生效與價格調整資料，並取得據此重算、仍合格的入場、股數、失效與目標路徑後重審；現有路徑不得直接沿用。",
+          "若在11/26盤中先重審收復型態，核對12:20後已收到的完成分鐘是否仍維持在既有昨高59.0之上，以及當日低點是否跌破既有54.4失效位；這項型態確認不會單獨解除公司行動造成的計畫缺口。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "目前沒有足以否定盤中收復假說的價格反證；盤中已高於前日高點59.0及MA5。惟60.1至73.4仍需上漲22.13%、約3.15 ATR，明顯高於已成熟五日歷史高點變幅的中位數2.05%及第75百分位3.56%；這些重疊視窗不能當作勝率。11月27日除權可能改變未調整的支撐、失效與目標基礎，現有計畫尚不能核可。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情：12:20:42後的報價、已完成分鐘及當日低點。",
+          "公司行動：確認11月27日除權條件及其對60.1入場、54.4失效、73.4目標的影響；目前歷史價格未經公司行動調整認證。",
+          "公司事件：目前官方揭露來源未涵蓋完整新聞歷史，須查核影響本計畫的後續公告。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接、未認證。",
+          "SOURCE_DATA_GAP：complete_news_history 未取得完整來源回覆。"
+        ],
+        "packet_id": "b0dce6a0cdd66c567b96f1006d4d469c2de7ddf9a8a6884664e1fa9b381e0aa8",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中收復前日高點的局部形態成立：60筆已完成分鐘彙整涵蓋11:00至12:20，最後報價60.1，當日低點58.7未跌破54.4。惟分鐘成交涵蓋未認證，且11月27日除權緊接在五日持有期限內；在確認公司行動對原價位計畫的影響前，不能同意既有60.1、7股、54.4、73.4的整組限價計畫。既有數值路徑的淨利與報酬風險比合格，但無法消除上述疑點。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得11月27日除權的正式條件及可核對的價格調整依據，重審既有支撐、失效、目標與數值路徑；若原路徑不再適用，須由系統重算。",
+          "在公司行動釐清前，若後續已收到的完成分鐘仍守住前日高點59.0、且當日低點未跌破既有失效54.4，可重審盤中收復形態；跌破54.4則重審或淘汰此路徑。",
+          "以更新的即時報價核對60.1限價與實際價差，並檢查新的公司公告是否影響持有期。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T12:37:23.187800+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "3264",
+      "packet_id": "2efc8fd9208272effae4059d906a4392911d92a15a97f63cfab248995a162b8f",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 156.0,
+        "bid": 155.5,
+        "ask": 156.0,
+        "low": 150.0,
+        "high": 156.0,
+        "quote_timestamp": "2026-11-26T12:35:57+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 496,
+        "observation_count": 1,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 156.0,
+            "invested_twd": 313.312,
+            "modeled_loss_twd": 36.591,
+            "net_profit_twd": 79.292,
+            "net_return": 0.253077,
+            "quantity": 2,
+            "reward_risk": 2.166981,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.5,
+            "stop": 140.0,
+            "target": 198.5
+          },
+          "eligible": true,
+          "entry": 156.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "4ffe4e144204d9c5",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 140.0
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 198.5
+          },
+          "target_distance_atr": 2.6327,
+          "target_required_return": 0.272436,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "11月26日盤中已收復前日高點154.5及前波高點155.5，但11:46觸及155.5後曾回落，至12:35僅有12:34、12:35兩筆完成分鐘收在156。從入場156至目標198.5須上漲27.24%、跨越2.63 ATR；已成熟的五日歷史高點變幅中位數為6.09%、第75百分位為11.78%。這些重疊視窗不能當作勝率，但顯示五日目標需要比多數歷史視窗更大的漲幅。近20日跌幅38.74%，盤中價格仍低於MA20的179.8。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_FEATURES",
+          "E_DAILY_HISTORY",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情：執行前須更新零股報價；現有156報價時間為11月26日12:35:57。",
+          "SOURCE_DATA_GAP：官方現況揭露已查詢，但完整新聞歷史未回傳；須核對是否有影響支撐、目標或風險的公司事件。",
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始未調整日線尚未認證；須核對140失效位與198.5目標的價格基準。"
+        ],
+        "packet_id": "2efc8fd9208272effae4059d906a4392911d92a15a97f63cfab248995a162b8f",
+        "selected_route_id": null,
+        "symbol": "3264",
+        "thesis": "盤中收復154.5與155.5使反彈假說值得追蹤；目前對156入場、2股、140失效、198.5目標的當日限價計畫，突破後的持續性與五日目標幅度仍缺足夠支持。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "核對12:36–13:00時段後續收到的完成分鐘：價格能否持續維持在既有155.5之上，回測既有154.5時能否守住；已收分鐘之間有缺口時，不推定連續站穩。",
+          "若後續價格跌破140，現有路徑失效；若回落至盤中低點150以下，重審盤中反彈形態及既有路徑。",
+          "若取得會影響140失效位或198.5目標之公司行動、事件或價格調整證據，重新審查假說。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "20日跌幅38.7%，現價仍低於MA20的179.8；198.5目標距入場價2.63 ATR、需上漲27.24%，明顯高於已成熟五日歷史高點變幅中位數6.09%及第75百分位11.78%。曾到達198.5不代表本次能在五日內重到。盤中直到12:34、12:35兩根已收到的完成分鐘才收在156，突破延續與回測證據仍薄弱。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情：12:35:57後的報價與已完成分鐘尚未提供。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment未串接，原始日線及歷史支撐、目標的公司行動調整未獲認證。",
+          "SOURCE_DATA_GAP：現況公告來源不含完整新聞歷史；後續公司事件及公司行動狀態未知。",
+          "已收分鐘彙整僅涵蓋11:16至12:35的60列，缺分鐘未補值，成交涵蓋範圍未認證。"
+        ],
+        "packet_id": "2efc8fd9208272effae4059d906a4392911d92a15a97f63cfab248995a162b8f",
+        "selected_route_id": null,
+        "symbol": "3264",
+        "thesis": "盤中已收復MA5與前日高154.5，反彈假說尚無明確反證；但156為當日高點，突破僅見於最後兩根已收到的完成分鐘。現階段不足以同意以156買2股、140失效、198.5目標的限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "收到12:35後的完成分鐘：若回測前日高154.5後仍收在其上，且較後完成分鐘再收於156，重審同一路徑及目標距離；缺分鐘不得視為持續站穩。",
+          "更新報價及當日低點；若跌破既有失效價140，該路徑失效。",
+          "取得可能影響140支撐或198.5目標的公司行動證據時，重審未調整歷史價位。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T12:54:05.749951+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "3706",
+      "packet_id": "828b777b74a3424bee94575908e1f7d28e9534391ffabf3a9f3e34bad12db346",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 60.1,
+        "bid": 60.1,
+        "ask": 60.2,
+        "low": 58.7,
+        "high": 60.5,
+        "quote_timestamp": "2026-11-26T12:52:20+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 507,
+        "observation_count": 7,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 60.2,
+            "invested_twd": 422.8214,
+            "modeled_loss_twd": 46.1015,
+            "net_profit_twd": 86.7655,
+            "net_return": 0.205206,
+            "quantity": 7,
+            "reward_risk": 1.882054,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.10000000000000142,
+            "stop": 54.4,
+            "target": 73.4
+          },
+          "eligible": true,
+          "entry": 60.2,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "c3481507042fd06a",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 54.4
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 73.4
+          },
+          "target_distance_atr": 3.1216,
+          "target_required_return": 0.219269,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "11/27 有除權相關公司行動，來源已標示目前計畫須重做；未驗證的原始價格可能影響 54.4 失效價與 73.4 目標。另 73.4 距入場價 3.12 ATR、需上漲 21.93%，明顯高於已成熟五日歷史高點變幅中位數 2.05% 與第 75 百分位 3.56%；重疊視窗不能當作勝率。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，原始日線價位尚未認證。",
+          "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；需核對 11/27 除權條件對本計畫價位與風險的影響。",
+          "12:52:20 後的即時報價、完成分鐘與公司事件更新未知；已收到的 60 列分鐘彙整僅涵蓋部分成交，未認證連續覆蓋。"
+        ],
+        "packet_id": "828b777b74a3424bee94575908e1f7d28e9534391ffabf3a9f3e34bad12db346",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中已收復前一日高點 59.0 與 MA5；11:44–12:51 收到的完成分鐘顯示局部回升，但尾段回到 60.1。現有 60.2 入場、7 股、54.4 失效、73.4 目標的路徑，因隔日除權對價位基準的影響未釐清，暫不能同意。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "核對 11/27 除權公告及其價格調整影響後，取得重新計算且仍合格的數值路徑，再審入場、股數、失效與目標。",
+          "若當日仍評估盤中收復形態，檢查 12:52 後實際收到的完成一分鐘彙整是否再觸及 60.2 並維持在既有前高 59.0 之上；若驗證盤中價格跌破 54.4，現有路徑失效。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "12:49–12:51 的已收到完成分鐘收在 60.1，低於計畫入場價 60.2；盤中仍低於 MA20，近 20 日跌幅為 28.4%。11/27 已列有除權事項，原始未調整價位跨越該日使用須重新檢查。這些削弱目前計畫，但尚未證明盤中收復假說失效。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_DAILY_HISTORY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "即時行情：12:52:20 後的報價與已完成分鐘。",
+          "公司事件：完整新聞歷史未提供；需查核有無影響計畫的新事件。",
+          "公司行動：核對 11/27 除權的最終資料，以及對既有失效價與目標價的影響。",
+          "SYSTEM_DATA_GAP: historical_corporate_action_adjustment 未串接，歷史價格基礎未認證。",
+          "SOURCE_DATA_GAP: complete_news_history 未由目前揭露來源提供。"
+        ],
+        "packet_id": "828b777b74a3424bee94575908e1f7d28e9534391ffabf3a9f3e34bad12db346",
+        "selected_route_id": null,
+        "symbol": "3706",
+        "thesis": "盤中已收復前日高點 59.0 與 MA5，但現有局部分鐘形態及隔日除權事項，尚不足以同意 60.2 買入 7 股、54.4 失效、73.4 目標的當日限價計畫。目標距離為 3.1216 ATR、需漲 21.93%；已成熟五日歷史高點變幅中位數為 2.05%、第 75 百分位為 3.56%。歷史觸及過 73.4 不代表持有期限內可重到；重疊視窗亦非勝率。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "核對 12:52 後至收盤已收到的完成分鐘，是否重新在 60.2 附近維持，且未跌回前日高點 59.0；若當日跌破既有失效價 54.4，重審假說。分鐘資料僅有 11:44–12:51 的 60 列且涵蓋未認證，不能據此宣稱全時段連續站穩。",
+          "完成 11/27 除權資料查核，確認原始未調整的 54.4 失效價與 73.4 目標價能否用於跨除權日的五個交易日計畫；若須調整，應以重新計算的合格路徑重審。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T13:10:28.258370+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "3264",
+      "packet_id": "2543dd27fe926be1fc8ec394a45c0404190e4a1b5cdf19e5eb4764f627d11580",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 156.0,
+        "bid": 155.5,
+        "ask": 156.0,
+        "low": 150.0,
+        "high": 157.0,
+        "quote_timestamp": "2026-11-26T13:09:10+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 570,
+        "observation_count": 4,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 156.0,
+            "invested_twd": 313.312,
+            "modeled_loss_twd": 36.591,
+            "net_profit_twd": 79.292,
+            "net_return": 0.253077,
+            "quantity": 2,
+            "reward_risk": 2.166981,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.5,
+            "stop": 140.0,
+            "target": 198.5
+          },
+          "eligible": true,
+          "entry": 156.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "4ffe4e144204d9c5",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 140.0
+          },
+          "target": {
+            "date": "2026-11-10",
+            "kind": "CONFIRMED_SWING_HIGH",
+            "known_on": "2026-11-11",
+            "price": 198.5
+          },
+          "target_distance_atr": 2.6327,
+          "target_required_return": 0.272436,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "近20日跌幅38.7%；11/25曾自154.5回落至145.5。198.5目標距入場價2.63 ATR、需上漲27.24%，明顯高於已成熟五日歷史高點變幅中位數6.09%及第75百分位11.78%；這些重疊視窗不能當作勝率或預測。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "13:09後的即時報價、可成交賣價及完成分鐘尚未知。",
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接；140失效價與198.5目標所依據的未調整歷史價格尚未核實。",
+          "SOURCE_DATA_GAP：官方現況揭露不含完整新聞歷史；須查明是否有影響本計畫支撐、目標或風險的公司事件。"
+        ],
+        "packet_id": "2543dd27fe926be1fc8ec394a45c0404190e4a1b5cdf19e5eb4764f627d11580",
+        "selected_route_id": null,
+        "symbol": "3264",
+        "thesis": "盤中已收復前日高點154.5與五日均線；收到的完成分鐘顯示12:34後上行至157，回落後13:08收在156。局部收復假說仍可觀察，但尚不足以同意156入場、2股、140失效、198.5目標的當日限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "檢查13:09後至當日收盤已收到的完成分鐘：回測154.5後若再收於156，且未出現跌破154.5的完成分鐘，重審盤中收復；缺分鐘不推定連續站穩。",
+          "若後續完成分鐘跌破154.5，重新評估收復假說；若盤中價格嚴格低於140，該路徑失效。",
+          "核實是否有會改變140支撐、198.5目標或風險的公司行動與事件後，重審價格基礎。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "目前盤中價 156 已高於前日高 154.5 與五日均線 145.9，已收到的分鐘彙整也顯示 12:34 後曾上探 157；但 12:58 至 13:07 多在 155 至 155.5，13:08 才回到 156，反彈延續仍待確認。五日、二十日報酬分別為 -13.13%、-38.74%，二十日均線 179.8 是通往目標的近端壓力。198.5 目標距入場價 2.63 ATR、需上漲 27.24%，高於五日歷史高點變幅的中位數 6.09% 與第 75 百分位 11.78%；這些重疊視窗不代表勝率或經校準預測。",
+        "evidence_ids": [
+          "E_INTRADAY",
+          "E_FEATURES",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "13:09 後的即時報價與已完成分鐘彙整，以核對回收 156 後的走勢；現有 60 列分鐘資料僅涵蓋已收到的成交，連續涵蓋未認證。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接；原始未調整日線尚未認證公司行動，可能影響 140 支撐與 198.5 目標的可比性。",
+          "SOURCE_DATA_GAP：complete_news_history 未由目前官方揭露來源完整提供；仍須查核可能影響本計畫的公司事件。"
+        ],
+        "packet_id": "2543dd27fe926be1fc8ec394a45c0404190e4a1b5cdf19e5eb4764f627d11580",
+        "selected_route_id": null,
+        "symbol": "3264",
+        "thesis": "盤中收復前日高點形成反彈研究假說，但現有局部回測不足以支持 156 元、2 股、140 元失效、198.5 元目標的當日限價計畫。合格數值路徑仍在，尚無足以 REJECT 的明確反證。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "取得 13:08 後至當日收盤已收到的完成分鐘：檢查回測時是否守住既有前高 154.5 與 11/24 高點 155.5，以及能否再次收在計畫入場價 156 或上探既有當日高點 157；若跌破既有當日低點 150，重審盤中反彈假說。",
+          "查明是否有影響原始價格序列的公司行動，或會改變支撐、目標與風險的公司公告後，重審同一路徑。"
+        ]
+      }
+    },
+    {
+      "at": "2026-11-26T13:28:30.520879+08:00",
+      "validation_status": "VALID",
+      "state": "RESEARCH_WATCH",
+      "selected_route_id": null,
+      "symbol": "2471",
+      "packet_id": "71e92d5278e2c87daaf74fa8f784c51b1a47cde301c80bd9dd27c084a1726c4c",
+      "completed_through": "2026-11-25",
+      "execution_context": {
+        "pricing_policy": "PLANNED_LIMIT",
+        "research_support_policy": "advisory",
+        "source": "LIVE_ACCOUNT_CONTEXT"
+      },
+      "intraday": {
+        "last_price": 65.9,
+        "bid": 65.9,
+        "ask": 66.0,
+        "low": 63.8,
+        "high": 67.2,
+        "quote_timestamp": "2026-11-26T13:26:55+08:00",
+        "session_date": "2026-11-26"
+      },
+      "history": {
+        "history_status": "RECEIVED_TICKS_PARTIAL_COVERAGE",
+        "tick_count": 409,
+        "observation_count": 60,
+        "continuous_coverage_verified": false,
+        "coverage": "RECEIVED_TICKS_ONLY_NOT_CERTIFIED_COMPLETE",
+        "storage_error": null,
+        "completed_minute_rows": 60
+      },
+      "economics": [
+        {
+          "allocation_remaining_twd": 5000.0,
+          "blockers": [],
+          "economics": {
+            "entry": 66.0,
+            "invested_twd": 463.462,
+            "modeled_loss_twd": 46.882,
+            "net_profit_twd": 79.6913,
+            "net_return": 0.171948,
+            "quantity": 7,
+            "reward_risk": 1.699827,
+            "slippage_bps_each_side": 10,
+            "spread_reserve": 0.09999999999999432,
+            "stop": 60.1,
+            "target": 78.2
+          },
+          "eligible": true,
+          "entry": 66.0,
+          "existing_modeled_risk_twd": 0.0,
+          "kind": "CURRENT_ASK",
+          "route_id": "3bc0664737a2cfbe",
+          "stop": {
+            "date": "2026-11-25",
+            "kind": "LAST_COMPLETED_LOW",
+            "known_on": "2026-11-25",
+            "price": 60.1
+          },
+          "target": {
+            "date": "2026-11-16",
+            "kind": "OBSERVED_60D_HIGH",
+            "known_on": "2026-11-25",
+            "price": 78.2
+          },
+          "target_distance_atr": 1.8925,
+          "target_required_return": 0.184848,
+          "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+        }
+      ],
+      "researcher": {
+        "counterevidence": "盤中自63.8反彈至65.9，但仍低於前一完成日高點66.6；11月16日觸及78.2後曾快速回落。由66.0至目標78.2需上漲18.48%、約1.89 ATR；已成熟的五日歷史高點變幅中位數為2.96%、第75百分位為9.09%。這些重疊視窗不代表勝率，也不能證明目標會在五個交易日內重到。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY",
+          "E_DATA_LIMITS"
+        ],
+        "execution_missing": [
+          "13:26:55後的即時報價與已完成分鐘資料未知。",
+          "公司事件：官方現況揭露未列公告，但來源並非完整新聞歷史；後續事件未知。",
+          "SYSTEM_DATA_GAP：historical_corporate_action_adjustment 未串接，原始未調整歷史尚未認證；若有影響比較基礎的公司行動，須重新核對78.2目標及歷史價位。"
+        ],
+        "packet_id": "71e92d5278e2c87daaf74fa8f784c51b1a47cde301c80bd9dd27c084a1726c4c",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "趨勢回檔後的盤中反彈值得追蹤，但目前尚不足以同意66.0限價、7股、60.1失效及78.2目標的整組計畫。已收到11:48至13:26的60列完成分鐘彙整，顯示局部回升；資料僅涵蓋已收到的成交，不能視為全時段連續站穩。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "檢查13:26後收到的完成分鐘：是否重新越過既有前高66.6，且後續已收到的完成分鐘仍維持在計畫入場價66.0以上；再以更新報價重審。",
+          "若盤中跌破既有失效價60.1，推翻此路徑的回檔支撐假說。",
+          "若查得會改變原始歷史價位比較基礎的公司行動，核對其對78.2目標與60.1支撐的影響後重審。"
+        ]
+      },
+      "challenger": {
+        "counterevidence": "11/25 完成日線收於66.6且量增；11/26 盤中高點67.2，現價65.9仍高於5日線及20日線，60.1失效價未被跌破。這些資料尚不足以反證趨勢延續假說。",
+        "evidence_ids": [
+          "E_FEATURES",
+          "E_LEVELS",
+          "E_ECONOMICS",
+          "E_DATA_LIMITS",
+          "E_DAILY_HISTORY",
+          "E_INTRADAY"
+        ],
+        "execution_missing": [
+          "SYSTEM_DATA_GAP：歷史公司行動調整未串接，60根原始日線尚未認證；須核對是否影響60.1支撐及78.2目標。",
+          "SOURCE_DATA_GAP：官方現況揭露並非完整新聞歷史；須查核有無影響本計畫的公司事件或公司行動。",
+          "即時下單時須重新核對報價、當日低點及帳戶狀態。"
+        ],
+        "packet_id": "71e92d5278e2c87daaf74fa8f784c51b1a47cde301c80bd9dd27c084a1726c4c",
+        "selected_route_id": null,
+        "symbol": "2471",
+        "thesis": "66.0限價、7股、60.1失效、78.2目標的路徑數值合格，成本後淨利79.6913元、報酬風險比1.699827。然而目標距離1.8925 ATR，須上漲18.4848%；已成熟的五日歷史高點變幅中位數約2.96%、第75百分位約9.09%，重到78.2的時限證據偏弱，這些重疊視窗並非勝率。當日曾到67.2，但13:26現價65.9，已收到的60列完成分鐘僅涵蓋11:48至13:26的部分成交，末段回升仍未以完成分鐘收復66.6；因此暫不認可先掛此限價計畫。",
+        "verdict": "WATCH",
+        "wait_conditions": [
+          "在後續已收到的完成1分鐘彙整中，觀察66.0附近回測後維持，並出現收於66.6以上的分鐘；重審時核對66.0限價路徑是否仍合格，不以抽樣快照推定連續站穩。",
+          "若盤中跌破既有失效價60.1，或新的當日低點使原路徑失效，立即重審假說與既有路徑。",
+          "若公司行動核對顯示原始歷史的60.1或78.2不可直接比較，依該具體結果重審。"
+        ]
+      }
+    }
+  ]
+}

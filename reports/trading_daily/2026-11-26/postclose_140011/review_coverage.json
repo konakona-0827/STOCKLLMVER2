@@ -1,0 +1,141 @@
+{
+  "call_results": 28,
+  "completed_pair_ids_from_saved_answers": 15,
+  "states": {
+    "RESEARCH_WATCH": 13,
+    "RESEARCH_REJECT": 2
+  },
+  "complete_cached_reviews": 15,
+  "same_count": true,
+  "pairs": [
+    {
+      "packet_id": "616412ad7c6175983c434f1e8409c3d20c0675ff833ccbe0837609c361dd51da",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "099722c6652a099edf8004f487b07b5f38c28037cc9dbf302db9d24d18f01533",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "bf8eb73ef1daea285767c4be3692a95c3ccaaaa5c837dd17eb12b5bb4ce92f84",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "656cdc12474e5bde147bec9c8bd2fabeede11b9be9138afa612adfdc55e53da8",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "3c35d4b2ad07757232f77373e801df56e06f316a30cdca43da9cfe7b48c2d343",
+      "symbol": "3147",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "48c66e4db373348dc4a41c297ee596f42204f51867357f388d144c2d4599f8c2",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "1c44b1ce1e1e31db4923e93c5ba2bca84069b0216904fc24818f0b772bef456e",
+      "symbol": "3706",
+      "state": "RESEARCH_REJECT"
+    },
+    {
+      "packet_id": "470913fe90bdc82a44c3b8869036b6f51754f335a6c2b33996b08440ff3ad7fc",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "facd2e25a70a9f25f4bcedf067c674d51173a3f302fda862609bba6429b481bd",
+      "symbol": "3706",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "a4ac2158f1b3e3d7f9f8d276d95a516d450c7a55d01006802416bf164e3a4112",
+      "symbol": "3706",
+      "state": "RESEARCH_REJECT"
+    },
+    {
+      "packet_id": "b0dce6a0cdd66c567b96f1006d4d469c2de7ddf9a8a6884664e1fa9b381e0aa8",
+      "symbol": "3706",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "2efc8fd9208272effae4059d906a4392911d92a15a97f63cfab248995a162b8f",
+      "symbol": "3264",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "828b777b74a3424bee94575908e1f7d28e9534391ffabf3a9f3e34bad12db346",
+      "symbol": "3706",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "2543dd27fe926be1fc8ec394a45c0404190e4a1b5cdf19e5eb4764f627d11580",
+      "symbol": "3264",
+      "state": "RESEARCH_WATCH"
+    },
+    {
+      "packet_id": "71e92d5278e2c87daaf74fa8f784c51b1a47cde301c80bd9dd27c084a1726c4c",
+      "symbol": "2471",
+      "state": "RESEARCH_WATCH"
+    }
+  ],
+  "call_errors": [
+    {
+      "at": "2026-11-26T12:23:31.006048+08:00",
+      "role": "researcher",
+      "status": "ERROR",
+      "symbols": [
+        "3706"
+      ],
+      "elapsed_seconds": 0.461,
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    },
+    {
+      "at": "2026-11-26T12:39:25.330651+08:00",
+      "role": "researcher",
+      "status": "ERROR",
+      "symbols": [
+        "3481",
+        "3264"
+      ],
+      "elapsed_seconds": 0.456,
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    }
+  ],
+  "error_recovery_time_correlations": [
+    {
+      "call_at": "2026-11-26T12:23:31.006048+08:00",
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED",
+      "nearby_recovery_requests": [
+        {
+          "at": "2026-11-26T04:23:29.311962+00:00",
+          "event": "GRACEFUL_RECOVERY_REQUESTED",
+          "child_pid": 30472,
+          "supervisor_pid": 10708,
+          "reason": "PROCESS_MEMORY_BUDGET_EXCEEDED"
+        }
+      ],
+      "interpretation": "Within two minutes is temporal association, not proof of exclusive cause."
+    },
+    {
+      "call_at": "2026-11-26T12:39:25.330651+08:00",
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED",
+      "nearby_recovery_requests": [
+        {
+          "at": "2026-11-26T04:39:20.302411+00:00",
+          "event": "GRACEFUL_RECOVERY_REQUESTED",
+          "child_pid": 27772,
+          "supervisor_pid": 10708,
+          "reason": "PROCESS_MEMORY_BUDGET_EXCEEDED"
+        }
+      ],
+      "interpretation": "Within two minutes is temporal association, not proof of exclusive cause."
+    }
+  ],
+  "pretrade_call_count": 0
+}
