@@ -2,9 +2,9 @@ name: Production Trading Skill Gates
 on:
   push:
     branches: ['codex/production-trading-skill']
-    paths: ['opportunity_flow/**', 'bounded_cli_capture.py', 'codex_cli.py', 'skills/tw-production-decision/**', 'config/trading_skill.json', 'tests/**', 'RunSkillTrading.ps1', 'SkillTrading*.cmd', '.github/workflows/production-trading-skill.yml']
+    paths: ['opportunity_flow/**', 'operations/account_transfer.py', 'account-share/**', 'bounded_cli_capture.py', 'codex_cli.py', 'skills/tw-production-decision/**', 'config/trading_skill.json', 'tests/**', 'RunSkillTrading.ps1', 'SkillTrading*.cmd', '.github/workflows/production-trading-skill.yml']
   pull_request:
-    paths: ['opportunity_flow/**', 'bounded_cli_capture.py', 'codex_cli.py', 'skills/tw-production-decision/**', 'config/trading_skill.json', 'tests/**', 'RunSkillTrading.ps1', 'SkillTrading*.cmd', '.github/workflows/production-trading-skill.yml']
+    paths: ['opportunity_flow/**', 'operations/account_transfer.py', 'account-share/**', 'bounded_cli_capture.py', 'codex_cli.py', 'skills/tw-production-decision/**', 'config/trading_skill.json', 'tests/**', 'RunSkillTrading.ps1', 'SkillTrading*.cmd', '.github/workflows/production-trading-skill.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,3 +24,5 @@ jobs:
         run: python -m pip install openai==3.8.0 openai-agents==0.23.1 jsonschema==4.26.0 comtypes==1.4.17 truststore==0.10.4 certifi==2025.6.15
       - name: Unit, integration, leakage, accounting, execution safety and regressions
         run: python -X utf8 -m unittest discover -s tests -v
+      - name: Account handoff archive integrity
+        run: python -X utf8 -m operations.account_transfer inspect

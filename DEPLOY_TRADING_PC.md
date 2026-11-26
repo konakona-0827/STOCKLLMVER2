@@ -1,6 +1,8 @@
 # 交易電腦取得與啟動
 
-分支：`codex/production-trading-skill`。包含正式 Skill 交易版、研究及 Paper 程式、測試、授權來源與報告。`.env`、憑證、帳戶資料庫、私人的對帳／模型原始記錄、官方行情快取及本機服務註冊不透過 Git 搬移。
+完整逐步操作請先讀 [交易電腦完整測試手冊](TRADING_PC_TEST_RUNBOOK.md)，涵蓋原帳戶／Git 帳本兩種路徑、群益行情、LLM、實單驗收與收工交接。以下為快速導覽。
+
+分支：`codex/production-trading-skill`。包含正式 Skill 交易版、研究及 Paper 程式、測試、授權來源與報告。帳本依使用者指示透過 `account-share/` 版本快照公開共享；`.env`、憑證、模型原始記錄、行情快取及本機服務註冊仍留在各電腦。
 
 本次整併已通過 1,100 項離線測試，修改及限制見 [移機驗證報告](reports/publication_20261126/README.md)。
 

@@ -1,6 +1,6 @@
 # 新 Skill 交易版：交易電腦測試用法
 
-新電腦先看 [取得程式、綁定原帳戶及準備行情](DEPLOY_TRADING_PC.md)。Git 不含憑證、私人帳本或本機行情快取。
+新電腦先看 [交易電腦完整測試手冊](TRADING_PC_TEST_RUNBOOK.md)。帳本透過 `account-share/` 公開快照交接；密碼、憑證與本機行情快取維持原本機使用方式。
 
 本分支把新台股交易 Skill 接到最新 Opportunity Flow 的正式交易鏈：全市場篩選 → researcher／challenger 獨立決策 → 即時資料及帳戶複查 → 下單前模型審查 → 原執行器 → 成交對帳 → AI 持倉及退出管理。你不必從 Paper 手動抄單；Live 模式通過原條件後會自動操作。
 
