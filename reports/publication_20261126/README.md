@@ -28,3 +28,5 @@
 首個提交 `919476d` 已從 GitHub 下載驗證。深層 Windows 路徑遇到既有報告的檔名長度限制，手冊改用 `git clone -c core.longpaths=true`，既有 clone 先設定同一選項；補完 checkout 後工作目錄乾淨，Skill SHA 驗證成功。
 
 第一輪遠端 Paper CI 的 Ubuntu 通過，Windows 發現原始碼封存以原始 bytes 計算 SHA、卻以文字讀取轉換 CRLF，造成保存內容與 SHA 不符。新版本只讀取一次 bytes，內容與 SHA 共用同一份快照，保留 CRLF；另增加強制 CRLF／非 ASCII 內容回歸測試。原封存與歷史版本不改寫，後續 CI 仍須全數通過。
+
+完整 Windows CI 也發現舊 CLI 傳輸單元測試在假 subprocess 回覆前仍會尋找已安裝的 Codex CLI。測試明確替換 executable 探索，脫離開發機安裝與登入，繼續驗證原登入限制、配額錯誤、無 API fallback、工具往返及取消程序；正式 executable 與執行器程式不因這項測試修正而改動。

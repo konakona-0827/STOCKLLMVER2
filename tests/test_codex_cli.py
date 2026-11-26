@@ -17,6 +17,11 @@ class CodexTransportTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
+        # Transport assertions use fake subprocess responses and must not
+        # depend on an installed CLI or a developer's ChatGPT login.
+        executable = patch('codex_cli.executable', return_value='codex-offline-test')
+        executable.start()
+        self.addCleanup(executable.stop)
         self.commands, self.answers, self.events = [], [], []
         self.request = dict(model='gpt-6-sol', instructions='test', input='test',
             text=dict(format=dict(type='json_schema', schema=dict(type='object',
