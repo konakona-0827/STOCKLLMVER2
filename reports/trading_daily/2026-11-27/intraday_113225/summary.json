@@ -1,0 +1,901 @@
+{
+  "trade_date": "2026-11-27",
+  "report_type": "INTRADAY_NOT_FULL_DAY",
+  "cutoff_taipei": "2026-11-27T11:32:25.853942+08:00",
+  "cutoff_japan": "2026-11-27T12:32:25.853942+09:00",
+  "market_status": "CONFIRMED_BY_DATED_NON_TRIAL_BROKER_QUOTES",
+  "market_evidence": "LATEST_BROKER_BATCH",
+  "market_calendar": {
+    "status": "OFFICIAL_YEAR_SPECIFIC_RESPONSE_NOT_VERIFIED",
+    "source": "http[PRIVATE_PATH]",
+    "limitation": "Official web response did not expose requested 2026 table; no holiday conclusion inferred from the wrong-year response."
+  },
+  "git": {
+    "branch": "codex/new-system-tw-opportunity-flow",
+    "head": "9e853148fc350f64f6c1dfe68c39bf6151156500",
+    "runtime_source_revision": "9e853148fc350f64f6c1dfe68c39bf6151156500",
+    "source_fingerprint": "4af8c0de843439ba3f6c72fab114e864bafde8c8b525bda476402ebfe92b177b",
+    "matches_live": true
+  },
+  "runtime": {
+    "state": "AUTOMATION_ACTIVE",
+    "checks": {
+      "startup_verified": true,
+      "current_process_heartbeat": true,
+      "running_version_verified": true,
+      "fresh_account_reconciled": true,
+      "watch_loop_running": true,
+      "automatic_execution_enabled": true,
+      "research_cycle_observed": true
+    },
+    "heartbeat_age_seconds": 3.0,
+    "supervisor_pid": 27304,
+    "runtime_pid": 27432,
+    "observed_at": "2026-11-27T03:32:24.927784+00:00",
+    "stage_counts_scope": "CUMULATIVE_SINCE_LAUNCH_NOT_TODAY_COUNTS",
+    "stages": {
+      "ACCOUNT_CHECK_STARTED": {
+        "first_at": 1795749697.7781553,
+        "last_at": 1795750298.9714842,
+        "count": 6,
+        "detail": {}
+      },
+      "ACCOUNT_RECONCILED": {
+        "first_at": 1795749715.1154826,
+        "last_at": 1795750308.878795,
+        "count": 6,
+        "detail": {}
+      },
+      "WATCH_STARTED": {
+        "first_at": 1795749715.1222441,
+        "last_at": 1795749715.1222441,
+        "count": 1,
+        "detail": {}
+      },
+      "RESEARCH_REVIEW_STARTED": {
+        "first_at": 1795749769.2407804,
+        "last_at": 1795750313.3292696,
+        "count": 5,
+        "detail": {
+          "count": 3
+        }
+      },
+      "RESEARCH_CYCLE_COMPLETED": {
+        "first_at": 1795749769.2427394,
+        "last_at": 1795750313.3315935,
+        "count": 10,
+        "detail": {
+          "count": 1990,
+          "eligible_count": 7,
+          "ready_count": 0
+        }
+      },
+      "RESEARCH_REVIEW_COMPLETED": {
+        "first_at": 1795749927.2673624,
+        "last_at": 1795750298.9669867,
+        "count": 4,
+        "detail": {
+          "count": 3
+        }
+      }
+    },
+    "order_evidence_scope": "CURRENT_RUN_ONLY_NOT_TODAY_LEDGER",
+    "order_evidence": {
+      "sent_events": 0,
+      "fill_events": 0,
+      "unknown_events": 0
+    }
+  },
+  "health": {
+    "checked_at": "2026-11-27T11:31:39+08:00",
+    "status": "PENDING_ORDER",
+    "inventory_checked": true,
+    "budget_status": "READY",
+    "current_buy_budget_twd": "8507.70",
+    "minimum_balance_twd": "5000",
+    "strategy_cap_twd": "10000",
+    "daily_buy_limit_twd": "30000",
+    "buy_block_reasons": [],
+    "errors": []
+  },
+  "daily_dataset": {
+    "end": "2026-11-26",
+    "calendar_verified_through": "2026-11-26",
+    "rows": 127025,
+    "rejected_rows": 1480
+  },
+  "model": {
+    "calls": 94,
+    "by_role": {
+      "researcher": 46,
+      "challenger": 44,
+      "pretrade": 4
+    },
+    "by_status": {
+      "ERROR": 7,
+      "VALID": 87
+    },
+    "prompt_versions": {
+      "null": 11,
+      "flow-review-v4-actionable-plan": 83
+    },
+    "paired_reviews": 117,
+    "paired_states": {
+      "RESEARCH_REJECT": 20,
+      "RESEARCH_WATCH": 91,
+      "RESEARCH_READY": 6
+    },
+    "reviews_with_received_minutes": 117,
+    "max_completed_minute_rows": 60
+  },
+  "flow": {
+    "recorded_cycles": 209,
+    "latest_completed_cycle": {
+      "additional_api_billed_usd": 0,
+      "as_of": "2026-11-27T11:31:52.545290+08:00",
+      "blockers": {
+        "CAPITAL_OR_RISK_CAP": 28,
+        "INSUFFICIENT_COMPLETED_HISTORY": 5,
+        "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1348,
+        "LIVE_INTRADAY_PLAN_DATA_REQUIRED": 2,
+        "NET_PROFIT_BELOW_FLOOR": 104,
+        "NET_RETURN_BELOW_FLOOR": 74,
+        "NO_CURRENT_SETUP": 350,
+        "OBSERVED_TARGET_MISSING": 1,
+        "PENDING_BROKER_ORDER": 2,
+        "RECENT_HISTORY_GAP_OR_INVALID_BAR": 155,
+        "REVIEWED_TARGET_ALREADY_REACHED": 2,
+        "REWARD_RISK_BELOW_FLOOR": 114,
+        "STRUCTURAL_STOP_MISSING": 12
+      },
+      "cached_theses": 0,
+      "dataset_manifest_sha256": "4c6f32b37777de2c6df04ea5b0cc2e5ad12ff8e286d4eb920f7a7bd37262d6fe",
+      "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+      "elapsed_seconds": 0.649,
+      "information_gap_origins": {},
+      "llm_calls": 0,
+      "orders_sent": 0,
+      "plan_usage_consumed": false,
+      "policy_sha256": "e295dc9d546a95617cbe484299853437a0506aba812db94796a69bce828ed6cb",
+      "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+      "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+      "states": {
+        "ACCOUNT_BLOCKED": 2,
+        "DATA_BLOCKED": 160,
+        "ECONOMIC_BLOCKED": 121,
+        "NO_SETUP": 350,
+        "REVIEW_DEFERRED_LIVE_QUOTE": 2,
+        "REVIEW_PENDING": 7,
+        "SCREENED_OUT": 1348
+      },
+      "symbols_observed": 1990,
+      "system": "TW Opportunity Flow",
+      "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+      "usage": {},
+      "usage_unknown_calls": 0
+    },
+    "latest_file_summary": {
+      "system": "TW Opportunity Flow",
+      "as_of": "2026-11-27T11:31:52.545290+08:00",
+      "policy_version": "tw-opportunity-flow-v1-frozen-20261112",
+      "policy_sha256": "e295dc9d546a95617cbe484299853437a0506aba812db94796a69bce828ed6cb",
+      "dataset_manifest_sha256": "4c6f32b37777de2c6df04ea5b0cc2e5ad12ff8e286d4eb920f7a7bd37262d6fe",
+      "universe_scope": "CURRENT_OFFICIAL_TWSE_TPEX_ORDINARY_SHARE_MASTERS_NOT_HISTORICAL_MEMBERSHIP",
+      "review_scope": "ALL_ELIGIBLE_CANDIDATES",
+      "symbols_observed": 1990,
+      "states": {
+        "NO_SETUP": 350,
+        "SCREENED_OUT": 1348,
+        "DATA_BLOCKED": 160,
+        "ECONOMIC_BLOCKED": 121,
+        "REVIEW_PENDING": 7,
+        "ACCOUNT_BLOCKED": 2,
+        "REVIEW_DEFERRED_LIVE_QUOTE": 2
+      },
+      "blockers": {
+        "NO_CURRENT_SETUP": 350,
+        "LIQUIDITY_UNKNOWN_OR_BELOW_FLOOR": 1348,
+        "RECENT_HISTORY_GAP_OR_INVALID_BAR": 155,
+        "NET_PROFIT_BELOW_FLOOR": 104,
+        "NET_RETURN_BELOW_FLOOR": 74,
+        "REWARD_RISK_BELOW_FLOOR": 114,
+        "OBSERVED_TARGET_MISSING": 1,
+        "CAPITAL_OR_RISK_CAP": 28,
+        "STRUCTURAL_STOP_MISSING": 12,
+        "PENDING_BROKER_ORDER": 2,
+        "LIVE_INTRADAY_PLAN_DATA_REQUIRED": 2,
+        "INSUFFICIENT_COMPLETED_HISTORY": 5,
+        "REVIEWED_TARGET_ALREADY_REACHED": 2
+      },
+      "llm_calls": 0,
+      "cached_theses": 0,
+      "usage": {},
+      "usage_unknown_calls": 0,
+      "information_gap_origins": {},
+      "additional_api_billed_usd": 0,
+      "plan_usage_consumed": false,
+      "orders_sent": 0,
+      "decision_scope": "LIVE_ACCOUNT_RESEARCH_SEPARATE_EXECUTION_HANDOFF",
+      "elapsed_seconds": 0.649
+    },
+    "cycle_counts_include_intermediate_pending_states": true,
+    "ready_reviews": [
+      {
+        "symbol": "3034",
+        "at": "2026-11-27T09:33:56.402929+08:00",
+        "selected_route_id": "777e32042a6c1be8",
+        "economics": [
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [
+              "REWARD_RISK_BELOW_FLOOR",
+              "NET_PROFIT_BELOW_FLOOR"
+            ],
+            "economics": {
+              "entry": 442.5,
+              "invested_twd": 886.885,
+              "modeled_loss_twd": 40.736,
+              "net_profit_twd": 42.181,
+              "net_return": 0.047561,
+              "quantity": 2,
+              "reward_risk": 1.035472,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.5,
+              "stop": 426.0,
+              "target": 467.5
+            },
+            "eligible": false,
+            "entry": 442.5,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "CURRENT_ASK",
+            "route_id": "57ea23598a57c3ee",
+            "stop": {
+              "date": "2026-11-26",
+              "kind": "LAST_COMPLETED_LOW",
+              "known_on": "2026-11-26",
+              "price": 426.0
+            },
+            "target": {
+              "date": "2026-11-19",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-20",
+              "price": 467.5
+            },
+            "target_distance_atr": 0.9333,
+            "target_required_return": 0.056497,
+            "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [
+              "REWARD_RISK_BELOW_FLOOR",
+              "NET_PROFIT_BELOW_FLOOR"
+            ],
+            "economics": {
+              "entry": 436.5,
+              "invested_twd": 437.9365,
+              "modeled_loss_twd": 31.3465,
+              "net_profit_twd": 25.5965,
+              "net_return": 0.058448,
+              "quantity": 1,
+              "reward_risk": 0.816566,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.5,
+              "stop": 410.5,
+              "target": 467.5
+            },
+            "eligible": false,
+            "entry": 436.5,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "b3aabd87bd97f0c3",
+            "stop": {
+              "date": "2026-11-20",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-23",
+              "price": 410.5
+            },
+            "target": {
+              "date": "2026-11-19",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-20",
+              "price": 467.5
+            },
+            "target_distance_atr": 1.1573,
+            "target_required_return": 0.071019,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 426.0,
+              "invested_twd": 853.852,
+              "modeled_loss_twd": 47.663,
+              "net_profit_twd": 75.214,
+              "net_return": 0.088088,
+              "quantity": 2,
+              "reward_risk": 1.578037,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.5,
+              "stop": 406.0,
+              "target": 467.5
+            },
+            "eligible": true,
+            "entry": 426.0,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "777e32042a6c1be8",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 406.0
+            },
+            "target": {
+              "date": "2026-11-19",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-20",
+              "price": 467.5
+            },
+            "target_distance_atr": 1.5493,
+            "target_required_return": 0.097418,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          }
+        ]
+      },
+      {
+        "symbol": "2338",
+        "at": "2026-11-27T09:52:21.791714+08:00",
+        "selected_route_id": "dedd1db89cfd06bb",
+        "economics": [
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [
+              "REWARD_RISK_BELOW_FLOOR",
+              "NET_PROFIT_BELOW_FLOOR"
+            ],
+            "economics": {
+              "entry": 34.8,
+              "invested_twd": 384.1828,
+              "modeled_loss_twd": 47.0732,
+              "net_profit_twd": 41.3882,
+              "net_return": 0.10773,
+              "quantity": 11,
+              "reward_risk": 0.87923,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.19999999999999574,
+              "stop": 31.15,
+              "target": 39.2
+            },
+            "eligible": false,
+            "entry": 34.8,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "CURRENT_ASK",
+            "route_id": "4288d9fa51b49f8f",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 31.15
+            },
+            "target": {
+              "date": "2026-09-07",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-09-08",
+              "price": 39.2
+            },
+            "target_distance_atr": 1.5117,
+            "target_required_return": 0.126437,
+            "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 33.35,
+              "invested_twd": 601.9003,
+              "modeled_loss_twd": 48.3574,
+              "net_profit_twd": 95.3977,
+              "net_return": 0.158494,
+              "quantity": 18,
+              "reward_risk": 1.972763,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.19999999999999574,
+              "stop": 31.15,
+              "target": 39.2
+            },
+            "eligible": true,
+            "entry": 33.35,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "dedd1db89cfd06bb",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 31.15
+            },
+            "target": {
+              "date": "2026-09-07",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-09-08",
+              "price": 39.2
+            },
+            "target_distance_atr": 2.0098,
+            "target_required_return": 0.175412,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 33.25,
+              "invested_twd": 633.3818,
+              "modeled_loss_twd": 48.9198,
+              "net_profit_twd": 102.8773,
+              "net_return": 0.162425,
+              "quantity": 19,
+              "reward_risk": 2.102978,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.19999999999999574,
+              "stop": 31.15,
+              "target": 39.2
+            },
+            "eligible": true,
+            "entry": 33.25,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "fb15f39be078144c",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 31.15
+            },
+            "target": {
+              "date": "2026-09-07",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-09-08",
+              "price": 39.2
+            },
+            "target_distance_atr": 2.0442,
+            "target_required_return": 0.178947,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          }
+        ]
+      },
+      {
+        "symbol": "2493",
+        "at": "2026-11-27T10:23:12.807415+08:00",
+        "selected_route_id": "34a3630b86d2791a",
+        "economics": [
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [
+              "REWARD_RISK_BELOW_FLOOR",
+              "NET_PROFIT_BELOW_FLOOR"
+            ],
+            "economics": {
+              "entry": 129.5,
+              "invested_twd": 389.8885,
+              "modeled_loss_twd": 48.2335,
+              "net_profit_twd": 37.181,
+              "net_return": 0.095363,
+              "quantity": 3,
+              "reward_risk": 0.770854,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.5,
+              "stop": 115.5,
+              "target": 144.0
+            },
+            "eligible": false,
+            "entry": 129.5,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "CURRENT_ASK",
+            "route_id": "e90ff18c2d28f460",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 115.5
+            },
+            "target": {
+              "date": "2026-11-18",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-19",
+              "price": 144.0
+            },
+            "target_distance_atr": 1.0885,
+            "target_required_return": 0.111969,
+            "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 124.0,
+              "invested_twd": 497.496,
+              "modeled_loss_twd": 40.956,
+              "net_profit_twd": 72.93,
+              "net_return": 0.146594,
+              "quantity": 4,
+              "reward_risk": 1.780691,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.5,
+              "stop": 115.5,
+              "target": 144.0
+            },
+            "eligible": true,
+            "entry": 124.0,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "34a3630b86d2791a",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 115.5
+            },
+            "target": {
+              "date": "2026-11-18",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-19",
+              "price": 144.0
+            },
+            "target_distance_atr": 1.5013,
+            "target_required_return": 0.16129,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          }
+        ]
+      },
+      {
+        "symbol": "2375",
+        "at": "2026-11-27T10:27:30.970086+08:00",
+        "selected_route_id": "1001e43ca41c6614",
+        "economics": [
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 83.6,
+              "invested_twd": 586.7852,
+              "modeled_loss_twd": 47.1284,
+              "net_profit_twd": 131.5917,
+              "net_return": 0.224259,
+              "quantity": 7,
+              "reward_risk": 2.792195,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.19999999999998863,
+              "stop": 77.8,
+              "target": 103.5
+            },
+            "eligible": true,
+            "entry": 83.6,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "CURRENT_ASK",
+            "route_id": "1001e43ca41c6614",
+            "stop": {
+              "date": "2026-11-26",
+              "kind": "LAST_COMPLETED_LOW",
+              "known_on": "2026-11-26",
+              "price": 77.8
+            },
+            "target": {
+              "date": "2026-11-12",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-13",
+              "price": 103.5
+            },
+            "target_distance_atr": 2.5443,
+            "target_required_return": 0.238038,
+            "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+          }
+        ]
+      },
+      {
+        "symbol": "3034",
+        "at": "2026-11-27T10:39:35.076722+08:00",
+        "selected_route_id": "7b17c9e717a8449e",
+        "economics": [
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [
+              "REWARD_RISK_BELOW_FLOOR",
+              "NET_PROFIT_BELOW_FLOOR"
+            ],
+            "economics": {
+              "entry": 444.0,
+              "invested_twd": 889.888,
+              "modeled_loss_twd": 44.738,
+              "net_profit_twd": 38.179,
+              "net_return": 0.042903,
+              "quantity": 2,
+              "reward_risk": 0.853391,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 1.0,
+              "stop": 426.0,
+              "target": 467.5
+            },
+            "eligible": false,
+            "entry": 444.0,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "CURRENT_ASK",
+            "route_id": "15ea05b5d1e850c0",
+            "stop": {
+              "date": "2026-11-26",
+              "kind": "LAST_COMPLETED_LOW",
+              "known_on": "2026-11-26",
+              "price": 426.0
+            },
+            "target": {
+              "date": "2026-11-19",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-20",
+              "price": 467.5
+            },
+            "target_distance_atr": 0.8773,
+            "target_required_return": 0.052928,
+            "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [
+              "REWARD_RISK_BELOW_FLOOR",
+              "NET_PROFIT_BELOW_FLOOR"
+            ],
+            "economics": {
+              "entry": 436.5,
+              "invested_twd": 437.9365,
+              "modeled_loss_twd": 31.846,
+              "net_profit_twd": 25.097,
+              "net_return": 0.057307,
+              "quantity": 1,
+              "reward_risk": 0.788074,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 1.0,
+              "stop": 410.5,
+              "target": 467.5
+            },
+            "eligible": false,
+            "entry": 436.5,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "4647b0f718299d4c",
+            "stop": {
+              "date": "2026-11-20",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-23",
+              "price": 410.5
+            },
+            "target": {
+              "date": "2026-11-19",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-20",
+              "price": 467.5
+            },
+            "target_distance_atr": 1.1573,
+            "target_required_return": 0.071019,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          },
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 426.0,
+              "invested_twd": 853.852,
+              "modeled_loss_twd": 48.662,
+              "net_profit_twd": 74.215,
+              "net_return": 0.086918,
+              "quantity": 2,
+              "reward_risk": 1.525112,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 1.0,
+              "stop": 406.0,
+              "target": 467.5
+            },
+            "eligible": true,
+            "entry": 426.0,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "OBSERVED_SUPPORT_PULLBACK",
+            "route_id": "7b17c9e717a8449e",
+            "stop": {
+              "date": "2026-11-25",
+              "kind": "CONFIRMED_SWING_LOW",
+              "known_on": "2026-11-26",
+              "price": 406.0
+            },
+            "target": {
+              "date": "2026-11-19",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-20",
+              "price": 467.5
+            },
+            "target_distance_atr": 1.5493,
+            "target_required_return": 0.097418,
+            "waiting_for": "PRICE_AT_OR_BELOW_ENTRY"
+          }
+        ]
+      },
+      {
+        "symbol": "2375",
+        "at": "2026-11-27T10:46:17.537637+08:00",
+        "selected_route_id": "420856d8c2b7d4ea",
+        "economics": [
+          {
+            "allocation_remaining_twd": 5000.0,
+            "blockers": [],
+            "economics": {
+              "entry": 84.1,
+              "invested_twd": 506.1046,
+              "modeled_loss_twd": 43.9702,
+              "net_profit_twd": 110.0756,
+              "net_return": 0.217496,
+              "quantity": 6,
+              "reward_risk": 2.503414,
+              "slippage_bps_each_side": 10,
+              "spread_reserve": 0.19999999999998863,
+              "stop": 77.8,
+              "target": 103.5
+            },
+            "eligible": true,
+            "entry": 84.1,
+            "existing_modeled_risk_twd": 0.0,
+            "kind": "CURRENT_ASK",
+            "route_id": "420856d8c2b7d4ea",
+            "stop": {
+              "date": "2026-11-26",
+              "kind": "LAST_COMPLETED_LOW",
+              "known_on": "2026-11-26",
+              "price": 77.8
+            },
+            "target": {
+              "date": "2026-11-12",
+              "kind": "CONFIRMED_SWING_HIGH",
+              "known_on": "2026-11-13",
+              "price": 103.5
+            },
+            "target_distance_atr": 2.4804,
+            "target_required_return": 0.230678,
+            "waiting_for": "RESEARCH_AND_EXECUTION_DATA"
+          }
+        ]
+      }
+    ],
+    "current_day_handoffs": 2,
+    "excluded_old_handoffs": 1,
+    "latest_execution_is_today": true,
+    "latest_execution_blocked": [
+      {
+        "symbol": "2375",
+        "reason": "PRETRADE_VETO_OR_ERROR",
+        "pretrade_status": "VALID",
+        "pretrade_reviews": [
+          {
+            "symbol": "2375",
+            "approved": false,
+            "reason": "84.1元限價、6股的成本與風險試算可核對：買入含佣金505.6元；目標扣一檔價差及費稅後獲利110.6元；77.8元失效價對應費後損失43.6元，未超過50元風險額度。已收到的完成分鐘顯示82.2元低點未觸及失效價，10:39及10:41回升至84.1及84.2元；現價高於限價不構成否決。但五個交易日內由84.1元到103.5元須上漲23.07%，期間仍有20日均線90.585元壓力。所附成熟五日歷史高點變幅中位數僅4.4%、第75百分位8.03%；可辨的11/20收盤69.7元至11/24高點82.7元約18.65%，亦不足支持所需幅度。11/24觸及82.7元後，11/25又收74.5元。103.5元雖是11/12歷史高點，資料仍不足以支持此計畫在指定期限內達成所需報酬，因此否決該筆固定計畫；兩方同意研究該計畫並不取代本次複核。"
+          }
+        ],
+        "decision": "WAIT",
+        "decision_reason": "TW Opportunity Flow 兩方通過固定計畫；同意研究既有限價84.1、6股、失效77.8、目標103.5的計畫。盤中低點82.2守在失效價之上，現價84.2已高於前高81.9；60列已完成分鐘顯示10:39及10:41回升至84.1、84.2。這支持收復假說，並非買進指令或五日達標預測。；交易前審查未通過：84.1元限價、6股的成本與風險試算可核對：買入含佣金505.6元；目標扣一檔價差及費稅後獲利110.6元；77.8元失效價對應費後損失43.6元，未超過50元風險額度。已收到的完成分鐘顯示82.2元低點未觸及失效價，10:39及10:41回升至84.1及84.2元；現價高於限價不構成否決。但五個交易日內由84.1元到103.5元須上漲23.07%，期間仍有20日均線90.585元壓力。所附成熟五日歷史高點變幅中位數僅4.4%、第75百分位8.03%；可辨的11/20收盤69.7元至11/24高點82.7元約18.65%，亦不足支持所需幅度。11/24觸及82.7元後，11/25又收74.5元。103.5元雖是11/12歷史高點，資料仍不足以支持此計畫在指定期限內達成所需報酬，因此否決該筆固定計畫；兩方同意研究該計畫並不取代本次複核。"
+      }
+    ],
+    "pretrade_model_events_today": 0,
+    "pretrade_event_limit": "Runtime events are bounded; corroborated with zero new formal attempts and zero new handoffs."
+  },
+  "formal_trading": {
+    "attempt_count": 2,
+    "attempt_statuses": {
+      "ACKNOWLEDGED": 2
+    },
+    "ledger_event_count": 8,
+    "new_handoff_count": 2,
+    "confirmed_fills_in_current_health": [],
+    "unresolved_attempts": 2,
+    "submissions": 2,
+    "acknowledged": 2,
+    "ledger_orders_with_fills": 0,
+    "ledger_filled_shares": 0.0,
+    "broker_orders_with_verified_fills": 0,
+    "broker_verified_filled_shares": 0.0,
+    "today_open_buy_orders": [
+      {
+        "decision_ref": "4f727511e8bef365",
+        "symbol": "2338",
+        "remaining_qty": 18,
+        "limit_price_twd": "33.35",
+        "gross_twd": "600.30",
+        "fee_buffer_twd": "20",
+        "reserve_twd": "620.30"
+      },
+      {
+        "decision_ref": "0824682c27aed1ca",
+        "symbol": "3034",
+        "remaining_qty": 2,
+        "limit_price_twd": "426.0",
+        "gross_twd": "852.0",
+        "fee_buffer_twd": "20",
+        "reserve_twd": "872.0"
+      }
+    ],
+    "today_broker_checks": [
+      {
+        "decision_ref": "0824682c27aed1ca",
+        "symbol": "3034",
+        "side": "BUY",
+        "ledger_status": "ACKNOWLEDGED",
+        "ordered_qty": 2,
+        "ledger_filled_qty": 0,
+        "broker_replay_filled_qty": 0,
+        "broker_verified_filled_qty": 0,
+        "unconfirmed_qty": 2,
+        "cancelled_qty": 0,
+        "expired_qty": 0,
+        "broker_event_status": "ACKNOWLEDGED_NO_FILL_EVENT",
+        "status": "NO_FILL_YET_VERIFIED",
+        "broker_replay_complete": true
+      },
+      {
+        "decision_ref": "4f727511e8bef365",
+        "symbol": "2338",
+        "side": "BUY",
+        "ledger_status": "ACKNOWLEDGED",
+        "ordered_qty": 18,
+        "ledger_filled_qty": 0,
+        "broker_replay_filled_qty": 0,
+        "broker_verified_filled_qty": 0,
+        "unconfirmed_qty": 18,
+        "cancelled_qty": 0,
+        "expired_qty": 0,
+        "broker_event_status": "ACKNOWLEDGED_NO_FILL_EVENT",
+        "status": "NO_FILL_YET_VERIFIED",
+        "broker_replay_complete": true
+      }
+    ],
+    "pending_buy_reserve_twd": "1492.30",
+    "ai_committed_capital_twd": "0",
+    "ledger_note": "Submission, broker acknowledgement, verified fills and open pending reservations are separate. Ledger unresolved may include accepted unfilled orders, not only unknown sends."
+  },
+  "quotes": {
+    "checked_at": "2026-11-27T11:31:08.098772+08:00",
+    "batch_size": 20,
+    "valid": 19,
+    "problems": {
+      "VALID": 19,
+      "LIVE_NON_TRIAL_QUOTE_REQUIRED": 1
+    },
+    "missing_fields": {
+      "ask": 0,
+      "bid": 0,
+      "last_price": 0,
+      "low": 0
+    },
+    "confirmed_market_absence": 0,
+    "coverage_symbols_with_persistent_history": 93,
+    "history_max_ticks": 1361,
+    "public_feed_events": {
+      "PUBLIC_QUOTES": 165,
+      "BROKER_READ_ERROR": 2,
+      "PUBLIC_QUOTES_ERROR": 3,
+      "PRETRADE_REVIEW_RESULT": 4
+    },
+    "coverage_limit": "Persistent history union is not exact subscription count. Current quote file holds latest batch only; public rotation events are separate."
+  },
+  "health_history": {
+    "records": 557,
+    "statuses": {
+      "OK": 490,
+      "ERROR": 6,
+      "PENDING_ORDER": 61
+    },
+    "error_status_records": 6,
+    "historical_error_details": "Not expanded; latest snapshot errors separately included."
+  },
+  "export_policy": {
+    "sqlite": "mode=ro with BEGIN read transaction per database; no cross-database atomic snapshot",
+    "no_broker_or_model_calls": true,
+    "no_trade_process_or_settings_changes": true,
+    "only_reports_committed": true
+  }
+}
