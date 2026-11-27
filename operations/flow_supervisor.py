@@ -81,6 +81,22 @@ def child_command(root, dataset, state, *, headless=False, model=None):
     return command
 
 
+def owned_python_process(command,env):
+    """Bypass Windows venv redirectors without changing the selected venv.
+
+    The redirector spawns another PID; Popen.pid otherwise identifies a wrapper
+    instead of the process writing heartbeats and allocating broker memory.
+    Use CPython's own launcher environment contract, keeping venv packages.
+    """
+    if os.name!='nt' or sys.prefix==sys.base_prefix:return command,env
+    selected=Path(command[0]);current=Path(sys.executable)
+    if (selected.parent.resolve()!=current.parent.resolve()
+            or selected.name.lower() not in ('python.exe','pythonw.exe')):return command,env
+    base=Path(getattr(sys,'_base_executable',sys.executable)).with_name(selected.name)
+    if not base.is_file() or base.resolve()==selected.resolve():return command,env
+    return [str(base),*command[1:]],dict(env,__PYVENV_LAUNCHER__=str(selected))
+
+
 def launch_detached(root,dataset,state,*,headless=False,model=None,handoff_token=None):
     executable=Path(sys.executable)
     if os.name=='nt' and executable.with_name('pythonw.exe').is_file():
@@ -90,9 +106,10 @@ def launch_detached(root,dataset,state,*,headless=False,model=None,handoff_token
     if headless:command.append('--headless')
     if model:command.extend(['--model',model])
     if handoff_token:command.extend(['--handoff-token',handoff_token])
+    command,env=owned_python_process(command,dict(os.environ))
     target=folder(root);target.mkdir(parents=True,exist_ok=True)
     with (target/'supervisor_output.log').open('ab') as output:
-        child=subprocess.Popen(command,cwd=ROOT,stdout=output,stderr=subprocess.STDOUT,
+        child=subprocess.Popen(command,cwd=ROOT,env=env,stdout=output,stderr=subprocess.STDOUT,
             creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     return child.pid
 
@@ -162,8 +179,9 @@ def supervise(root, dataset, state, *, headless=False, model=None, stop=None, po
             with (target / 'child_output.log').open('ab') as output:
                 launched = time.time()
                 try:
-                    child = subprocess.Popen(child_command(root, dataset, state, headless=headless, model=model),
-                        cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT,
+                    command,child_env=owned_python_process(child_command(root,dataset,state,headless=headless,model=model),env)
+                    child = subprocess.Popen(command,
+                        cwd=ROOT, env=child_env, stdout=output, stderr=subprocess.STDOUT,
                         creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
                 except OSError as exc:
                     failed_launch()

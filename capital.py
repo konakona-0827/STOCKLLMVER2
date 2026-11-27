@@ -8,12 +8,11 @@ from datetime import datetime
 import os
 import time
 import uuid
-import ctypes
-from ctypes import wintypes
 from config import ROOT, TAIPEI, now
 from capital_check import find_dll, unpack, error_info
 from market import quality
 from execution.capital_session_audit import record_capital_event
+from execution.com_lifetime import pump_events,stock_record
 
 
 def normalize_stock(stock, received_at):
@@ -72,21 +71,7 @@ class CapitalMarket:
 
     def pump(self, seconds=.1):
         if self.client and not self.stopped():
-            # SKCOM also posts native Windows messages. CoWait/PumpEvents alone
-            # may not dispatch its hidden-window socket notifications.
-            user32 = ctypes.windll.user32
-            user32.PeekMessageW.argtypes = [ctypes.POINTER(wintypes.MSG), wintypes.HWND,
-                                            wintypes.UINT, wintypes.UINT, wintypes.UINT]
-            user32.TranslateMessage.argtypes = [ctypes.POINTER(wintypes.MSG)]
-            user32.DispatchMessageW.argtypes = [ctypes.POINTER(wintypes.MSG)]
-            user32.DispatchMessageW.restype = ctypes.c_ssize_t
-            msg = wintypes.MSG()
-            for _ in range(1000):
-                if not user32.PeekMessageW(ctypes.byref(msg), None, 0, 0, 1):
-                    break
-                user32.TranslateMessage(ctypes.byref(msg))
-                user32.DispatchMessageW(ctypes.byref(msg))
-            self.client.PumpEvents(seconds)
+            pump_events(self.client,seconds)
 
     def wait(self, predicate, seconds=15):
         end = time.monotonic() + seconds
@@ -288,12 +273,12 @@ class CapitalMarket:
             object_type='SKQuoteLib', object_id=hex(id(quote)),
             api_name='SKQuoteLib_LeaveMonitor', return_code=rc,
         )
-        self.entered = self.connected = self.ready = False
-        self.subscribed = ()
-        self.pending_indices.clear()
         if rc:
             self.cleanup_event('LEAVE_MONITOR_FAILED', {'return_code': rc})
             raise RuntimeError(f'BROKER_LEAVE_MONITOR_RETURN_CODE_{rc}')
+        self.entered = self.connected = self.ready = False
+        self.subscribed = ()
+        self.pending_indices.clear()
         self.retry_at = 0
         return rc
 
@@ -359,12 +344,7 @@ class CapitalMarket:
         for market, index in list(self.pending_indices):
             self.pending_indices.discard((market, index))
             try:
-                stock = self.sk.SKSTOCKLONG()
-                result = quote.SKQuoteLib_GetStockByIndexLONG(market, index, stock)
-                if unpack(result):
-                    continue
-                if isinstance(result, (tuple, list)):
-                    stock = next((v for v in result if hasattr(v, 'nClose')), stock)
+                stock = stock_record(self.sk.SKSTOCKLONG,quote.SKQuoteLib_GetStockByIndexLONG,market,index)
                 data = normalize_stock(stock, now())
                 data['callback_received_at'] = self.callback_times.get((market, index))
                 data['retrieval_method'] = 'LONG_CALLBACK_THEN_GET_STOCK_BY_INDEX'
@@ -378,14 +358,8 @@ class CapitalMarket:
             if symbol in self.quotes:
                 continue
             try:
-                stock = self.sk.SKSTOCKLONG()
-                value = quote.SKQuoteLib_GetStockByMarketAndNo(5, symbol, stock)
-                rc = unpack(value)
-                self.event('SYMBOL_SNAPSHOT', {'symbol': symbol, 'return_code': rc})
-                if rc:
-                    continue
-                if isinstance(value, (tuple, list)):
-                    stock = next((v for v in value if hasattr(v, 'nClose')), stock)
+                stock = stock_record(self.sk.SKSTOCKLONG,quote.SKQuoteLib_GetStockByMarketAndNo,5,symbol)
+                self.event('SYMBOL_SNAPSHOT', {'symbol': symbol, 'return_code': 0})
                 data = normalize_stock(stock, now())
                 data['callback_received_at'] = None
                 data['retrieval_method'] = 'SUBSCRIBED_SYMBOL_LOOKUP'
@@ -411,13 +385,19 @@ class CapitalMarket:
                 self.leave_monitor()
             except Exception as exc:
                 self.cleanup_event('LEAVE_MONITOR_ERROR', error_info(exc))
+                raise RuntimeError('QUOTE_MONITOR_CLEANUP_PENDING') from exc
         self.entered = self.connected = self.ready = False
         self.subscribed = ()
+        remaining=[]
         for connection in self.connections:
             try:
                 connection.disconnect()
             except Exception as exc:
                 self.cleanup_event('QUOTE_EVENT_DISCONNECT_ERROR', error_info(exc))
+                remaining.append(connection)
+        if remaining:
+            self.connections=remaining
+            raise RuntimeError('QUOTE_EVENT_CLEANUP_PENDING')
         self.connections, self.sinks, self.objects = [], [], {}
         if self.dll_handle:
             self.dll_handle.close()

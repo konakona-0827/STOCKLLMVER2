@@ -154,6 +154,20 @@ class PretradePolicyTests(unittest.TestCase):
         self.assertEqual(review['status'],'VALID')
         self.assertEqual(trade['decision'],'BUY')
 
+    def test_planned_target_horizon_cannot_replace_entry_return_with_current_reference(self):
+        c=self.candidate();c.update(pricing_policy='PLANNED_LIMIT',ask=446.5,bid=446,last_price=446)
+        trade=self.decision(qty=2);trade.update(suggested_price=426,target_price=467.5,invalidation_price=406,holding_days=5)
+        def provider(request):
+            payload=json.loads(request['input']);check=payload['computed_checks'][0]['target_horizon_comparison']
+            self.assertEqual(check['anchor'],'PROPOSED_ENTRY_PRICE');self.assertTrue(check['conditional_on_fill'])
+            self.assertAlmostEqual(check['return_required_from_entry'],467.5/426-1)
+            self.assertAlmostEqual(check['return_from_current_reference'],467.5/446-1)
+            self.assertGreater(check['return_required_from_entry'],check['return_from_current_reference'])
+            self.assertIn('不能用較小的前收或現價漲幅取代',request['instructions'])
+            return json.dumps({'reviews':[dict(symbol='2330',approved=False,reason='期限證據不足')]}),{}
+        review=review_trades(dict(decisions=[trade]),dict(model='test',input=json.dumps(dict(analysis_set=[c]))),provider)
+        self.assertEqual(review['status'],'VALID');self.assertEqual(trade['decision'],'WAIT')
+
     def test_live_confirmed_fill_plan_survives_reconstruction(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'execution.sqlite3'

@@ -151,7 +151,8 @@ def availability(raw_quote,bars,event,history):
             minute_bars_delivered=len((history.get('minute_bars') or {}).get('rows',[])),
             ticks_delivered=history.get('tick_count',0),
             observation_count=history.get('observation_count',0),continuous_coverage_verified=False),
-        current_disclosures=dict(origin='PROVIDED_CURRENT_OFFICIAL_DISCLOSURES' if event and event.get('source_url') else 'SOURCE_UNAVAILABLE',
+        current_disclosures=dict(origin='PROVIDED_CURRENT_OFFICIAL_DISCLOSURES' if event and event.get('source_url')
+            and event.get('status') in ('CHECKED_CLEAR','SOURCE_REVIEW_REQUIRED') else 'SOURCE_UNAVAILABLE',
             complete_news_history=False),historical_corporate_action_adjustment=dict(origin='SYSTEM_NOT_INTEGRATED',verified=False),
         market_absence_confirmed=False)
 

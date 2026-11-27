@@ -53,7 +53,7 @@ class FlowDashboard(Dashboard):
         self.flow_filter=tk.StringVar(value='具型態')
         selector=ttk.Combobox(filters,textvariable=self.flow_filter,state='readonly',width=18,
             values=('具型態','全部','等待研究','雙方研究通過','研究觀察','研究否決','研究計畫分歧',
-                    '費後／風險未過','資料待補','帳戶條件阻擋','研究錯誤'))
+                    '費後／風險未過','資料待補','公司事件待重建計畫','帳戶條件阻擋','研究錯誤'))
         selector.pack(side='left',padx=5);selector.bind('<<ComboboxSelected>>',lambda e:self.render_flow_rows())
         ttk.Label(filters,text='代號／名稱：').pack(side='left',padx=(12,0))
         self.flow_search=tk.StringVar();ttk.Entry(filters,textvariable=self.flow_search,width=20).pack(side='left',padx=5)

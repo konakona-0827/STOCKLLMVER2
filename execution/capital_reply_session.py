@@ -9,6 +9,7 @@ from threading import get_ident
 
 from .capital_crosscheck import CrossCheckResult, evaluate_seq13
 from .capital_session_audit import record_capital_event
+from .com_lifetime import pump_events
 
 
 class CapitalReplySessionError(RuntimeError):
@@ -170,6 +171,7 @@ class CapitalReplySession:
                 "after checking the broker connection."
             )
 
+        self._owner_thread_id = get_ident()
         import comtypes.client
         comtypes.client.GetModule(str(self.dll_path))
         import comtypes.gen.SKCOMLib as sk
@@ -351,7 +353,7 @@ class CapitalReplySession:
             if refresh_rc==0:
                 end=time.monotonic()+agreement_wait_seconds
                 while time.monotonic()<end:
-                    self._comtypes.PumpEvents(min(.25,max(0,end-time.monotonic())))
+                    pump_events(self._comtypes,min(.25,max(0,end-time.monotonic())))
                 self.snapshot.begin_replay()
                 rc=connect_once()
             if rc==2018:
@@ -374,7 +376,7 @@ class CapitalReplySession:
 
         end = time.time() + replay_wait_seconds
         while time.time() < end and not self.snapshot.replay_complete:
-            self._comtypes.PumpEvents(0.25)
+            pump_events(self._comtypes,0.25)
 
         if not self.snapshot.replay_complete:
             self._reply_needs_reset=True
@@ -382,7 +384,7 @@ class CapitalReplySession:
 
         end = time.time() + max(0.0, replay_grace_seconds)
         while time.time() < end:
-            self._comtypes.PumpEvents(0.25)
+            pump_events(self._comtypes,0.25)
 
         self._connected = True
         self._owner_thread_id = get_ident()
@@ -391,12 +393,44 @@ class CapitalReplySession:
         return self.snapshot.copy()
 
     def pump(self, seconds: float) -> ReplySnapshot:
+        self.pump_idle(seconds)
+        return self.snapshot.copy()
+
+    def pump_idle(self, seconds: float) -> None:
+        """Idle dispatch does not copy the entire financial reply history."""
         if (not self._connected and not self._reply_startup_pending) or self._comtypes is None:
             raise CapitalReplySessionError("Session is not connected.")
-        end = time.time() + max(0.0, seconds)
-        while time.time() < end:
-            self._comtypes.PumpEvents(0.25)
-        return self.snapshot.copy()
+        end = time.monotonic() + max(0.0, seconds)
+        while time.monotonic() < end:
+            pump_events(self._comtypes,min(.25,max(0,end-time.monotonic())))
+
+    def close(self):
+        """Detach callbacks and release every interface on its owning STA."""
+        if self._owner_thread_id is not None and self._owner_thread_id!=get_ident():
+            raise CapitalReplySessionError('Broker session cleanup must run on its COM thread.')
+        self._connected=False;self._reply_startup_pending=False
+        # Quote monitor is closed by BrokerRuntime before this method. No order
+        # cancellation, resubmission, or modification belongs in destruction.
+        close=getattr(self._skR,'SKReplyLib_SolaceCloseByID',None)
+        if self._center_login_attempted and callable(close):
+            try:rc=close(self.user)
+            except Exception as exc:rc='EXCEPTION:'+type(exc).__name__
+            record_capital_event(self.project_root,session_id=self.session_id,
+                call_site='CapitalReplySession.close',event='REPLY_CLOSE',return_code=rc)
+        errors=[]
+        for name in ('_reply_conn','_order_conn','_center_conn'):
+            connection=getattr(self,name,None)
+            if connection is not None:
+                try:connection.disconnect()
+                except Exception as exc:errors.append(name+':'+type(exc).__name__)
+                else:setattr(self,name,None)
+        if errors:
+            # Keep the objects and event receivers alive for another owner-thread
+            # cleanup attempt, rather than release beneath an advised callback.
+            raise CapitalReplySessionError('BROKER_EVENT_CLEANUP_PENDING:'+','.join(errors))
+        self._skR=self._skO=self._skC=self._skQ=None
+        record_capital_event(self.project_root,session_id=self.session_id,
+            call_site='CapitalReplySession.close',event='COM_INTERFACES_RELEASED')
 
     def quote_login_context(self):
         """Expose the current COM login to a quote monitor on this same thread."""
@@ -429,7 +463,7 @@ class CapitalReplySession:
 
         end = time.time() + timeout_seconds
         while time.time() < end and not self.snapshot.real_balance_complete:
-            self._comtypes.PumpEvents(0.25)
+            pump_events(self._comtypes,0.25)
 
         if not self.snapshot.real_balance_complete:
             raise CapitalReplySessionError(
@@ -527,7 +561,7 @@ class CapitalReplySession:
             if rc!=0:raise CapitalReplySessionError(f'Reply reset failed: rc={rc}')
             end=time.monotonic()+5
             while self.reply_connection_state() not in (0,None) and time.monotonic()<end:
-                self._comtypes.PumpEvents(.1)
+                pump_events(self._comtypes,.1)
             if self.reply_connection_state() not in (0,None):
                 raise CapitalReplySessionError('Reply reset did not disconnect; refusing another ConnectByID.')
 
@@ -544,7 +578,7 @@ class CapitalReplySession:
 
         end = time.time() + replay_wait_seconds
         while time.time() < end and not self.snapshot.replay_complete:
-            self._comtypes.PumpEvents(0.25)
+            pump_events(self._comtypes,0.25)
 
         if not self.snapshot.replay_complete:
             self._reply_needs_reset=True
@@ -554,7 +588,7 @@ class CapitalReplySession:
 
         end = time.time() + max(0.0, replay_grace_seconds)
         while time.time() < end:
-            self._comtypes.PumpEvents(0.25)
+            pump_events(self._comtypes,0.25)
         self._reply_needs_reset=False
 
     def ensure_ready(
@@ -587,7 +621,7 @@ class CapitalReplySession:
             # replay repeatedly just because OnComplete has not arrived yet.
             end=time.monotonic()+20
             while time.monotonic()<end:
-                self._comtypes.PumpEvents(.25)
+                pump_events(self._comtypes,.25)
                 health=self.health_check()
                 if health.ready:return health
                 if health.action!='REPLAY_PENDING':break

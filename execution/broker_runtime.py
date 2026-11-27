@@ -11,6 +11,7 @@ from state_lock import StateLease
 
 from .capital_reply_session import build_live_readonly_session_from_project
 from .timing import current_trace,set_trace,reset_trace,mark
+from .memory_diagnostics import checkpoint
 
 
 class BrokerRuntime:
@@ -21,8 +22,10 @@ class BrokerRuntime:
         self._unresponsive = Event()
         self._submission_lock = Lock()
         self._shutdown_future = None
+        self._closing = Event()
         self._recovery_future = None
-        self._thread = Thread(target=self._run, name="broker-runtime", daemon=True)
+        # Python finalization must not abandon a native callback/financial job.
+        self._thread = Thread(target=self._run, name="broker-runtime", daemon=False)
         try:
             self._thread.start()
         except BaseException:
@@ -52,7 +55,7 @@ class BrokerRuntime:
         started = monotonic()
         with self._submission_lock:
             recovering = kind == 'health' and self.read_quarantined and self._recovery_future is None
-            if kind != 'shutdown' and (self._shutdown_future is not None or
+            if kind != 'shutdown' and (self._closing.is_set() or self._shutdown_future is not None or
                                        (self.read_quarantined and not recovering)):
                 raise RuntimeError('BROKER_READ_TIMEOUT_OR_SHUTDOWN_RESTART_REQUIRED')
             if kind == 'shutdown' and self._shutdown_future is not None:
@@ -67,6 +70,7 @@ class BrokerRuntime:
                 if recovering:
                     self._recovery_future = future
                 if kind == 'shutdown':
+                    self._closing.set()
                     self._shutdown_future = future
                 future._timing_queued_ns=perf_counter_ns()
                 mark('broker_queue_enqueued',job_kind=kind)
@@ -140,7 +144,7 @@ class BrokerRuntime:
         if not self._thread.is_alive():
             return {"status": "ALREADY_STOPPED"}
         result = self._submit("shutdown")
-        if result['status'] == 'STOPPING_BROKER_UNRESPONSIVE':
+        if result['status'].startswith('STOPPING_BROKER_'):
             return result
         self._thread.join(timeout=5)
         if self._thread.is_alive():
@@ -155,6 +159,7 @@ class BrokerRuntime:
         login_error = None
         com_initialized = False
         com_error = None
+        cleanup_sessions=[]
         try:
             import comtypes
             comtypes.CoInitialize()
@@ -169,7 +174,7 @@ class BrokerRuntime:
                 except Empty:
                     # A blocking Queue.get leaves the STA's COM callbacks
                     # unprocessed between jobs, including Reply disconnects.
-                    pump=getattr(session,'pump',None)
+                    pump=getattr(session,'pump_idle',None) or getattr(session,'pump',None)
                     if callable(pump):
                         try:pump(.01)
                         except Exception as exc:
@@ -181,9 +186,12 @@ class BrokerRuntime:
                     continue
                 trace_token=set_trace(getattr(future,'_execution_trace',None))
                 try:
+                    checkpoint(self.project_root,'broker_'+kind+'_before')
                     queued_ns=getattr(future,'_timing_queued_ns',None)
                     mark('broker_worker_started',job_kind=kind,queue_wait_ms=round((perf_counter_ns()-queued_ns)/1_000_000,3) if queued_ns is not None else 0)
                     self._check_read_deadline(future)
+                    if kind!='shutdown' and self._closing.is_set():
+                        raise RuntimeError('BROKER_SHUTDOWN_PENDING')
                     recovering = getattr(future, '_broker_recovery', False)
                     if kind != 'shutdown' and self.read_quarantined and not recovering:
                         raise RuntimeError('BROKER_READ_TIMEOUT_RESTART_REQUIRED')
@@ -194,6 +202,18 @@ class BrokerRuntime:
                             quote_market.close()
                             quote_market = None
                             quote_symbols = None
+                        for retired in cleanup_sessions:
+                            close=getattr(retired,'close',None)
+                            if callable(close):close()
+                        cleanup_sessions.clear()
+                        retired=None
+                        close=getattr(session,'close',None)
+                        if callable(close):close()
+                        session=None;close=None;pump=None
+                        # Collect event receiver cycles while the owning STA is
+                        # still initialized, never after CoUninitialize.
+                        import gc
+                        gc.collect()
                         result = {"status": "STOPPED"}
                         stop_worker = True
                     elif not com_initialized:
@@ -228,6 +248,13 @@ class BrokerRuntime:
                                     # setup failure. Another login could return 2003.
                                     login_blocked = True
                                     login_error = connection_error
+                                if candidate is not None and session is None:
+                                    cleanup_sessions.append(candidate)
+                                    close=getattr(candidate,'close',None)
+                                    if callable(close):close()
+                                    cleanup_sessions.remove(candidate)
+                            finally:
+                                candidate=None  # Do not retain another COM owner reference.
                         if getattr(session,'reply_startup_pending',False) is True and kind!='health':
                             raise RuntimeError('BROKER_REPLY_STARTUP_UNVERIFIED: health reconciliation required')
                         if kind in ('execute','health_order_test'):
@@ -316,8 +343,13 @@ class BrokerRuntime:
                     future.set_result(result)
                 except BaseException as exc:
                     mark('broker_worker_failed',job_kind=kind,error=type(exc).__name__)
-                    future.set_exception(exc)
+                    if kind=='shutdown':
+                        with self._submission_lock:self._shutdown_future=None
+                        future.set_result(dict(status='STOPPING_BROKER_CLEANUP_PENDING',lease_held=True,
+                            automatic_retry=False,error=type(exc).__name__))
+                    else:future.set_exception(exc)
                 finally:
+                    checkpoint(self.project_root,'broker_'+kind+'_after')
                     reset_trace(trace_token)
                     self._queue.task_done()
                 if stop_worker:
@@ -326,6 +358,16 @@ class BrokerRuntime:
             try:
                 if quote_market is not None:
                     quote_market.close()
+                    quote_market=None
+                close=getattr(session,'close',None)
+                if callable(close):close()
+                session=None
+                for retired in cleanup_sessions:
+                    close=getattr(retired,'close',None)
+                    if callable(close):close()
+                cleanup_sessions.clear();retired=None;close=None;pump=None
+                import gc
+                gc.collect()
                 if com_initialized:
                     comtypes.CoUninitialize()
             finally:

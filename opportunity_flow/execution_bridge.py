@@ -301,9 +301,16 @@ class ExecutionBridge:
 
     def step(self,result,dataset,at):
         from execution.timing import trace_scope,span
+        from .execution_audit import record,outcome
+        record(self.state,result['candidates'],'STARTED')
         with trace_scope() as trace:
-            with span('flow_cycle'):
-                report=self._step(result,dataset,at)
+            try:
+                with span('flow_cycle'):
+                    report=self._step(result,dataset,at)
+            except BaseException as exc:
+                record(self.state,result['candidates'],'INTERRUPTED',type(exc).__name__)
+                raise
+            outcome(self.state,result['candidates'],report)
             for block in report.get('blocked',[]):observe('EXECUTION_BLOCKED',reason=block.get('reason'))
             report['execution_timing']=trace.export()
             return report
@@ -365,7 +372,9 @@ class ExecutionBridge:
                 current=runtime.candidates([symbol],quotes,dataset)[0]
                 current.update({k:c[k] for k in ('flow_plan','handoff_key','pricing_policy')})
                 decisions[0]['reference_price']=current['last_price']
-                reports.append(self.dispatch(payload_for(decisions,[current],runtime.account(),self.now(),review=review)))
+                dispatched=self.dispatch(payload_for(decisions,[current],runtime.account(),self.now(),review=review))
+                reports.append({**dispatched,'flow_research_packet_id':candidate['review']['packet']['packet_id'],
+                    'flow_research_symbol':symbol})
                 break  # Next BUY uses a newly reconciled account, not this budget snapshot.
             except (ValueError,KeyError,TypeError,ArithmeticError) as exc:
                 reason=str(exc)

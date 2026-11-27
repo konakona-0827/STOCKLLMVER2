@@ -175,6 +175,11 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
     data_executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='flow-daily-data') if live is not None else None
     data_worker=None
     data_retry_after=0
+    def memory_checkpoint(stage):
+        account_root=getattr(getattr(live,'runtime',None),'root',None)
+        if account_root is not None:
+            from execution.memory_diagnostics import checkpoint
+            checkpoint(account_root,stage)
     def pause(seconds):
         if live is not None and external_wake is not None:external_wake.wait(seconds)
         elif live is not None:stop_event.wait(seconds)
@@ -184,6 +189,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             try:live.refresh_account()
             except (TimeoutError,RuntimeError):pass
         while not stop_event.is_set():
+            memory_checkpoint('watch_loop')
             if recovery is not None:
                 recovery.update(loop=True,coordinator=live,controller_status='RUNNING')
                 if recovery.restart_requested() or not intent(recovery.root):
@@ -326,6 +332,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
                     result=run_cycle(ds,at,p,args.state,observed_quotes,events,
                         use_llm=args.llm and args.command=="cycle",diagnose_blocked=args.diagnose_blocked,review_symbols=args.review_symbols,
                         account_context=account_context)
+                    memory_checkpoint('numeric_cycle_after')
                     if live is not None:live.research_refresh_required=False
                 except (ValueError,RuntimeError,OSError) as exc:
                     if recovery is not None:observe('RESEARCH_ERROR')
@@ -376,6 +383,7 @@ def main(argv=None,coordinator=None,external_stop=None,external_wake=None):
             executor.shutdown(wait=True,cancel_futures=True)
         if data_executor is not None:data_executor.shutdown(wait=True,cancel_futures=True)
         if live is not None:live.close()
+        memory_checkpoint('watch_closed')
     return 0
 
 

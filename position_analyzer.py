@@ -67,6 +67,12 @@ def review_trades(result, request, provider):
                     minimum_commission_twd=rules.get('minimum_commission_twd', 1),
                     commission_rate=rules.get('commission_rate', '0.001425'))
                 checks.append(dict(symbol=decision['symbol'], side='BUY',
+                    target_horizon_comparison=dict(anchor='PROPOSED_ENTRY_PRICE',conditional_on_fill=True,
+                        entry_price=decision['suggested_price'],target_price=decision['target_price'],
+                        holding_days=decision.get('holding_days'),
+                        return_required_from_entry=float(Decimal(str(decision['target_price']))/Decimal(str(decision['suggested_price']))-1),
+                        return_from_current_reference=(float(Decimal(str(decision['target_price']))/Decimal(str(candidate['last_price']))-1)
+                            if candidate.get('last_price') and Decimal(str(candidate['last_price']))>0 else None)),
                     estimated_net_return=float(Decimal(str(economics['estimated_net_upside_twd'])) /
                                                Decimal(str(economics['estimated_buy_cost_twd']))),
                     **economics))
@@ -105,6 +111,9 @@ def review_trades(result, request, provider):
                       '合理市場不確定性、未證明未來必定獲利、或 advisory 研究為 WATCH 本身不構成否決。'
                       'REQUIRED_PAYOFF_NOT_OBSERVED_PRICE 與舊 MODELED_R_MULTIPLE_NOT_OBSERVED_PRICE 都是報酬要求，不是價格預測；'
                       '核對 payoff_assessment 的期限、前收錨定空間與不重疊歷史支持，不能用2R或單次極端樣本當作潛力證據。'
+                      'computed_checks.target_horizon_comparison 明列既有入場到目標的必要漲幅；'
+                      '限價低於現價／前收時，先回到入場再反彈至目標是另一條條件路徑，不能用較小的前收或現價漲幅取代它來證明計畫期限可及。'
+                      '兩種錨點分別說明；歷史變幅不是條件成交後的勝率，也不以單一分位數自動批准或否決。'
                       '須核對突破、完成日線量能、真實支撐與風險，不把估算誤稱歷史成交價。'
                       'SELL 可因原假設失效、達成目標、重大新風險，或費後正獲利且有具體回落/壓力證據通過；'
                       '若舊計畫未知，不可捏造失效理由。不能改寫價格或股數。'

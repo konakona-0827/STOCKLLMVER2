@@ -1,0 +1,229 @@
+{
+  "source_files": {
+    "reports/trading_daily/2026-11-27/intraday_113225/summary.json": "ffaee569fed1d8b2167c98b6c754d04b095efa5511ad97446a9616985280670e",
+    "reports/trading_daily/2026-11-27/intraday_113225/ready_plan_handoff.json": "22bbab7a951a4677fab269cc42401f4c6efb55d20b7f22e0aaffe22652678ea2",
+    "reports/trading_daily/2026-11-27/intraday_113225/research_decisions.json": "27f5021a3f3e445f31921ac043aa28c74502c5cc0e3557f6360dd0c5f55dc39d",
+    "reports/trading_daily/2026-11-27/intraday_113225/recovery_and_execution_stages.json": "cc543cd47500be3cee95ec8b5330e05971a9b74f345e3db925eb94f0f2f224b3"
+  },
+  "cutoff_taipei": "2026-11-27T11:32:25.853942+08:00",
+  "cutoff_japan": "2026-11-27T12:32:25.853942+09:00",
+  "model": {
+    "calls": 94,
+    "by_role": {
+      "researcher": 46,
+      "challenger": 44,
+      "pretrade": 4
+    },
+    "by_status": {
+      "ERROR": 7,
+      "VALID": 87
+    },
+    "prompt_versions": {
+      "null": 11,
+      "flow-review-v4-actionable-plan": 83
+    },
+    "paired_reviews": 117,
+    "paired_states": {
+      "RESEARCH_REJECT": 20,
+      "RESEARCH_WATCH": 91,
+      "RESEARCH_READY": 6
+    },
+    "reviews_with_received_minutes": 117,
+    "max_completed_minute_rows": 60
+  },
+  "health": {
+    "checked_at": "2026-11-27T11:31:39+08:00",
+    "status": "PENDING_ORDER",
+    "inventory_checked": true,
+    "budget_status": "READY",
+    "current_buy_budget_twd": "8507.70",
+    "minimum_balance_twd": "5000",
+    "strategy_cap_twd": "10000",
+    "daily_buy_limit_twd": "30000",
+    "buy_block_reasons": [],
+    "errors": []
+  },
+  "formal_trading": {
+    "attempt_count": 2,
+    "attempt_statuses": {
+      "ACKNOWLEDGED": 2
+    },
+    "ledger_event_count": 8,
+    "new_handoff_count": 2,
+    "confirmed_fills_in_current_health": [],
+    "unresolved_attempts": 2,
+    "submissions": 2,
+    "acknowledged": 2,
+    "ledger_orders_with_fills": 0,
+    "ledger_filled_shares": 0.0,
+    "broker_orders_with_verified_fills": 0,
+    "broker_verified_filled_shares": 0.0,
+    "today_open_buy_orders": [
+      {
+        "decision_ref": "4f727511e8bef365",
+        "symbol": "2338",
+        "remaining_qty": 18,
+        "limit_price_twd": "33.35",
+        "gross_twd": "600.30",
+        "fee_buffer_twd": "20",
+        "reserve_twd": "620.30"
+      },
+      {
+        "decision_ref": "0824682c27aed1ca",
+        "symbol": "3034",
+        "remaining_qty": 2,
+        "limit_price_twd": "426.0",
+        "gross_twd": "852.0",
+        "fee_buffer_twd": "20",
+        "reserve_twd": "872.0"
+      }
+    ],
+    "today_broker_checks": [
+      {
+        "decision_ref": "0824682c27aed1ca",
+        "symbol": "3034",
+        "side": "BUY",
+        "ledger_status": "ACKNOWLEDGED",
+        "ordered_qty": 2,
+        "ledger_filled_qty": 0,
+        "broker_replay_filled_qty": 0,
+        "broker_verified_filled_qty": 0,
+        "unconfirmed_qty": 2,
+        "cancelled_qty": 0,
+        "expired_qty": 0,
+        "broker_event_status": "ACKNOWLEDGED_NO_FILL_EVENT",
+        "status": "NO_FILL_YET_VERIFIED",
+        "broker_replay_complete": true
+      },
+      {
+        "decision_ref": "4f727511e8bef365",
+        "symbol": "2338",
+        "side": "BUY",
+        "ledger_status": "ACKNOWLEDGED",
+        "ordered_qty": 18,
+        "ledger_filled_qty": 0,
+        "broker_replay_filled_qty": 0,
+        "broker_verified_filled_qty": 0,
+        "unconfirmed_qty": 18,
+        "cancelled_qty": 0,
+        "expired_qty": 0,
+        "broker_event_status": "ACKNOWLEDGED_NO_FILL_EVENT",
+        "status": "NO_FILL_YET_VERIFIED",
+        "broker_replay_complete": true
+      }
+    ],
+    "pending_buy_reserve_twd": "1492.30",
+    "ai_committed_capital_twd": "0",
+    "ledger_note": "Submission, broker acknowledgement, verified fills and open pending reservations are separate. Ledger unresolved may include accepted unfilled orders, not only unknown sends."
+  },
+  "pretrade_decisions": [
+    {
+      "at": "2026-11-27T09:54:39.694527+08:00",
+      "symbol": "2338",
+      "approved": true
+    },
+    {
+      "at": "2026-11-27T10:29:42.376000+08:00",
+      "symbol": "2375",
+      "approved": false
+    },
+    {
+      "at": "2026-11-27T10:41:22.708880+08:00",
+      "symbol": "3034",
+      "approved": true
+    },
+    {
+      "at": "2026-11-27T10:47:28.033422+08:00",
+      "symbol": "2375",
+      "approved": false
+    }
+  ],
+  "early_ready_paths_without_durable_reason": [
+    {
+      "packet_id": "54bfd7b306c777d086365bc2d38995ac0b5ed91b9df606c3c25de63df9b5af7d",
+      "symbol": "3034",
+      "at": "2026-11-27T09:33:56.402929+08:00",
+      "conclusion": "NO_DURABLE_PRETRADE_OR_STOP_REASON_IN_THIS_ARCHIVE"
+    },
+    {
+      "packet_id": "5301c2a68d635593b851f448300559df5900ecc2b745792f269175a26ec9e41a",
+      "symbol": "2493",
+      "at": "2026-11-27T10:23:12.807415+08:00",
+      "conclusion": "NO_DURABLE_PRETRADE_OR_STOP_REASON_IN_THIS_ARCHIVE"
+    }
+  ],
+  "memory_exceeds": 9,
+  "memory_exceeds_during_market": 8,
+  "recovery_event_counts": {
+    "SUPERVISOR_ALREADY_RUNNING": 692,
+    "FLOW_EXITED": 11,
+    "FLOW_STARTED": 11,
+    "HEARTBEAT_READ_UNAVAILABLE": 1,
+    "HEARTBEAT_READ_RECOVERED": 1,
+    "MEMORY_PRESSURE_DETECTED": 9,
+    "GRACEFUL_RECOVERY_REQUESTED": 9
+  },
+  "exit_code_counts": {
+    "0": 7,
+    "3221225477": 4
+  },
+  "access_violations": [
+    {
+      "at": "2026-11-27T01:43:09.004761+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 27812,
+      "supervisor_pid": 27304,
+      "run_id": "675548e5c56647d4a41e68451183193e",
+      "exit_code": 3221225477
+    },
+    {
+      "at": "2026-11-27T02:15:13.362137+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 8968,
+      "supervisor_pid": 27304,
+      "run_id": "e60af12d824440eeb7a928f2f8ebfd32",
+      "exit_code": 3221225477
+    },
+    {
+      "at": "2026-11-27T03:05:04.575733+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 18388,
+      "supervisor_pid": 27304,
+      "run_id": "42ebfb933ee4450f885a120c2a9e2e52",
+      "exit_code": 3221225477
+    },
+    {
+      "at": "2026-11-27T03:21:31.092543+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 23148,
+      "supervisor_pid": 27304,
+      "run_id": "5b27cdb357284048bb39a0ba1e8174ce",
+      "exit_code": 3221225477
+    }
+  ],
+  "horizon_anchor_comparisons": [
+    {
+      "symbol": "2338",
+      "entry": 33.35,
+      "target": 39.2,
+      "previous_close_cited_in_review": 35.3,
+      "required_from_entry": 0.17541229385307355,
+      "from_cited_previous_close": 0.11048158640226635
+    },
+    {
+      "symbol": "3034",
+      "entry": 426,
+      "target": 467.5,
+      "previous_close_cited_in_review": 446,
+      "required_from_entry": 0.09741784037558676,
+      "from_cited_previous_close": 0.04820627802690591
+    }
+  ],
+  "conclusions": {
+    "real_research_to_broker_acknowledgement_observed": true,
+    "confirmed_fill_observed": false,
+    "actual_post_fill_position_management_verified_today": false,
+    "all_decisions_proven_correct": false,
+    "full_intraday_quote_path_for_missed_opportunity_replay_available": false
+  }
+}

@@ -3,13 +3,14 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import math
+import sqlite3
 from pathlib import Path
 import subprocess
 import sys
 import threading
 import time
 
-from opportunity_flow.common import atomic_write_text,read,save
+from opportunity_flow.common import atomic_write_text,read,save,TAIPEI
 from opportunity_flow.recovery import STAGES,code_revision,folder,money,runtime_fingerprint,safe_details,same_runtime_code
 from operations.flow_resources import PRIVATE_LIMIT,pressure_reason
 
@@ -204,6 +205,30 @@ class RuntimeAudit:
             exported_at=datetime.fromtimestamp(now,timezone.utc).isoformat(),
             supervisor_pid=__import__('os').getpid(),runtime_pid=pid,run_id=run_id,source_fingerprint=self.fingerprint)
         report['resources']=None
+        report['decision_quality']=None
+        try:
+            quality=read(self.state/'decision_quality.json');quality_at=epoch(quality.get('as_of'))
+            if quality_at is not None and 0<=now-quality_at<=3600:
+                safe={k:v for k,v in quality.items() if k in ('symbols_observed','paired_research_candidates',
+                    'research_pending','research_errors_or_backoff','deferred_candidates','data_blocked',
+                    'model_call_errors','eligible_routes_above_descriptive_historical_p75') and type(v) is int and v>=0}
+                report['decision_quality']=dict(as_of=quality['as_of'],**safe,market_opportunity_absence_verified=False)
+        except (OSError,ValueError,TypeError,AttributeError):pass
+        report['memory_diagnostics']=None
+        try:
+            detail=read(folder(self.root)/'memory_diagnostics.json')
+            sampled=epoch(detail.get('at'))
+            if (detail.get('pid')==pid and sampled is not None and 0<=now-sampled<=180
+                    and detail.get('stage') in ('watch_loop','numeric_cycle_after','watch_closed',
+                        'broker_health_before','broker_health_after','broker_quotes_before','broker_quotes_after',
+                        'broker_execute_before','broker_execute_after','broker_shutdown_before','broker_shutdown_after')):
+                safe={k:v for k,v in detail.items() if k in ('private_commit_bytes','working_set_bytes',
+                    'python_allocated_blocks','private_delta_since_same_stage') and type(v) is int}
+                native=detail.get('com') or {}
+                safe['com']={k:v for k,v in native.items() if k in ('stock_records','bstr_freed','bstr_bytes_freed','sta_waits')
+                    and type(v) is int and v>=0}
+                report['memory_diagnostics']=dict(stage=detail['stage'],**safe)
+        except (OSError,ValueError,TypeError,AttributeError):pass
         try:
             resource=read(folder(self.root)/'resources.json');sampled=epoch(resource.get('at'))
             if (resource.get('pid')==pid and resource.get('run_id')==run_id
@@ -219,11 +244,16 @@ class RuntimeAudit:
                    tuple(report['order_evidence'].values()))
         if not force and now-self.last_saved<30 and signature==self.last_signature:return report
         self.last_saved,self.last_signature=now,signature
-        # The account copy survives a read-only/moved Git checkout.
-        try:save(folder(self.root)/'runtime-audit.json',report)
-        except OSError:report['export_error']='ACCOUNT_EXPORT_UNAVAILABLE'
         try:
             target=self.code_root/'reports/opportunity_flow_runtime'
+            from opportunity_flow.execution_audit import public_paths
+            day=datetime.fromtimestamp(now,TAIPEI).date().isoformat()
+            try:
+                paths=public_paths(self.state,day)
+                save(target/'decision_paths'/(day+'.json'),paths)
+                report['decision_path_export']=dict(date=day,count=len(paths['paths']),truncated=paths['truncated'])
+            except (OSError,ValueError,TypeError,AttributeError,sqlite3.Error):
+                report['decision_path_export']=dict(error='DECISION_PATH_EXPORT_UNAVAILABLE')
             save(target/'latest.json',report)
             atomic_write_text(target/'latest.txt',text_report(report))
             if run_id:
@@ -231,8 +261,10 @@ class RuntimeAudit:
                 save(target/'runs'/(name+'.json'),report)
         except OSError:
             report['export_error']='REPOSITORY_EXPORT_UNAVAILABLE'
-            try:save(folder(self.root)/'runtime-audit.json',report)
-            except OSError:pass
+        # The account copy survives a read-only/moved Git checkout, with the
+        # same export observations as the value returned to callers.
+        try:save(folder(self.root)/'runtime-audit.json',report)
+        except OSError:report['export_error']='ACCOUNT_EXPORT_UNAVAILABLE'
         return report
 
 

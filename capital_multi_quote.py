@@ -8,6 +8,7 @@ from capital_check import unpack, error_info
 from config import ROOT, now
 from main import snapshot
 from execution.capital_session_audit import record_capital_event
+from execution.com_lifetime import stock_record
 
 MAX_ODDLOT_QUOTE_SYMBOLS = 20
 MAX_ODDLOT_HISTORY_SYMBOLS = 10
@@ -21,14 +22,6 @@ def buy_quote_complete(q,at):
            for k in ('price','bid','ask','low')):
         return False
     return q['bid']<=q['ask'] and (q.get('high') is None or q['low']<=q['high'])
-
-
-def read_stock(result, original):
-    if unpack(result):
-        raise ValueError('QUOTE_RETURN_CODE_' + str(unpack(result)))
-    if isinstance(result, (tuple, list)):
-        return next((v for v in result if hasattr(v, 'nClose')), original)
-    return original
 
 
 class MultiCapitalMarket(CapitalMarket):
@@ -150,8 +143,7 @@ class MultiCapitalMarket(CapitalMarket):
             for market, index in list(self.pending_indices):
                 self.pending_indices.discard((market, index))
                 try:
-                    stock = self.sk.SKSTOCKLONG()
-                    stock = read_stock(quote.SKQuoteLib_GetStockByIndexLONG(market, index, stock), stock)
+                    stock = stock_record(self.sk.SKSTOCKLONG,quote.SKQuoteLib_GetStockByIndexLONG,market,index)
                     stock_cache[(market,index)]=stock
                     q = normalize_stock(stock, now())
                     q['callback_received_at'] = self.callback_times.get((market, index))
@@ -174,8 +166,7 @@ class MultiCapitalMarket(CapitalMarket):
                     if market!=getattr(self,'oddlot_market_no',5):continue
                     stock=stock_cache.get((market,index))
                     if stock is None:
-                        original=self.sk.SKSTOCKLONG()
-                        stock=read_stock(quote.SKQuoteLib_GetStockByIndexLONG(market,index,original),original)
+                        stock=stock_record(self.sk.SKSTOCKLONG,quote.SKQuoteLib_GetStockByIndexLONG,market,index)
                         stock_cache[(market,index)]=stock
                     symbol=str(stock.bstrStockNo)
                     if symbol not in requested:continue
@@ -190,9 +181,8 @@ class MultiCapitalMarket(CapitalMarket):
             if symbol in ready or self.stopped():
                 continue
             try:
-                stock = self.sk.SKSTOCKLONG()
                 market_no=getattr(self,'oddlot_market_no',5)
-                stock = read_stock(quote.SKQuoteLib_GetStockByMarketAndNo(market_no, symbol, stock), stock)
+                stock = stock_record(self.sk.SKSTOCKLONG,quote.SKQuoteLib_GetStockByMarketAndNo,market_no,symbol)
                 q = normalize_stock(stock, now())
                 if q['symbol'] != symbol:
                     raise ValueError('RETURNED_SYMBOL_MISMATCH')

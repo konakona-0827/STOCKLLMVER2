@@ -25,6 +25,10 @@ class Ledger:
                 kind TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS handoffs (decision_id TEXT PRIMARY KEY, status TEXT NOT NULL,
                 payload TEXT NOT NULL, report TEXT);
+            CREATE TABLE IF NOT EXISTS execution_paths (
+                packet_id TEXT NOT NULL,symbol TEXT NOT NULL,stage TEXT NOT NULL,reason TEXT NOT NULL,
+                first_at TEXT NOT NULL,last_at TEXT NOT NULL,route_id TEXT,data TEXT NOT NULL,
+                observations INTEGER NOT NULL,PRIMARY KEY(packet_id,stage,reason));
         """)
         self.db.commit()
 

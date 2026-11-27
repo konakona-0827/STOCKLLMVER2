@@ -194,15 +194,24 @@ class LiveCoordinator:
 
     def offer(self,result,dataset):
         self.drain()
-        if self.stop.is_set() or self.broker_read_error:return
+        from .execution_audit import record
+        candidates=result['candidates']
+        record(self.state,candidates,'OFFER_RECEIVED')
+        if self.stop.is_set() or self.broker_read_error:
+            record(self.state,candidates,'BLOCKED','USER_STOPPED' if self.stop.is_set() else 'BROKER_READ_UNVERIFIED')
+            return
         ready=any(c['state']=='RESEARCH_READY' for c in result['candidates'])
         # The execution worker needs approved plans only, not another complete
         # copy of every stock's frozen history and cached model responses.
         selected=dict(candidates=[deepcopy(c) for c in result['candidates'] if c['state']=='RESEARCH_READY'])
         if self.future is not None:
-            if ready:self.pending=(selected,dataset)
+            if ready:
+                if self.pending:record(self.state,self.pending[0]['candidates'],'SUPERSEDED','FRESH_RESEARCH_REPLACED_PENDING')
+                self.pending=(selected,dataset)
+                record(self.state,selected['candidates'],'QUEUED','WAITING_FOR_EXECUTION_WORKER')
         elif ready or any(q>0 for q in self.runtime.store.ai_positions().values()):
             self.pending=None
+            record(self.state,selected['candidates'],'QUEUED')
             self.future=self.pool.submit(self.bridge.step,selected,dataset,datetime.now(TAIPEI))
 
     def drain(self):

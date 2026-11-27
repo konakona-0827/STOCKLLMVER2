@@ -1,0 +1,194 @@
+{
+  "source_files": {
+    "reports/trading_daily/2026-11-26/postclose_140011/summary.json": "119f2d9922a250f6867477507598c40adeef05cf0c64be16de14a5426c456db2",
+    "reports/trading_daily/2026-11-26/postclose_140011/research_decisions.json": "4ab229763c0d9605e34b2b4218bcb0132a4851a11bd053bb1871da650e27b083",
+    "reports/trading_daily/2026-11-26/postclose_140011/cycles_and_feed.json": "aa9592074b5549670e25da2638d909bc9b531221fb74f7299b71761d975cb7b1",
+    "reports/trading_daily/2026-11-26/postclose_140011/execution_and_health.json": "8c99a0f3243568d9f61793f44c3646d486093b5baf9b4fc018912ce04d88b683",
+    "reports/trading_daily/2026-11-26/postclose_140011/recovery_events.json": "0f6b68a428ff929c5b28503017b7669d66cf46f24f8e5ce7770e769f3c467110"
+  },
+  "cutoff_taipei": "2026-11-26T14:00:11.182924+08:00",
+  "cutoff_japan": "2026-11-26T15:00:11.182924+09:00",
+  "model_calls": 28,
+  "call_statuses": {
+    "VALID": 26,
+    "ERROR": 2
+  },
+  "completed_pairs": 15,
+  "pair_states": {
+    "RESEARCH_WATCH": 13,
+    "RESEARCH_REJECT": 2
+  },
+  "unique_reviewed_symbols": 4,
+  "per_symbol": {
+    "2471": {
+      "pairs": 7,
+      "states": {
+        "RESEARCH_WATCH": 7
+      },
+      "received_completed_minutes": [
+        7,
+        11,
+        25,
+        28,
+        30,
+        32,
+        60
+      ],
+      "target_required_returns": [
+        0.179487,
+        0.184848,
+        0.184848,
+        0.179487,
+        0.181269,
+        0.184848,
+        0.184848
+      ],
+      "system_gap_reported_by_models": true
+    },
+    "3147": {
+      "pairs": 1,
+      "states": {
+        "RESEARCH_WATCH": 1
+      },
+      "received_completed_minutes": [
+        20
+      ],
+      "target_required_returns": [
+        0.167315
+      ],
+      "system_gap_reported_by_models": true
+    },
+    "3264": {
+      "pairs": 2,
+      "states": {
+        "RESEARCH_WATCH": 2
+      },
+      "received_completed_minutes": [
+        60,
+        60
+      ],
+      "target_required_returns": [
+        0.272436,
+        0.272436
+      ],
+      "system_gap_reported_by_models": true
+    },
+    "3706": {
+      "pairs": 5,
+      "states": {
+        "RESEARCH_REJECT": 2,
+        "RESEARCH_WATCH": 3
+      },
+      "received_completed_minutes": [
+        32,
+        60,
+        60,
+        60,
+        60
+      ],
+      "target_required_returns": [
+        0.237774,
+        0.221298,
+        0.223333,
+        0.221298,
+        0.219269
+      ],
+      "system_gap_reported_by_models": true
+    }
+  },
+  "errors": [
+    {
+      "at": "2026-11-26T12:23:31.006048+08:00",
+      "role": "researcher",
+      "symbols": [
+        "3706"
+      ],
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    },
+    {
+      "at": "2026-11-26T12:39:25.330651+08:00",
+      "role": "researcher",
+      "symbols": [
+        "3481",
+        "3264"
+      ],
+      "error": "RuntimeError:CODEX_REVIEW_STOPPED"
+    }
+  ],
+  "cycle_count": 229,
+  "max_states_across_cycles": {
+    "DATA_BLOCKED": 160,
+    "ECONOMIC_BLOCKED": 25,
+    "NO_SETUP": 478,
+    "RESEARCH_REJECT": 1,
+    "RESEARCH_WATCH": 2,
+    "REVIEW_DEFERRED_LIVE_QUOTE": 2,
+    "REVIEW_ERROR": 2,
+    "REVIEW_IN_FLIGHT": 1,
+    "REVIEW_PENDING": 2,
+    "SCREENED_OUT": 1340
+  },
+  "last_cycle": {
+    "at": "2026-11-26T13:30:56.741037+08:00",
+    "states": {
+      "DATA_BLOCKED": 160,
+      "ECONOMIC_BLOCKED": 15,
+      "NO_SETUP": 475,
+      "SCREENED_OUT": 1340
+    }
+  },
+  "formal_trading": {
+    "attempt_count": 0,
+    "attempt_statuses": {},
+    "ledger_event_count": 0,
+    "new_handoff_count": 0,
+    "confirmed_fills_in_current_health": [],
+    "unresolved_attempts": 0,
+    "ledger_note": "Zero attempts/events today is zero recorded automated submissions/fills; older manual/AI broker reconciliation entries excluded."
+  },
+  "memory_alarms": 16,
+  "access_violations": [
+    {
+      "at": "2026-11-26T03:10:11.972619+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 7412,
+      "supervisor_pid": 10708,
+      "run_id": "2b292bae7e004eceb2a2fcbdecbf1a20",
+      "exit_code": 3221225477
+    },
+    {
+      "at": "2026-11-26T04:56:44.000596+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 16580,
+      "supervisor_pid": 10708,
+      "run_id": "9f656ffcfde34f2880d58aa886b691ef",
+      "exit_code": 3221225477
+    },
+    {
+      "at": "2026-11-26T05:13:00.336031+00:00",
+      "event": "FLOW_EXITED",
+      "child_pid": 1344,
+      "supervisor_pid": 10708,
+      "run_id": "9886a90db5a241cb945ffae606d6c01f",
+      "exit_code": 3221225477
+    }
+  ],
+  "event_counts": {
+    "SUPERVISOR_ALREADY_RUNNING": 840,
+    "HEARTBEAT_READ_UNAVAILABLE": 4,
+    "HEARTBEAT_READ_RECOVERED": 4,
+    "MEMORY_PRESSURE_DETECTED": 16,
+    "GRACEFUL_RECOVERY_REQUESTED": 16,
+    "FLOW_EXITED": 17,
+    "FLOW_STARTED": 17
+  },
+  "conclusions": {
+    "market_opportunity_absence_verified": false,
+    "all_nontrades_proven_rational": false,
+    "native_faulting_module_verified": false,
+    "complete_counterfactual_quote_path_available": false,
+    "observed_system_interruptions": 2,
+    "known_event_repeated_research_symbol": "3706",
+    "historical_action_adjustment": "SYSTEM_NOT_INTEGRATED_NOT_MARKET_ABSENCE"
+  }
+}

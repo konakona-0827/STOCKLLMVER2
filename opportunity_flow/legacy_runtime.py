@@ -384,4 +384,11 @@ class LegacyRuntime:
 
     def close(self):
         from execution.broker_runtime import shutdown_broker_runtime
-        return shutdown_broker_runtime(self.root)
+        while True:
+            result=shutdown_broker_runtime(self.root)
+            if not isinstance(result,dict) or not str(result.get('status','')).startswith('STOPPING_BROKER_'):
+                return result
+            # Keep the watch/UI close pending and retain its leases until the
+            # original STA has actually released callbacks and financial work.
+            # Retrying cleanup is not another login, order, or process restart.
+            time.sleep(1)

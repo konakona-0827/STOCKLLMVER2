@@ -214,7 +214,7 @@ class QuoteCompletionTests(unittest.TestCase):
         def pump(delay):pumps.append(delay);market.pending_indices.add((5,1))
         market.pump=pump
         with patch('capital_multi_quote.normalize_stock',side_effect=[partial,complete]),\
-             patch('capital_multi_quote.read_stock'),patch('capital_multi_quote.now',return_value=at):
+             patch('capital_multi_quote.stock_record'),patch('capital_multi_quote.now',return_value=at):
             quotes,errors=market._fetch_one_batch(('1111',),timeout=1,batch_index=1,batch_count=1)
         self.assertEqual(len(pumps),2)
         self.assertEqual((quotes['1111']['ask'],quotes['1111']['low']),(100,99))
@@ -255,7 +255,7 @@ class QuoteCompletionTests(unittest.TestCase):
 
         market.pump=pump
         with patch('capital_multi_quote.normalize_stock',side_effect=[empty,complete]),\
-             patch('capital_multi_quote.read_stock'),patch('capital_multi_quote.now',return_value=at):
+             patch('capital_multi_quote.stock_record'),patch('capital_multi_quote.now',return_value=at):
             quotes,errors=market._fetch_one_batch(('1111',),timeout=1,batch_index=1,batch_count=1)
         self.assertEqual(len(counter),2)
         self.assertEqual(quotes['1111']['ask'],100)

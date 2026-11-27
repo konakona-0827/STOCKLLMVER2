@@ -9,6 +9,7 @@ from .engine import build,economics
 from .data import plan_quote_problem
 from .review import CodexRunner, combine, validate
 from .state import Ledger
+from .decision_quality import KNOWN_EVENT_RISKS,summarize
 
 
 def execution_readiness(candidate, reviewed_packet, route_id, at, event, p,*,support_policy='strict',planned_limits=False):
@@ -83,6 +84,13 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
                 # A feed outage is not new market evidence. Keep the frozen
                 # research in the ledger; do not pay to re-review degraded input.
                 c.update(state='REVIEW_DEFERRED_EVENT_SOURCE',reasons=['COMPANY_EVENT_SOURCE_UNAVAILABLE'])
+            if (c.get('packet') and (account_context or {}).get(symbol,{}).get('source')=='LIVE_ACCOUNT_CONTEXT'
+                    and set((event or {}).get('blockers') or []) & KNOWN_EVENT_RISKS):
+                # A known event already blocks the original executor. New ticks
+                # cannot resolve its price basis; don't repeat two model calls
+                # on the same unusable plan every time its minute window moves.
+                c.update(state='REVIEW_DEFERRED_EVENT_RISK',
+                    reasons=sorted(set(event['blockers']) & KNOWN_EVENT_RISKS))
             candidates.append(c)
         queue=sorted([c for c in candidates if c["state"] == "REVIEW_PENDING" or
             (diagnose_blocked and c["state"] == "ECONOMIC_BLOCKED")],
@@ -207,8 +215,12 @@ def run_cycle(dataset,at,p,state_folder,quotes=None,events=None,runner=None,use_
             archived.append(row)
         save(root/"candidates.json",archived)
         save(root/"calls.json",calls)
+        quality=summarize(candidates,calls)
+        quality['as_of']=at.isoformat()
+        save(root/'decision_quality.json',quality)
         if publish_latest:
             save(ledger.folder/"latest.json",dict(summary=summary,candidates=candidates))
-        return dict(summary=summary,candidates=candidates,output=str(root))
+            save(ledger.folder/'decision_quality.json',quality)
+        return dict(summary=summary,candidates=candidates,output=str(root),decision_quality=quality)
     finally:
         ledger.close()
